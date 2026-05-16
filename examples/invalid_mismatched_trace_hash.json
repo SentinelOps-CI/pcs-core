@@ -1,0 +1,101 @@
+{
+  "bundle_id": "scb-mismatched-trace",
+  "schema_version": "v0",
+  "claim_artifact": {
+    "artifact_id": "claim-qc-release-v0.1",
+    "artifact_type": "ClaimArtifact.v0",
+    "schema_version": "v0",
+    "claim_text": "Mismatched trace hash example.",
+    "claim_kind": "temporal_claim",
+    "status": "CertificateChecked",
+    "assumption_set_ref": "as-labtrust-qc-v0.1",
+    "source_span_refs": [],
+    "formal_statement": "",
+    "certificate_refs": ["cert-trace-qc-release-v0.1"],
+    "runtime_receipt_refs": ["receipt-qc-release-run-001"],
+    "created_at": "2026-05-16T12:05:00Z",
+    "producer": "labtrust-gym",
+    "producer_version": "0.1.0",
+    "source_repo": "https://github.com/fraware/LabTrust-Gym",
+    "source_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "signature_or_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+  },
+  "assumption_set": {
+    "assumption_set_id": "as-labtrust-qc-v0.1",
+    "schema_version": "v0",
+    "created_at": "2026-05-16T12:00:00Z",
+    "producer": "labtrust-gym",
+    "producer_version": "0.1.0",
+    "source_repo": "https://github.com/fraware/LabTrust-Gym",
+    "source_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "assumptions": [],
+    "human_review_status": "approved",
+    "status": "HumanReviewed",
+    "signature_or_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+  },
+  "runtime_receipts": [
+    {
+      "receipt_id": "receipt-qc-release-run-001",
+      "schema_version": "v0",
+      "run_id": "runs/qc-release",
+      "environment": {},
+      "started_at": "2026-05-16T11:58:00Z",
+      "ended_at": "2026-05-16T12:00:00Z",
+      "status": "RuntimeObserved",
+      "events_hash": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+      "policy_hash": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+      "trace_hash": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+      "producer": "labtrust-gym",
+      "producer_version": "0.1.0",
+      "source_repo": "https://github.com/fraware/LabTrust-Gym",
+      "source_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "input_hashes": {},
+      "output_hashes": {},
+      "signature_or_digest": "sha256:7777777777777777777777777777777777777777777777777777777777777777"
+    }
+  ],
+  "certificates": [
+    {
+      "certificate_id": "cert-trace-qc-release-v0.1",
+      "schema_version": "v0",
+      "trace_hash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "spec_hash": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+      "property_id": "qc_release.temporal.safety",
+      "checker": "certifyedge",
+      "checker_version": "0.1.0",
+      "status": "CertificateChecked",
+      "counterexample_ref": null,
+      "created_at": "2026-05-16T12:10:00Z",
+      "producer": "certifyedge",
+      "producer_version": "0.1.0",
+      "source_repo": "https://github.com/fraware/CertifyEdge",
+      "source_commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "signature_or_digest": "sha256:8888888888888888888888888888888888888888888888888888888888888888"
+    }
+  ],
+  "evidence_bundle": {
+    "bundle_id": "evidence-qc-release-v0.1",
+    "schema_version": "v0",
+    "claim_refs": ["claim-qc-release-v0.1"],
+    "assumption_set_refs": ["as-labtrust-qc-v0.1"],
+    "runtime_receipt_refs": ["receipt-qc-release-run-001"],
+    "certificate_refs": ["cert-trace-qc-release-v0.1"],
+    "artifact_hashes": {},
+    "created_at": "2026-05-16T12:12:00Z",
+    "producer": "labtrust-gym",
+    "producer_version": "0.1.0",
+    "source_repo": "https://github.com/fraware/LabTrust-Gym",
+    "source_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "signature_or_digest": "sha256:9999999999999999999999999999999999999999999999999999999999999999"
+  },
+  "verification_policy": {
+    "policy_id": "labtrust-v0.1-qc-release",
+    "required_checks": ["trace-hash-alignment"]
+  },
+  "created_at": "2026-05-16T12:15:00Z",
+  "producer": "labtrust-gym",
+  "producer_version": "0.1.0",
+  "source_repo": "https://github.com/fraware/LabTrust-Gym",
+  "source_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "signature_or_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+}

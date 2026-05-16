@@ -1,0 +1,28 @@
+{
+  "assumption_set_id": "as-labtrust-qc-v0.1",
+  "schema_version": "v0",
+  "created_at": "2026-05-16T12:00:00Z",
+  "producer": "labtrust-gym",
+  "producer_version": "0.1.0",
+  "source_repo": "https://github.com/fraware/LabTrust-Gym",
+  "source_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "assumptions": [
+    {
+      "assumption_id": "asm-domain-qc-sim",
+      "text": "Simulation models a hospital QC release workflow, not a live clinical laboratory.",
+      "kind": "domain",
+      "status": "HumanReviewed",
+      "source_span_refs": ["span-qc-release-spec-1"]
+    },
+    {
+      "assumption_id": "asm-policy-trace-integrity",
+      "text": "Exported trace.json is byte-stable for the run identifier.",
+      "kind": "policy",
+      "status": "RuntimeObserved",
+      "source_span_refs": ["span-qc-release-spec-1"]
+    }
+  ],
+  "human_review_status": "approved",
+  "status": "HumanReviewed",
+  "signature_or_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+}

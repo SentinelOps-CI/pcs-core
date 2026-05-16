@@ -1,0 +1,10 @@
+{
+  "source_span_id": "span-qc-release-spec-1",
+  "schema_version": "v0",
+  "source_type": "protocol_file",
+  "source_uri": "templates/hospital_lab/qc_release.stl",
+  "start": { "line": 1, "column": 0 },
+  "end": { "line": 42, "column": 0 },
+  "hash": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+  "description": "QC release temporal property specification"
+}

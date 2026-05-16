@@ -1,0 +1,19 @@
+{
+  "receipt_id": "receipt-bad-status",
+  "schema_version": "v0",
+  "run_id": "runs/bad",
+  "environment": {},
+  "started_at": "2026-05-16T11:58:00Z",
+  "ended_at": "2026-05-16T12:00:00Z",
+  "status": "TotallyInvalidStatus",
+  "events_hash": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+  "policy_hash": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+  "trace_hash": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+  "producer": "labtrust-gym",
+  "producer_version": "0.1.0",
+  "source_repo": "https://github.com/fraware/LabTrust-Gym",
+  "source_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "input_hashes": {},
+  "output_hashes": {},
+  "signature_or_digest": "sha256:7777777777777777777777777777777777777777777777777777777777777777"
+}

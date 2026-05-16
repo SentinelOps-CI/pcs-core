@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pcs-core"
+version = "0.1.0"
+description = "Proof-Carrying Science canonical artifact validation"
+requires-python = ">=3.11"
+dependencies = [
+  "jsonschema>=4.23.0",
+  "referencing>=0.35.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0.0",
+  "ruff>=0.6.0",
+]
+
+[project.scripts]
+pcs = "pcs_core.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pcs_core*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

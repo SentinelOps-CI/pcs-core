@@ -1,0 +1,11 @@
+{
+  "name": "pcs-typescript",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": ["packages/core"],
+  "scripts": {
+    "build": "npm run build -w @pcs/core",
+    "test": "npm run test -w @pcs/core",
+    "lint": "npm run lint -w @pcs/core"
+  }
+}

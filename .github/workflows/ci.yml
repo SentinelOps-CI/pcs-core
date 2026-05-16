@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install and test Python
+        run: |
+          cd python
+          pip install -e ".[dev]"
+          pytest -q
+          pcs schema check
+          pcs examples check
+          ruff check pcs_core tests
+
+  rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Test Rust
+        run: |
+          cd rust
+          cargo fmt --check
+          cargo test
+
+  typescript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Test TypeScript
+        run: |
+          cd typescript
+          npm install
+          npm test
+          npm run lint
+
+  lean:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: leanprover/lean-action@v1
+      - name: Build Lean
+        run: |
+          cd lean
+          lake build
+
+  validate-examples:
+    runs-on: ubuntu-latest
+    needs: python
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate all valid examples
+        run: |
+          cd python
+          pip install -e .
+          pcs examples check
