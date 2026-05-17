@@ -1,8 +1,8 @@
 {
   "schema_version": "v0",
   "release_candidate": "pcs-v0.1.0-rc1",
-  "generated_at": "2026-05-17T13:14:56Z",
-  "pcs_core_commit": "280bbea4bf3bf3e45004b6254bc72b603030f179",
+  "generated_at": "2026-05-17T13:15:22Z",
+  "pcs_core_commit": "dd2b45aecc61ac5a64aaf99a1c5aff5ab3c098b9",
   "labtrust_gym_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
   "certifyedge_commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
   "provability_fabric_commit": "cccccccccccccccccccccccccccccccccccccccc",
