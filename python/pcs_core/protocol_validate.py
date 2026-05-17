@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from pathlib import Path
 from typing import Any
 
 _PATTERN_PLACEHOLDER = re.compile(r"^(?:a{40}|b{40}|c{40}|d{40}|e{40})$")
@@ -67,6 +68,46 @@ def validate_release_manifest_semantics(data: dict[str, Any]) -> list[str]:
             ):
                 if not chain_root.get(key):
                     errors.append(f"chain_root.{key} required when release_status is Validated")
+        ref = data.get("release_chain_validation_result")
+        if isinstance(ref, dict):
+            digest = ref.get("sha256")
+            if isinstance(digest, str) and digest.startswith("sha256:") and digest.endswith(
+                "0" * 64,
+            ):
+                errors.append(
+                    "release_chain_validation_result.sha256 is a placeholder; "
+                    "run just materialize-labtrust-protocol",
+                )
+    return errors
+
+
+def validate_release_manifest_fixture_refs(
+    data: dict[str, Any],
+    base_dir: Path,
+) -> list[str]:
+    """Ensure release_chain_validation_result path digest matches on-disk bytes."""
+    errors: list[str] = []
+    ref = data.get("release_chain_validation_result")
+    if not isinstance(ref, dict):
+        return errors
+    rel_path = ref.get("path")
+    expected = ref.get("sha256")
+    if not isinstance(rel_path, str) or not isinstance(expected, str):
+        return errors
+    artifact_path = base_dir / rel_path
+    if not artifact_path.is_file():
+        errors.append(
+            f"release_chain_validation_result.path missing on disk: {rel_path}",
+        )
+        return errors
+    from pcs_core.release_fixtures import file_digest
+
+    actual = file_digest(artifact_path.read_bytes())
+    if actual != expected:
+        errors.append(
+            "release_chain_validation_result.sha256 does not match file bytes "
+            f"(expected {expected}, got {actual})",
+        )
     return errors
 
 

@@ -78,11 +78,27 @@ Committed under `examples/labtrust-release/`:
 
 `release_manifest.v0.json` is derived from `RELEASE_FIXTURE_MANIFEST.json` (same artifact hashes and producer commits).
 
-Regenerate after a full chain promotion:
+Regenerate after a full chain promotion (writes validation result first, then manifest digest pin):
 
 ```bash
 just materialize-labtrust-protocol
 ```
+
+`release_chain_validation_result.v0.json` is built from the live 30-check catalog with `checked_at` pinned to `RELEASE_FIXTURE_MANIFEST.json` `generated_at` so manifests and hash vectors stay stable.
+
+## Protocol conformance suite
+
+Downstream repos can run subsets from `conformance/`:
+
+| Suite | Command |
+|-------|---------|
+| Release chain | `pcs validate-release-chain examples/labtrust-release/` |
+| Registry | `pcs registry validate examples/artifact_registry.valid.json` |
+| Hash | `pcs shared-hash-vectors verify` |
+| Migration | `pcs migrate --from v0 --to v0 <artifact>` |
+| Status | `pcs check-status-transition Rejected ProofChecked` |
+
+Integration tests: `pytest tests/test_protocol_conformance.py` (also `just protocol-conformance`).
 
 ## Release-mode semantics (protocol artifacts)
 

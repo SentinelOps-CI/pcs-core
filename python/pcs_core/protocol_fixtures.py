@@ -20,7 +20,8 @@ PF_REPO = "https://github.com/SentinelOps-CI/provability-fabric"
 SM_REPO = "https://github.com/fraware/scientific-memory"
 
 RELEASE_ID = "release-pcs-v0.1-labtrust-qc"
-PCS_CORE_COMMIT = "19c715455ac97bc50d7b091aec577b21dd19d930"
+# Default when legacy manifest is absent; live fixtures pin via RELEASE_FIXTURE_MANIFEST.json.
+PCS_CORE_COMMIT = "b133c2ed32293b02c4e28971da7b3a7fffcedc2a"
 
 _ARTIFACT_MANIFEST_META: dict[str, dict[str, str]] = {
     "trace.json": {
@@ -106,7 +107,10 @@ def _with_digest(doc: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
-def labtrust_release_manifest_body() -> dict[str, Any]:
+def labtrust_release_manifest_body(
+    *,
+    validation_artifact_path: str = "release_chain_validation_result.v0.json",
+) -> dict[str, Any]:
     """ReleaseManifest.v0 derived from RELEASE_FIXTURE_MANIFEST.json on disk."""
     legacy = _load_legacy_release_manifest()
     legacy_artifacts = legacy.get("artifacts")
@@ -150,7 +154,7 @@ def labtrust_release_manifest_body() -> dict[str, Any]:
             "signed_bundle_hash": signed_hash,
         },
         "release_chain_validation_result": {
-            "path": validation_path,
+            "path": validation_artifact_path,
             "sha256": validation_digest,
         },
         "canonical_signed_bundle": {
@@ -187,8 +191,15 @@ def labtrust_release_manifest_body() -> dict[str, Any]:
     }
 
 
-def release_manifest_valid() -> dict[str, Any]:
-    return _with_digest(labtrust_release_manifest_body())
+def release_manifest_valid(*, for_examples_tree: bool = False) -> dict[str, Any]:
+    validation_path = (
+        "release_chain_validation_result.valid.json"
+        if for_examples_tree
+        else "release_chain_validation_result.v0.json"
+    )
+    return _with_digest(
+        labtrust_release_manifest_body(validation_artifact_path=validation_path),
+    )
 
 
 def _handoff_base(
@@ -342,55 +353,56 @@ def handoff_signed_bundle_to_memory() -> dict[str, Any]:
 
 
 def release_chain_validation_result_valid() -> dict[str, Any]:
-    return _with_digest(
-        {
-            "schema_version": "v0",
-            "validation_id": "validation-pcs-v0.1-labtrust-qc-rc",
-            "release_id": RELEASE_ID,
-            "release_candidate": "pcs-v0.1.0-rc1",
-            "validator": "pcs-core",
-            "validator_version": "0.1.0",
-            "checked_at": "2026-05-17T17:01:22Z",
-            "status": "ProofChecked",
-            "checks": [
-                {
-                    "check_id": "certificate_id_consistency",
-                    "description": (
-                        "Certificate ID is identical across certificate, certified bundle, "
-                        "verification result, and signed bundle"
-                    ),
-                    "status": "passed",
-                    "details": {"certificate_id": LABTRUST_RC_CERTIFICATE_ID},
-                },
-                {
-                    "check_id": "manifest_hash_alignment",
-                    "description": "All manifest artifact hashes match on-disk files",
-                    "status": "passed",
-                    "details": {},
-                },
-            ],
-            "artifacts_checked": 8,
-            "failure_codes": [],
-            "source_repo": PCS_CORE_REPO,
-            "source_commit": PCS_CORE_COMMIT,
-            "signature_or_digest": PLACEHOLDER_DIGEST,
-        },
+    """Full 30-check result for examples/, pinned to legacy manifest generated_at."""
+    from pcs_core.paths import examples_dir
+    from pcs_core.release_chain_report import build_release_chain_validation_result
+
+    release_dir = examples_dir() / "labtrust-release"
+    legacy = _load_legacy_release_manifest()
+    checked_at = str(legacy.get("generated_at", "2026-05-17T17:01:22Z"))
+    pcs_commit = str(legacy.get("pcs_core_commit", PCS_CORE_COMMIT))
+    return build_release_chain_validation_result(
+        release_dir,
+        checked_at=checked_at,
+        source_commit=pcs_commit,
     )
 
 
-LABTRUST_PROTOCOL_ARTIFACTS = {
-    "release_manifest.v0.json": release_manifest_valid,
-    "release_chain_validation_result.v0.json": release_chain_validation_result_valid,
+LABTRUST_HANDOFF_ARTIFACTS = {
     "handoff_manifest.runtime_to_certificate.v0.json": handoff_runtime_to_certificate,
     "handoff_manifest.certificate_to_bundle.v0.json": handoff_certificate_to_bundle,
     "handoff_manifest.bundle_to_verifier.v0.json": handoff_bundle_to_verifier,
     "handoff_manifest.signed_bundle_to_memory.v0.json": handoff_signed_bundle_to_memory,
 }
 
+LABTRUST_PROTOCOL_ARTIFACTS = {
+    "release_manifest.v0.json": release_manifest_valid,
+    "release_chain_validation_result.v0.json": release_chain_validation_result_valid,
+    **LABTRUST_HANDOFF_ARTIFACTS,
+}
+
 
 def write_labtrust_protocol_artifacts(directory: Path) -> None:
     """Write Phase 2 protocol artifacts into a release fixture directory."""
+    from pcs_core.release_chain_report import build_release_chain_validation_result
+
     directory.mkdir(parents=True, exist_ok=True)
-    for filename, builder in LABTRUST_PROTOCOL_ARTIFACTS.items():
+    legacy = json.loads((directory / "RELEASE_FIXTURE_MANIFEST.json").read_text(encoding="utf-8"))
+    checked_at = str(legacy.get("generated_at", "2026-05-17T17:01:22Z"))
+    pcs_commit = str(legacy.get("pcs_core_commit", PCS_CORE_COMMIT))
+    validation = build_release_chain_validation_result(
+        directory,
+        checked_at=checked_at,
+        source_commit=pcs_commit,
+    )
+    (directory / "release_chain_validation_result.v0.json").write_text(
+        json.dumps(validation, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    (directory / "release_manifest.v0.json").write_text(
+        json.dumps(release_manifest_valid(), indent=2) + "\n",
+        encoding="utf-8",
+    )
+    for filename, builder in LABTRUST_HANDOFF_ARTIFACTS.items():
         path = directory / filename
         path.write_text(json.dumps(builder(), indent=2) + "\n", encoding="utf-8")

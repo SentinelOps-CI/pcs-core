@@ -28,12 +28,19 @@ From repo root after `pip install -e python/.[dev]`:
 ```bash
 pcs validate-release-chain examples/labtrust-release/
 pcs validate-release-chain examples/labtrust-release/ --json
+pcs validate-release-chain examples/labtrust-release/ --out examples/labtrust-release/release_chain_validation_result.v0.json
 pcs validate examples/labtrust-release/release_manifest.v0.json
 pcs registry validate examples/artifact_registry.valid.json
 pcs shared-hash-vectors verify
+just materialize-labtrust-protocol
+just protocol-conformance
 just validate-labtrust-release-fixtures
-cd python && pytest -q tests/test_release_chain.py tests/test_labtrust_protocol_artifacts.py
+cd python && pytest -q tests/test_release_chain.py tests/test_labtrust_protocol_artifacts.py tests/test_protocol_conformance.py
+cd rust && cargo test shared_hash_vectors
+cd typescript && npm test
 ```
+
+`release_manifest.v0.json` pins `release_chain_validation_result.sha256` to the on-disk validation artifact bytes (regenerate both via `just materialize-labtrust-protocol`, not independently).
 
 CI runs `pcs validate-release-chain ../examples/labtrust-release/` on every push and on PRs touching schemas, release fixtures, `python/pcs_core/`, or `docs/labtrust-v0.1-profile.md`.
 

@@ -37,7 +37,41 @@ def _release_candidate(directory: Path) -> str:
     return RELEASE_CANDIDATE_ID
 
 
-def build_release_chain_validation_result(directory: Path) -> dict[str, Any]:
+def _legacy_manifest_checked_at(directory: Path) -> str | None:
+    manifest_path = directory / MANIFEST_NAME
+    if not manifest_path.is_file():
+        return None
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return None
+    if isinstance(manifest, dict):
+        generated_at = manifest.get("generated_at")
+        if isinstance(generated_at, str) and generated_at:
+            return generated_at
+    return None
+
+
+def _legacy_manifest_pcs_core_commit(directory: Path) -> str:
+    manifest_path = directory / MANIFEST_NAME
+    if manifest_path.is_file():
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            manifest = None
+        if isinstance(manifest, dict):
+            commit = manifest.get("pcs_core_commit")
+            if isinstance(commit, str) and commit:
+                return commit
+    return PCS_CORE_COMMIT
+
+
+def build_release_chain_validation_result(
+    directory: Path,
+    *,
+    checked_at: str | None = None,
+    source_commit: str | None = None,
+) -> dict[str, Any]:
     """Build a schema-oriented ReleaseChainValidationResult.v0 document."""
     base = directory.resolve()
     issues = validate_release_chain(base)
@@ -58,6 +92,11 @@ def build_release_chain_validation_result(directory: Path) -> dict[str, Any]:
     else:
         status = "ProofChecked"
 
+    if checked_at is None:
+        checked_at = datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    if source_commit is None:
+        source_commit = _legacy_manifest_pcs_core_commit(base)
+
     body: dict[str, Any] = {
         "schema_version": "v0",
         "validation_id": VALIDATION_ID,
@@ -65,13 +104,13 @@ def build_release_chain_validation_result(directory: Path) -> dict[str, Any]:
         "release_candidate": _release_candidate(base),
         "validator": VALIDATOR,
         "validator_version": VALIDATOR_VERSION,
-        "checked_at": datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+        "checked_at": checked_at,
         "status": status,
         "checks": checks,
         "artifacts_checked": len(MANIFEST_ARTIFACTS),
         "failure_codes": failure_codes,
         "source_repo": PCS_CORE_REPO,
-        "source_commit": PCS_CORE_COMMIT,
+        "source_commit": source_commit,
         "signature_or_digest": PLACEHOLDER_DIGEST,
     }
     body["signature_or_digest"] = canonical_hash(body)

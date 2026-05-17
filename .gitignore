@@ -21,3 +21,4 @@ lean/build/
 *.swp
 
 release-run/
+examples/labtrust-release/.ci_validation_result.json

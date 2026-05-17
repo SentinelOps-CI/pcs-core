@@ -8,6 +8,9 @@ on:
       - "examples/labtrust-release-invalid/**"
       - "python/pcs_core/**"
       - "python/tests/test_release_chain.py"
+      - "python/tests/test_protocol_conformance.py"
+      - "conformance/**"
+      - "test_vectors/hash/**"
       - "docs/labtrust-v0.1-profile.md"
       - "docs/labtrust-rc-canonical.md"
       - "docs/releases/**"
@@ -20,6 +23,9 @@ on:
       - "examples/labtrust-release-invalid/**"
       - "python/pcs_core/**"
       - "python/tests/test_release_chain.py"
+      - "python/tests/test_protocol_conformance.py"
+      - "conformance/**"
+      - "test_vectors/hash/**"
       - "docs/labtrust-v0.1-profile.md"
       - "docs/labtrust-rc-canonical.md"
       - "docs/releases/**"
@@ -40,9 +46,12 @@ jobs:
           cd python
           test -f ../examples/labtrust-release/release_manifest.v0.json
           pcs validate-release-chain ../examples/labtrust-release/
-          pcs validate-release-chain ../examples/labtrust-release/ --json
+          pcs validate-release-chain ../examples/labtrust-release/ --json > /dev/null
+          pcs validate-release-chain ../examples/labtrust-release/ --out ../examples/labtrust-release/.ci_validation_result.json
+          pcs validate ../examples/labtrust-release/.ci_validation_result.json
           pcs validate ../examples/labtrust-release/release_manifest.v0.json
+          pcs shared-hash-vectors verify
       - name: Release-chain tests
         run: |
           cd python
-          pytest -q tests/test_release_chain.py tests/test_labtrust_protocol_artifacts.py
+          pytest -q tests/test_release_chain.py tests/test_labtrust_protocol_artifacts.py tests/test_protocol_conformance.py

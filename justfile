@@ -56,9 +56,16 @@ materialize-labtrust-protocol:
 pcs-schema-diff vendor_dir="schemas":
     bash "{{root}}/scripts/pcs-schema-diff.sh" "{{root}}/{{vendor_dir}}"
 
-ci: build python-test rust-test ts-test validate-examples labtrust-check validate-labtrust-release-fixtures hash-vectors-verify shared-hash-vectors-verify pcs-schema-diff
+protocol-conformance:
+    cd "{{root}}/python" && pytest -q tests/test_protocol_conformance.py
+
+ci: build python-test rust-test ts-test validate-examples labtrust-check validate-labtrust-release-fixtures protocol-conformance hash-vectors-verify shared-hash-vectors-verify pcs-schema-diff
     cd "{{root}}/python" && pcs schema check
     cd "{{root}}/python" && pcs registry validate ../examples/artifact_registry.valid.json
+    cd "{{root}}/python" && pcs validate ../examples/labtrust-release/release_manifest.v0.json
+    cd "{{root}}/python" && pcs validate-release-chain ../examples/labtrust-release/ --out ../examples/labtrust-release/.ci_validation_result.json
+    cd "{{root}}/python" && pcs validate ../examples/labtrust-release/.ci_validation_result.json
+    cd "{{root}}/rust" && cargo test shared_hash_vectors
     cd "{{root}}/python" && ruff check pcs_core tests
     cd "{{root}}/python" && ruff format --check pcs_core tests
     cd "{{root}}/rust" && cargo fmt --check

@@ -2,7 +2,7 @@
   "schema_version": "v0",
   "release_id": "release-pcs-v0.1-labtrust-qc",
   "release_candidate": "pcs-v0.1.0-rc1",
-  "generated_at": "2026-05-17T22:21:02Z",
+  "generated_at": "2026-05-17T22:31:25Z",
   "validation_profile": "labtrust-v0.1-release-chain",
   "chain_root": {
     "trace_hash": "sha256:c3e8a3dc4ad86d533de1dfa4ae7fe2a338c2cff3c945404c96a75216524d58cd",
@@ -11,8 +11,8 @@
     "signed_bundle_hash": "sha256:d0ab55f964227c1350b29fe359dcaf61d04ad6b7dfcf1db351b717e1c47aab43"
   },
   "release_chain_validation_result": {
-    "path": "release_chain_validation_result.v0.json",
-    "sha256": "sha256:c9e069790473c89f8eaf2dbeea9dd2dd29fe11e23f158044f77e300772bd932c"
+    "path": "release_chain_validation_result.valid.json",
+    "sha256": "sha256:2bda8688328d9de1750fd5c42b94bcd1557973e4619ebce70b3b8cc74291b54a"
   },
   "canonical_signed_bundle": {
     "path": "signed_science_claim_bundle.json",
@@ -23,7 +23,7 @@
   "producer_repos": {
     "pcs_core": {
       "repo": "https://github.com/SentinelOps-CI/pcs-core",
-      "commit": "b133c2ed32293b02c4e28971da7b3a7fffcedc2a"
+      "commit": "a361fd2b388f88cdbc9e4e4691ae49dba714ab6c"
     },
     "labtrust_gym": {
       "repo": "https://github.com/fraware/LabTrust-Gym",
@@ -105,9 +105,9 @@
       "producer": "Scientific Memory",
       "source_repo": "https://github.com/fraware/scientific-memory",
       "source_commit": "226ad64eb61c085cfa6f6dcc7b4d0d752f615e5e",
-      "sha256": "sha256:2010adb43f82cf7eedf306dd48449f895df20040d527d06127672a27f5aa2736"
+      "sha256": "sha256:3f9b7767a815508c33e43474489abccbfd45e8e2e45a8894b0580183e30ee8a8"
     }
   },
   "release_status": "Validated",
-  "signature_or_digest": "sha256:7bbd4c1daa164ff28b5ac1d910b8e2822067848a6f9958af40dd6f8493829cc6"
+  "signature_or_digest": "sha256:1c9f37e9060ddd1e1159e20a3a20c5cdeab30ddf7bbf85b506106c7bc9f1a262"
 }

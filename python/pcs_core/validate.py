@@ -16,6 +16,7 @@ from pcs_core.paths import schemas_dir
 from pcs_core.protocol_validate import (
     validate_handoff_manifest_semantics,
     validate_release_chain_validation_result_semantics,
+    validate_release_manifest_fixture_refs,
     validate_release_manifest_semantics,
 )
 from pcs_core.status import ARTIFACT_STATUSES, TRACE_CERTIFICATE_STATUSES
@@ -375,6 +376,13 @@ def validate_file(path: Path | str) -> str:
     if not artifact_type:
         raise ValidationError(f"Could not detect artifact type in {path}")
     validate_artifact(data, artifact_type)
+    if artifact_type == "ReleaseManifest.v0":
+        ref_errors = validate_release_manifest_fixture_refs(data, path.parent)
+        if ref_errors:
+            raise ValidationError(
+                f"Validation failed for {artifact_type}",
+                errors=ref_errors,
+            )
     return artifact_type
 
 

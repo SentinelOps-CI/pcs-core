@@ -27,7 +27,7 @@ def main() -> int:
     write_labtrust_protocol_artifacts(release_dir)
     examples = examples_dir()
     for name, doc in (
-        ("release_manifest.valid.json", release_manifest_valid()),
+        ("release_manifest.valid.json", release_manifest_valid(for_examples_tree=True)),
         ("handoff_manifest.valid.json", handoff_manifest_valid()),
         (
             "release_chain_validation_result.valid.json",

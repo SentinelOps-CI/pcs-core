@@ -40,6 +40,26 @@ def test_release_manifest_legacy_equivalence() -> None:
     assert drift == [], drift
 
 
+def test_legacy_manifest_and_release_manifest_v0_are_semantically_equivalent() -> None:
+    test_release_manifest_legacy_equivalence()
+
+
+def test_release_manifest_validation_result_ref_matches_file() -> None:
+    from pcs_core.release_fixtures import file_digest
+
+    manifest = json.loads(RELEASE_MANIFEST_V0.read_text(encoding="utf-8"))
+    ref = manifest["release_chain_validation_result"]
+    path = RELEASE / str(ref["path"])
+    assert file_digest(path.read_bytes()) == ref["sha256"]
+
+
+def test_on_disk_release_chain_validation_has_full_checks() -> None:
+    data = json.loads(
+        (RELEASE / "release_chain_validation_result.v0.json").read_text(encoding="utf-8"),
+    )
+    assert len(data["checks"]) == 30
+
+
 def test_validate_release_chain_emits_release_chain_validation_result() -> None:
     result = build_release_chain_validation_result(release_dir())
     assert result["status"] == "ProofChecked"

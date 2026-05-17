@@ -18,9 +18,13 @@ jobs:
           cd python
           pip install -e ".[dev]"
           pytest -q
+          pytest -q tests/test_protocol_conformance.py
           pcs schema check
           pcs examples check
           pcs validate-release-chain ../examples/labtrust-release/
+          pcs validate-release-chain ../examples/labtrust-release/ --json > /dev/null
+          pcs validate-release-chain ../examples/labtrust-release/ --out ../examples/labtrust-release/.ci_validation_result.json
+          pcs validate ../examples/labtrust-release/.ci_validation_result.json
           test -f ../examples/labtrust-release/release_manifest.v0.json
           pcs validate ../examples/labtrust-release/release_manifest.v0.json
           python -m pcs_core.hash_vectors --verify
@@ -48,6 +52,7 @@ jobs:
           cargo fmt --check
           cargo clippy --all-targets -- -D warnings
           cargo test
+          cargo test shared_hash_vectors
 
   typescript:
     runs-on: ubuntu-latest
