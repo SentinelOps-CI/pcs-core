@@ -34,6 +34,8 @@ ARTIFACT_SCHEMAS: dict[str, str] = {
     "HandoffManifest.v0": "HandoffManifest.v0.schema.json",
     "ReleaseChainValidationResult.v0": "ReleaseChainValidationResult.v0.schema.json",
     "ArtifactRegistry.v0": "ArtifactRegistry.v0.schema.json",
+    "MigrationReport.v0": "MigrationReport.v0.schema.json",
+    "ComponentReleaseFragment.v0": "ComponentReleaseFragment.v0.schema.json",
 }
 
 CERTIFIED_CLAIM_STATUSES = frozenset(
@@ -64,8 +66,18 @@ class ValidationError(Exception):
 
 
 def detect_artifact_type(data: dict[str, Any]) -> str | None:
+    if "from_version" in data and "to_version" in data and "changes" in data and "artifact_type" in data:
+        return "MigrationReport.v0"
     if "validation_id" in data and "artifacts_checked" in data:
         return "ReleaseChainValidationResult.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("component"), str)
+        and isinstance(data.get("artifacts"), dict)
+        and "signature_or_digest" in data
+        and "source_commit" in data
+    ):
+        return "ComponentReleaseFragment.v0"
     if "handoff_id" in data and "handoff_kind" in data:
         return "HandoffManifest.v0"
     if "registry_id" in data and "entries" in data and "registry_version" in data:
@@ -293,6 +305,9 @@ def validate_semantics(data: dict[str, Any], artifact_type: str) -> list[str]:
     if artifact_type == "ArtifactRegistry.v0":
         return errors
 
+    if artifact_type == "MigrationReport.v0":
+        return errors
+
     if artifact_type == "ReleaseManifest.v0":
         errors.extend(validate_release_manifest_semantics(data))
         return errors
@@ -389,6 +404,7 @@ def check_valid_examples(examples_dir: Path | None = None) -> None:
         "handoff_manifest.valid.json",
         "release_chain_validation_result.valid.json",
         "artifact_registry.valid.json",
+        "migration_report.valid.json",
     ):
         validate_file(examples_dir / name)
 

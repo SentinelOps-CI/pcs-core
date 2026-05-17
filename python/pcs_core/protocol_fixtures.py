@@ -126,12 +126,42 @@ def labtrust_release_manifest_body() -> dict[str, Any]:
             "sha256": str(digest),
         }
     pcs_commit = str(legacy.get("pcs_core_commit", PCS_CORE_COMMIT))
+    certified_hash = str(legacy_artifacts["science_claim_bundle.certified.json"])
+    signed_hash = str(legacy_artifacts["signed_science_claim_bundle.json"])
+    validation_path = "release_chain_validation_result.v0.json"
+    from pcs_core.paths import examples_dir
+    from pcs_core.release_fixtures import file_digest
+
+    validation_file = examples_dir() / "labtrust-release" / validation_path
+    if validation_file.is_file():
+        validation_digest = file_digest(validation_file.read_bytes())
+    else:
+        validation_digest = PLACEHOLDER_DIGEST
     return {
         "schema_version": "v0",
         "release_id": RELEASE_ID,
         "release_candidate": str(legacy.get("release_candidate", "pcs-v0.1.0-rc1")),
         "generated_at": str(legacy.get("generated_at", "2026-05-17T17:01:22Z")),
         "validation_profile": "labtrust-v0.1-release-chain",
+        "chain_root": {
+            "trace_hash": LABTRUST_RC_TRACE_HASH,
+            "certificate_id": LABTRUST_RC_CERTIFICATE_ID,
+            "certified_bundle_hash": certified_hash,
+            "signed_bundle_hash": signed_hash,
+        },
+        "release_chain_validation_result": {
+            "path": validation_path,
+            "sha256": validation_digest,
+        },
+        "canonical_signed_bundle": {
+            "path": "signed_science_claim_bundle.json",
+            "sha256": signed_hash,
+        },
+        "canonical_claim_id": "claim-pcs-qc-release-v0.1",
+        "limitations_notice": (
+            "PCS v0.1 demonstrates a proof-carrying simulated lab workflow; "
+            "it does not claim clinical validity or production certification."
+        ),
         "producer_repos": {
             "pcs_core": {"repo": PCS_CORE_REPO, "commit": pcs_commit},
             "labtrust_gym": {

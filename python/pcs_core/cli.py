@@ -17,7 +17,11 @@ from pcs_core.registry import (
     list_artifact_types,
     validate_registry_file,
 )
-from pcs_core.release_chain import validate_release_chain_report
+from pcs_core.release_chain_report import (
+    build_release_chain_report,
+    build_release_chain_validation_result,
+    write_release_chain_validation_result,
+)
 from pcs_core.release_fixtures import release_dir, validate_release_manifest
 from pcs_core.shared_hash_vectors import verify_shared_vectors, write_shared_vectors
 from pcs_core.status_policy import check_status_transition, explain_status
@@ -27,6 +31,7 @@ from pcs_core.validate import (
     check_invalid_examples,
     check_valid_examples,
     detect_artifact_type,
+    validate_artifact,
     validate_file,
 )
 
@@ -185,16 +190,28 @@ def cmd_validate_release_manifest(path: Path) -> int:
     return 0
 
 
-def cmd_validate_release_chain(path: Path | None, *, json_output: bool = False) -> int:
+def cmd_validate_release_chain(
+    path: Path | None,
+    *,
+    json_output: bool = False,
+    out_path: Path | None = None,
+) -> int:
     directory = resolve_release_chain_directory(path or release_dir())
-    report = validate_release_chain_report(directory)
+    result = build_release_chain_validation_result(directory)
+    validate_artifact(result, "ReleaseChainValidationResult.v0")
+    if out_path is not None:
+        write_release_chain_validation_result(directory, out_path)
     if json_output:
-        print(json.dumps(report, indent=2))
-    elif report["status"] == "passed":
+        print(json.dumps(result, indent=2))
+    elif result["status"] == "ProofChecked":
         print(f"OK release chain {directory}")
     else:
-        print(f"FAIL {report.get('failure_code')}: {report.get('message')}", file=sys.stderr)
-    return 0 if report["status"] == "passed" else 1
+        summary = build_release_chain_report(directory)
+        print(
+            f"FAIL {summary.get('failure_code')}: {summary.get('message')}",
+            file=sys.stderr,
+        )
+    return 0 if result["status"] == "ProofChecked" else 1
 
 
 def cmd_hash_vectors_verify() -> int:
@@ -277,7 +294,13 @@ def main(argv: list[str] | None = None) -> int:
     p_chain.add_argument(
         "--json",
         action="store_true",
-        help="Emit machine-readable validation report JSON",
+        help="Emit ReleaseChainValidationResult.v0 JSON",
+    )
+    p_chain.add_argument(
+        "--out",
+        type=Path,
+        default=None,
+        help="Write ReleaseChainValidationResult.v0 to this path",
     )
 
     schema_parser = sub.add_parser("schema", help="Schema commands")
@@ -329,7 +352,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "validate-release-manifest":
         return cmd_validate_release_manifest(args.path)
     if args.command == "validate-release-chain":
-        return cmd_validate_release_chain(args.path, json_output=args.json)
+        return cmd_validate_release_chain(
+            args.path,
+            json_output=args.json,
+            out_path=args.out,
+        )
     if args.command == "schema" and args.schema_cmd == "check":
         return cmd_schema_check()
     if args.command == "examples" and args.examples_cmd == "check":

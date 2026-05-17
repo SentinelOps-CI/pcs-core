@@ -4,6 +4,22 @@ from __future__ import annotations
 
 from typing import Any
 
+_CONSUMER_REPOS: dict[str, list[str]] = {
+    "AssumptionSet.v0": ["LabTrust-Gym"],
+    "SourceSpan.v0": ["LabTrust-Gym"],
+    "ClaimArtifact.v0": ["LabTrust-Gym"],
+    "RuntimeReceipt.v0": ["LabTrust-Gym"],
+    "TraceCertificate.v0": ["CertifyEdge"],
+    "EvidenceBundle.v0": ["LabTrust-Gym"],
+    "ScienceClaimBundle.v0": ["LabTrust-Gym"],
+    "VerificationResult.v0": ["Provability Fabric"],
+    "SignedScienceClaimBundle.v0": ["Provability Fabric"],
+    "ReleaseManifest.v0": ["pcs-core"],
+    "HandoffManifest.v0": ["pcs-core"],
+    "ReleaseChainValidationResult.v0": ["pcs-core", "Scientific Memory"],
+    "ArtifactRegistry.v0": ["pcs-core"],
+}
+
 _REGISTRY_ENTRIES: dict[str, dict[str, Any]] = {
     "AssumptionSet.v0": {
         "artifact_type": "AssumptionSet.v0",
@@ -192,6 +208,11 @@ _REGISTRY_ENTRIES: dict[str, dict[str, Any]] = {
             "producer_repos",
             "artifacts",
             "release_status",
+            "chain_root",
+            "release_chain_validation_result",
+            "canonical_signed_bundle",
+            "canonical_claim_id",
+            "limitations_notice",
             "signature_or_digest",
         ],
         "semantic_checks": [
@@ -215,6 +236,21 @@ _REGISTRY_ENTRIES: dict[str, dict[str, Any]] = {
             "signature_or_digest",
         ],
         "semantic_checks": ["handoff_input_hashes_when_validated"],
+    },
+    "ComponentReleaseFragment.v0": {
+        "artifact_type": "ComponentReleaseFragment.v0",
+        "schema": "schemas/ComponentReleaseFragment.v0.schema.json",
+        "producer": "pcs-core",
+        "allowed_statuses": ["Draft", "Validated", "Rejected", "Stale", "Deprecated"],
+        "required_release_fields": [
+            "schema_version",
+            "component",
+            "source_repo",
+            "source_commit",
+            "artifacts",
+            "signature_or_digest",
+        ],
+        "semantic_checks": [],
     },
     "ReleaseChainValidationResult.v0": {
         "artifact_type": "ReleaseChainValidationResult.v0",
@@ -251,4 +287,11 @@ _REGISTRY_ENTRIES: dict[str, dict[str, Any]] = {
 
 
 def registry_entries() -> dict[str, dict[str, Any]]:
-    return {key: dict(value) for key, value in _REGISTRY_ENTRIES.items()}
+    out: dict[str, dict[str, Any]] = {}
+    for key, value in _REGISTRY_ENTRIES.items():
+        entry = dict(value)
+        entry.setdefault("consumer_repos", _CONSUMER_REPOS.get(key, [entry["producer"]]))
+        entry.setdefault("canonical_hash_required", True)
+        entry.setdefault("release_mode_required", key not in {"ArtifactRegistry.v0"})
+        out[key] = entry
+    return out

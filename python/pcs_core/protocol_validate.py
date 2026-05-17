@@ -48,6 +48,25 @@ def validate_release_manifest_semantics(data: dict[str, Any]) -> list[str]:
         for name, entry in (artifacts or {}).items():
             if isinstance(entry, dict) and not entry.get("sha256"):
                 errors.append(f"artifacts.{name}: sha256 required when release_status is Validated")
+        for field in (
+            "chain_root",
+            "release_chain_validation_result",
+            "canonical_signed_bundle",
+            "canonical_claim_id",
+            "limitations_notice",
+        ):
+            if field not in data:
+                errors.append(f"{field} required when release_status is Validated")
+        chain_root = data.get("chain_root")
+        if isinstance(chain_root, dict):
+            for key in (
+                "trace_hash",
+                "certificate_id",
+                "certified_bundle_hash",
+                "signed_bundle_hash",
+            ):
+                if not chain_root.get(key):
+                    errors.append(f"chain_root.{key} required when release_status is Validated")
     return errors
 
 

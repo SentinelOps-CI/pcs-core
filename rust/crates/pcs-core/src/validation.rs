@@ -39,6 +39,7 @@ const ARTIFACT_SCHEMAS: &[(&str, &str)] = &[
         "ReleaseChainValidationResult.v0.schema.json",
     ),
     ("ArtifactRegistry.v0", "ArtifactRegistry.v0.schema.json"),
+    ("MigrationReport.v0", "MigrationReport.v0.schema.json"),
 ];
 
 const PROTOCOL_ARTIFACT_TYPES: &[&str] = &[
@@ -46,10 +47,18 @@ const PROTOCOL_ARTIFACT_TYPES: &[&str] = &[
     "HandoffManifest.v0",
     "ReleaseChainValidationResult.v0",
     "ArtifactRegistry.v0",
+    "MigrationReport.v0",
 ];
 
 pub fn detect_artifact_type(value: &Value) -> Option<&'static str> {
     let obj = value.as_object()?;
+    if obj.contains_key("from_version")
+        && obj.contains_key("to_version")
+        && obj.contains_key("changes")
+        && obj.contains_key("artifact_type")
+    {
+        return Some("MigrationReport.v0");
+    }
     if obj.contains_key("validation_id") && obj.contains_key("artifacts_checked") {
         return Some("ReleaseChainValidationResult.v0");
     }
@@ -363,11 +372,19 @@ mod tests {
             }
             let vector: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
             let artifact_type = vector["artifact_type"].as_str().unwrap();
-            let example_name = vector["input_file"].as_str().unwrap();
-            let data: Value = serde_json::from_str(
-                &fs::read_to_string(examples.join(example_name)).unwrap(),
-            )
-            .unwrap();
+            let example_name = vector["input"]
+                .as_str()
+                .or_else(|| vector["input_file"].as_str())
+                .unwrap();
+            let example_path = if example_name.starts_with("examples/") {
+                PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                    .join("../../..")
+                    .join(example_name)
+            } else {
+                examples.join(example_name)
+            };
+            let data: Value =
+                serde_json::from_str(&fs::read_to_string(&example_path).unwrap()).unwrap();
             let expected_digest = vector["expected_digest"].as_str().unwrap();
             let expected_canonical = vector["canonical_json"].as_str().unwrap();
             assert_eq!(canonical_json_string(&data), expected_canonical, "{artifact_type}");

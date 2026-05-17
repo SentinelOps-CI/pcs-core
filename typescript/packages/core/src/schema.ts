@@ -38,6 +38,7 @@ const ARTIFACT_SCHEMAS: Record<ArtifactType, string> = {
   "HandoffManifest.v0": "HandoffManifest.v0.schema.json",
   "ReleaseChainValidationResult.v0": "ReleaseChainValidationResult.v0.schema.json",
   "ArtifactRegistry.v0": "ArtifactRegistry.v0.schema.json",
+  "MigrationReport.v0": "MigrationReport.v0.schema.json",
 };
 
 type Ajv = InstanceType<typeof Ajv2020>;

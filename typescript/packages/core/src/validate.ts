@@ -37,16 +37,21 @@ export type ArtifactType =
   | "ReleaseManifest.v0"
   | "HandoffManifest.v0"
   | "ReleaseChainValidationResult.v0"
-  | "ArtifactRegistry.v0";
+  | "ArtifactRegistry.v0"
+  | "MigrationReport.v0";
 
 const PROTOCOL_ARTIFACT_TYPES = new Set<ArtifactType>([
   "ReleaseManifest.v0",
   "HandoffManifest.v0",
   "ReleaseChainValidationResult.v0",
   "ArtifactRegistry.v0",
-]);
+  "MigrationReport.v0",
+] as ArtifactType[]);
 
 export function detectArtifactType(data: Record<string, unknown>): ArtifactType | null {
+  if ("from_version" in data && "to_version" in data && "changes" in data && "artifact_type" in data) {
+    return "MigrationReport.v0";
+  }
   if ("validation_id" in data && "artifacts_checked" in data) {
     return "ReleaseChainValidationResult.v0";
   }

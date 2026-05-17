@@ -1,6 +1,6 @@
 {
   "artifact_type": "RuntimeReceipt.v0",
-  "input_file": "runtime_receipt.valid.json",
+  "input": "examples/runtime_receipt.valid.json",
   "expected_digest": "sha256:9a53efb1afcfac773486d66180fcd6241f54d9a14cdb281ec87e43cc358ec5b1",
   "canonical_json": "{\"ended_at\":\"2026-05-16T12:00:00Z\",\"environment\":{\"labtrust_version\":\"0.1.0\",\"platform\":\"linux\",\"python\":\"3.12\"},\"events_hash\":\"sha256:3333333333333333333333333333333333333333333333333333333333333333\",\"final_reason_code\":\"ok\",\"input_hashes\":{\"spec\":\"sha256:6666666666666666666666666666666666666666666666666666666666666666\"},\"output_hashes\":{\"trace.json\":\"sha256:5555555555555555555555555555555555555555555555555555555555555555\"},\"policy_hash\":\"sha256:4444444444444444444444444444444444444444444444444444444444444444\",\"producer\":\"labtrust-gym\",\"producer_version\":\"0.1.0\",\"receipt_id\":\"receipt-qc-release-run-001\",\"released\":true,\"run_id\":\"runs/qc-release\",\"run_outcome\":\"passed\",\"schema_version\":\"v0\",\"source_commit\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"source_repo\":\"https://github.com/fraware/LabTrust-Gym\",\"started_at\":\"2026-05-16T11:58:00Z\",\"status\":\"RuntimeObserved\",\"trace_hash\":\"sha256:5555555555555555555555555555555555555555555555555555555555555555\"}"
 }

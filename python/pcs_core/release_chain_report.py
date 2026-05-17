@@ -1,16 +1,25 @@
-"""JSON report for pcs validate-release-chain."""
+"""ReleaseChainValidationResult.v0 builder for pcs validate-release-chain."""
 
 from __future__ import annotations
 
 import json
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from pcs_core.hash import PLACEHOLDER_DIGEST, canonical_hash
+from pcs_core.protocol_fixtures import PCS_CORE_COMMIT, PCS_CORE_REPO, RELEASE_ID
 from pcs_core.release_chain import ReleaseChainIssue, validate_release_chain
+from pcs_core.release_chain_checks import (
+    RELEASE_CHAIN_CHECK_COUNT,
+    build_checks_from_issues,
+)
 from pcs_core.release_fixtures import MANIFEST_ARTIFACTS, MANIFEST_NAME
 
 RELEASE_CANDIDATE_ID = "pcs-v0.1.0-rc1"
-RELEASE_CHAIN_CHECK_COUNT = 30
+VALIDATOR = "pcs-core"
+VALIDATOR_VERSION = "0.1.0"
+VALIDATION_ID = "validation-pcs-v0.1-labtrust-qc-rc"
 
 
 def _release_candidate(directory: Path) -> str:
@@ -28,47 +37,91 @@ def _release_candidate(directory: Path) -> str:
     return RELEASE_CANDIDATE_ID
 
 
-def _issue_failure_payload(issue: ReleaseChainIssue) -> dict[str, Any]:
-    payload: dict[str, Any] = {
-        "status": "failed",
-        "failure_code": issue.code,
-        "message": issue.message,
+def build_release_chain_validation_result(directory: Path) -> dict[str, Any]:
+    """Build a schema-oriented ReleaseChainValidationResult.v0 document."""
+    base = directory.resolve()
+    issues = validate_release_chain(base)
+    checks = build_checks_from_issues(issues)
+    failure_codes = sorted({issue.code for issue in issues})
+    has_failed = any(check["status"] == "failed" for check in checks)
+    has_warning_only = (
+        not has_failed
+        and bool(issues) is False
+        and any(check["status"] == "warning" for check in checks)
+    )
+    if not issues:
+        status = "ProofChecked"
+    elif has_failed:
+        status = "Rejected"
+    elif has_warning_only:
+        status = "ProofChecked"
+    else:
+        status = "ProofChecked"
+
+    body: dict[str, Any] = {
+        "schema_version": "v0",
+        "validation_id": VALIDATION_ID,
+        "release_id": RELEASE_ID,
+        "release_candidate": _release_candidate(base),
+        "validator": VALIDATOR,
+        "validator_version": VALIDATOR_VERSION,
+        "checked_at": datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+        "status": status,
+        "checks": checks,
+        "artifacts_checked": len(MANIFEST_ARTIFACTS),
+        "failure_codes": failure_codes,
+        "source_repo": PCS_CORE_REPO,
+        "source_commit": PCS_CORE_COMMIT,
+        "signature_or_digest": PLACEHOLDER_DIGEST,
     }
-    if issue.artifact is not None:
-        payload["artifact"] = issue.artifact
-    if issue.expected is not None:
-        payload["expected"] = issue.expected
-    if issue.actual is not None:
-        payload["actual"] = issue.actual
-    return payload
+    body["signature_or_digest"] = canonical_hash(body)
+    return body
 
 
 def build_release_chain_report(directory: Path) -> dict[str, Any]:
-    """Build machine-readable pass/fail summary for a release fixture directory."""
-    base = directory.resolve()
-    release_candidate = _release_candidate(base)
-    checked_artifacts = len(MANIFEST_ARTIFACTS)
-    issues = validate_release_chain(base)
-
-    if not issues:
-        return {
-            "status": "passed",
-            "release_candidate": release_candidate,
-            "checked_artifacts": checked_artifacts,
-            "checks_passed": RELEASE_CHAIN_CHECK_COUNT,
-            "checks_failed": 0,
+    """Backward-compatible summary derived from ReleaseChainValidationResult.v0."""
+    result = build_release_chain_validation_result(directory)
+    checks = result.get("checks")
+    if not isinstance(checks, list):
+        checks = []
+    checks_passed = sum(1 for check in checks if check.get("status") == "passed")
+    checks_failed = sum(1 for check in checks if check.get("status") == "failed")
+    failure_codes = result.get("failure_codes")
+    if isinstance(failure_codes, list) and failure_codes:
+        summary: dict[str, Any] = {
+            "status": "failed",
+            "release_candidate": result.get("release_candidate", RELEASE_CANDIDATE_ID),
+            "checked_artifacts": result.get("artifacts_checked", len(MANIFEST_ARTIFACTS)),
+            "checks_passed": checks_passed,
+            "checks_failed": checks_failed,
+            "failure_code": failure_codes[0],
+            "message": _first_failed_message(checks),
         }
-
-    checks_failed = len(issues)
-    checks_passed = max(0, RELEASE_CHAIN_CHECK_COUNT - checks_failed)
-    report: dict[str, Any] = {
-        "status": "failed",
-        "release_candidate": release_candidate,
-        "checked_artifacts": checked_artifacts,
-        "checks_passed": checks_passed,
-        "checks_failed": checks_failed,
-        **_issue_failure_payload(issues[0]),
+        if len(failure_codes) > 1:
+            summary["failures"] = [
+                {"failure_code": code, "message": code} for code in failure_codes[1:]
+            ]
+        return summary
+    return {
+        "status": "passed",
+        "release_candidate": result.get("release_candidate", RELEASE_CANDIDATE_ID),
+        "checked_artifacts": result.get("artifacts_checked", len(MANIFEST_ARTIFACTS)),
+        "checks_passed": RELEASE_CHAIN_CHECK_COUNT,
+        "checks_failed": 0,
     }
-    if len(issues) > 1:
-        report["failures"] = [_issue_failure_payload(issue) for issue in issues[1:]]
-    return report
+
+
+def _first_failed_message(checks: list[dict[str, Any]]) -> str:
+    for check in checks:
+        if check.get("status") == "failed":
+            details = check.get("details")
+            if isinstance(details, dict) and details.get("message"):
+                return str(details["message"])
+    return "release chain validation failed"
+
+
+def write_release_chain_validation_result(directory: Path, out_path: Path) -> dict[str, Any]:
+    result = build_release_chain_validation_result(directory)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+    return result

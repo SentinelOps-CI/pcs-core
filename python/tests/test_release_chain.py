@@ -64,6 +64,14 @@ def test_validate_release_chain_json_output_passes() -> None:
     assert report["status"] == "passed"
 
 
+def test_validate_release_chain_json_is_schema_valid_result() -> None:
+    from pcs_core.release_chain_report import build_release_chain_validation_result
+    from pcs_core.validate import validate_artifact
+
+    result = build_release_chain_validation_result(release_dir())
+    validate_artifact(result, "ReleaseChainValidationResult.v0")
+
+
 def test_canonical_rc_pin_values_in_manifest_and_artifacts() -> None:
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
     assert manifest["labtrust_gym_commit"] == LABTRUST_RC_LABTRUST_GYM_COMMIT

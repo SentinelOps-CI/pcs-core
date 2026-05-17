@@ -36,6 +36,8 @@ def test_protocol_fixtures_match_on_disk_examples() -> None:
     assert on_disk["release_id"] == built["release_id"]
     assert on_disk["artifacts"] == built["artifacts"]
     assert on_disk["producer_repos"] == built["producer_repos"]
+    assert on_disk["chain_root"] == built["chain_root"]
+    assert on_disk["canonical_claim_id"] == built["canonical_claim_id"]
 
 
 def test_invalid_release_manifest_placeholder_commit_fails() -> None:

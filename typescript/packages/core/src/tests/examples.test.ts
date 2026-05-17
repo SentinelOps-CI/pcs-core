@@ -127,11 +127,13 @@ test("shared hash vectors match test_vectors/hash fixtures", () => {
       readFileSync(join(sharedVectorsDir, fileName), "utf8"),
     ) as {
       artifact_type: string;
-      input_file: string;
+      input?: string;
+      input_file?: string;
       expected_digest: string;
       canonical_json: string;
     };
-    const data = load(vector.input_file);
+    const inputPath = vector.input ?? vector.input_file ?? "";
+    const data = load(inputPath.replace(/^examples\//, ""));
     assert.equal(Buffer.from(canonicalJsonBytes(data)).toString("utf8"), vector.canonical_json);
     assert.equal(canonicalHash(data), vector.expected_digest);
   }

@@ -2,12 +2,28 @@
   "schema_version": "v0",
   "release_id": "release-pcs-v0.1-labtrust-qc",
   "release_candidate": "pcs-v0.1.0-rc1",
-  "generated_at": "2026-05-17T21:26:22Z",
+  "generated_at": "2026-05-17T22:21:02Z",
   "validation_profile": "labtrust-v0.1-release-chain",
+  "chain_root": {
+    "trace_hash": "sha256:c3e8a3dc4ad86d533de1dfa4ae7fe2a338c2cff3c945404c96a75216524d58cd",
+    "certificate_id": "cert-trace-886c95f0-5d63-42d6-aa13-5891c12c5a6a",
+    "certified_bundle_hash": "sha256:9b42d792199eb6f358d26f822699f0ed65bb4366eee306d4958d42121c656833",
+    "signed_bundle_hash": "sha256:d0ab55f964227c1350b29fe359dcaf61d04ad6b7dfcf1db351b717e1c47aab43"
+  },
+  "release_chain_validation_result": {
+    "path": "release_chain_validation_result.v0.json",
+    "sha256": "sha256:c9e069790473c89f8eaf2dbeea9dd2dd29fe11e23f158044f77e300772bd932c"
+  },
+  "canonical_signed_bundle": {
+    "path": "signed_science_claim_bundle.json",
+    "sha256": "sha256:d0ab55f964227c1350b29fe359dcaf61d04ad6b7dfcf1db351b717e1c47aab43"
+  },
+  "canonical_claim_id": "claim-pcs-qc-release-v0.1",
+  "limitations_notice": "PCS v0.1 demonstrates a proof-carrying simulated lab workflow; it does not claim clinical validity or production certification.",
   "producer_repos": {
     "pcs_core": {
       "repo": "https://github.com/SentinelOps-CI/pcs-core",
-      "commit": "19c715455ac97bc50d7b091aec577b21dd19d930"
+      "commit": "b133c2ed32293b02c4e28971da7b3a7fffcedc2a"
     },
     "labtrust_gym": {
       "repo": "https://github.com/fraware/LabTrust-Gym",
@@ -23,7 +39,7 @@
     },
     "scientific_memory": {
       "repo": "https://github.com/fraware/scientific-memory",
-      "commit": "18c411b15b802a930e79a599e6e77247ababd85f"
+      "commit": "226ad64eb61c085cfa6f6dcc7b4d0d752f615e5e"
     }
   },
   "artifacts": {
@@ -88,10 +104,10 @@
       "schema": "scientific_memory_import_report.json",
       "producer": "Scientific Memory",
       "source_repo": "https://github.com/fraware/scientific-memory",
-      "source_commit": "18c411b15b802a930e79a599e6e77247ababd85f",
-      "sha256": "sha256:f7d0f74293ac0dd77b6e42b3de5a504fb4295cf208eb6654c853487299da2f76"
+      "source_commit": "226ad64eb61c085cfa6f6dcc7b4d0d752f615e5e",
+      "sha256": "sha256:2010adb43f82cf7eedf306dd48449f895df20040d527d06127672a27f5aa2736"
     }
   },
   "release_status": "Validated",
-  "signature_or_digest": "sha256:c5f420edd042043d49faa67177a392f5edcb72de797896e0b5310c379c779aa6"
+  "signature_or_digest": "sha256:7bbd4c1daa164ff28b5ac1d910b8e2822067848a6f9958af40dd6f8493829cc6"
 }

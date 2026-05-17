@@ -2,15 +2,15 @@
   "allow_legacy": false,
   "bundle_shape": "pcs_core",
   "claim_id": "claim-pcs-qc-release-v0.1",
-  "imported_at": "2026-05-17T21:25:13Z",
+  "imported_at": "2026-05-17T22:22:22Z",
   "render_path": "/pcs/claims/claim-pcs-qc-release-v0.1",
-  "scientific_memory_commit": "18c411b15b802a930e79a599e6e77247ababd85f",
+  "scientific_memory_commit": "226ad64eb61c085cfa6f6dcc7b4d0d752f615e5e",
   "source_bundle_path": "signed_science_claim_bundle.json",
   "stale_artifacts": [],
   "strict": true,
   "verification_status": "passed",
   "warnings": [],
-  "source_commit": "18c411b15b802a930e79a599e6e77247ababd85f",
+  "source_commit": "226ad64eb61c085cfa6f6dcc7b4d0d752f615e5e",
   "source_repo": "https://github.com/fraware/scientific-memory",
   "release_id": "release-pcs-v0.1-labtrust-qc",
   "release_candidate": "pcs-v0.1.0-rc1",
@@ -20,5 +20,5 @@
   "release_chain_validation_status": "ProofChecked",
   "release_chain_validator": "pcs-core",
   "release_chain_checked_at": "2026-05-17T17:01:22Z",
-  "release_manifest_hash": "sha256:e073c2d915abdaaa272894cab2b224fa37b21c85b4549a4fc4efdd714c9830d6"
+  "release_manifest_hash": "sha256:9e7098d29746834b3825b0ec4b9e1859649c977490b4140d8e110f6b14c34a00"
 }
