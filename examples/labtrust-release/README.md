@@ -1,6 +1,6 @@
 # LabTrust v0.1 release fixtures
 
-This directory contains **generated PCS v0.1 release-candidate artifacts** (release evidence only). Files must be produced by the end-to-end LabTrust → CertifyEdge → Provability Fabric → Scientific Memory chain, then imported with `pcs_core.release_fixtures --write`, which aligns embedded `source_commit` values to the five-repo manifest and re-signs PCS digests. **Placeholder commits are prohibited** for final release tags.
+This directory contains **generated PCS v0.1 release-candidate artifacts** (release evidence only). Files must come from one atomic cross-repo chain run (LabTrust → CertifyEdge → Provability Fabric → Scientific Memory) and must not be updated file-by-file. **Placeholder commits are prohibited** for final release tags.
 
 Schema conformance fixtures live in [`../labtrust/`](../labtrust/) and must not be used as release evidence.
 
@@ -13,33 +13,25 @@ Schema conformance fixtures live in [`../labtrust/`](../labtrust/) and must not 
    bash examples/pcs_qc_release/scripts/run_pcs_v01_clean_chain.sh
    ```
 
-2. Import chain outputs into pcs-core (from pcs-core repo root):
+2. Import into pcs-core (builds `release-run/`, validates, then atomically replaces this directory):
 
    ```bash
-   export PCS_CHAIN_WORK=../LabTrust-Gym   # or absolute path to chain workdir
+   export PCS_CHAIN_WORK=../LabTrust-Gym
    just generate-labtrust-release-fixtures
    ```
 
-   Optional commit overrides (defaults: `git rev-parse HEAD` in each sibling repo):
-
-   ```bash
-   export LABTRUST_GYM_COMMIT=<40-hex>
-   export CERTIFYEDGE_COMMIT=<40-hex>
-   export PROVABILITY_FABRIC_COMMIT=<40-hex>
-   export SCIENTIFIC_MEMORY_COMMIT=<40-hex>
-   ```
-
-`RELEASE_FIXTURE_MANIFEST.json` records five repository commits and SHA-256 digests of every file in this directory.
+`RELEASE_FIXTURE_MANIFEST.json` records five repository commits (derived from artifact provenance) and SHA-256 digests of every file.
 
 ## Validation
 
 ```bash
-pcs validate-release-manifest examples/labtrust-release/RELEASE_FIXTURE_MANIFEST.json
-# or
+pcs validate-release-chain examples/labtrust-release/
 just validate-labtrust-release-fixtures
 ```
 
-PCS artifacts must pass `pcs validate`. `trace.json` and `scientific_memory_import_report.json` are pipeline exports recorded in the manifest but are not PCS artifact schemas.
+`validate-release-chain` checks manifest digests, provenance commits, certificate ID alignment across certified/verification/signed artifacts, bundle equality, and PF/SM status fields.
+
+Invalid mixed-run example: [`../labtrust-release-invalid/mixed_certificate_id/`](../labtrust-release-invalid/mixed_certificate_id/).
 
 ## Authority
 

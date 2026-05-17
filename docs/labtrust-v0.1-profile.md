@@ -20,7 +20,7 @@ Downstream repos must depend on **pcs-core** for schemas, validation, and hash. 
 | `examples/labtrust/` | **Schema conformance** fixtures — stable example values for `pcs validate`, CI, and bindings tests |
 | `examples/labtrust-release/` | **Generated release** fixtures — end-to-end cross-repo pipeline outputs and `RELEASE_FIXTURE_MANIFEST.json` |
 
-Only `examples/labtrust-release/` may be used as **PCS v0.1 release evidence**. Regenerate after the cross-repo clean-checkout chain (`just generate-labtrust-release-fixtures` with `PCS_CHAIN_WORK` set). Verify with `pcs validate-release-manifest examples/labtrust-release/RELEASE_FIXTURE_MANIFEST.json` or `just validate-labtrust-release-fixtures`. The validator checks manifest digests, non-placeholder manifest commits, nested `source_commit` alignment (LabTrust / CertifyEdge / PF / SM), trace-hash alignment, `ProofChecked` / `CertificateChecked` status, and forbids `local_dev` plus placeholder hashes anywhere in release artifacts.
+Only `examples/labtrust-release/` may be used as **PCS v0.1 release evidence**. Regenerate after one cross-repo clean-checkout chain (`just generate-labtrust-release-fixtures` with `PCS_CHAIN_WORK` set); imports build `release-run/` and promote atomically. Verify with `pcs validate-release-chain examples/labtrust-release/` or `just validate-labtrust-release-fixtures` (manifest digests, provenance commits, single-run certificate ID alignment, bundle/verification equality, trace-hash alignment, status fields).
 
 ## Release fixture authority
 

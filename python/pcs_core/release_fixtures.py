@@ -15,11 +15,11 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from pcs_core.hash import SIGNATURE_FIELD, canonical_hash
 from pcs_core.paths import examples_dir, repo_root
 from pcs_core.validate import ValidationError, validate_file
 
 RELEASE_DIR_NAME = "labtrust-release"
+RELEASE_RUN_DIR_NAME = "release-run"
 CONFORMANCE_DIR_NAME = "labtrust"
 MANIFEST_NAME = "RELEASE_FIXTURE_MANIFEST.json"
 
@@ -74,6 +74,10 @@ SM_SOURCE_REPO = "https://github.com/fraware/scientific-memory"
 
 def release_dir() -> Path:
     return examples_dir() / RELEASE_DIR_NAME
+
+
+def release_run_dir() -> Path:
+    return repo_root() / RELEASE_RUN_DIR_NAME
 
 
 def conformance_dir() -> Path:
@@ -208,116 +212,62 @@ def normalize_import_report(
     return normalized
 
 
-def _resign(doc: dict[str, Any]) -> dict[str, Any]:
-    out = dict(doc)
-    out.pop(SIGNATURE_FIELD, None)
-    out[SIGNATURE_FIELD] = canonical_hash(out)
-    return out
+def commits_from_release_run(run_dir: Path) -> dict[str, str]:
+    """Derive manifest commit pins from a single atomic release-run."""
+    receipt = _load_json(run_dir / "runtime_receipt.json")
+    cert = _load_json(run_dir / "trace_certificate.json")
+    vr = _load_json(run_dir / "verification_result.json")
+    sm = _load_json(run_dir / "scientific_memory_import_report.json")
+    if not receipt or not cert or not vr or not sm:
+        raise ValueError("release-run is missing artifacts required to derive manifest commits")
+
+    return {
+        "pcs_core_commit": git_commit_at(repo_root()),
+        "labtrust_gym_commit": str(receipt["source_commit"]),
+        "certifyedge_commit": str(cert["source_commit"]),
+        "provability_fabric_commit": str(vr["source_commit"]),
+        "scientific_memory_commit": str(sm["source_commit"]),
+    }
 
 
-def _set_provenance(obj: dict[str, Any], *, repo: str, commit: str) -> None:
-    obj["source_repo"] = repo
-    obj["source_commit"] = commit
-    obj.pop("local_dev", None)
-
-
-def align_release_provenance(out: Path, commits: dict[str, str]) -> None:
-    """Rewrite embedded source_commit fields and re-sign PCS artifacts."""
-    lt = commits["labtrust_gym_commit"]
-    ce = commits["certifyedge_commit"]
-    pf = commits["provability_fabric_commit"]
-
-    receipt_path = out / "runtime_receipt.json"
-    receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
-    _set_provenance(receipt, repo=LABTRUST_SOURCE_REPO, commit=lt)
-    write_json(receipt_path, _resign(receipt))
-
-    cert_path = out / "trace_certificate.json"
-    cert = json.loads(cert_path.read_text(encoding="utf-8"))
-    _set_provenance(cert, repo=CERTIFYEDGE_SOURCE_REPO, commit=ce)
-    write_json(cert_path, _resign(cert))
-
-    for name in ("science_claim_bundle.pending.json", "science_claim_bundle.certified.json"):
-        bundle = json.loads((out / name).read_text(encoding="utf-8"))
-        _align_science_claim_bundle(bundle, lt=lt, ce=ce)
-        write_json(out / name, _resign(bundle))
-
-    vr_path = out / "verification_result.json"
-    vr = json.loads(vr_path.read_text(encoding="utf-8"))
-    _set_provenance(vr, repo=PF_SOURCE_REPO, commit=pf)
-    write_json(vr_path, _resign(vr))
-
-    signed_path = out / "signed_science_claim_bundle.json"
-    signed = json.loads(signed_path.read_text(encoding="utf-8"))
-    scb = signed.get("science_claim_bundle")
-    if isinstance(scb, dict):
-        _align_science_claim_bundle(scb, lt=lt, ce=ce)
-    embedded_vr = signed.get("verification_result")
-    if isinstance(embedded_vr, dict):
-        _set_provenance(embedded_vr, repo=PF_SOURCE_REPO, commit=pf)
-        signed["verification_result"] = _resign(embedded_vr)
-    _set_provenance(signed, repo=PF_SOURCE_REPO, commit=pf)
-    write_json(signed_path, _resign(signed))
-
-
-def _align_science_claim_bundle(bundle: dict[str, Any], *, lt: str, ce: str) -> None:
-    _set_provenance(bundle, repo=LABTRUST_SOURCE_REPO, commit=lt)
-    for key in ("claim_artifact", "assumption_set", "evidence_bundle"):
-        part = bundle.get(key)
-        if isinstance(part, dict):
-            _set_provenance(part, repo=LABTRUST_SOURCE_REPO, commit=lt)
-            bundle[key] = _resign(part)
-    receipts = bundle.get("runtime_receipts")
-    if isinstance(receipts, list):
-        aligned: list[Any] = []
-        for item in receipts:
-            if isinstance(item, dict):
-                _set_provenance(item, repo=LABTRUST_SOURCE_REPO, commit=lt)
-                aligned.append(_resign(item))
-            else:
-                aligned.append(item)
-        bundle["runtime_receipts"] = aligned
-    certs = bundle.get("certificates")
-    if isinstance(certs, list):
-        aligned_certs: list[Any] = []
-        for item in certs:
-            if isinstance(item, dict):
-                _set_provenance(item, repo=CERTIFYEDGE_SOURCE_REPO, commit=ce)
-                aligned_certs.append(_resign(item))
-            else:
-                aligned_certs.append(item)
-        bundle["certificates"] = aligned_certs
-
-
-def import_chain_artifacts(
+def build_release_run(
     workdir: Path,
     *,
     release_candidate: str = "pcs-v0.1.0-rc1",
-    commits: dict[str, str] | None = None,
     claim_id: str = DEFAULT_CLAIM_ID,
+    run_dir: Path | None = None,
 ) -> Path:
-    """Copy real cross-repo chain outputs into examples/labtrust-release/."""
+    """Populate release-run/ from one cross-repo chain workdir (no partial updates)."""
     if not _chain_artifacts_present(workdir):
         missing = [name for name in CHAIN_ARTIFACTS if not (workdir / name).is_file()]
         raise FileNotFoundError(
             f"chain workdir {workdir} is missing artifacts: {', '.join(missing)}",
         )
 
-    out = release_dir()
-    out.mkdir(parents=True, exist_ok=True)
+    out = run_dir or release_run_dir()
+    if out.exists():
+        shutil.rmtree(out)
+    out.mkdir(parents=True)
 
     for name in CHAIN_ARTIFACTS:
         shutil.copy2(workdir / name, out / name)
 
-    pin_commits = commits or resolve_five_repo_commits()
-    for key in COMMIT_KEYS:
-        commit = pin_commits.get(key, "")
-        if not isinstance(commit, str) or len(commit) != 40:
-            raise ValueError(f"invalid {key}: {commit!r}")
-        if is_placeholder_commit(commit):
-            raise ValueError(f"{key} is a placeholder commit; set {key.upper()} env or rebuild siblings")
+    receipt = _load_json(out / "runtime_receipt.json")
+    cert = _load_json(out / "trace_certificate.json")
+    vr = _load_json(out / "verification_result.json")
+    if not receipt or not cert or not vr:
+        raise ValueError("release-run missing receipt, certificate, or verification_result")
 
-    align_release_provenance(out, pin_commits)
+    pin_commits = {
+        "pcs_core_commit": git_commit_at(repo_root()),
+        "labtrust_gym_commit": str(receipt["source_commit"]),
+        "certifyedge_commit": str(cert["source_commit"]),
+        "provability_fabric_commit": str(vr["source_commit"]),
+        "scientific_memory_commit": git_commit_or(
+            "SCIENTIFIC_MEMORY_COMMIT",
+            repo_root().parent / "scientific-memory",
+        ),
+    }
 
     sm_report_path = resolve_sm_import_report(workdir, claim_id=claim_id)
     sm_report = normalize_import_report(
@@ -325,9 +275,14 @@ def import_chain_artifacts(
         commits=pin_commits,
     )
     write_json(out / "scientific_memory_import_report.json", sm_report)
+    pin_commits = commits_from_release_run(out)
+
+    for key in COMMIT_KEYS:
+        commit = pin_commits[key]
+        if is_placeholder_commit(commit):
+            raise ValueError(f"{key} is a placeholder commit: {commit}")
 
     artifacts = {name: file_digest((out / name).read_bytes()) for name in MANIFEST_ARTIFACTS}
-
     manifest: dict[str, Any] = {
         "schema_version": "v0",
         "release_candidate": release_candidate,
@@ -342,17 +297,41 @@ def import_chain_artifacts(
     return out
 
 
+def promote_release_run(run_dir: Path, *, target: Path | None = None) -> Path:
+    """Atomically replace examples/labtrust-release/ with a validated release-run/."""
+    from pcs_core.release_chain import validate_release_chain
+
+    target_dir = target or release_dir()
+    issues = validate_release_chain(run_dir)
+    if issues:
+        lines = "\n".join(issue.format() for issue in issues)
+        raise RuntimeError(f"release-run failed chain validation:\n{lines}")
+
+    preserved: list[tuple[Path, bytes]] = []
+    if target_dir.exists():
+        for pattern in ("invalid_*.json", "README.md"):
+            for path in target_dir.glob(pattern):
+                preserved.append((path, path.read_bytes()))
+
+    if target_dir.exists():
+        shutil.rmtree(target_dir)
+    shutil.copytree(run_dir, target_dir)
+
+    for path, content in preserved:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(content)
+
+    return target_dir
+
+
 def write_release_fixtures(
     *,
     workdir: Path | None = None,
     release_candidate: str = "pcs-v0.1.0-rc1",
 ) -> Path:
     work = workdir or resolve_chain_workdir()
-    path = import_chain_artifacts(work, release_candidate=release_candidate)
-    drift = validate_release_manifest(path / MANIFEST_NAME)
-    if drift:
-        raise RuntimeError("release fixtures failed self-check:\n" + "\n".join(drift))
-    return path
+    run_path = build_release_run(work, release_candidate=release_candidate)
+    return promote_release_run(run_path)
 
 
 def _load_json(path: Path) -> dict[str, Any] | None:
@@ -740,7 +719,9 @@ def validate_release_manifest(manifest_path: Path) -> list[str]:
 
 
 def verify_release_fixtures() -> list[str]:
-    return validate_release_manifest(release_dir() / MANIFEST_NAME)
+    from pcs_core.release_chain import validate_release_chain_messages
+
+    return validate_release_chain_messages(release_dir())
 
 
 def main(argv: list[str] | None = None) -> int:

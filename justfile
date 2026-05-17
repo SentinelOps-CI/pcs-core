@@ -20,7 +20,7 @@ generate-labtrust-release-fixtures:
     cd "{{root}}/python" && python -m pcs_core.release_fixtures --write
 
 validate-labtrust-release-fixtures:
-    cd "{{root}}/python" && pcs validate-release-manifest ../examples/labtrust-release/RELEASE_FIXTURE_MANIFEST.json
+    cd "{{root}}/python" && pcs validate-release-chain ../examples/labtrust-release/
 
 pcs-v01-clean-chain:
     pwsh -File "{{root}}/scripts/run-pcs-v01-clean-chain.ps1"

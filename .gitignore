@@ -19,3 +19,5 @@ lean/build/
 
 .DS_Store
 *.swp
+
+release-run/

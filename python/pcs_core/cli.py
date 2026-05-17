@@ -10,6 +10,7 @@ from pathlib import Path
 from pcs_core.hash import canonical_hash
 from pcs_core.hash_vectors import verify_vectors, write_vectors
 from pcs_core.paths import examples_dir
+from pcs_core.release_chain import validate_release_chain_messages
 from pcs_core.release_fixtures import validate_release_manifest
 from pcs_core.validate import (
     ValidationError,
@@ -108,6 +109,19 @@ def cmd_validate_release_manifest(path: Path) -> int:
     return 0
 
 
+def cmd_validate_release_chain(path: Path) -> int:
+    directory = path
+    if path.is_file() and path.name == "RELEASE_FIXTURE_MANIFEST.json":
+        directory = path.parent
+    drift = validate_release_chain_messages(directory)
+    if drift:
+        for err in drift:
+            print(f"FAIL {err}", file=sys.stderr)
+        return 1
+    print(f"OK release chain {directory}")
+    return 0
+
+
 def cmd_hash_vectors_verify() -> int:
     drift = verify_vectors()
     if drift:
@@ -137,6 +151,12 @@ def main(argv: list[str] | None = None) -> int:
     )
     p_release.add_argument("path", type=Path)
 
+    p_chain = sub.add_parser(
+        "validate-release-chain",
+        help="Validate atomic LabTrust release fixture chain consistency",
+    )
+    p_chain.add_argument("path", type=Path)
+
     schema_parser = sub.add_parser("schema", help="Schema commands")
     schema_sub = schema_parser.add_subparsers(dest="schema_cmd", required=True)
     schema_sub.add_parser("check", help="Validate JSON schemas")
@@ -161,6 +181,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_status(args.path)
     if args.command == "validate-release-manifest":
         return cmd_validate_release_manifest(args.path)
+    if args.command == "validate-release-chain":
+        return cmd_validate_release_chain(args.path)
     if args.command == "schema" and args.schema_cmd == "check":
         return cmd_schema_check()
     if args.command == "examples" and args.examples_cmd == "check":
