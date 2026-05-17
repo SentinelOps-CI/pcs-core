@@ -16,7 +16,10 @@ LabTrust-Gym runtime trace (trace.json)
   → Scientific Memory import report
 ```
 
-**Canonical fixtures:** `examples/labtrust-release/` with `RELEASE_FIXTURE_MANIFEST.json`.
+**Canonical fixtures:** `examples/labtrust-release/` with:
+
+- `RELEASE_FIXTURE_MANIFEST.json` (legacy manifest; release-chain validator)
+- `release_manifest.v0.json`, `handoff_manifest.*.v0.json`, `release_chain_validation_result.v0.json` (Phase 2 protocol layer; see [protocol-phase2.md](../protocol-phase2.md))
 
 ## Validate (exact commands)
 
@@ -25,8 +28,11 @@ From repo root after `pip install -e python/.[dev]`:
 ```bash
 pcs validate-release-chain examples/labtrust-release/
 pcs validate-release-chain examples/labtrust-release/ --json
+pcs validate examples/labtrust-release/release_manifest.v0.json
+pcs registry validate examples/artifact_registry.valid.json
+pcs shared-hash-vectors verify
 just validate-labtrust-release-fixtures
-cd python && pytest -q tests/test_release_chain.py
+cd python && pytest -q tests/test_release_chain.py tests/test_labtrust_protocol_artifacts.py
 ```
 
 CI runs `pcs validate-release-chain ../examples/labtrust-release/` on every push and on PRs touching schemas, release fixtures, `python/pcs_core/`, or `docs/labtrust-v0.1-profile.md`.
@@ -86,6 +92,8 @@ PCS v0.1 demonstrates a **proof-carrying simulated lab workflow** with machine-c
 ## Tag readiness
 
 - [ ] `pcs validate-release-chain examples/labtrust-release/` passes locally
-- [ ] CI green on `main`
+- [ ] `pcs validate examples/labtrust-release/release_manifest.v0.json` passes
+- [ ] `pcs shared-hash-vectors verify` and `pcs registry validate examples/artifact_registry.valid.json` pass
+- [ ] CI green on `main` (Python, Rust, TypeScript, release-chain workflow)
 - [ ] Downstream repos synced or hash-verified against this manifest
 - [ ] Tag `pcs-v0.1.0-rc1` on the pinned `pcs_core_commit` recorded in the manifest
