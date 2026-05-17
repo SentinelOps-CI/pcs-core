@@ -10,6 +10,7 @@ from pathlib import Path
 from pcs_core.hash import canonical_hash
 from pcs_core.hash_vectors import verify_vectors, write_vectors
 from pcs_core.paths import examples_dir
+from pcs_core.release_fixtures import validate_release_manifest
 from pcs_core.validate import (
     ValidationError,
     check_all_schemas,
@@ -97,6 +98,16 @@ def cmd_examples_check() -> int:
         return 1
 
 
+def cmd_validate_release_manifest(path: Path) -> int:
+    drift = validate_release_manifest(path)
+    if drift:
+        for err in drift:
+            print(f"FAIL {err}", file=sys.stderr)
+        return 1
+    print(f"OK release manifest {path}")
+    return 0
+
+
 def cmd_hash_vectors_verify() -> int:
     drift = verify_vectors()
     if drift:
@@ -120,6 +131,12 @@ def main(argv: list[str] | None = None) -> int:
     p_status = sub.add_parser("status", help="Print status fields")
     p_status.add_argument("path", type=Path)
 
+    p_release = sub.add_parser(
+        "validate-release-manifest",
+        help="Validate LabTrust release fixture manifest and artifacts",
+    )
+    p_release.add_argument("path", type=Path)
+
     schema_parser = sub.add_parser("schema", help="Schema commands")
     schema_sub = schema_parser.add_subparsers(dest="schema_cmd", required=True)
     schema_sub.add_parser("check", help="Validate JSON schemas")
@@ -142,6 +159,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_hash(args.path)
     if args.command == "status":
         return cmd_status(args.path)
+    if args.command == "validate-release-manifest":
+        return cmd_validate_release_manifest(args.path)
     if args.command == "schema" and args.schema_cmd == "check":
         return cmd_schema_check()
     if args.command == "examples" and args.examples_cmd == "check":

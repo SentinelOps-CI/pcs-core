@@ -1,17 +1,17 @@
 {
-  "certificate_id": "cert-trace-qc-release-rc1",
+  "certificate_id": "cert-trace-2efbc950-be55-4a16-ad36-84ea371216aa",
   "schema_version": "v0",
-  "trace_hash": "sha256:cec07719b3abb6647590fe5af0ec09b8b1355bc6620cdb80d6aa22f611a60fde",
-  "spec_hash": "sha256:db07f02ebb853dbc9e84213812b1c847eef2cb0b9e2133b3d94d96889a108857",
-  "property_id": "qc_release.temporal.safety",
-  "checker": "certifyedge",
+  "trace_hash": "sha256:c3e8a3dc4ad86d533de1dfa4ae7fe2a338c2cff3c945404c96a75216524d58cd",
+  "spec_hash": "sha256:7c66dfcf640d382653d8ce7c2c700371d72ff0d6fb59156d411cf2aa9a7dfe5e",
+  "property_id": "hospital_lab.qc_release",
+  "checker": "CertifyEdge",
   "checker_version": "0.1.0",
   "status": "CertificateChecked",
   "counterexample_ref": null,
-  "created_at": "2026-05-16T12:10:00Z",
-  "producer": "certifyedge",
+  "created_at": "2026-05-17T13:45:10Z",
+  "producer": "CertifyEdge",
   "producer_version": "0.1.0",
   "source_repo": "https://github.com/fraware/CertifyEdge",
-  "source_commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-  "signature_or_digest": "sha256:7eff9ec14b0658208f95c53d1d0ac69b20c4bbe282216dbe5e696d18602ceea8"
+  "source_commit": "9f531e5b577e0ec3bd1c79809e2232ed3b661598",
+  "signature_or_digest": "sha256:e552eada662f0ace08c3125e2575828f4363e7f450d1bb98a0fd6aa722cf7b08"
 }

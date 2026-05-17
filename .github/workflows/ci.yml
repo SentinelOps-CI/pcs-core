@@ -28,7 +28,7 @@ jobs:
       - name: LabTrust release fixtures
         run: |
           cd python
-          python -m pcs_core.release_fixtures --verify
+          pcs validate-release-manifest examples/labtrust-release/RELEASE_FIXTURE_MANIFEST.json
 
   rust:
     runs-on: ubuntu-latest

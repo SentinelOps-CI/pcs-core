@@ -1,0 +1,11 @@
+{
+  "schema_version": "v0",
+  "release_candidate": "pcs-v0.1.0-rc1-invalid",
+  "generated_at": "2026-05-16T12:00:00Z",
+  "pcs_core_commit": "0000000000000000000000000000000000000000",
+  "labtrust_gym_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "certifyedge_commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "provability_fabric_commit": "cccccccccccccccccccccccccccccccccccccccc",
+  "scientific_memory_commit": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "artifacts": {}
+}

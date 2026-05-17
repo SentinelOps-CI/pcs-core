@@ -1,35 +1,45 @@
 # LabTrust v0.1 release fixtures
 
-This directory holds **generated end-to-end release evidence** for the PCS v0.1 LabTrust QC-release workflow. It is distinct from `examples/labtrust/`, which contains stable **schema conformance** fixtures.
+This directory contains **generated PCS v0.1 release-candidate artifacts**. Files in this directory must be produced by the end-to-end LabTrust → CertifyEdge → Provability Fabric → Scientific Memory chain. **Placeholder commits are prohibited** for final release tags.
+
+Schema conformance fixtures live in [`../labtrust/`](../labtrust/) and must not be used as release evidence.
 
 ## Regeneration
 
-From the pcs-core repository root:
+1. Run the clean-checkout chain from a sibling [LabTrust-Gym](https://github.com/fraware/LabTrust-Gym) checkout:
 
-```bash
-cd python
-python -m pcs_core.release_fixtures --write
-```
+   ```bash
+   export PCS_DETERMINISTIC=1
+   bash examples/pcs_qc_release/scripts/run_pcs_v01_clean_chain.sh
+   ```
 
-Set repository commit pins when generating from a real cross-repo pipeline:
+2. Import chain outputs into pcs-core (from pcs-core repo root):
 
-```bash
-export LABTRUST_GYM_COMMIT=<40-hex>
-export CERTIFYEDGE_COMMIT=<40-hex>
-export PROVABILITY_FABRIC_COMMIT=<40-hex>
-export SCIENTIFIC_MEMORY_COMMIT=<40-hex>
-python -m pcs_core.release_fixtures --write
-```
+   ```bash
+   export PCS_CHAIN_WORK=../LabTrust-Gym   # or absolute path to chain workdir
+   just generate-labtrust-release-fixtures
+   ```
 
-`RELEASE_FIXTURE_MANIFEST.json` records `pcs_core_commit` from `git rev-parse HEAD` and the digests of every file in this directory.
+   Optional commit overrides (defaults: `git rev-parse HEAD` in each sibling repo):
+
+   ```bash
+   export LABTRUST_GYM_COMMIT=<40-hex>
+   export CERTIFYEDGE_COMMIT=<40-hex>
+   export PROVABILITY_FABRIC_COMMIT=<40-hex>
+   export SCIENTIFIC_MEMORY_COMMIT=<40-hex>
+   ```
+
+`RELEASE_FIXTURE_MANIFEST.json` records five repository commits and SHA-256 digests of every file in this directory.
 
 ## Validation
 
 ```bash
+pcs validate-release-manifest examples/labtrust-release/RELEASE_FIXTURE_MANIFEST.json
+# or
 just validate-labtrust-release-fixtures
 ```
 
-PCS artifacts in this directory must pass `pcs validate`. `trace.json` and `scientific_memory_import_report.json` are pipeline exports recorded in the manifest but are not PCS artifact schemas.
+PCS artifacts must pass `pcs validate`. `trace.json` and `scientific_memory_import_report.json` are pipeline exports recorded in the manifest but are not PCS artifact schemas.
 
 ## Authority
 
