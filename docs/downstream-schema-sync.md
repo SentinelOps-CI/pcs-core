@@ -54,14 +54,14 @@ Fixture authority is defined in [labtrust-v0.1-profile.md](labtrust-v0.1-profile
 
 ## Release-candidate fixtures (canonical)
 
-**Authority:** `pcs-core/examples/labtrust-release/` is the only canonical PCS v0.1 release-candidate fixture set.
+**Authority:** `pcs-core/examples/labtrust-release/` is the canonical PCS v0.1 RC fixture chain.
 
 | Rule | Detail |
 |------|--------|
-| Source of truth | Copy files from pcs-core at the pinned commit; do not regenerate partial fixtures in downstream repos |
+| Source of truth | Sync against this directory at the pinned pcs-core commit, or prove canonical-hash equivalence to `RELEASE_FIXTURE_MANIFEST.json` |
 | Atomic refresh | Regenerate only via the full clean-checkout chain and atomic promote (`just generate-labtrust-release-fixtures` in pcs-core) |
-| Pin values | See [labtrust-rc-canonical.md](labtrust-rc-canonical.md) (`certificate_id`, `trace_hash`, certified bundle hash, per-repo commits) |
-| Verification | `pcs validate-release-chain examples/labtrust-release/` (18 checks; see [labtrust-rc-canonical.md](labtrust-rc-canonical.md)) |
+| Pin values | See [labtrust-rc-canonical.md](labtrust-rc-canonical.md) |
+| Verification | `pcs validate-release-chain examples/labtrust-release/` (20 checks; CI gate on `main`) |
 
 Downstream release fixture tests must assert the same pin values as pcs-core. Schema conformance fixtures remain under `examples/labtrust/` (separate from release evidence).
 

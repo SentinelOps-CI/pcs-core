@@ -52,16 +52,35 @@ def _first_certificate_id(bundle: dict[str, Any]) -> str | None:
     return None
 
 
-def _certificate_ref_ids(bundle: dict[str, Any]) -> list[str]:
-    refs: list[str] = []
-    for key in ("claim_artifact", "evidence_bundle"):
-        part = bundle.get(key)
-        if not isinstance(part, dict):
-            continue
-        certificate_refs = part.get("certificate_refs")
-        if isinstance(certificate_refs, list):
-            refs.extend(ref for ref in certificate_refs if isinstance(ref, str))
-    return refs
+def _first_certificate_ref(bundle: dict[str, Any], part_key: str) -> str | None:
+    part = bundle.get(part_key)
+    if not isinstance(part, dict):
+        return None
+    certificate_refs = part.get("certificate_refs")
+    if not isinstance(certificate_refs, list) or not certificate_refs:
+        return None
+    first = certificate_refs[0]
+    return first if isinstance(first, str) else None
+
+
+def _expect_certificate_id(
+    issues: list[ReleaseChainIssue],
+    *,
+    expected: str,
+    actual: str | None,
+    label: str,
+) -> None:
+    if actual is None:
+        issues.append(
+            _issue("certificate_id_mismatch", f"{label}: certificate ID is required"),
+        )
+    elif actual != expected:
+        issues.append(
+            _issue(
+                "certificate_id_mismatch",
+                f"{label}: expected {expected!r}, got {actual!r}",
+            ),
+        )
 
 
 def _verified_input_certificate_id(vr: dict[str, Any]) -> str | None:
@@ -161,9 +180,7 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
             continue
         _scan_forbidden_values(doc, label=name, errors=scan_errors)
     for msg in scan_errors:
-        if "placeholder" in msg:
-            issues.append(_issue("placeholder_commit_detected", msg))
-        elif "local_dev" in msg:
+        if "placeholder" in msg or "zero" in msg or "local_dev" in msg:
             issues.append(_issue("placeholder_commit_detected", msg))
         else:
             issues.append(_issue("invalid_artifact", msg))
@@ -171,7 +188,7 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
     trace_errors: list[str] = []
     _validate_trace_hash_alignment(base, trace_errors)
     for msg in trace_errors:
-        issues.append(_issue("invalid_artifact", msg))
+        issues.append(_issue("trace_hash_mismatch", msg))
 
     for name in RELEASE_PCS_ARTIFACTS:
         path = base / name
@@ -305,71 +322,64 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
                     "scientific_memory_import_report.verification_status must be passed",
                 ),
             )
+        if sm_report.get("strict") is not True:
+            issues.append(
+                _issue(
+                    "scientific_memory_import_failed",
+                    "scientific_memory_import_report.strict must be true",
+                ),
+            )
+        if sm_report.get("allow_legacy") is not False:
+            issues.append(
+                _issue(
+                    "legacy_import_detected",
+                    "scientific_memory_import_report.allow_legacy must be false",
+                ),
+            )
+        if sm_report.get("bundle_shape") != "pcs_core":
+            issues.append(
+                _issue(
+                    "legacy_import_detected",
+                    "scientific_memory_import_report.bundle_shape must be pcs_core "
+                    f"(got {sm_report.get('bundle_shape')!r})",
+                ),
+            )
 
     certified_cert_id = _first_certificate_id(certified) if certified else None
-    trace_cert_id = trace_cert.get("certificate_id") if trace_cert else None
-    vr_cert_id = _verified_input_certificate_id(verification) if verification else None
     signed_scb = signed.get("science_claim_bundle") if signed else None
-    signed_cert_id = _first_certificate_id(signed_scb) if isinstance(signed_scb, dict) else None
 
-    cert_ids = {
-        cid
-        for cid in (certified_cert_id, trace_cert_id, vr_cert_id, signed_cert_id)
-        if isinstance(cid, str)
-    }
-    if len(cert_ids) > 1:
-        issues.append(
-            _issue(
-                "certificate_id_mismatch",
-                "certificate_id mismatch across trace_certificate, certified bundle, "
-                f"verification_result.verified_input, and signed bundle ({cert_ids})",
-            ),
+    if certified_cert_id and certified:
+        _expect_certificate_id(
+            issues,
+            expected=certified_cert_id,
+            actual=trace_cert.get("certificate_id") if trace_cert else None,
+            label="trace_certificate.certificate_id",
         )
-    elif certified_cert_id and certified:
-        if trace_cert_id and trace_cert_id != certified_cert_id:
-            issues.append(
-                _issue(
-                    "certificate_id_mismatch",
-                    f"trace_certificate.certificate_id {trace_cert_id} != certified {certified_cert_id}",
-                ),
+        _expect_certificate_id(
+            issues,
+            expected=certified_cert_id,
+            actual=_first_certificate_ref(certified, "claim_artifact"),
+            label="science_claim_bundle.certified.claim_artifact.certificate_refs[0]",
+        )
+        _expect_certificate_id(
+            issues,
+            expected=certified_cert_id,
+            actual=_first_certificate_ref(certified, "evidence_bundle"),
+            label="science_claim_bundle.certified.evidence_bundle.certificate_refs[0]",
+        )
+        _expect_certificate_id(
+            issues,
+            expected=certified_cert_id,
+            actual=_verified_input_certificate_id(verification) if verification else None,
+            label="verification_result.verified_input.certificate_id",
+        )
+        if isinstance(signed_scb, dict):
+            _expect_certificate_id(
+                issues,
+                expected=certified_cert_id,
+                actual=_first_certificate_id(signed_scb),
+                label="signed_science_claim_bundle.science_claim_bundle.certificates[0].certificate_id",
             )
-        if vr_cert_id and vr_cert_id != certified_cert_id:
-            issues.append(
-                _issue(
-                    "certificate_id_mismatch",
-                    "verification_result.verified_input.certificate_id "
-                    f"{vr_cert_id} != certified {certified_cert_id}",
-                ),
-            )
-        if signed_cert_id and signed_cert_id != certified_cert_id:
-            issues.append(
-                _issue(
-                    "certificate_id_mismatch",
-                    "signed.science_claim_bundle certificate_id "
-                    f"{signed_cert_id} != certified {certified_cert_id}",
-                ),
-            )
-        for ref_id in _certificate_ref_ids(certified):
-            if ref_id != certified_cert_id:
-                issues.append(
-                    _issue(
-                        "certificate_id_mismatch",
-                        f"certified bundle certificate_refs entry {ref_id!r} "
-                        f"!= {certified_cert_id}",
-                    ),
-                )
-        if signed:
-            scb = signed.get("science_claim_bundle")
-            if isinstance(scb, dict):
-                for ref_id in _certificate_ref_ids(scb):
-                    if ref_id != certified_cert_id:
-                        issues.append(
-                            _issue(
-                                "certificate_id_mismatch",
-                                f"signed bundle certificate_refs entry {ref_id!r} "
-                                f"!= {certified_cert_id}",
-                            ),
-                        )
 
     if verification and verification.get("status") != "ProofChecked":
         issues.append(
@@ -414,6 +424,25 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
                         "verified_input_hash_mismatch",
                         f"verified_input.bundle_hash {bundle_hash} != manifest certified bundle hash "
                         f"{certified_hash}",
+                    ),
+                )
+            verified_trace_hash = verified.get("trace_hash")
+            receipt_hash = receipt.get("trace_hash") if receipt else None
+            cert_hash = trace_cert.get("trace_hash") if trace_cert else None
+            if verified_trace_hash and receipt_hash and verified_trace_hash != receipt_hash:
+                issues.append(
+                    _issue(
+                        "trace_hash_mismatch",
+                        "verification_result.verified_input.trace_hash "
+                        f"{verified_trace_hash} != runtime_receipt.trace_hash {receipt_hash}",
+                    ),
+                )
+            if verified_trace_hash and cert_hash and verified_trace_hash != cert_hash:
+                issues.append(
+                    _issue(
+                        "trace_hash_mismatch",
+                        "verification_result.verified_input.trace_hash "
+                        f"{verified_trace_hash} != trace_certificate.trace_hash {cert_hash}",
                     ),
                 )
     if signed and certified_hash:

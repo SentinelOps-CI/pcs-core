@@ -53,6 +53,19 @@ def test_validate_release_chain_passes_on_current_fixture() -> None:
     assert validate_release_chain(release_dir()) == []
 
 
+def test_validate_release_chain_checks_scientific_memory_import_flags() -> None:
+    sm_path = release_dir() / "scientific_memory_import_report.json"
+    original = sm_path.read_text(encoding="utf-8")
+    try:
+        report = json.loads(original)
+        report["allow_legacy"] = True
+        sm_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+        codes = _codes(release_dir())
+        assert "legacy_import_detected" in codes
+    finally:
+        sm_path.write_text(original, encoding="utf-8")
+
+
 def test_canonical_rc_pin_values_in_manifest_and_artifacts() -> None:
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
     assert manifest["labtrust_gym_commit"] == LABTRUST_RC_LABTRUST_GYM_COMMIT

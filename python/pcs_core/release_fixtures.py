@@ -378,13 +378,19 @@ def _scan_forbidden_values(obj: Any, *, label: str, errors: list[str]) -> None:
                 errors.append(f"{label}: local_dev=true at {node_path}")
             repo = node.get("source_repo")
             commit = node.get("source_commit")
-            if isinstance(commit, str) and is_placeholder_commit(commit):
+            if isinstance(commit, str) and commit == "0" * 40:
+                errors.append(
+                    f"{label}: zero source_commit at {node_path}: {commit}",
+                )
+            elif isinstance(commit, str) and is_placeholder_commit(commit):
                 errors.append(
                     f"{label}: placeholder source_commit at {node_path}: {commit}",
                 )
             if isinstance(repo, str) and isinstance(commit, str):
                 continue
-        if isinstance(node, str) and is_placeholder_commit(node):
+        if isinstance(node, str) and node == "0" * 40:
+            errors.append(f"{label}: zero commit string at {node_path}: {node}")
+        elif isinstance(node, str) and is_placeholder_commit(node):
             errors.append(f"{label}: placeholder commit string at {node_path}: {node}")
 
 
