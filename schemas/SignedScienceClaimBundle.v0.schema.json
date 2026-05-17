@@ -16,7 +16,7 @@
   ],
   "additionalProperties": false,
   "properties": {
-    "schema_version": { "const": "SignedScienceClaimBundle.v0" },
+    "schema_version": { "$ref": "common.defs.json#/$defs/schema_version" },
     "signed_bundle_id": { "type": "string", "minLength": 1 },
     "science_claim_bundle": { "$ref": "ScienceClaimBundle.v0.schema.json" },
     "verification_result": { "$ref": "VerificationResult.v0.schema.json" },

@@ -28,7 +28,10 @@ hash-vectors-write:
 hash-vectors-verify:
     cd "{{root}}/python" && python -m pcs_core.hash_vectors --verify
 
-ci: build python-test rust-test ts-test validate-examples hash-vectors-verify
+pcs-schema-diff vendor_dir="schemas":
+    bash "{{root}}/scripts/pcs-schema-diff.sh" "{{root}}/{{vendor_dir}}"
+
+ci: build python-test rust-test ts-test validate-examples hash-vectors-verify pcs-schema-diff
     cd "{{root}}/python" && pcs schema check
     cd "{{root}}/python" && ruff check pcs_core tests
     cd "{{root}}/python" && ruff format --check pcs_core tests

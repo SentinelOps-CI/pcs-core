@@ -7,21 +7,11 @@ from pcs_core.validate import validate_file
 EXAMPLES = Path(__file__).resolve().parents[2] / "examples"
 
 
-@pytest.mark.parametrize(
-    "filename",
-    [
-        "assumption_set.valid.json",
-        "source_span.valid.json",
-        "claim_artifact.valid.json",
-        "runtime_receipt.valid.json",
-        "trace_certificate.valid.json",
-        "evidence_bundle.valid.json",
-        "science_claim_bundle.pending.valid.json",
-        "science_claim_bundle.certified.valid.json",
-        "verification_result.valid.json",
-        "signed_science_claim_bundle.valid.json",
-    ],
-)
-def test_valid_examples(filename: str) -> None:
-    artifact_type = validate_file(EXAMPLES / filename)
+def _valid_example_paths() -> list[Path]:
+    return sorted(p for p in EXAMPLES.rglob("*.json") if ".valid." in p.name)
+
+
+@pytest.mark.parametrize("path", _valid_example_paths(), ids=lambda p: str(p.relative_to(EXAMPLES)))
+def test_valid_examples(path: Path) -> None:
+    artifact_type = validate_file(path)
     assert artifact_type

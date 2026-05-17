@@ -46,6 +46,7 @@ just ci
 ```
 schemas/          JSON Schema (Draft 2020-12)
 examples/         Valid and invalid fixtures
+examples/labtrust/  Cross-repo conformance fixtures (LabTrust → PF → SM)
 docs/             Protocol, trust model, LabTrust profile
 python/           `pcs` CLI and validation library
 rust/             Rust bindings (semantic checks + hash)
@@ -59,7 +60,9 @@ tests/hash_vectors/   Frozen canonical hash test vectors
 2. Validate artifacts with `pcs validate` before publish/import.
 3. Hash with `pcs hash` — see [docs/hash-canonicalization.md](docs/hash-canonicalization.md).
 4. Import schemas from `schemas/`; pin by release tag.
-5. Follow [docs/labtrust-v0.1-profile.md](docs/labtrust-v0.1-profile.md) for the QC-release workflow.
+5. Follow [docs/downstream-schema-sync.md](docs/downstream-schema-sync.md) for vendoring and `just pcs-schema-diff`.
+6. Validate cross-repo fixtures under `examples/labtrust/`.
+7. Follow [docs/labtrust-v0.1-profile.md](docs/labtrust-v0.1-profile.md) for the QC-release workflow.
 
 ## License
 

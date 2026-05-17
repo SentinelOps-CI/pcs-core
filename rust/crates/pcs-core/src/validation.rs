@@ -33,9 +33,6 @@ const ARTIFACT_SCHEMAS: &[(&str, &str)] = &[
 
 pub fn detect_artifact_type(value: &Value) -> Option<&'static str> {
     let obj = value.as_object()?;
-    if obj.get("schema_version").and_then(|v| v.as_str()) == Some("SignedScienceClaimBundle.v0") {
-        return Some("SignedScienceClaimBundle.v0");
-    }
     if obj.contains_key("signed_bundle_id") && obj.contains_key("science_claim_bundle") {
         return Some("SignedScienceClaimBundle.v0");
     }
@@ -242,9 +239,11 @@ mod tests {
 
     #[test]
     fn valid_examples_pass_jsonschema_and_semantics() {
-        for entry in WalkDir::new(examples_dir()).min_depth(1).max_depth(1) {
-            let entry = entry.unwrap();
+        for entry in WalkDir::new(examples_dir()).into_iter().filter_map(Result::ok) {
             let path = entry.path();
+            if !entry.file_type().is_file() {
+                continue;
+            }
             let name = path.file_name().unwrap().to_string_lossy();
             if !name.contains(".valid.") {
                 continue;

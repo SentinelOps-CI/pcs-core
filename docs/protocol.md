@@ -18,6 +18,14 @@ Proof-Carrying Science (PCS) is a cross-repo artifact protocol. **pcs-core** is 
 
 Downstream repos must not define competing versions of these artifacts.
 
+## `schema_version` vs artifact class
+
+`schema_version` identifies the **protocol version**, not the artifact class. For v0.1, all artifacts use `schema_version = "v0"`.
+
+The artifact class is determined by the schema file name (for example `ScienceClaimBundle.v0.schema.json`), the JSON Schema `title`, and the required ID field (`bundle_id`, `receipt_id`, `signed_bundle_id`, and so on). Do not encode the artifact class in `schema_version`.
+
+Downstream repos must vendor schemas only as generated mirrors; see [downstream-schema-sync.md](downstream-schema-sync.md).
+
 ## Producer metadata
 
 Every major artifact includes:

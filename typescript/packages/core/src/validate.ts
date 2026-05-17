@@ -30,9 +30,6 @@ export type ArtifactType =
   | "SignedScienceClaimBundle.v0";
 
 export function detectArtifactType(data: Record<string, unknown>): ArtifactType | null {
-  if (data.schema_version === "SignedScienceClaimBundle.v0") {
-    return "SignedScienceClaimBundle.v0";
-  }
   if ("signed_bundle_id" in data && "science_claim_bundle" in data) {
     return "SignedScienceClaimBundle.v0";
   }

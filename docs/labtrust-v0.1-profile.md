@@ -11,7 +11,9 @@
 | 5 | **Provability Fabric** | Signs and emits `SignedScienceClaimBundle.v0` |
 | 6 | **Scientific Memory** | Imports `SignedScienceClaimBundle.v0` for durable display |
 
-Downstream repos must depend on **pcs-core** for schemas, validation, and hash — not vendored local copies.
+Downstream repos must depend on **pcs-core** for schemas, validation, and hash. Vendored schema mirrors are allowed only as read-only copies; see [downstream-schema-sync.md](downstream-schema-sync.md). All artifacts use `schema_version: "v0"` including `SignedScienceClaimBundle.v0`.
+
+Conformance fixtures: `examples/labtrust/`.
 
 ## Repos in scope
 

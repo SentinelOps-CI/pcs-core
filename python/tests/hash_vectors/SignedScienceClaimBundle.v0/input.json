@@ -1,5 +1,5 @@
 {
-  "schema_version": "SignedScienceClaimBundle.v0",
+  "schema_version": "v0",
   "science_claim_bundle": {
     "assumption_set": {
       "assumption_set_id": "as-labtrust-qc-v0.1",

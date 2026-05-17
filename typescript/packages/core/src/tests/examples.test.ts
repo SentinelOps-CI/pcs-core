@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
@@ -13,19 +13,33 @@ const vectorsDir = join(
   "../../../../../python/tests/hash_vectors",
 );
 
-function load(name: string): Record<string, unknown> {
-  return JSON.parse(readFileSync(join(examplesDir, name), "utf8")) as Record<string, unknown>;
+function load(rel: string): Record<string, unknown> {
+  return JSON.parse(readFileSync(join(examplesDir, rel), "utf8")) as Record<string, unknown>;
+}
+
+function walkJsonFiles(dir: string): string[] {
+  const found: string[] = [];
+  for (const name of readdirSync(dir)) {
+    const path = join(dir, name);
+    if (statSync(path).isDirectory()) {
+      found.push(...walkJsonFiles(path));
+    } else if (name.endsWith(".json")) {
+      found.push(path);
+    }
+  }
+  return found;
 }
 
 function validExampleFiles(): string[] {
-  return readdirSync(examplesDir).filter((name) => name.includes(".valid."));
+  return walkJsonFiles(examplesDir).filter((path) => path.includes(".valid."));
 }
 
 test("valid examples pass schema and semantic validation", () => {
-  for (const file of validExampleFiles()) {
-    const data = load(file);
+  for (const path of validExampleFiles()) {
+    const data = JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
+    const rel = path.slice(examplesDir.length + 1).replace(/\\/g, "/");
     const type = detectArtifactType(data);
-    assert.ok(type, `detect type for ${file}`);
+    assert.ok(type, `detect type for ${rel}`);
     validateArtifact(data, type);
   }
 });
@@ -45,6 +59,24 @@ test("invalid mismatched trace hash", () => {
 test("invalid zero source commit", () => {
   assert.throws(() =>
     validateArtifact(load("invalid_zero_source_commit.release.json"), "RuntimeReceipt.v0"),
+  );
+});
+
+test("labtrust invalid legacy singular receipt", () => {
+  assert.throws(() =>
+    validateArtifact(
+      load("labtrust/invalid_pf_legacy_singular_receipt.json"),
+      "ScienceClaimBundle.v0",
+    ),
+  );
+});
+
+test("labtrust invalid signed schema_version artifact name", () => {
+  assert.throws(() =>
+    validateArtifact(
+      load("labtrust/invalid_signed_schema_version_artifact_name.json"),
+      "SignedScienceClaimBundle.v0",
+    ),
   );
 });
 

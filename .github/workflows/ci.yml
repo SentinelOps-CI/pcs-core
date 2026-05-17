@@ -23,6 +23,8 @@ jobs:
           python -m pcs_core.hash_vectors --verify
           ruff check pcs_core tests
           ruff format --check pcs_core tests
+      - name: Schema drift check (reference)
+        run: bash scripts/pcs-schema-diff.sh schemas
 
   rust:
     runs-on: ubuntu-latest
@@ -66,4 +68,6 @@ jobs:
           pip install -e .
           pcs validate ../examples/science_claim_bundle.certified.valid.json
           pcs validate ../examples/signed_science_claim_bundle.valid.json
+          pcs validate ../examples/labtrust/signed_science_claim_bundle.valid.json
           pcs hash ../examples/science_claim_bundle.certified.valid.json
+          pcs examples check

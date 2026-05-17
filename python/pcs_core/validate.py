@@ -47,8 +47,6 @@ class ValidationError(Exception):
 
 
 def detect_artifact_type(data: dict[str, Any]) -> str | None:
-    if data.get("schema_version") == "SignedScienceClaimBundle.v0":
-        return "SignedScienceClaimBundle.v0"
     if "signed_bundle_id" in data and "science_claim_bundle" in data:
         return "SignedScienceClaimBundle.v0"
     if "bundle_id" in data and "claim_artifact" in data:
@@ -303,6 +301,10 @@ def _is_valid_example(path: Path) -> bool:
     return path.suffix == ".json" and ".valid." in path.name
 
 
+def iter_example_json_files(examples_dir: Path) -> list[Path]:
+    return sorted(p for p in examples_dir.rglob("*.json") if p.is_file())
+
+
 def check_all_schemas() -> None:
     for artifact_type, schema_name in ARTIFACT_SCHEMAS.items():
         schema_path = schemas_dir() / schema_name
@@ -313,7 +315,7 @@ def check_all_schemas() -> None:
 
 def check_valid_examples(examples_dir: Path | None = None) -> None:
     examples_dir = examples_dir or default_examples_dir()
-    for path in sorted(examples_dir.iterdir()):
+    for path in iter_example_json_files(examples_dir):
         if _is_valid_example(path):
             validate_file(path)
 
@@ -325,6 +327,8 @@ def check_invalid_examples(examples_dir: Path | None = None) -> None:
         "invalid_missing_assumption_set.json": "ScienceClaimBundle.v0",
         "invalid_mismatched_trace_hash.json": "ScienceClaimBundle.v0",
         "invalid_zero_source_commit.release.json": "RuntimeReceipt.v0",
+        "labtrust/invalid_pf_legacy_singular_receipt.json": "ScienceClaimBundle.v0",
+        "labtrust/invalid_signed_schema_version_artifact_name.json": "SignedScienceClaimBundle.v0",
     }
     for filename, artifact_type in invalid_cases.items():
         path = examples_dir / filename
