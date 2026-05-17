@@ -38,7 +38,7 @@ cd python && pytest -q tests/test_release_chain.py tests/test_release_fixtures.p
 # or: just test-release-chain
 ```
 
-`validate-release-chain` enforces the 20 RC checks in [docs/labtrust-rc-canonical.md](../../docs/labtrust-rc-canonical.md) (manifest digests, provenance commits, certificate/trace-hash alignment, bundle hashes, Scientific Memory strict PCS import flags).
+`validate-release-chain` enforces the 26 RC checks in [docs/labtrust-rc-canonical.md](../../docs/labtrust-rc-canonical.md).
 
 Invalid mixed-run example: [`../labtrust-release-invalid/mixed_certificate_id/`](../labtrust-release-invalid/mixed_certificate_id/).
 

@@ -630,6 +630,22 @@ def _validate_trace_hash_alignment(base: Path, errors: list[str]) -> None:
                     errors.append(
                         f"{bundle_name} runtime_receipts[{i}].trace_hash != trace trace_hash",
                     )
+    vr = _load_json(base / "verification_result.json")
+    if vr and trace_hash:
+        verified = vr.get("verified_input")
+        if isinstance(verified, dict) and verified.get("trace_hash") != trace_hash:
+            errors.append(
+                "verification_result.verified_input.trace_hash != canonical trace trace_hash",
+            )
+    signed = _load_json(base / "signed_science_claim_bundle.json")
+    if signed and trace_hash:
+        embedded_vr = signed.get("verification_result")
+        if isinstance(embedded_vr, dict):
+            verified = embedded_vr.get("verified_input")
+            if isinstance(verified, dict) and verified.get("trace_hash") != trace_hash:
+                errors.append(
+                    "signed.verification_result.verified_input.trace_hash != canonical trace trace_hash",
+                )
 
 
 def validate_release_manifest(manifest_path: Path) -> list[str]:

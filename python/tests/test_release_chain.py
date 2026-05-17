@@ -40,6 +40,11 @@ def _codes(path: Path) -> set[str]:
     return {issue.code for issue in validate_release_chain(path)}
 
 
+def test_validate_release_chain_reports_manifest_missing(tmp_path: Path) -> None:
+    codes = _codes(tmp_path)
+    assert "manifest_missing" in codes
+
+
 def test_resolve_release_chain_directory_from_python_relative_path() -> None:
     assert resolve_release_chain_directory(Path("examples/labtrust-release")) == release_dir()
 

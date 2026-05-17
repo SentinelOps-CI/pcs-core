@@ -115,49 +115,49 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
 
     manifest_path = base / MANIFEST_NAME
     if not manifest_path.is_file():
-        issues.append(_issue("missing_manifest", f"{MANIFEST_NAME} not found in {base}"))
+        issues.append(_issue("manifest_missing", f"{MANIFEST_NAME} not found in {base}"))
         return issues
 
     try:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
-        issues.append(_issue("invalid_manifest", f"manifest JSON parse error: {exc}"))
+        issues.append(_issue("schema_validation_failed", f"manifest JSON parse error: {exc}"))
         return issues
 
     if not isinstance(manifest, dict):
-        issues.append(_issue("invalid_manifest", "manifest root must be a JSON object"))
+        issues.append(_issue("schema_validation_failed", "manifest root must be a JSON object"))
         return issues
 
     commits = {key: manifest.get(key) for key in COMMIT_KEYS}
     for key in COMMIT_KEYS:
         commit = commits[key]
         if not isinstance(commit, str) or len(commit) != 40:
-            issues.append(_issue("manifest_commit_mismatch", f"manifest missing or invalid {key}"))
-        elif is_placeholder_commit(commit):
+            issues.append(_issue("schema_validation_failed", f"manifest missing or invalid {key}"))
+        elif is_placeholder_commit(commit) or commit == "0" * 40:
             issues.append(
                 _issue(
-                    "manifest_commit_mismatch",
-                    f"manifest {key} uses placeholder provenance: {commit}",
+                    "placeholder_commit_detected",
+                    f"manifest {key} uses forbidden provenance: {commit}",
                 ),
             )
 
     artifacts = manifest.get("artifacts")
     if not isinstance(artifacts, dict):
-        issues.append(_issue("invalid_manifest", "manifest artifacts must be an object"))
+        issues.append(_issue("schema_validation_failed", "manifest artifacts must be an object"))
         return issues
 
     if set(artifacts) != set(MANIFEST_ARTIFACTS):
         missing = sorted(set(MANIFEST_ARTIFACTS) - set(artifacts))
         extra = sorted(set(artifacts) - set(MANIFEST_ARTIFACTS))
         if missing:
-            issues.append(_issue("invalid_manifest", f"manifest artifacts missing keys: {missing}"))
+            issues.append(_issue("schema_validation_failed", f"manifest artifacts missing keys: {missing}"))
         if extra:
-            issues.append(_issue("invalid_manifest", f"manifest artifacts unexpected keys: {extra}"))
+            issues.append(_issue("schema_validation_failed", f"manifest artifacts unexpected keys: {extra}"))
 
     for name in MANIFEST_ARTIFACTS:
         path = base / name
         if not path.is_file():
-            issues.append(_issue("missing_artifact", f"missing artifact file {name}"))
+            issues.append(_issue("artifact_missing", f"missing artifact file {name}"))
             continue
         expected = artifacts.get(name)
         actual = file_digest(path.read_bytes())
@@ -176,14 +176,14 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
             continue
         doc = _load_json(path)
         if doc is None:
-            issues.append(_issue("invalid_artifact", f"{name}: invalid JSON"))
+            issues.append(_issue("schema_validation_failed", f"{name}: invalid JSON"))
             continue
         _scan_forbidden_values(doc, label=name, errors=scan_errors)
     for msg in scan_errors:
         if "placeholder" in msg or "zero" in msg or "local_dev" in msg:
             issues.append(_issue("placeholder_commit_detected", msg))
         else:
-            issues.append(_issue("invalid_artifact", msg))
+            issues.append(_issue("schema_validation_failed", msg))
 
     trace_errors: list[str] = []
     _validate_trace_hash_alignment(base, trace_errors)
@@ -197,7 +197,7 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
         try:
             validate_file(path)
         except ValidationError as exc:
-            issues.append(_issue("invalid_artifact", f"{name}: pcs validate failed: {exc}"))
+            issues.append(_issue("schema_validation_failed", f"{name}: pcs validate failed: {exc}"))
 
     lt_commit = commits.get("labtrust_gym_commit")
     ce_commit = commits.get("certifyedge_commit")
@@ -224,7 +224,6 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
         for label, doc in (
             ("science_claim_bundle.pending.json", pending),
             ("science_claim_bundle.certified.json", certified),
-            ("signed_science_claim_bundle.json", signed),
         ):
             if not isinstance(doc, dict):
                 continue
@@ -237,6 +236,19 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
                             f"!= manifest.labtrust_gym_commit {lt_commit}",
                         ),
                     )
+        if signed:
+            signed_scb = signed.get("science_claim_bundle")
+            if isinstance(signed_scb, dict):
+                for repo, commit in _iter_provenance_pairs(signed_scb):
+                    if _repo_matches(repo, LABTRUST_SOURCE_REPO) and commit != lt_commit:
+                        issues.append(
+                            _issue(
+                                "labtrust_commit_mismatch",
+                                "signed_science_claim_bundle.science_claim_bundle: "
+                                f"LabTrust source_commit {commit} "
+                                f"!= manifest.labtrust_gym_commit {lt_commit}",
+                            ),
+                        )
 
     if isinstance(ce_commit, str):
         if trace_cert and trace_cert.get("source_commit") != ce_commit:
@@ -384,7 +396,7 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
     if verification and verification.get("status") != "ProofChecked":
         issues.append(
             _issue(
-                "invalid_artifact",
+                "schema_validation_failed",
                 "verification_result.status must be ProofChecked",
             ),
         )
@@ -393,7 +405,7 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
         if isinstance(embedded_vr, dict) and embedded_vr.get("status") != "ProofChecked":
             issues.append(
                 _issue(
-                    "invalid_artifact",
+                    "schema_validation_failed",
                     "signed.verification_result.status must be ProofChecked",
                 ),
             )
@@ -401,7 +413,7 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
     if not verification or not verification.get("verified_input"):
         issues.append(
             _issue(
-                "invalid_artifact",
+                "schema_validation_failed",
                 "verification_result.verified_input is required for release chain fixtures",
             ),
         )
@@ -426,25 +438,6 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
                         f"{certified_hash}",
                     ),
                 )
-            verified_trace_hash = verified.get("trace_hash")
-            receipt_hash = receipt.get("trace_hash") if receipt else None
-            cert_hash = trace_cert.get("trace_hash") if trace_cert else None
-            if verified_trace_hash and receipt_hash and verified_trace_hash != receipt_hash:
-                issues.append(
-                    _issue(
-                        "trace_hash_mismatch",
-                        "verification_result.verified_input.trace_hash "
-                        f"{verified_trace_hash} != runtime_receipt.trace_hash {receipt_hash}",
-                    ),
-                )
-            if verified_trace_hash and cert_hash and verified_trace_hash != cert_hash:
-                issues.append(
-                    _issue(
-                        "trace_hash_mismatch",
-                        "verification_result.verified_input.trace_hash "
-                        f"{verified_trace_hash} != trace_certificate.trace_hash {cert_hash}",
-                    ),
-                )
     if signed and certified_hash:
         signed_hash = signed.get("signed_input_bundle_hash")
         if not signed_hash:
@@ -466,7 +459,7 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
     if trace_cert and trace_cert.get("status") != "CertificateChecked":
         issues.append(
             _issue(
-                "invalid_artifact",
+                "schema_validation_failed",
                 "trace_certificate.status must be CertificateChecked",
             ),
         )
