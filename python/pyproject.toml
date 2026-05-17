@@ -1,15 +1,17 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "pcs-core"
 version = "0.1.0"
 description = "Proof-Carrying Science canonical artifact validation"
+readme = "../README.md"
+license = { text = "Apache-2.0" }
 requires-python = ">=3.11"
 dependencies = [
   "jsonschema>=4.23.0",
-  "referencing>=0.35.0",
+  "referencing>=0.35.0,<0.37.0",
 ]
 
 [project.optional-dependencies]
@@ -21,9 +23,24 @@ dev = [
 [project.scripts]
 pcs = "pcs_core.cli:main"
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["pcs_core*"]
+[project.urls]
+Homepage = "https://github.com/SentinelOps-CI/pcs-core"
+Repository = "https://github.com/SentinelOps-CI/pcs-core"
+
+[tool.hatch.build.targets.wheel]
+packages = ["pcs_core"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"../schemas" = "pcs_core/schemas"
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "/schemas",
+  "/python/pcs_core",
+  "/python/tests",
+  "/examples",
+  "/docs",
+]
 
 [tool.ruff]
 line-length = 100

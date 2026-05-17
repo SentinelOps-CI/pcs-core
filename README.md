@@ -1,22 +1,34 @@
 # pcs-core
 
-**Proof-Carrying Science (PCS)** — canonical protocol repository for artifact schemas, status enums, validation, hash canonicalization, and language bindings.
+**Proof-Carrying Science (PCS)** — canonical protocol repository for v0.1 artifact schemas, validation, and hash canonicalization.
 
-pcs-core is boring, stable, and dependency-like. LabTrust-Gym, CertifyEdge, provability-fabric, and scientific-memory consume it; they must not fork artifact shapes.
+This repo is the single source of truth for LabTrust-Gym, CertifyEdge, Provability Fabric, and Scientific Memory. Downstream repos must not fork artifact shapes.
 
 ## v0.1 artifacts
 
-AssumptionSet, SourceSpan, ClaimArtifact, RuntimeReceipt, TraceCertificate, EvidenceBundle, ScienceClaimBundle, VerificationResult — see [`schemas/`](schemas/) and [`docs/protocol.md`](docs/protocol.md).
+| Artifact | Schema |
+|----------|--------|
+| AssumptionSet.v0 | `schemas/AssumptionSet.v0.schema.json` |
+| SourceSpan.v0 | `schemas/SourceSpan.v0.schema.json` |
+| ClaimArtifact.v0 | `schemas/ClaimArtifact.v0.schema.json` |
+| RuntimeReceipt.v0 | `schemas/RuntimeReceipt.v0.schema.json` |
+| TraceCertificate.v0 | `schemas/TraceCertificate.v0.schema.json` |
+| EvidenceBundle.v0 | `schemas/EvidenceBundle.v0.schema.json` |
+| ScienceClaimBundle.v0 | `schemas/ScienceClaimBundle.v0.schema.json` |
+| VerificationResult.v0 | `schemas/VerificationResult.v0.schema.json` |
+| SignedScienceClaimBundle.v0 | `schemas/SignedScienceClaimBundle.v0.schema.json` |
 
 ## Quick start
 
 ```bash
-# Python CLI
 cd python && pip install -e ".[dev]"
-pcs validate ../examples/science_claim_bundle.valid.json
-pcs hash ../examples/science_claim_bundle.valid.json
 
-# All checks
+pcs validate examples/science_claim_bundle.certified.valid.json
+pcs validate examples/signed_science_claim_bundle.valid.json
+pcs hash examples/science_claim_bundle.certified.valid.json
+pcs examples check
+pcs schema check
+
 just ci
 ```
 
@@ -24,31 +36,30 @@ just ci
 
 | Command | Description |
 |---------|-------------|
-| `pcs validate <file>` | Schema + semantic validation |
-| `pcs hash <file>` | Canonical SHA-256 digest |
-| `pcs status <file>` | Print artifact status field(s) |
-| `pcs schema check` | Validate JSON schemas |
-| `pcs examples check` | Validate all `examples/*.valid.json` |
+| `pcs validate <file>` | JSON Schema + semantic validation |
+| `pcs hash <file>` | Canonical `sha256:` digest |
+| `pcs schema check` | Validate all JSON schemas |
+| `pcs examples check` | Validate valid/invalid fixtures |
 
 ## Layout
 
 ```
-schemas/     JSON Schema (Draft 2020-12)
-examples/    Valid and invalid fixtures
-docs/        Protocol, trust model, lifecycle
-python/      Python package + `pcs` CLI
-rust/        Rust crate
-typescript/  TypeScript package
-lean/        Minimal Lean structures
+schemas/          JSON Schema (Draft 2020-12)
+examples/         Valid and invalid fixtures
+docs/             Protocol, trust model, LabTrust profile
+python/           `pcs` CLI and validation library
+rust/             Rust bindings (semantic checks + hash)
+typescript/       `@pcs/core` package
+tests/hash_vectors/   Frozen canonical hash test vectors
 ```
 
 ## Downstream integration
 
-1. **Validate**: `pcs validate` or import `pcs_core` / `pcs-core` / `@pcs/core`.
-2. **Hash**: use `pcs hash` algorithm ([docs/versioning.md](docs/versioning.md)).
-3. **Schemas**: vendor or submodule `schemas/`; pin releases.
-4. **Status**: import canonical enum only.
-5. **New types**: add `*.v1` schemas; do not break v0.
+1. Add **pcs-core** as a git submodule or package dependency.
+2. Validate artifacts with `pcs validate` before publish/import.
+3. Hash with `pcs hash` — see [docs/hash-canonicalization.md](docs/hash-canonicalization.md).
+4. Import schemas from `schemas/`; pin by release tag.
+5. Follow [docs/labtrust-v0.1-profile.md](docs/labtrust-v0.1-profile.md) for the QC-release workflow.
 
 ## License
 

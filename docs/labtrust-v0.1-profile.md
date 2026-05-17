@@ -1,12 +1,23 @@
 # LabTrust v0.1 Profile
 
-This profile describes how active v0.1 repos compose the QC-release demonstration.
+## Dependency contract (cross-repo)
 
-## Repos
+| Step | Repo | Output |
+|------|------|--------|
+| 1 | **LabTrust-Gym** | Pending `ScienceClaimBundle.v0` (`certificates: []`) |
+| 2 | **CertifyEdge** | `TraceCertificate.v0` |
+| 3 | **LabTrust-Gym** | Certified `ScienceClaimBundle.v0` (certificate attached) |
+| 4 | **Provability Fabric** | Verifies certified bundle; emits `VerificationResult.v0` |
+| 5 | **Provability Fabric** | Signs and emits `SignedScienceClaimBundle.v0` |
+| 6 | **Scientific Memory** | Imports `SignedScienceClaimBundle.v0` for durable display |
+
+Downstream repos must depend on **pcs-core** for schemas, validation, and hash — not vendored local copies.
+
+## Repos in scope
 
 | Repo | Role |
 |------|------|
-| [pcs-core](https://github.com/SentinelOps-CI/pcs-core) | Schemas, validation, hash |
+| [pcs-core](https://github.com/SentinelOps-CI/pcs-core) | Canonical schemas, validation, hash |
 | [LabTrust-Gym](https://github.com/fraware/LabTrust-Gym) | Simulation, receipts, bundle export |
 | [CertifyEdge](https://github.com/fraware/CertifyEdge) | `TraceCertificate.v0` |
 | [provability-fabric](https://github.com/SentinelOps-CI/provability-fabric) | Verify and sign |
@@ -43,14 +54,15 @@ just pcs-import-bundle BUNDLE=signed_science_claim_bundle.json
 just pcs-render-claim CLAIM_ID=<claim_id>
 ```
 
-## pcs-core obligations for downstream
+## pcs-core validation highlights
 
-1. Validate every emitted artifact with `pcs validate` or language bindings.
-2. Use canonical status strings only.
-3. Compute hashes with `pcs hash` rules.
-4. Never redefine artifact types locally.
-5. Label UI with guarantee-type separation (see [trust-model.md](trust-model.md)).
+- Unknown `status` values are rejected.
+- `ScienceClaimBundle` requires `assumption_set` and non-empty `runtime_receipts`.
+- Certified bundles (`CertificateChecked`, etc.) require at least one `TraceCertificate`.
+- `TraceCertificate.status` must be in the certificate enum.
+- Receipt and certificate `trace_hash` values must align.
+- Zero `source_commit` is rejected unless `local_dev: true` on that artifact.
 
 ## Simulation disclaimer
 
-All claims in this profile are about **simulation artifacts**. Assumption sets must include domain assumptions that exclude clinical production guarantees.
+All claims in this profile are about **simulation artifacts**, not clinical production systems.

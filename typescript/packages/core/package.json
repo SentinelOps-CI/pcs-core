@@ -15,6 +15,10 @@
     "test": "npm run build && node --test dist/tests/*.test.js",
     "lint": "tsc -p tsconfig.json --noEmit"
   },
+  "dependencies": {
+    "ajv": "^8.17.0",
+    "ajv-formats": "^3.0.1"
+  },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "typescript": "^5.6.0"

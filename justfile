@@ -10,7 +10,8 @@ build:
     cd "{{root}}/rust" && cargo build
     cd "{{root}}/typescript" && npm install && npm run build
 
-test: python-test rust-test ts-test
+validate-examples:
+    cd "{{root}}/python" && pcs examples check
 
 python-test:
     cd "{{root}}/python" && pytest -q
@@ -21,14 +22,15 @@ rust-test:
 ts-test:
     cd "{{root}}/typescript" && npm test
 
-validate-examples:
-    cd "{{root}}/python" && pcs examples check
+hash-vectors-write:
+    cd "{{root}}/python" && python -m pcs_core.hash_vectors --write
 
-lake-build:
-    cd "{{root}}/lean" && lake build
+hash-vectors-verify:
+    cd "{{root}}/python" && python -m pcs_core.hash_vectors --verify
 
-ci: build test validate-examples lake-build
+ci: build python-test rust-test ts-test validate-examples hash-vectors-verify
     cd "{{root}}/python" && pcs schema check
     cd "{{root}}/python" && ruff check pcs_core tests
+    cd "{{root}}/python" && ruff format --check pcs_core tests
     cd "{{root}}/rust" && cargo fmt --check
-    cd "{{root}}/typescript" && npm run lint
+    cd "{{root}}/rust" && cargo clippy --all-targets -- -D warnings

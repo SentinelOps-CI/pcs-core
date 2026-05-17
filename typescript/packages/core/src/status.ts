@@ -1,4 +1,4 @@
-export const ARTIFACT_STATUSES = [
+export const ARTIFACT_STATUSES = new Set([
   "Draft",
   "Extracted",
   "HumanReviewed",
@@ -13,10 +13,15 @@ export const ARTIFACT_STATUSES = [
   "EmpiricalOnly",
   "Deprecated",
   "Stale",
-] as const;
+]);
 
-export type ArtifactStatus = (typeof ARTIFACT_STATUSES)[number];
+export const TRACE_CERTIFICATE_STATUSES = new Set([
+  "CertificatePending",
+  "CertificateChecked",
+  "Rejected",
+  "Stale",
+]);
 
-export function isValidStatus(value: string): value is ArtifactStatus {
-  return (ARTIFACT_STATUSES as readonly string[]).includes(value);
+export function isValidStatus(value: string): boolean {
+  return ARTIFACT_STATUSES.has(value);
 }

@@ -1,38 +1,26 @@
-use serde::{Deserialize, Serialize};
+pub const ARTIFACT_STATUSES: &[&str] = &[
+    "Draft",
+    "Extracted",
+    "HumanReviewed",
+    "Formalized",
+    "ProofPending",
+    "ProofChecked",
+    "CertificatePending",
+    "CertificateChecked",
+    "RuntimeObserved",
+    "RuntimeChecked",
+    "Rejected",
+    "EmpiricalOnly",
+    "Deprecated",
+    "Stale",
+];
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "PascalCase")]
-pub enum ArtifactStatus {
-    Draft,
-    Extracted,
-    HumanReviewed,
-    Formalized,
-    ProofPending,
-    ProofChecked,
-    CertificatePending,
-    CertificateChecked,
-    RuntimeObserved,
-    RuntimeChecked,
-    Rejected,
-    EmpiricalOnly,
-    Deprecated,
-    Stale,
-}
+pub const TRACE_CERTIFICATE_STATUSES: &[&str] = &[
+    "CertificatePending",
+    "CertificateChecked",
+    "Rejected",
+    "Stale",
+];
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "PascalCase")]
-pub enum TraceCertificateStatus {
-    CertificatePending,
-    CertificateChecked,
-    Rejected,
-    Stale,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum CheckStatus {
-    Passed,
-    Failed,
-    Skipped,
-    Warning,
-}
+pub const CERTIFIED_CLAIM_STATUSES: &[&str] =
+    &["CertificateChecked", "ProofChecked", "RuntimeChecked"];

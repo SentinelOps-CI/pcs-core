@@ -1,12 +1,26 @@
 """Proof-Carrying Science (PCS) core validation library."""
 
-from pcs_core.hash import canonical_hash
-from pcs_core.status import ArtifactStatus, is_valid_status
-from pcs_core.validate import validate_artifact, validate_file
+from pcs_core.hash import canonical_hash, canonical_json_bytes, canonicalize_for_hash
+from pcs_core.status import (
+    ARTIFACT_STATUSES,
+    TRACE_CERTIFICATE_STATUSES,
+    ArtifactStatus,
+    is_valid_status,
+)
+from pcs_core.validate import (
+    detect_artifact_type,
+    validate_artifact,
+    validate_file,
+)
 
 __all__ = [
+    "ARTIFACT_STATUSES",
+    "TRACE_CERTIFICATE_STATUSES",
     "ArtifactStatus",
     "canonical_hash",
+    "canonical_json_bytes",
+    "canonicalize_for_hash",
+    "detect_artifact_type",
     "is_valid_status",
     "validate_artifact",
     "validate_file",

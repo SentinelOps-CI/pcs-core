@@ -7,13 +7,15 @@ import json
 import sys
 from pathlib import Path
 
-from pcs_core.artifact import detect_artifact_type, repo_root
 from pcs_core.hash import canonical_hash
+from pcs_core.hash_vectors import verify_vectors, write_vectors
+from pcs_core.paths import examples_dir
 from pcs_core.validate import (
     ValidationError,
     check_all_schemas,
     check_invalid_examples,
     check_valid_examples,
+    detect_artifact_type,
     validate_file,
 )
 
@@ -46,7 +48,7 @@ def cmd_hash(path: Path) -> int:
 
 def _collect_statuses(data: dict, prefix: str = "") -> list[tuple[str, str]]:
     found: list[tuple[str, str]] = []
-    if "status" in data and isinstance(data["status"], str):
+    if "status" in data and isinstance(data["status"], str) and "check_id" not in data:
         key = f"{prefix}status" if prefix else "status"
         found.append((key, data["status"]))
     for key, value in data.items():
@@ -83,10 +85,9 @@ def cmd_schema_check() -> int:
 
 
 def cmd_examples_check() -> int:
-    examples_dir = repo_root() / "examples"
     try:
-        check_valid_examples(examples_dir)
-        check_invalid_examples(examples_dir)
+        check_valid_examples(examples_dir())
+        check_invalid_examples(examples_dir())
         print("OK all examples")
         return 0
     except ValidationError as exc:
@@ -94,6 +95,16 @@ def cmd_examples_check() -> int:
         for err in exc.errors:
             print(f"  - {err}", file=sys.stderr)
         return 1
+
+
+def cmd_hash_vectors_verify() -> int:
+    drift = verify_vectors()
+    if drift:
+        for err in drift:
+            print(f"FAIL {err}", file=sys.stderr)
+        return 1
+    print("OK hash vectors")
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -117,6 +128,12 @@ def main(argv: list[str] | None = None) -> int:
     examples_sub = examples_parser.add_subparsers(dest="examples_cmd", required=True)
     examples_sub.add_parser("check", help="Validate example fixtures")
 
+    hash_parser = sub.add_parser("hash-vectors", help="Canonical hash test vectors")
+    hash_sub = hash_parser.add_subparsers(dest="hash_cmd", required=True)
+    hash_sub.add_parser("verify", help="Verify frozen hash vectors")
+    hash_write = hash_sub.add_parser("write", help="Regenerate frozen hash vectors")
+    hash_write.add_argument("--force", action="store_true")
+
     args = parser.parse_args(argv)
 
     if args.command == "validate":
@@ -129,6 +146,12 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_schema_check()
     if args.command == "examples" and args.examples_cmd == "check":
         return cmd_examples_check()
+    if args.command == "hash-vectors" and args.hash_cmd == "verify":
+        return cmd_hash_vectors_verify()
+    if args.command == "hash-vectors" and args.hash_cmd == "write":
+        write_vectors(force=args.force)
+        print("Wrote hash vectors")
+        return 0
 
     parser.print_help()
     return 2

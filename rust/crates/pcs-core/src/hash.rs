@@ -30,9 +30,16 @@ pub fn canonicalize_for_hash(data: &serde_json::Value) -> serde_json::Value {
     sort_value(Value::Object(obj))
 }
 
-pub fn canonical_hash(data: &serde_json::Value) -> String {
+pub fn canonical_json_string(data: &serde_json::Value) -> String {
     let canonical = canonicalize_for_hash(data);
-    let bytes = serde_json::to_vec(&canonical).expect("serialize canonical json");
-    let digest = Sha256::digest(bytes);
+    serde_json::to_string(&canonical).expect("serialize canonical json")
+}
+
+pub fn canonical_json_bytes(data: &serde_json::Value) -> Vec<u8> {
+    canonical_json_string(data).into_bytes()
+}
+
+pub fn canonical_hash(data: &serde_json::Value) -> String {
+    let digest = Sha256::digest(canonical_json_bytes(data));
     format!("sha256:{:x}", digest)
 }

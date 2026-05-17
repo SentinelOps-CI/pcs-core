@@ -2,6 +2,11 @@ import { createHash } from "node:crypto";
 
 const SIGNATURE_FIELD = "signature_or_digest";
 
+export function isZeroSourceCommit(commit: string): boolean {
+  const trimmed = commit.trim();
+  return trimmed.length > 0 && /^0+$/.test(trimmed);
+}
+
 function sortValue(value: unknown): unknown {
   if (Array.isArray(value)) {
     return value.map(sortValue);
@@ -24,9 +29,12 @@ export function canonicalizeForHash(data: Record<string, unknown>): Record<strin
   return sortValue(payload) as Record<string, unknown>;
 }
 
-export function canonicalHash(data: Record<string, unknown>): string {
+export function canonicalJsonBytes(data: Record<string, unknown>): Uint8Array {
   const canonical = canonicalizeForHash(data);
-  const bytes = Buffer.from(JSON.stringify(canonical), "utf8");
-  const digest = createHash("sha256").update(bytes).digest("hex");
+  return Buffer.from(JSON.stringify(canonical), "utf8");
+}
+
+export function canonicalHash(data: Record<string, unknown>): string {
+  const digest = createHash("sha256").update(canonicalJsonBytes(data)).digest("hex");
   return `sha256:${digest}`;
 }

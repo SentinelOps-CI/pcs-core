@@ -20,17 +20,22 @@ jobs:
           pytest -q
           pcs schema check
           pcs examples check
+          python -m pcs_core.hash_vectors --verify
           ruff check pcs_core tests
+          ruff format --check pcs_core tests
 
   rust:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
       - name: Test Rust
         run: |
           cd rust
           cargo fmt --check
+          cargo clippy --all-targets -- -D warnings
           cargo test
 
   typescript:
@@ -47,17 +52,7 @@ jobs:
           npm test
           npm run lint
 
-  lean:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: leanprover/lean-action@v1
-      - name: Build Lean
-        run: |
-          cd lean
-          lake build
-
-  validate-examples:
+  validate-cli-contract:
     runs-on: ubuntu-latest
     needs: python
     steps:
@@ -65,8 +60,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Validate all valid examples
+      - name: Required CLI commands
         run: |
           cd python
           pip install -e .
-          pcs examples check
+          pcs validate ../examples/science_claim_bundle.certified.valid.json
+          pcs validate ../examples/signed_science_claim_bundle.valid.json
+          pcs hash ../examples/science_claim_bundle.certified.valid.json

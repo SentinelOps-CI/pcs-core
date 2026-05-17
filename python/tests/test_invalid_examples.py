@@ -23,3 +23,8 @@ def test_missing_assumption_set_rejected() -> None:
 def test_mismatched_trace_hash_rejected() -> None:
     with pytest.raises(ValidationError):
         validate_file(EXAMPLES / "invalid_mismatched_trace_hash.json")
+
+
+def test_zero_source_commit_rejected() -> None:
+    with pytest.raises(ValidationError):
+        validate_file(EXAMPLES / "invalid_zero_source_commit.release.json")

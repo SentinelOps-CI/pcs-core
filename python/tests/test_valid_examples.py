@@ -16,8 +16,10 @@ EXAMPLES = Path(__file__).resolve().parents[2] / "examples"
         "runtime_receipt.valid.json",
         "trace_certificate.valid.json",
         "evidence_bundle.valid.json",
-        "science_claim_bundle.valid.json",
+        "science_claim_bundle.pending.valid.json",
+        "science_claim_bundle.certified.valid.json",
         "verification_result.valid.json",
+        "signed_science_claim_bundle.valid.json",
     ],
 )
 def test_valid_examples(filename: str) -> None:

@@ -1,11 +1,9 @@
-pub mod artifact;
-pub mod claim;
-pub mod evidence_bundle;
 pub mod hash;
-pub mod runtime_receipt;
+pub mod schema;
 pub mod status;
-pub mod trace_certificate;
 pub mod validation;
 
-pub use hash::canonical_hash;
-pub use validation::{detect_artifact_type, validate_semantics, ValidationError};
+pub use hash::{canonical_hash, canonical_json_bytes, canonical_json_string};
+pub use validation::{
+    detect_artifact_type, validate_artifact, validate_semantics, ValidationError,
+};

@@ -14,6 +14,7 @@ Proof-Carrying Science (PCS) is a cross-repo artifact protocol. **pcs-core** is 
 | EvidenceBundle.v0 | `schemas/EvidenceBundle.v0.schema.json` |
 | ScienceClaimBundle.v0 | `schemas/ScienceClaimBundle.v0.schema.json` |
 | VerificationResult.v0 | `schemas/VerificationResult.v0.schema.json` |
+| SignedScienceClaimBundle.v0 | `schemas/SignedScienceClaimBundle.v0.schema.json` |
 
 Downstream repos must not define competing versions of these artifacts.
 
@@ -53,7 +54,7 @@ Schema-only validation uses JSON Schema Draft 2020-12. Semantic checks (trace ha
 pcs hash path/to/artifact.json
 ```
 
-See [versioning.md](versioning.md) for the canonicalization algorithm.
+See [hash-canonicalization.md](hash-canonicalization.md) for the canonicalization algorithm.
 
 ## Importing schemas
 
@@ -67,5 +68,5 @@ See [versioning.md](versioning.md) for the canonicalization algorithm.
 1. Add `NewArtifact.v1.schema.json` under `schemas/` (never mutate v0 schemas in place).
 2. Add valid/invalid examples.
 3. Extend bindings in Python, Rust, TypeScript, and Lean.
-4. Document in `versioning.md` and release notes.
+4. Document in `hash-canonicalization.md` and release notes.
 5. v0.1 consumers continue using `*.v0` unchanged.
