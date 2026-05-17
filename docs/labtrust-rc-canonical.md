@@ -1,8 +1,8 @@
 # PCS v0.1 LabTrust release-candidate (canonical)
 
-**Authority:** `examples/labtrust-release/` in [pcs-core](https://github.com/SentinelOps-CI/pcs-core) is the single canonical PCS v0.1 release-candidate fixture set.
+**Authority:** `examples/labtrust-release/` in [pcs-core](https://github.com/SentinelOps-CI/pcs-core) is the canonical PCS v0.1 RC fixture set.
 
-Downstream repos (LabTrust-Gym, CertifyEdge, Provability Fabric, Scientific Memory) must **copy** these files into their local test fixture paths. Do **not** regenerate partial fixtures independently. The only supported refresh is a full cross-repo clean-checkout chain that promotes atomically into `examples/labtrust-release/`.
+Downstream repos must **copy** these files for local release fixture tests. Do not regenerate partial fixtures independently. Refresh only via a full cross-repo clean-checkout chain that promotes atomically into `examples/labtrust-release/`.
 
 ## Canonical pin (pcs-v0.1.0-rc1)
 
@@ -16,44 +16,40 @@ Downstream repos (LabTrust-Gym, CertifyEdge, Provability Fabric, Scientific Memo
 | `provability_fabric_commit` | `0f659b90c80c46a6bbfd51b0d37ea723b032fb9d` |
 | `scientific_memory_commit` | `d49cbf78837d42883a3c73078f098669e69f5e3d` |
 
-Python constants: `pcs_core.release_canonical` (used by pcs-core tests).
+Python constants: `pcs_core.release_canonical`.
 
 ## Verification
 
-From repo root (after `pip install -e python/.[dev]`):
-
 ```bash
 pcs validate-release-chain examples/labtrust-release/
-```
-
-Or:
-
-```bash
 just validate-labtrust-release-fixtures
 ```
 
-CI runs this on every push to `main`.
+CI runs `pcs validate-release-chain` on every push to `main`.
 
-## `validate-release-chain` checks
+## `pcs validate-release-chain` checks
 
 1. `RELEASE_FIXTURE_MANIFEST.json` exists.
-2. All listed artifacts exist.
-3. All manifest hashes match files (`manifest_hash_mismatch`).
+2. Every manifest-listed artifact file exists.
+3. Every manifest artifact hash matches the file (`manifest_hash_mismatch`).
 4. No placeholder commits or `local_dev` (`placeholder_commit_detected`).
-5. LabTrust `source_commit` values match `manifest.labtrust_gym_commit` (`manifest_labtrust_commit_mismatch`).
-6. CertifyEdge `source_commit` values match `manifest.certifyedge_commit` (`manifest_certifyedge_commit_mismatch`).
-7. PF `source_commit` values match `manifest.provability_fabric_commit` (`manifest_pf_commit_mismatch`).
-8. Scientific Memory report commits match `manifest.scientific_memory_commit` (`manifest_scientific_memory_commit_mismatch`).
-9. `certificate_id` alignment across trace certificate, certified bundle (`certificates`, `claim_artifact.certificate_refs`, `evidence_bundle.certificate_refs`), verification `verified_input`, and signed bundle (`mixed_certificate_id`).
-10. `verification_result.verified_input.bundle_hash` equals manifest digest for `science_claim_bundle.certified.json` (`verified_input_hash_mismatch`).
-11. `signed_science_claim_bundle.signed_input_bundle_hash` equals the same digest (`signed_input_bundle_hash_mismatch`).
-12. `scientific_memory_import_report.verification_status` is `passed`.
+5. `runtime_receipt.source_commit` equals `manifest.labtrust_gym_commit` (`labtrust_commit_mismatch`).
+6. All LabTrust `source_commit` values in pending, certified, and signed bundles match the manifest (`labtrust_commit_mismatch`).
+7. `trace_certificate.source_commit` equals `manifest.certifyedge_commit` (`certifyedge_commit_mismatch`).
+8. All CertifyEdge `source_commit` values in certified and signed bundles match the manifest (`certifyedge_commit_mismatch`).
+9. `verification_result.source_commit` equals `manifest.provability_fabric_commit` (`pf_commit_mismatch`).
+10. `signed_science_claim_bundle.source_commit` equals `manifest.provability_fabric_commit` (`pf_commit_mismatch`).
+11. `scientific_memory_import_report.source_commit` and `scientific_memory_commit` equal `manifest.scientific_memory_commit` (`scientific_memory_commit_mismatch`).
+12. `trace_certificate.certificate_id` equals the certified bundle certificate ID (`certificate_id_mismatch`).
+13. Certified `claim_artifact` / `evidence_bundle` `certificate_refs` use the same ID (`certificate_id_mismatch`).
+14. `verification_result.verified_input.certificate_id` matches (`certificate_id_mismatch`).
+15. Embedded signed `science_claim_bundle` certificate ID matches (`certificate_id_mismatch`).
+16. `verification_result.verified_input.bundle_hash` equals the manifest certified-bundle hash (`verified_input_hash_mismatch`).
+17. `signed_science_claim_bundle.signed_input_bundle_hash` equals the same hash (`signed_input_hash_mismatch`).
+18. `scientific_memory_import_report.verification_status` is `passed` (`scientific_memory_import_failed`).
 
-## Downstream sync policy
+## Failure codes
 
-1. Copy the full `examples/labtrust-release/` tree (including `RELEASE_FIXTURE_MANIFEST.json`) from the pinned pcs-core commit.
-2. Assert the same pin values in repo-specific release fixture tests.
-3. Run `pcs validate-release-chain` on the copied directory in downstream CI when feasible.
-4. Refresh only when pcs-core publishes a new promoted manifest from an atomic chain run.
+`manifest_hash_mismatch`, `placeholder_commit_detected`, `labtrust_commit_mismatch`, `certifyedge_commit_mismatch`, `pf_commit_mismatch`, `scientific_memory_commit_mismatch`, `certificate_id_mismatch`, `verified_input_hash_mismatch`, `signed_input_hash_mismatch`, `scientific_memory_import_failed`.
 
 See also [labtrust-v0.1-profile.md](labtrust-v0.1-profile.md) and [downstream-schema-sync.md](downstream-schema-sync.md).

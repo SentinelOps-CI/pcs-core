@@ -61,7 +61,7 @@ Fixture authority is defined in [labtrust-v0.1-profile.md](labtrust-v0.1-profile
 | Source of truth | Copy files from pcs-core at the pinned commit; do not regenerate partial fixtures in downstream repos |
 | Atomic refresh | Regenerate only via the full clean-checkout chain and atomic promote (`just generate-labtrust-release-fixtures` in pcs-core) |
 | Pin values | See [labtrust-rc-canonical.md](labtrust-rc-canonical.md) (`certificate_id`, `trace_hash`, certified bundle hash, per-repo commits) |
-| Verification | `pcs validate-release-chain examples/labtrust-release/` or `just validate-labtrust-release-fixtures` |
+| Verification | `pcs validate-release-chain examples/labtrust-release/` (18 checks; see [labtrust-rc-canonical.md](labtrust-rc-canonical.md)) |
 
 Downstream release fixture tests must assert the same pin values as pcs-core. Schema conformance fixtures remain under `examples/labtrust/` (separate from release evidence).
 

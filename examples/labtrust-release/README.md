@@ -38,7 +38,7 @@ cd python && pytest -q tests/test_release_chain.py tests/test_release_fixtures.p
 # or: just test-release-chain
 ```
 
-`validate-release-chain` checks manifest digests, provenance commits, certificate ID alignment (including `claim_artifact` / `evidence_bundle` `certificate_refs`), bundle hash equality, and Scientific Memory `verification_status=passed`. Failure codes: `manifest_hash_mismatch`, `manifest_labtrust_commit_mismatch`, `manifest_certifyedge_commit_mismatch`, `manifest_pf_commit_mismatch`, `manifest_scientific_memory_commit_mismatch`, `mixed_certificate_id`, `verified_input_hash_mismatch`, `signed_input_bundle_hash_mismatch`, `placeholder_commit_detected`.
+`validate-release-chain` enforces the 18 RC checks documented in [docs/labtrust-rc-canonical.md](../../docs/labtrust-rc-canonical.md) (manifest digests, provenance commits, certificate ID alignment, bundle hash equality, Scientific Memory import status).
 
 Invalid mixed-run example: [`../labtrust-release-invalid/mixed_certificate_id/`](../labtrust-release-invalid/mixed_certificate_id/).
 

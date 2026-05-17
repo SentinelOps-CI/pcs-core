@@ -199,7 +199,7 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
         if receipt and receipt.get("source_commit") != lt_commit:
             issues.append(
                 _issue(
-                    "manifest_labtrust_commit_mismatch",
+                    "labtrust_commit_mismatch",
                     f"runtime_receipt.source_commit {receipt.get('source_commit')!r} "
                     f"!= manifest.labtrust_gym_commit {lt_commit}",
                 ),
@@ -207,6 +207,7 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
         for label, doc in (
             ("science_claim_bundle.pending.json", pending),
             ("science_claim_bundle.certified.json", certified),
+            ("signed_science_claim_bundle.json", signed),
         ):
             if not isinstance(doc, dict):
                 continue
@@ -214,45 +215,54 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
                 if _repo_matches(repo, LABTRUST_SOURCE_REPO) and commit != lt_commit:
                     issues.append(
                         _issue(
-                            "manifest_labtrust_commit_mismatch",
+                            "labtrust_commit_mismatch",
                             f"{label}: LabTrust source_commit {commit} "
                             f"!= manifest.labtrust_gym_commit {lt_commit}",
                         ),
                     )
-        if signed:
-            scb = signed.get("science_claim_bundle")
-            if isinstance(scb, dict):
-                for repo, commit in _iter_provenance_pairs(scb):
-                    if _repo_matches(repo, LABTRUST_SOURCE_REPO) and commit != lt_commit:
-                        issues.append(
-                            _issue(
-                                "manifest_labtrust_commit_mismatch",
-                                "signed.science_claim_bundle: LabTrust source_commit "
-                                f"{commit} != manifest.labtrust_gym_commit {lt_commit}",
-                            ),
-                        )
 
     if isinstance(ce_commit, str):
         if trace_cert and trace_cert.get("source_commit") != ce_commit:
             issues.append(
                 _issue(
-                    "manifest_certifyedge_commit_mismatch",
+                    "certifyedge_commit_mismatch",
                     f"trace_certificate.source_commit {trace_cert.get('source_commit')!r} "
                     f"!= manifest.certifyedge_commit {ce_commit}",
                 ),
             )
-        if certified:
-            for repo, commit in _iter_provenance_pairs(certified.get("certificates", [])):
+        for label, doc in (
+            ("science_claim_bundle.certified.json", certified),
+            ("signed_science_claim_bundle.json", signed),
+        ):
+            if not isinstance(doc, dict):
+                continue
+            for repo, commit in _iter_provenance_pairs(doc):
                 if _repo_matches(repo, CERTIFYEDGE_SOURCE_REPO) and commit != ce_commit:
                     issues.append(
                         _issue(
-                            "manifest_certifyedge_commit_mismatch",
-                            "certified.certificates: CertifyEdge source_commit "
-                            f"{commit} != manifest.certifyedge_commit {ce_commit}",
+                            "certifyedge_commit_mismatch",
+                            f"{label}: CertifyEdge source_commit {commit} "
+                            f"!= manifest.certifyedge_commit {ce_commit}",
                         ),
                     )
 
     if isinstance(pf_commit, str):
+        if verification and verification.get("source_commit") != pf_commit:
+            issues.append(
+                _issue(
+                    "pf_commit_mismatch",
+                    f"verification_result.source_commit {verification.get('source_commit')!r} "
+                    f"!= manifest.provability_fabric_commit {pf_commit}",
+                ),
+            )
+        if signed and signed.get("source_commit") != pf_commit:
+            issues.append(
+                _issue(
+                    "pf_commit_mismatch",
+                    f"signed_science_claim_bundle.source_commit {signed.get('source_commit')!r} "
+                    f"!= manifest.provability_fabric_commit {pf_commit}",
+                ),
+            )
         for label, doc in (
             ("verification_result.json", verification),
             ("signed_science_claim_bundle.json", signed),
@@ -263,22 +273,11 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
                 if _repo_matches(repo, PF_SOURCE_REPO) and commit != pf_commit:
                     issues.append(
                         _issue(
-                            "manifest_pf_commit_mismatch",
-                            f"{label}: PF source_commit {commit} != manifest.provability_fabric_commit {pf_commit}",
+                            "pf_commit_mismatch",
+                            f"{label}: PF source_commit {commit} "
+                            f"!= manifest.provability_fabric_commit {pf_commit}",
                         ),
                     )
-        if signed:
-            embedded_vr = signed.get("verification_result")
-            if isinstance(embedded_vr, dict):
-                for repo, commit in _iter_provenance_pairs(embedded_vr):
-                    if _repo_matches(repo, PF_SOURCE_REPO) and commit != pf_commit:
-                        issues.append(
-                            _issue(
-                                "manifest_pf_commit_mismatch",
-                                "signed.verification_result: PF source_commit "
-                                f"{commit} != manifest.provability_fabric_commit {pf_commit}",
-                            ),
-                        )
 
     if isinstance(sm_commit, str) and sm_report:
         sm_src = sm_report.get("source_commit")
@@ -286,7 +285,7 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
         if sm_src != sm_commit:
             issues.append(
                 _issue(
-                    "manifest_scientific_memory_commit_mismatch",
+                    "scientific_memory_commit_mismatch",
                     f"scientific_memory_import_report.source_commit {sm_src!r} "
                     f"!= manifest.scientific_memory_commit {sm_commit}",
                 ),
@@ -294,7 +293,7 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
         if sm_pin is not None and sm_pin != sm_commit:
             issues.append(
                 _issue(
-                    "manifest_scientific_memory_commit_mismatch",
+                    "scientific_memory_commit_mismatch",
                     f"scientific_memory_import_report.scientific_memory_commit {sm_pin!r} "
                     f"!= manifest.scientific_memory_commit {sm_commit}",
                 ),
@@ -302,7 +301,7 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
         if sm_report.get("verification_status") != "passed":
             issues.append(
                 _issue(
-                    "invalid_artifact",
+                    "scientific_memory_import_failed",
                     "scientific_memory_import_report.verification_status must be passed",
                 ),
             )
@@ -321,7 +320,7 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
     if len(cert_ids) > 1:
         issues.append(
             _issue(
-                "mixed_certificate_id",
+                "certificate_id_mismatch",
                 "certificate_id mismatch across trace_certificate, certified bundle, "
                 f"verification_result.verified_input, and signed bundle ({cert_ids})",
             ),
@@ -330,14 +329,14 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
         if trace_cert_id and trace_cert_id != certified_cert_id:
             issues.append(
                 _issue(
-                    "mixed_certificate_id",
+                    "certificate_id_mismatch",
                     f"trace_certificate.certificate_id {trace_cert_id} != certified {certified_cert_id}",
                 ),
             )
         if vr_cert_id and vr_cert_id != certified_cert_id:
             issues.append(
                 _issue(
-                    "mixed_certificate_id",
+                    "certificate_id_mismatch",
                     "verification_result.verified_input.certificate_id "
                     f"{vr_cert_id} != certified {certified_cert_id}",
                 ),
@@ -345,7 +344,7 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
         if signed_cert_id and signed_cert_id != certified_cert_id:
             issues.append(
                 _issue(
-                    "mixed_certificate_id",
+                    "certificate_id_mismatch",
                     "signed.science_claim_bundle certificate_id "
                     f"{signed_cert_id} != certified {certified_cert_id}",
                 ),
@@ -354,7 +353,7 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
             if ref_id != certified_cert_id:
                 issues.append(
                     _issue(
-                        "mixed_certificate_id",
+                        "certificate_id_mismatch",
                         f"certified bundle certificate_refs entry {ref_id!r} "
                         f"!= {certified_cert_id}",
                     ),
@@ -366,7 +365,7 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
                     if ref_id != certified_cert_id:
                         issues.append(
                             _issue(
-                                "mixed_certificate_id",
+                                "certificate_id_mismatch",
                                 f"signed bundle certificate_refs entry {ref_id!r} "
                                 f"!= {certified_cert_id}",
                             ),
@@ -422,14 +421,14 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
         if not signed_hash:
             issues.append(
                 _issue(
-                    "signed_input_bundle_hash_mismatch",
+                    "signed_input_hash_mismatch",
                     "signed_science_claim_bundle.signed_input_bundle_hash is required",
                 ),
             )
         elif signed_hash != certified_hash:
             issues.append(
                 _issue(
-                    "signed_input_bundle_hash_mismatch",
+                    "signed_input_hash_mismatch",
                     f"signed_input_bundle_hash {signed_hash} != manifest certified bundle hash "
                     f"{certified_hash}",
                 ),

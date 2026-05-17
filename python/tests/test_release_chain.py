@@ -118,4 +118,4 @@ def test_validate_release_manifest_rejects_hash_mismatch() -> None:
 def test_validate_release_chain_rejects_mixed_certificate_id_fixture() -> None:
     issues = validate_release_chain(INVALID_MIXED)
     codes = {issue.code for issue in issues}
-    assert "mixed_certificate_id" in codes
+    assert "certificate_id_mismatch" in codes
