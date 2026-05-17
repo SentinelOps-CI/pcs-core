@@ -1,6 +1,6 @@
 # LabTrust v0.1 release fixtures
 
-This directory contains **generated PCS v0.1 release-candidate artifacts**. Files in this directory must be produced by the end-to-end LabTrust → CertifyEdge → Provability Fabric → Scientific Memory chain. **Placeholder commits are prohibited** for final release tags.
+This directory contains **generated PCS v0.1 release-candidate artifacts** (release evidence only). Files must be produced by the end-to-end LabTrust → CertifyEdge → Provability Fabric → Scientific Memory chain, then imported with `pcs_core.release_fixtures --write`, which aligns embedded `source_commit` values to the five-repo manifest and re-signs PCS digests. **Placeholder commits are prohibited** for final release tags.
 
 Schema conformance fixtures live in [`../labtrust/`](../labtrust/) and must not be used as release evidence.
 

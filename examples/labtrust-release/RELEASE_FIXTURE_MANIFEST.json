@@ -1,20 +1,20 @@
 {
-  "schema_version": "v0",
-  "release_candidate": "pcs-v0.1.0-rc1",
-  "generated_at": "2026-05-17T13:47:48Z",
-  "pcs_core_commit": "f4e895b65e401d6936573276f913e079c8f7cd0b",
-  "labtrust_gym_commit": "9f531e5b577e0ec3bd1c79809e2232ed3b661598",
-  "certifyedge_commit": "f0725b3b987b27c9f23956362706d096effdb617",
-  "provability_fabric_commit": "df91a79f748695f3d63d7ccc274ff3a888ed8448",
-  "scientific_memory_commit": "536519f7f34ecb48dd43ca06056b9ccaf79489fb",
   "artifacts": {
+    "runtime_receipt.json": "sha256:792fa26d73bf0df82e07d7162be5ee4279fc7c2eb2a34067212334aa4b03997a",
+    "science_claim_bundle.certified.json": "sha256:f4c627cffba61d81e1ecbd8b660ab1abd4dcb5760ad6a9349ca273b25a188a16",
+    "science_claim_bundle.pending.json": "sha256:85f0c493cb20c41a42502ce5ff944ca724bb6def5670140ef1654e15366b9cc6",
+    "scientific_memory_import_report.json": "sha256:7919fb4005f2058b015b5776e2b3a8e73b7b09d495c1eac321ea5533ca84d22c",
+    "signed_science_claim_bundle.json": "sha256:fa6c6c1654f404281bd3ba8fc08cb73d6503dfb5930688b47cc92676402d8eec",
     "trace.json": "sha256:f99eb0a90cd2b9819816a25ec4e938663d26ae8d40868cd8188665e940f7ad5c",
-    "runtime_receipt.json": "sha256:f7ed1cf540a36ec8191e2f5876ee0bf74401cbd5f5dcaadfa731236fc3d92502",
-    "trace_certificate.json": "sha256:3969227ec3294456a758c7f7a2c3f06f5acf5793856291b9f6df48edc1604105",
-    "science_claim_bundle.pending.json": "sha256:a007cf3d93fd3c97e6fdbfb35d9adeed339a2c8b6632987579c2b1222c738a22",
-    "science_claim_bundle.certified.json": "sha256:e39bb54f65d3c32a209971f833dbbfce51b6916a94a2e629f81cb97b9bf9505d",
-    "verification_result.json": "sha256:4d2e4d6f44fe477f616f1b11cab29c9aaea464edb466fc480326fa42f38b1ddd",
-    "signed_science_claim_bundle.json": "sha256:a34cbfa6accf38676e67e92b9d276293d41d29d27627fb1a97a5579aa6ab8af4",
-    "scientific_memory_import_report.json": "sha256:6bfe7cb5f79d40579e8d1edb3c44d2ddeb9551af4a882136f1e215cf8117a3d8"
-  }
+    "trace_certificate.json": "sha256:26145c4269531b06659928514c505a986853ee2ebeee4c83e57e922c3fffa1d8",
+    "verification_result.json": "sha256:7626e4fe2a856cbf76f326a74d9ea6be413fe40440c38e870052d6e783eb2a30"
+  },
+  "certifyedge_commit": "68b79aa47bd1cdcc02b2605aaa988078cc41952f",
+  "generated_at": "2026-05-17T14:36:56Z",
+  "labtrust_gym_commit": "11dbc13c4b6359dc1b9a57ef6c1eadf84576d83e",
+  "pcs_core_commit": "b31f367deb22fd3a1c31b001d1b1acfba7777fe6",
+  "provability_fabric_commit": "993a0e5d1214b7c1bd6e84475d771806950965dd",
+  "release_candidate": "pcs-v0.1.0-rc1",
+  "schema_version": "v0",
+  "scientific_memory_commit": "4f4111f0f6b90ec48709cf97f532218bdc372f42"
 }

@@ -21,10 +21,10 @@
   "run_id": "qc-release",
   "run_outcome": "passed",
   "schema_version": "v0",
-  "signature_or_digest": "sha256:569825f255d9ecc9c63570a160efdb97438fcd50d14704bbe1beb47a7e5d867a",
-  "source_commit": "c20139460f7e46b0fe3031e9da70a1c36e4dda33",
+  "source_commit": "11dbc13c4b6359dc1b9a57ef6c1eadf84576d83e",
   "source_repo": "https://github.com/fraware/LabTrust-Gym",
   "started_at": "2026-01-15T08:00:00Z",
   "status": "RuntimeObserved",
-  "trace_hash": "sha256:c3e8a3dc4ad86d533de1dfa4ae7fe2a338c2cff3c945404c96a75216524d58cd"
+  "trace_hash": "sha256:c3e8a3dc4ad86d533de1dfa4ae7fe2a338c2cff3c945404c96a75216524d58cd",
+  "signature_or_digest": "sha256:4545aa3daa0ee08f679bd29cca138aebb05fb3c30cf36f82a6ac9c1024016768"
 }
