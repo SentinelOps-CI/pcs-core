@@ -324,12 +324,12 @@
     ],
     "created_at": "2026-01-15T11:00:00Z",
     "source_repo": "https://github.com/SentinelOps-CI/provability-fabric",
-    "source_commit": "993a0e5d1214b7c1bd6e84475d771806950965dd",
-    "signature_or_digest": "sha256:274650d43f455fc1660f0fb4130c3d2881df33253fc7d2c15505089241f36e5b"
+    "source_commit": "0c30431e5d5cbb5c7c8fe074e3bc9ccf249a2941",
+    "signature_or_digest": "sha256:f83ba7a7e3ba9e77911ab5ed26d1589893d6cdbbc5f87b16814544992b8043f3"
   },
   "signer": "Provability Fabric",
   "signed_at": "2026-01-15T11:00:00Z",
   "source_repo": "https://github.com/SentinelOps-CI/provability-fabric",
-  "source_commit": "993a0e5d1214b7c1bd6e84475d771806950965dd",
-  "signature_or_digest": "sha256:94cd484727cca3dc0f80cc3f1e5d52d386a85a2b871af5a759649acff49a81d5"
+  "source_commit": "0c30431e5d5cbb5c7c8fe074e3bc9ccf249a2941",
+  "signature_or_digest": "sha256:1045196b28c385e6784f76970ba2be6e24d55ee2100616b5eb0e2e929f4e0fed"
 }
