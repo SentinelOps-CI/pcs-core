@@ -9,7 +9,8 @@ from pathlib import Path
 
 from pcs_core.hash import canonical_hash
 from pcs_core.hash_vectors import verify_vectors, write_vectors
-from pcs_core.paths import examples_dir
+from pcs_core.paths import examples_dir, resolve_release_chain_directory
+from pcs_core.release_fixtures import release_dir
 from pcs_core.release_chain import validate_release_chain_messages
 from pcs_core.release_fixtures import validate_release_manifest
 from pcs_core.validate import (
@@ -109,10 +110,8 @@ def cmd_validate_release_manifest(path: Path) -> int:
     return 0
 
 
-def cmd_validate_release_chain(path: Path) -> int:
-    directory = path
-    if path.is_file() and path.name == "RELEASE_FIXTURE_MANIFEST.json":
-        directory = path.parent
+def cmd_validate_release_chain(path: Path | None) -> int:
+    directory = resolve_release_chain_directory(path or release_dir())
     drift = validate_release_chain_messages(directory)
     if drift:
         for err in drift:
@@ -155,7 +154,13 @@ def main(argv: list[str] | None = None) -> int:
         "validate-release-chain",
         help="Validate atomic LabTrust release fixture chain consistency",
     )
-    p_chain.add_argument("path", type=Path)
+    p_chain.add_argument(
+        "path",
+        type=Path,
+        nargs="?",
+        default=None,
+        help="Release fixture directory (default: examples/labtrust-release under repo root)",
+    )
 
     schema_parser = sub.add_parser("schema", help="Schema commands")
     schema_sub = schema_parser.add_subparsers(dest="schema_cmd", required=True)

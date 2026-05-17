@@ -9,7 +9,9 @@ Schema conformance fixtures live in [`../labtrust/`](../labtrust/) and must not 
 1. Run the clean-checkout chain from a sibling [LabTrust-Gym](https://github.com/fraware/LabTrust-Gym) checkout:
 
    ```bash
-   export PCS_DETERMINISTIC=1
+   export PCS_DETERMINISTIC=0
+   export CERTIFYEDGE_SOURCE_COMMIT="$(git -C ../CertifyEdge rev-parse HEAD)"
+   export PF_SOURCE_COMMIT="$(git -C ../provability-fabric rev-parse HEAD)"
    bash examples/pcs_qc_release/scripts/run_pcs_v01_clean_chain.sh
    ```
 
@@ -27,6 +29,13 @@ Schema conformance fixtures live in [`../labtrust/`](../labtrust/) and must not 
 ```bash
 pcs validate-release-chain examples/labtrust-release/
 just validate-labtrust-release-fixtures
+
+# from repo root (requires pcs-core on PYTHONPATH; install once: pip install -e python/.[dev])
+pytest python/tests/test_release_chain.py python/tests/test_release_fixtures.py
+
+# recommended (matches CI):
+cd python && pytest -q tests/test_release_chain.py tests/test_release_fixtures.py
+# or: just test-release-chain
 ```
 
 `validate-release-chain` checks manifest digests, provenance commits, certificate ID alignment across certified/verification/signed artifacts, bundle equality, and PF/SM status fields.

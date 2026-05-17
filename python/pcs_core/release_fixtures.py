@@ -202,6 +202,7 @@ def normalize_import_report(
     normalized["source_bundle_path"] = "signed_science_claim_bundle.json"
     normalized["source_repo"] = SM_SOURCE_REPO
     normalized["source_commit"] = commits["scientific_memory_commit"]
+    normalized["scientific_memory_commit"] = commits["scientific_memory_commit"]
     imported_at = normalized.get("imported_at")
     if isinstance(imported_at, str) and imported_at and "." in imported_at:
         base, _, tz = imported_at.partition(".")
@@ -210,6 +211,13 @@ def normalize_import_report(
         elif "+" in tz or tz.endswith("Z"):
             normalized["imported_at"] = base + (tz if tz.startswith("+") else "Z")
     return normalized
+
+
+def _top_level_commit_for_repo(doc: dict[str, Any], repo_url: str) -> str | None:
+    if doc.get("source_repo") == repo_url:
+        commit = doc.get("source_commit")
+        return commit if isinstance(commit, str) else None
+    return None
 
 
 def commits_from_release_run(run_dir: Path) -> dict[str, str]:
@@ -221,11 +229,17 @@ def commits_from_release_run(run_dir: Path) -> dict[str, str]:
     if not receipt or not cert or not vr or not sm:
         raise ValueError("release-run is missing artifacts required to derive manifest commits")
 
+    parent = repo_root().parent
+    pf_commit = _top_level_commit_for_repo(vr, PF_SOURCE_REPO) or git_commit_or(
+        "PROVABILITY_FABRIC_COMMIT",
+        parent / "provability-fabric",
+    )
+
     return {
         "pcs_core_commit": git_commit_at(repo_root()),
         "labtrust_gym_commit": str(receipt["source_commit"]),
         "certifyedge_commit": str(cert["source_commit"]),
-        "provability_fabric_commit": str(vr["source_commit"]),
+        "provability_fabric_commit": pf_commit,
         "scientific_memory_commit": str(sm["source_commit"]),
     }
 
@@ -258,14 +272,18 @@ def build_release_run(
     if not receipt or not cert or not vr:
         raise ValueError("release-run missing receipt, certificate, or verification_result")
 
+    parent = repo_root().parent
     pin_commits = {
         "pcs_core_commit": git_commit_at(repo_root()),
         "labtrust_gym_commit": str(receipt["source_commit"]),
         "certifyedge_commit": str(cert["source_commit"]),
-        "provability_fabric_commit": str(vr["source_commit"]),
+        "provability_fabric_commit": git_commit_or(
+            "PROVABILITY_FABRIC_COMMIT",
+            parent / "provability-fabric",
+        ),
         "scientific_memory_commit": git_commit_or(
             "SCIENTIFIC_MEMORY_COMMIT",
-            repo_root().parent / "scientific-memory",
+            parent / "scientific-memory",
         ),
     }
 

@@ -3,22 +3,25 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 from pcs_core.release_fixtures import (
     COMMIT_KEYS,
+    LABTRUST_SOURCE_REPO,
+    CERTIFYEDGE_SOURCE_REPO,
+    PF_SOURCE_REPO,
+    SM_SOURCE_REPO,
     MANIFEST_ARTIFACTS,
     MANIFEST_NAME,
     RELEASE_PCS_ARTIFACTS,
     _load_json,
     _scan_forbidden_values,
-    _validate_nested_provenance,
     _validate_trace_hash_alignment,
     file_digest,
     is_placeholder_commit,
-    manifest_commit_key,
 )
 from pcs_core.validate import ValidationError, validate_file
 
@@ -49,42 +52,33 @@ def _first_certificate_id(bundle: dict[str, Any]) -> str | None:
     return None
 
 
-def _vr_certificate_refs(vr: dict[str, Any]) -> list[str]:
-    checks = vr.get("checks")
-    if not isinstance(checks, list):
-        return []
-    for check in checks:
-        if not isinstance(check, dict):
-            continue
-        if check.get("check_id") != "evidence_refs_complete":
-            continue
-        details = check.get("details")
-        if not isinstance(details, dict):
-            return []
-        refs = details.get("certificate_refs")
-        if isinstance(refs, list):
-            return [r for r in refs if isinstance(r, str)]
-    return []
+def _verified_input_certificate_id(vr: dict[str, Any]) -> str | None:
+    verified = vr.get("verified_input")
+    if isinstance(verified, dict):
+        cid = verified.get("certificate_id")
+        return cid if isinstance(cid, str) else None
+    return None
 
 
-def _strip_signatures(value: Any) -> Any:
-    if isinstance(value, dict):
-        return {
-            k: _strip_signatures(v)
-            for k, v in value.items()
-            if k != SIGNATURE_FIELD
-        }
-    if isinstance(value, list):
-        return [_strip_signatures(item) for item in value]
-    return value
+def _iter_provenance_pairs(obj: Any) -> Iterator[tuple[str, str]]:
+    if isinstance(obj, dict):
+        repo = obj.get("source_repo")
+        commit = obj.get("source_commit")
+        if isinstance(repo, str) and isinstance(commit, str):
+            yield repo, commit
+        for value in obj.values():
+            yield from _iter_provenance_pairs(value)
+    elif isinstance(obj, list):
+        for item in obj:
+            yield from _iter_provenance_pairs(item)
 
 
-def _json_equal(a: dict[str, Any], b: dict[str, Any]) -> bool:
-    return _strip_signatures(a) == _strip_signatures(b)
+def _repo_matches(repo: str, expected_repo: str) -> bool:
+    return expected_repo.lower() in repo.lower()
 
 
 def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
-    """Validate a complete release-run directory for single-run atomic consistency."""
+    """Validate a complete release directory for single-run atomic consistency."""
     issues: list[ReleaseChainIssue] = []
     base = directory.resolve()
 
@@ -139,12 +133,12 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
         if expected != actual:
             issues.append(
                 _issue(
-                    "manifest_hash_mismatch",
+                    "manifest_artifact_hash_mismatch",
                     f"{name}: manifest digest mismatch (expected {expected}, got {actual})",
                 ),
             )
 
-    string_errors: list[str] = []
+    scan_errors: list[str] = []
     for name in MANIFEST_ARTIFACTS:
         path = base / name
         if not path.is_file():
@@ -153,37 +147,10 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
         if doc is None:
             issues.append(_issue("invalid_artifact", f"{name}: invalid JSON"))
             continue
-        _scan_forbidden_values(doc, label=name, errors=string_errors)
-        repo = doc.get("source_repo")
-        commit = doc.get("source_commit")
-        if isinstance(repo, str) and isinstance(commit, str):
-            key = manifest_commit_key(repo)
-            if key and isinstance(commits.get(key), str) and commits[key] != commit:
-                issues.append(
-                    _issue(
-                        "manifest_commit_mismatch",
-                        f"{name}: source_commit {commit} != manifest {key} ({commits[key]})",
-                    ),
-                )
-
-    for msg in string_errors:
-        if "placeholder" in msg:
-            issues.append(_issue("manifest_commit_mismatch", msg))
-        elif "local_dev" in msg:
+        _scan_forbidden_values(doc, label=name, errors=scan_errors)
+    for msg in scan_errors:
+        if "placeholder" in msg or "local_dev" in msg:
             issues.append(_issue("invalid_artifact", msg))
-        else:
-            issues.append(_issue("invalid_artifact", msg))
-
-    nested_errors: list[str] = []
-    _validate_nested_provenance(base, manifest, nested_errors)
-    for msg in nested_errors:
-        if "source_commit expected" in msg or "source_repo expected" in msg:
-            if "certifyedge" in msg.lower() or "certificates" in msg:
-                issues.append(_issue("mixed_run_labtrust_commit", msg))
-            elif "provability" in msg.lower() or "verification" in msg:
-                issues.append(_issue("mixed_run_pf_verification_result", msg))
-            else:
-                issues.append(_issue("mixed_run_labtrust_commit", msg))
         else:
             issues.append(_issue("invalid_artifact", msg))
 
@@ -201,113 +168,233 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
         except ValidationError as exc:
             issues.append(_issue("invalid_artifact", f"{name}: pcs validate failed: {exc}"))
 
-    trace_cert = _load_json(base / "trace_certificate.json")
+    lt_commit = commits.get("labtrust_gym_commit")
+    ce_commit = commits.get("certifyedge_commit")
+    pf_commit = commits.get("provability_fabric_commit")
+    sm_commit = commits.get("scientific_memory_commit")
+
+    receipt = _load_json(base / "runtime_receipt.json")
+    pending = _load_json(base / "science_claim_bundle.pending.json")
     certified = _load_json(base / "science_claim_bundle.certified.json")
     verification = _load_json(base / "verification_result.json")
     signed = _load_json(base / "signed_science_claim_bundle.json")
+    trace_cert = _load_json(base / "trace_certificate.json")
     sm_report = _load_json(base / "scientific_memory_import_report.json")
 
-    cert_ids: dict[str, str | None] = {
-        "trace_certificate.json": trace_cert.get("certificate_id") if trace_cert else None,
-        "science_claim_bundle.certified.json": _first_certificate_id(certified) if certified else None,
+    if isinstance(lt_commit, str):
+        if receipt and receipt.get("source_commit") != lt_commit:
+            issues.append(
+                _issue(
+                    "mixed_runtime_receipt_commit",
+                    f"runtime_receipt.source_commit {receipt.get('source_commit')!r} "
+                    f"!= manifest.labtrust_gym_commit {lt_commit}",
+                ),
+            )
+        for label, doc, code in (
+            ("science_claim_bundle.pending.json", pending, "manifest_labtrust_commit_mismatch"),
+            ("science_claim_bundle.certified.json", certified, "mixed_certified_bundle_commit"),
+        ):
+            if not isinstance(doc, dict):
+                continue
+            for repo, commit in _iter_provenance_pairs(doc):
+                if _repo_matches(repo, LABTRUST_SOURCE_REPO) and commit != lt_commit:
+                    issues.append(
+                        _issue(
+                            code,
+                            f"{label}: LabTrust source_commit {commit} != manifest.labtrust_gym_commit {lt_commit}",
+                        ),
+                    )
+        if signed:
+            scb = signed.get("science_claim_bundle")
+            if isinstance(scb, dict):
+                for repo, commit in _iter_provenance_pairs(scb):
+                    if _repo_matches(repo, LABTRUST_SOURCE_REPO) and commit != lt_commit:
+                        issues.append(
+                            _issue(
+                                "mixed_signed_bundle_commit",
+                                "signed.science_claim_bundle: LabTrust source_commit "
+                                f"{commit} != manifest.labtrust_gym_commit {lt_commit}",
+                            ),
+                        )
+
+    if isinstance(ce_commit, str):
+        if trace_cert and trace_cert.get("source_commit") != ce_commit:
+            issues.append(
+                _issue(
+                    "manifest_certifyedge_commit_mismatch",
+                    f"trace_certificate.source_commit {trace_cert.get('source_commit')!r} "
+                    f"!= manifest.certifyedge_commit {ce_commit}",
+                ),
+            )
+        if certified:
+            for repo, commit in _iter_provenance_pairs(certified.get("certificates", [])):
+                if _repo_matches(repo, CERTIFYEDGE_SOURCE_REPO) and commit != ce_commit:
+                    issues.append(
+                        _issue(
+                            "manifest_certifyedge_commit_mismatch",
+                            "certified.certificates: CertifyEdge source_commit "
+                            f"{commit} != manifest.certifyedge_commit {ce_commit}",
+                        ),
+                    )
+
+    if isinstance(pf_commit, str):
+        for label, doc in (
+            ("verification_result.json", verification),
+            ("signed_science_claim_bundle.json", signed),
+        ):
+            if not isinstance(doc, dict):
+                continue
+            for repo, commit in _iter_provenance_pairs(doc):
+                if _repo_matches(repo, PF_SOURCE_REPO) and commit != pf_commit:
+                    issues.append(
+                        _issue(
+                            "manifest_pf_commit_mismatch",
+                            f"{label}: PF source_commit {commit} != manifest.provability_fabric_commit {pf_commit}",
+                        ),
+                    )
+        if signed:
+            embedded_vr = signed.get("verification_result")
+            if isinstance(embedded_vr, dict):
+                for repo, commit in _iter_provenance_pairs(embedded_vr):
+                    if _repo_matches(repo, PF_SOURCE_REPO) and commit != pf_commit:
+                        issues.append(
+                            _issue(
+                                "manifest_pf_commit_mismatch",
+                                "signed.verification_result: PF source_commit "
+                                f"{commit} != manifest.provability_fabric_commit {pf_commit}",
+                            ),
+                        )
+
+    if isinstance(sm_commit, str) and sm_report:
+        sm_src = sm_report.get("source_commit")
+        sm_pin = sm_report.get("scientific_memory_commit")
+        if sm_src != sm_commit:
+            issues.append(
+                _issue(
+                    "manifest_sm_commit_mismatch",
+                    f"scientific_memory_import_report.source_commit {sm_src!r} "
+                    f"!= manifest.scientific_memory_commit {sm_commit}",
+                ),
+            )
+        if sm_pin is not None and sm_pin != sm_commit:
+            issues.append(
+                _issue(
+                    "manifest_sm_commit_mismatch",
+                    f"scientific_memory_import_report.scientific_memory_commit {sm_pin!r} "
+                    f"!= manifest.scientific_memory_commit {sm_commit}",
+                ),
+            )
+        if sm_report.get("verification_status") != "passed":
+            issues.append(
+                _issue(
+                    "invalid_artifact",
+                    "scientific_memory_import_report.verification_status must be passed",
+                ),
+            )
+
+    certified_cert_id = _first_certificate_id(certified) if certified else None
+    trace_cert_id = trace_cert.get("certificate_id") if trace_cert else None
+    vr_cert_id = _verified_input_certificate_id(verification) if verification else None
+    signed_scb = signed.get("science_claim_bundle") if signed else None
+    signed_cert_id = _first_certificate_id(signed_scb) if isinstance(signed_scb, dict) else None
+
+    cert_ids = {
+        cid
+        for cid in (certified_cert_id, trace_cert_id, vr_cert_id, signed_cert_id)
+        if isinstance(cid, str)
     }
+    if len(cert_ids) > 1:
+        issues.append(
+            _issue(
+                "mixed_certificate_id",
+                "certificate_id mismatch across trace_certificate, certified bundle, "
+                f"verification_result.verified_input, and signed bundle ({cert_ids})",
+            ),
+        )
+    elif certified_cert_id:
+        if trace_cert_id and trace_cert_id != certified_cert_id:
+            issues.append(
+                _issue(
+                    "mixed_certificate_id",
+                    f"trace_certificate.certificate_id {trace_cert_id} != certified {certified_cert_id}",
+                ),
+            )
+        if vr_cert_id and vr_cert_id != certified_cert_id:
+            issues.append(
+                _issue(
+                    "mixed_certificate_id",
+                    "verification_result.verified_input.certificate_id "
+                    f"{vr_cert_id} != certified {certified_cert_id}",
+                ),
+            )
+        if signed_cert_id and signed_cert_id != certified_cert_id:
+            issues.append(
+                _issue(
+                    "mixed_certificate_id",
+                    "signed.science_claim_bundle certificate_id "
+                    f"{signed_cert_id} != certified {certified_cert_id}",
+                ),
+            )
+
+    if verification and verification.get("status") != "ProofChecked":
+        issues.append(
+            _issue(
+                "manifest_pf_commit_mismatch",
+                "verification_result.status must be ProofChecked",
+            ),
+        )
+    if signed:
+        embedded_vr = signed.get("verification_result")
+        if isinstance(embedded_vr, dict) and embedded_vr.get("status") != "ProofChecked":
+            issues.append(
+                _issue(
+                    "manifest_pf_commit_mismatch",
+                    "signed.verification_result.status must be ProofChecked",
+                ),
+            )
+
+    if not verification or not verification.get("verified_input"):
+        issues.append(
+            _issue(
+                "invalid_artifact",
+                "verification_result.verified_input is required for release chain fixtures",
+            ),
+        )
+
+    certified_hash = artifacts.get("science_claim_bundle.certified.json")
+    if signed and certified_hash:
+        signed_hash = signed.get("signed_input_bundle_hash")
+        if not signed_hash:
+            issues.append(
+                _issue(
+                    "signed_input_bundle_hash_mismatch",
+                    "signed_science_claim_bundle.signed_input_bundle_hash is required",
+                ),
+            )
+        elif signed_hash != certified_hash:
+            issues.append(
+                _issue(
+                    "signed_input_bundle_hash_mismatch",
+                    f"signed_input_bundle_hash {signed_hash} != manifest certified bundle hash "
+                    f"{certified_hash}",
+                ),
+            )
+        verified = verification.get("verified_input") if verification else None
+        if isinstance(verified, dict):
+            bundle_hash = verified.get("bundle_hash")
+            if bundle_hash and bundle_hash != certified_hash:
+                issues.append(
+                    _issue(
+                        "signed_input_bundle_hash_mismatch",
+                        "verified_input.bundle_hash does not match manifest certified bundle hash",
+                    ),
+                )
 
     if trace_cert and trace_cert.get("status") != "CertificateChecked":
         issues.append(
             _issue(
                 "invalid_artifact",
                 "trace_certificate.status must be CertificateChecked",
-            ),
-        )
-
-    if verification:
-        if verification.get("status") != "ProofChecked":
-            issues.append(
-                _issue(
-                    "mixed_run_pf_verification_result",
-                    "verification_result.status must be ProofChecked",
-                ),
-            )
-        if certified and verification.get("bundle_id") != certified.get("bundle_id"):
-            issues.append(
-                _issue(
-                    "mixed_run_pf_verification_result",
-                    "verification_result.bundle_id does not match certified bundle_id",
-                ),
-            )
-
-    vr_refs = _vr_certificate_refs(verification) if verification else []
-    if vr_refs:
-        cert_ids["verification_result.json"] = vr_refs[0]
-
-    if signed:
-        scb = signed.get("science_claim_bundle")
-        if isinstance(scb, dict):
-            cert_ids["signed_science_claim_bundle.json"] = _first_certificate_id(scb)
-        embedded_vr = signed.get("verification_result")
-        if isinstance(embedded_vr, dict):
-            if embedded_vr.get("status") != "ProofChecked":
-                issues.append(
-                    _issue(
-                        "mixed_run_pf_verification_result",
-                        "signed.verification_result.status must be ProofChecked",
-                    ),
-                )
-            embedded_refs = _vr_certificate_refs(embedded_vr)
-            if embedded_refs:
-                cert_ids["signed.verification_result"] = embedded_refs[0]
-
-    unique_cert_ids = {cid for cid in cert_ids.values() if isinstance(cid, str)}
-    if len(unique_cert_ids) > 1:
-        details = ", ".join(f"{label}={cid}" for label, cid in cert_ids.items() if cid)
-        issues.append(
-            _issue(
-                "mixed_run_certificate_id",
-                f"certificate_id mismatch across release chain artifacts ({details})",
-            ),
-        )
-
-    if certified and signed:
-        scb = signed.get("science_claim_bundle")
-        if not isinstance(scb, dict):
-            issues.append(
-                _issue(
-                    "mixed_run_certificate_id",
-                    "signed_science_claim_bundle missing science_claim_bundle object",
-                ),
-            )
-        elif not _json_equal(certified, scb):
-            issues.append(
-                _issue(
-                    "mixed_run_certificate_id",
-                    "signed.science_claim_bundle does not match science_claim_bundle.certified.json "
-                    "(excluding signature_or_digest fields)",
-                ),
-            )
-
-    if verification and signed:
-        embedded_vr = signed.get("verification_result")
-        if not isinstance(embedded_vr, dict):
-            issues.append(
-                _issue(
-                    "mixed_run_pf_verification_result",
-                    "signed_science_claim_bundle missing verification_result object",
-                ),
-            )
-        elif not _json_equal(verification, embedded_vr):
-            issues.append(
-                _issue(
-                    "mixed_run_pf_verification_result",
-                    "signed.verification_result does not match verification_result.json "
-                    "(excluding signature_or_digest fields)",
-                ),
-            )
-
-    if sm_report and sm_report.get("verification_status") != "passed":
-        issues.append(
-            _issue(
-                "invalid_artifact",
-                "scientific_memory_import_report.verification_status must be passed",
             ),
         )
 

@@ -51,4 +51,6 @@ select = ["E", "F", "I", "W"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-asyncio_default_fixture_loop_scope = "function"
+pythonpath = ["."]
+# pcs-core tests are sync-only; disable corridor-os / global pytest-asyncio plugin noise
+addopts = "-p no:asyncio"

@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from pcs_core.paths import resolve_release_chain_directory
 from pcs_core.release_chain import validate_release_chain
 from pcs_core.release_fixtures import (
     MANIFEST_ARTIFACTS,
@@ -28,6 +29,10 @@ INVALID_LT = release_dir() / "invalid_mismatched_labtrust_commit_manifest.json"
 
 def _codes(path: Path) -> set[str]:
     return {issue.code for issue in validate_release_chain(path)}
+
+
+def test_resolve_release_chain_directory_from_python_relative_path() -> None:
+    assert resolve_release_chain_directory(Path("examples/labtrust-release")) == release_dir()
 
 
 def test_validate_release_manifest_passes_on_current_fixture() -> None:
@@ -85,4 +90,4 @@ def test_validate_release_manifest_rejects_hash_mismatch() -> None:
 def test_validate_release_chain_rejects_mixed_certificate_id_fixture() -> None:
     issues = validate_release_chain(INVALID_MIXED)
     codes = {issue.code for issue in issues}
-    assert "mixed_run_certificate_id" in codes
+    assert "mixed_certificate_id" in codes

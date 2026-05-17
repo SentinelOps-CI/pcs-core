@@ -33,5 +33,34 @@ def examples_dir() -> Path:
     return repo_root() / "examples"
 
 
+RELEASE_FIXTURE_MANIFEST = "RELEASE_FIXTURE_MANIFEST.json"
+
+
+def resolve_release_chain_directory(path: Path) -> Path:
+    """Resolve release-chain dir from cwd or pcs-core repo root.
+
+    When ``pcs`` runs from ``python/``, ``examples/labtrust-release`` is
+    retried under :func:`repo_root` if the cwd-relative path has no manifest.
+    """
+    if path.is_file() and path.name == RELEASE_FIXTURE_MANIFEST:
+        directory = path.parent
+    else:
+        directory = path
+
+    def has_manifest(candidate: Path) -> bool:
+        return (candidate / RELEASE_FIXTURE_MANIFEST).is_file()
+
+    resolved = directory.resolve()
+    if has_manifest(resolved):
+        return resolved
+
+    if not directory.is_absolute():
+        from_root = (repo_root() / directory).resolve()
+        if has_manifest(from_root):
+            return from_root
+
+    return resolved
+
+
 def hash_vectors_dir() -> Path:
     return python_project_root() / "tests" / "hash_vectors"

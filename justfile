@@ -22,6 +22,9 @@ generate-labtrust-release-fixtures:
 validate-labtrust-release-fixtures:
     cd "{{root}}/python" && pcs validate-release-chain ../examples/labtrust-release/
 
+test-release-chain:
+    cd "{{root}}/python" && pytest -q tests/test_release_chain.py tests/test_release_fixtures.py
+
 pcs-v01-clean-chain:
     pwsh -File "{{root}}/scripts/run-pcs-v01-clean-chain.ps1"
 
