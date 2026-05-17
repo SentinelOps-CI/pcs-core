@@ -62,10 +62,10 @@ test("invalid zero source commit", () => {
   );
 });
 
-test("labtrust invalid legacy singular receipt", () => {
+test("labtrust invalid singular runtime receipt bundle", () => {
   assert.throws(() =>
     validateArtifact(
-      load("labtrust/invalid_pf_legacy_singular_receipt.json"),
+      load("labtrust/invalid_singular_runtime_receipt_bundle.json"),
       "ScienceClaimBundle.v0",
     ),
   );

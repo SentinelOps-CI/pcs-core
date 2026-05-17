@@ -327,7 +327,7 @@ def check_invalid_examples(examples_dir: Path | None = None) -> None:
         "invalid_missing_assumption_set.json": "ScienceClaimBundle.v0",
         "invalid_mismatched_trace_hash.json": "ScienceClaimBundle.v0",
         "invalid_zero_source_commit.release.json": "RuntimeReceipt.v0",
-        "labtrust/invalid_pf_legacy_singular_receipt.json": "ScienceClaimBundle.v0",
+        "labtrust/invalid_singular_runtime_receipt_bundle.json": "ScienceClaimBundle.v0",
         "labtrust/invalid_signed_schema_version_artifact_name.json": "SignedScienceClaimBundle.v0",
     }
     for filename, artifact_type in invalid_cases.items():

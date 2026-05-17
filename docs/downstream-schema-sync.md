@@ -2,59 +2,55 @@
 
 pcs-core is the canonical source for all PCS v0.1 JSON Schemas. LabTrust-Gym, CertifyEdge, Provability Fabric, and Scientific Memory must stay aligned with this repository.
 
-## Vendoring rules
+## Mirroring rules
 
-1. Downstream repos may vendor schemas **only as generated mirrors** of `pcs-core/schemas/`.
-2. Mirrors must be copied from pcs-core **without local edits**. Do not patch vendored files in place.
-3. Record the pcs-core git tag or commit in release notes when refreshing mirrors.
+1. Downstream repos may mirror schemas **only as generated copies** of `pcs-core/schemas/`.
+2. Mirrored schemas must be **byte-for-byte equivalent** to pcs-core at the pinned revision, unless a file is explicitly documented as a **legacy fixture** (read-only negative example, never used for publish/import).
+3. Do not edit mirrored schema files in downstream repos. Refresh copies from pcs-core and record the git tag or commit in release notes.
 4. Typical mirror paths:
    - `schemas/pcs/` (Scientific Memory, Provability Fabric)
    - `vendor/pcs-core/schemas/` (submodule layouts)
 
 ## Schema drift checks
 
-Every downstream repo must expose:
-
-```bash
-just pcs-schema-diff
-```
-
-That target runs the pcs-core script against the repo’s vendored mirror:
+Every downstream repo must provide a schema drift check (for example `just pcs-schema-diff`) that compares the vendored mirror to pcs-core:
 
 ```bash
 scripts/pcs-schema-diff.sh path/to/vendored/schemas
 ```
 
-In pcs-core itself, the reference check is:
+pcs-core reference check:
 
 ```bash
 just pcs-schema-diff schemas
 ```
 
-**Schema drift is a release blocker.** CI must fail when the mirror differs from the pinned pcs-core revision.
+**Schema drift blocks v0.1 release.** CI must fail when the mirror differs from the pinned pcs-core revision.
 
-## Conformance fixtures
+## LabTrust conformance fixtures
 
-Cross-repo validation must use the shared LabTrust flow fixtures under `examples/labtrust/`:
+Cross-repo validation must use the shared fixture set under `examples/labtrust/`:
 
 | File | Stage |
 |------|--------|
-| `science_claim_bundle.pending.valid.json` | LabTrust-Gym (pre-certification) |
+| `science_claim_bundle.pending.valid.json` | LabTrust-Gym (pending bundle) |
 | `trace_certificate.valid.json` | CertifyEdge |
-| `science_claim_bundle.certified.valid.json` | LabTrust-Gym (post-certification) |
+| `science_claim_bundle.certified.valid.json` | LabTrust-Gym (certified bundle) |
 | `verification_result.valid.json` | Provability Fabric (verification) |
-| `signed_science_claim_bundle.valid.json` | Provability Fabric (signed export) |
+| `signed_science_claim_bundle.valid.json` | Provability Fabric (signed export) → Scientific Memory import |
 
-Negative fixtures under the same directory document known mismatches that must **fail** validation:
+Negative fixtures (must fail validation):
 
-- `invalid_pf_legacy_singular_receipt.json` — uses `runtime_receipt` instead of `runtime_receipts`
-- `invalid_signed_schema_version_artifact_name.json` — uses `schema_version: "SignedScienceClaimBundle.v0"` instead of `"v0"`
+| File | Failure reason |
+|------|----------------|
+| `invalid_signed_schema_version_artifact_name.json` | `schema_version: "SignedScienceClaimBundle.v0"` instead of `"v0"` |
+| `invalid_singular_runtime_receipt_bundle.json` | `runtime_receipt` instead of required `runtime_receipts` |
 
-Downstream test suites should import or copy these paths and assert pass/fail accordingly.
+Downstream test suites should copy or reference these paths and assert pass/fail accordingly. Python conformance tests live in `python/tests/test_labtrust_conformance.py`.
 
 ## Validation and hash
 
-- Use `pcs validate` (Python CLI) or language bindings from pcs-core for schema + semantic checks.
+- Use `pcs validate` or pcs-core language bindings for schema + semantic checks.
 - Use `pcs hash` for canonical digests; do not reimplement canonicalization locally.
 - Pin the same pcs-core version across all repos in a release train.
 

@@ -20,11 +20,11 @@ Downstream repos must not define competing versions of these artifacts.
 
 ## `schema_version` vs artifact class
 
-`schema_version` identifies the **protocol version**, not the artifact class. For v0.1, all artifacts use `schema_version = "v0"`.
+`schema_version` identifies the **PCS protocol version**, not the artifact class. For PCS v0.1, **every** artifact uses `schema_version = "v0"` (including `SignedScienceClaimBundle.v0`).
 
-The artifact class is determined by the schema file name (for example `ScienceClaimBundle.v0.schema.json`), the JSON Schema `title`, and the required ID field (`bundle_id`, `receipt_id`, `signed_bundle_id`, and so on). Do not encode the artifact class in `schema_version`.
+The artifact class is determined by the schema file, JSON Schema `title`, and required identifier fields (`bundle_id`, `receipt_id`, `signed_bundle_id`, and so on). Do not encode the artifact class in `schema_version`.
 
-Downstream repos must vendor schemas only as generated mirrors; see [downstream-schema-sync.md](downstream-schema-sync.md).
+Downstream repos must mirror schemas only as generated copies; see [downstream-schema-sync.md](downstream-schema-sync.md).
 
 ## Producer metadata
 

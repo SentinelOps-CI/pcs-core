@@ -29,12 +29,3 @@ def test_zero_source_commit_rejected() -> None:
     with pytest.raises(ValidationError):
         validate_file(EXAMPLES / "invalid_zero_source_commit.release.json")
 
-
-def test_labtrust_legacy_singular_receipt_rejected() -> None:
-    with pytest.raises(ValidationError):
-        validate_file(EXAMPLES / "labtrust/invalid_pf_legacy_singular_receipt.json")
-
-
-def test_labtrust_signed_schema_version_artifact_name_rejected() -> None:
-    with pytest.raises(ValidationError):
-        validate_file(EXAMPLES / "labtrust/invalid_signed_schema_version_artifact_name.json")
