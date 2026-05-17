@@ -11,7 +11,7 @@ from pcs_core.hash import canonical_hash
 from pcs_core.hash_vectors import verify_vectors, write_vectors
 from pcs_core.paths import examples_dir, resolve_release_chain_directory
 from pcs_core.release_fixtures import release_dir
-from pcs_core.release_chain import validate_release_chain_messages
+from pcs_core.release_chain import validate_release_chain_messages, validate_release_chain_report
 from pcs_core.release_fixtures import validate_release_manifest
 from pcs_core.validate import (
     ValidationError,
@@ -110,15 +110,16 @@ def cmd_validate_release_manifest(path: Path) -> int:
     return 0
 
 
-def cmd_validate_release_chain(path: Path | None) -> int:
+def cmd_validate_release_chain(path: Path | None, *, json_output: bool = False) -> int:
     directory = resolve_release_chain_directory(path or release_dir())
-    drift = validate_release_chain_messages(directory)
-    if drift:
-        for err in drift:
-            print(f"FAIL {err}", file=sys.stderr)
-        return 1
-    print(f"OK release chain {directory}")
-    return 0
+    report = validate_release_chain_report(directory)
+    if json_output:
+        print(json.dumps(report, indent=2))
+    elif report["status"] == "passed":
+        print(f"OK release chain {directory}")
+    else:
+        print(f"FAIL {report.get('failure_code')}: {report.get('message')}", file=sys.stderr)
+    return 0 if report["status"] == "passed" else 1
 
 
 def cmd_hash_vectors_verify() -> int:
@@ -161,6 +162,11 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="Release fixture directory (default: examples/labtrust-release under repo root)",
     )
+    p_chain.add_argument(
+        "--json",
+        action="store_true",
+        help="Emit machine-readable validation report JSON",
+    )
 
     schema_parser = sub.add_parser("schema", help="Schema commands")
     schema_sub = schema_parser.add_subparsers(dest="schema_cmd", required=True)
@@ -187,7 +193,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "validate-release-manifest":
         return cmd_validate_release_manifest(args.path)
     if args.command == "validate-release-chain":
-        return cmd_validate_release_chain(args.path)
+        return cmd_validate_release_chain(args.path, json_output=args.json)
     if args.command == "schema" and args.schema_cmd == "check":
         return cmd_schema_check()
     if args.command == "examples" and args.examples_cmd == "check":

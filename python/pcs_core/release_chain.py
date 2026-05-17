@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
@@ -13,7 +14,6 @@ from pcs_core.release_fixtures import (
     LABTRUST_SOURCE_REPO,
     CERTIFYEDGE_SOURCE_REPO,
     PF_SOURCE_REPO,
-    SM_SOURCE_REPO,
     MANIFEST_ARTIFACTS,
     MANIFEST_NAME,
     RELEASE_PCS_ARTIFACTS,
@@ -21,24 +21,67 @@ from pcs_core.release_fixtures import (
     _scan_forbidden_values,
     _validate_trace_hash_alignment,
     file_digest,
-    is_placeholder_commit,
+    is_release_pattern_placeholder,
+    is_zero_commit,
 )
 from pcs_core.validate import ValidationError, validate_file
 
-SIGNATURE_FIELD = "signature_or_digest"
+_DIGEST_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
 
 
 @dataclass(frozen=True)
 class ReleaseChainIssue:
     code: str
     message: str
+    artifact: str | None = None
+    expected: Any = None
+    actual: Any = None
 
     def format(self) -> str:
         return f"{self.code}: {self.message}"
 
 
-def _issue(code: str, message: str) -> ReleaseChainIssue:
-    return ReleaseChainIssue(code=code, message=message)
+def _issue(
+    code: str,
+    message: str,
+    *,
+    artifact: str | None = None,
+    expected: Any = None,
+    actual: Any = None,
+) -> ReleaseChainIssue:
+    return ReleaseChainIssue(
+        code=code,
+        message=message,
+        artifact=artifact,
+        expected=expected,
+        actual=actual,
+    )
+
+
+def _validate_trace_json(doc: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    trace_hash = doc.get("trace_hash")
+    if not isinstance(trace_hash, str) or not _DIGEST_RE.fullmatch(trace_hash):
+        errors.append("trace.json: trace_hash must be a sha256 digest")
+    if not doc.get("events"):
+        errors.append("trace.json: events are required")
+    return errors
+
+
+def _validate_scientific_memory_report_json(doc: dict[str, Any]) -> list[str]:
+    required = (
+        "verification_status",
+        "strict",
+        "allow_legacy",
+        "bundle_shape",
+        "source_commit",
+        "scientific_memory_commit",
+    )
+    return [
+        f"scientific_memory_import_report.json: missing required field {key}"
+        for key in required
+        if key not in doc
+    ]
 
 
 def _first_certificate_id(bundle: dict[str, Any]) -> str | None:
@@ -63,22 +106,61 @@ def _first_certificate_ref(bundle: dict[str, Any], part_key: str) -> str | None:
     return first if isinstance(first, str) else None
 
 
+def _certificate_ref_contains(bundle: dict[str, Any], part_key: str, certificate_id: str) -> bool:
+    part = bundle.get(part_key)
+    if not isinstance(part, dict):
+        return False
+    certificate_refs = part.get("certificate_refs")
+    if not isinstance(certificate_refs, list):
+        return False
+    return certificate_id in certificate_refs
+
+
 def _expect_certificate_id(
     issues: list[ReleaseChainIssue],
     *,
     expected: str,
     actual: str | None,
     label: str,
+    artifact: str,
 ) -> None:
     if actual is None:
         issues.append(
-            _issue("certificate_id_mismatch", f"{label}: certificate ID is required"),
+            _issue(
+                "certificate_id_mismatch",
+                f"{label}: certificate ID is required",
+                artifact=artifact,
+                expected=expected,
+            ),
         )
     elif actual != expected:
         issues.append(
             _issue(
                 "certificate_id_mismatch",
                 f"{label}: expected {expected!r}, got {actual!r}",
+                artifact=artifact,
+                expected=expected,
+                actual=actual,
+            ),
+        )
+
+
+def _expect_certificate_ref_contains(
+    issues: list[ReleaseChainIssue],
+    *,
+    bundle: dict[str, Any],
+    part_key: str,
+    certificate_id: str,
+    artifact: str,
+) -> None:
+    label = f"science_claim_bundle.certified.{part_key}.certificate_refs"
+    if not _certificate_ref_contains(bundle, part_key, certificate_id):
+        issues.append(
+            _issue(
+                "certificate_id_mismatch",
+                f"{label} must contain {certificate_id!r}",
+                artifact=artifact,
+                expected=certificate_id,
             ),
         )
 
@@ -133,11 +215,20 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
         commit = commits[key]
         if not isinstance(commit, str) or len(commit) != 40:
             issues.append(_issue("schema_validation_failed", f"manifest missing or invalid {key}"))
-        elif is_placeholder_commit(commit) or commit == "0" * 40:
+        elif is_zero_commit(commit):
             issues.append(
                 _issue(
                     "placeholder_commit_detected",
-                    f"manifest {key} uses forbidden provenance: {commit}",
+                    f"manifest {key} uses zero provenance: {commit}",
+                    artifact=MANIFEST_NAME,
+                ),
+            )
+        elif is_release_pattern_placeholder(commit):
+            issues.append(
+                _issue(
+                    "placeholder_commit_detected",
+                    f"manifest {key} uses pattern placeholder provenance: {commit}",
+                    artifact=MANIFEST_NAME,
                 ),
             )
 
@@ -166,6 +257,9 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
                 _issue(
                     "manifest_hash_mismatch",
                     f"{name}: manifest digest mismatch (expected {expected}, got {actual})",
+                    artifact=name,
+                    expected=expected,
+                    actual=actual,
                 ),
             )
 
@@ -176,14 +270,27 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
             continue
         doc = _load_json(path)
         if doc is None:
-            issues.append(_issue("schema_validation_failed", f"{name}: invalid JSON"))
+            issues.append(
+                _issue("schema_validation_failed", f"{name}: invalid JSON", artifact=name),
+            )
             continue
+        if name == "trace.json":
+            for msg in _validate_trace_json(doc):
+                issues.append(_issue("schema_validation_failed", msg, artifact=name))
+        elif name == "scientific_memory_import_report.json":
+            for msg in _validate_scientific_memory_report_json(doc):
+                issues.append(_issue("schema_validation_failed", msg, artifact=name))
         _scan_forbidden_values(doc, label=name, errors=scan_errors)
     for msg in scan_errors:
-        if "placeholder" in msg or "zero" in msg or "local_dev" in msg:
-            issues.append(_issue("placeholder_commit_detected", msg))
+        artifact = msg.split(":", 1)[0] if ":" in msg else None
+        if "local_dev" in msg:
+            issues.append(_issue("local_dev_detected", msg, artifact=artifact))
+        elif "zero" in msg:
+            issues.append(_issue("placeholder_commit_detected", msg, artifact=artifact))
+        elif "placeholder" in msg:
+            issues.append(_issue("placeholder_commit_detected", msg, artifact=artifact))
         else:
-            issues.append(_issue("schema_validation_failed", msg))
+            issues.append(_issue("schema_validation_failed", msg, artifact=artifact))
 
     trace_errors: list[str] = []
     _validate_trace_hash_alignment(base, trace_errors)
@@ -197,7 +304,13 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
         try:
             validate_file(path)
         except ValidationError as exc:
-            issues.append(_issue("schema_validation_failed", f"{name}: pcs validate failed: {exc}"))
+            issues.append(
+                _issue(
+                    "schema_validation_failed",
+                    f"{name}: pcs validate failed: {exc}",
+                    artifact=name,
+                ),
+            )
 
     lt_commit = commits.get("labtrust_gym_commit")
     ce_commit = commits.get("certifyedge_commit")
@@ -357,40 +470,46 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
                 ),
             )
 
+    trace_cert_id = trace_cert.get("certificate_id") if trace_cert else None
     certified_cert_id = _first_certificate_id(certified) if certified else None
     signed_scb = signed.get("science_claim_bundle") if signed else None
 
-    if certified_cert_id and certified:
+    if trace_cert_id and certified and isinstance(certified, dict):
         _expect_certificate_id(
             issues,
-            expected=certified_cert_id,
-            actual=trace_cert.get("certificate_id") if trace_cert else None,
-            label="trace_certificate.certificate_id",
+            expected=trace_cert_id,
+            actual=certified_cert_id,
+            label="science_claim_bundle.certified.certificates[0].certificate_id",
+            artifact="science_claim_bundle.certified.json",
+        )
+        _expect_certificate_ref_contains(
+            issues,
+            bundle=certified,
+            part_key="claim_artifact",
+            certificate_id=trace_cert_id,
+            artifact="science_claim_bundle.certified.json",
+        )
+        _expect_certificate_ref_contains(
+            issues,
+            bundle=certified,
+            part_key="evidence_bundle",
+            certificate_id=trace_cert_id,
+            artifact="science_claim_bundle.certified.json",
         )
         _expect_certificate_id(
             issues,
-            expected=certified_cert_id,
-            actual=_first_certificate_ref(certified, "claim_artifact"),
-            label="science_claim_bundle.certified.claim_artifact.certificate_refs[0]",
-        )
-        _expect_certificate_id(
-            issues,
-            expected=certified_cert_id,
-            actual=_first_certificate_ref(certified, "evidence_bundle"),
-            label="science_claim_bundle.certified.evidence_bundle.certificate_refs[0]",
-        )
-        _expect_certificate_id(
-            issues,
-            expected=certified_cert_id,
+            expected=trace_cert_id,
             actual=_verified_input_certificate_id(verification) if verification else None,
             label="verification_result.verified_input.certificate_id",
+            artifact="verification_result.json",
         )
         if isinstance(signed_scb, dict):
             _expect_certificate_id(
                 issues,
-                expected=certified_cert_id,
+                expected=trace_cert_id,
                 actual=_first_certificate_id(signed_scb),
                 label="signed_science_claim_bundle.science_claim_bundle.certificates[0].certificate_id",
+                artifact="signed_science_claim_bundle.json",
             )
 
     if verification and verification.get("status") != "ProofChecked":
@@ -469,3 +588,9 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
 
 def validate_release_chain_messages(directory: Path) -> list[str]:
     return [issue.format() for issue in validate_release_chain(directory)]
+
+
+def validate_release_chain_report(directory: Path) -> dict[str, Any]:
+    from pcs_core.release_chain_report import build_release_chain_report
+
+    return build_release_chain_report(directory)

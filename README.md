@@ -50,7 +50,7 @@ just ci
 
 **Canonical set:** [`examples/labtrust-release/`](examples/labtrust-release/) with [`RELEASE_FIXTURE_MANIFEST.json`](examples/labtrust-release/RELEASE_FIXTURE_MANIFEST.json).
 
-Downstream repos must sync against this directory or prove canonical-hash equivalence to the manifest (do not partially regenerate). Pin values and the 20-check validator: [docs/labtrust-rc-canonical.md](docs/labtrust-rc-canonical.md).
+Downstream repos must sync against this directory or prove canonical-hash equivalence to the manifest (do not partially regenerate). Pin values and the 30-check validator: [docs/labtrust-rc-canonical.md](docs/labtrust-rc-canonical.md). RC tag checklist: [docs/releases/pcs-v0.1.0-rc1.md](docs/releases/pcs-v0.1.0-rc1.md).
 
 ```bash
 pcs validate-release-chain examples/labtrust-release/

@@ -97,6 +97,17 @@ def is_placeholder_commit(commit: str) -> bool:
     return bool(PLACEHOLDER_COMMIT_RE.fullmatch(commit.strip()))
 
 
+RELEASE_PATTERN_PLACEHOLDER_RE = re.compile(r"^(?:a{40}|b{40}|c{40}|d{40}|e{40})$")
+
+
+def is_release_pattern_placeholder(commit: str) -> bool:
+    return bool(RELEASE_PATTERN_PLACEHOLDER_RE.fullmatch(commit.strip()))
+
+
+def is_zero_commit(commit: str) -> bool:
+    return commit.strip() == "0" * 40
+
+
 def manifest_commit_key(source_repo: str) -> str | None:
     repo = source_repo.lower()
     for needle, key in REPO_COMMIT_KEYS:

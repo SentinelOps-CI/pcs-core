@@ -1,4 +1,4 @@
-"""PCS v0.1 atomic LabTrust release-chain validation."""
+"""PCS v0.1 LabTrust release-chain validation."""
 
 import copy
 import json
@@ -17,19 +17,16 @@ from pcs_core.release_canonical import (
     LABTRUST_RC_TRACE_HASH,
 )
 from pcs_core.release_chain import validate_release_chain
+from pcs_core.release_chain_report import build_release_chain_report
 from pcs_core.release_fixtures import (
     MANIFEST_ARTIFACTS,
     release_dir,
     validate_release_manifest,
 )
 
+ROOT = Path(__file__).resolve().parents[2]
+INVALID_ROOT = ROOT / "examples" / "labtrust-release-invalid"
 MANIFEST = release_dir() / "RELEASE_FIXTURE_MANIFEST.json"
-INVALID_MIXED = (
-    Path(__file__).resolve().parents[2]
-    / "examples"
-    / "labtrust-release-invalid"
-    / "mixed_certificate_id"
-)
 INVALID_PLACEHOLDER = release_dir() / "invalid_placeholder_commit_manifest.json"
 INVALID_CE = release_dir() / "invalid_mismatched_certifyedge_commit_manifest.json"
 INVALID_PF = release_dir() / "invalid_mismatched_pf_commit_manifest.json"
@@ -40,35 +37,31 @@ def _codes(path: Path) -> set[str]:
     return {issue.code for issue in validate_release_chain(path)}
 
 
+def _invalid_dir(name: str) -> Path:
+    return INVALID_ROOT / name
+
+
 def test_validate_release_chain_reports_manifest_missing(tmp_path: Path) -> None:
-    codes = _codes(tmp_path)
-    assert "manifest_missing" in codes
+    assert "manifest_missing" in _codes(tmp_path)
 
 
 def test_resolve_release_chain_directory_from_python_relative_path() -> None:
     assert resolve_release_chain_directory(Path("examples/labtrust-release")) == release_dir()
 
 
-def test_validate_release_manifest_passes_on_current_fixture() -> None:
-    assert validate_release_manifest(MANIFEST) == []
+def test_validate_release_chain_passes_on_current_rc() -> None:
     assert validate_release_chain(release_dir()) == []
+    report = build_release_chain_report(release_dir())
+    assert report["status"] == "passed"
+    assert report["release_candidate"] == "pcs-v0.1.0-rc1"
+    assert report["checks_passed"] == 30
+    assert report["checks_failed"] == 0
+    assert report["checked_artifacts"] == len(MANIFEST_ARTIFACTS)
 
 
-def test_validate_release_chain_passes_on_current_fixture() -> None:
-    assert validate_release_chain(release_dir()) == []
-
-
-def test_validate_release_chain_checks_scientific_memory_import_flags() -> None:
-    sm_path = release_dir() / "scientific_memory_import_report.json"
-    original = sm_path.read_text(encoding="utf-8")
-    try:
-        report = json.loads(original)
-        report["allow_legacy"] = True
-        sm_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
-        codes = _codes(release_dir())
-        assert "legacy_import_detected" in codes
-    finally:
-        sm_path.write_text(original, encoding="utf-8")
+def test_validate_release_chain_json_output_passes() -> None:
+    report = build_release_chain_report(release_dir())
+    assert report["status"] == "passed"
 
 
 def test_canonical_rc_pin_values_in_manifest_and_artifacts() -> None:
@@ -88,6 +81,37 @@ def test_canonical_rc_pin_values_in_manifest_and_artifacts() -> None:
 
     trace = json.loads((release_dir() / "trace.json").read_text())
     assert trace["trace_hash"] == LABTRUST_RC_TRACE_HASH
+
+
+@pytest.mark.parametrize(
+    ("fixture_name", "expected_code"),
+    [
+        ("placeholder_commit", "placeholder_commit_detected"),
+        ("mismatched_certificate_id", "certificate_id_mismatch"),
+        ("mismatched_trace_hash", "trace_hash_mismatch"),
+        ("mismatched_certified_bundle_hash", "verified_input_hash_mismatch"),
+        ("failed_scientific_memory_import", "scientific_memory_import_failed"),
+        ("legacy_import_mode", "legacy_import_detected"),
+    ],
+)
+def test_validate_release_chain_rejects_invalid_fixtures(
+    fixture_name: str,
+    expected_code: str,
+) -> None:
+    path = _invalid_dir(fixture_name)
+    if not path.is_dir():
+        pytest.skip(f"invalid fixture not materialized: {path}")
+    codes = _codes(path)
+    assert expected_code in codes
+    report = build_release_chain_report(path)
+    assert report["status"] == "failed"
+    assert report["failure_code"] == expected_code or expected_code in {
+        f.get("failure_code") for f in report.get("failures", [])
+    }
+
+
+def test_validate_release_manifest_passes_on_current_fixture() -> None:
+    assert validate_release_manifest(MANIFEST) == []
 
 
 def test_validate_release_manifest_rejects_placeholder_commits() -> None:
@@ -130,10 +154,3 @@ def test_validate_release_manifest_rejects_hash_mismatch() -> None:
     finally:
         if path.exists():
             path.unlink()
-
-
-@pytest.mark.skipif(not INVALID_MIXED.is_dir(), reason="mixed_certificate_id fixture not present")
-def test_validate_release_chain_rejects_mixed_certificate_id_fixture() -> None:
-    issues = validate_release_chain(INVALID_MIXED)
-    codes = {issue.code for issue in issues}
-    assert "certificate_id_mismatch" in codes
