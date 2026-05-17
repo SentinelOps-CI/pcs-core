@@ -13,6 +13,9 @@ build:
 validate-examples:
     cd "{{root}}/python" && pcs examples check
 
+labtrust-check:
+    cd "{{root}}/python" && pytest -q tests/test_labtrust_conformance.py
+
 python-test:
     cd "{{root}}/python" && pytest -q
 
@@ -31,7 +34,7 @@ hash-vectors-verify:
 pcs-schema-diff vendor_dir="schemas":
     bash "{{root}}/scripts/pcs-schema-diff.sh" "{{root}}/{{vendor_dir}}"
 
-ci: build python-test rust-test ts-test validate-examples hash-vectors-verify pcs-schema-diff
+ci: build python-test rust-test ts-test validate-examples labtrust-check hash-vectors-verify pcs-schema-diff
     cd "{{root}}/python" && pcs schema check
     cd "{{root}}/python" && ruff check pcs_core tests
     cd "{{root}}/python" && ruff format --check pcs_core tests

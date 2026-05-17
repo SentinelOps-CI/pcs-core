@@ -28,4 +28,3 @@ def test_mismatched_trace_hash_rejected() -> None:
 def test_zero_source_commit_rejected() -> None:
     with pytest.raises(ValidationError):
         validate_file(EXAMPLES / "invalid_zero_source_commit.release.json")
-
