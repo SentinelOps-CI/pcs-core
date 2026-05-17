@@ -36,6 +36,12 @@ Regenerate protocol JSON:
 just materialize-labtrust-protocol
 ```
 
+Windows PowerShell (repo root, no `just` required):
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/materialize-labtrust-protocol.ps1
+```
+
 ## Validation
 
 ```bash

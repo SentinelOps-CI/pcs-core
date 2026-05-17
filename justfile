@@ -1,6 +1,7 @@
 set shell := ["bash", "-cu"]
-
-root := justfile_directory()
+# Bash (including Git Bash on Windows) needs forward slashes in paths.
+root_native := justfile_directory()
+root := replace(justfile_directory(), "\\", "/")
 
 default:
     @just ci
@@ -50,8 +51,7 @@ shared-hash-vectors-verify:
     cd "{{root}}/python" && pcs shared-hash-vectors verify
 
 materialize-labtrust-protocol:
-    cd "{{root}}/python" && python scripts/materialize_labtrust_protocol_artifacts.py
-    cd "{{root}}/python" && pcs shared-hash-vectors verify
+    bash "{{root_native}}/scripts/materialize-labtrust-protocol.sh"
 
 pcs-schema-diff vendor_dir="schemas":
     bash "{{root}}/scripts/pcs-schema-diff.sh" "{{root}}/{{vendor_dir}}"
