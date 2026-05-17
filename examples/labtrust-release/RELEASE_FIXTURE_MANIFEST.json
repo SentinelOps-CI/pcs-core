@@ -1,7 +1,7 @@
 {
   "schema_version": "v0",
   "release_candidate": "pcs-v0.1.0-rc1",
-  "generated_at": "2026-05-17T15:05:04Z",
+  "generated_at": "2026-05-17T15:03:27Z",
   "pcs_core_commit": "0baa3fae6c48a2ff4c27b8c67210b9e3d405f5e9",
   "labtrust_gym_commit": "c20139460f7e46b0fe3031e9da70a1c36e4dda33",
   "certifyedge_commit": "4fbfe170d7b08e148329e95b38395f02a81729ec",
@@ -12,9 +12,9 @@
     "runtime_receipt.json": "sha256:f7ed1cf540a36ec8191e2f5876ee0bf74401cbd5f5dcaadfa731236fc3d92502",
     "trace_certificate.json": "sha256:57be59dc03343d9223315a180305f5dcdcab3bca86dccd17b8911d739651cf41",
     "science_claim_bundle.pending.json": "sha256:a007cf3d93fd3c97e6fdbfb35d9adeed339a2c8b6632987579c2b1222c738a22",
-    "science_claim_bundle.certified.json": "sha256:6cb7ad50ef9b569150a67f9904424ce875a0e62e6bad0d41f9c52dd0a503344b",
-    "verification_result.json": "sha256:a2d5f70f77f1e1b8b45b965e0608a7bf7e542cc4ce52dc0539168ffd49b6cb0c",
-    "signed_science_claim_bundle.json": "sha256:51b82d304a13fc7a868ff1121bed76ef22cc8facb02e576bab51297b4a61f209",
-    "scientific_memory_import_report.json": "sha256:2ae52dd961d749adb353f50cce485c57dcc96a68b461401fb9fdf7ab7d3fc1cb"
+    "science_claim_bundle.certified.json": "sha256:f321a35ba235a854bad1badf151dd5b4361487896415c249da5016ef82475f01",
+    "verification_result.json": "sha256:b98c4cb5b7baf3ff71e5fc6677ac40f780e8a76853777bd243b5a3423a425949",
+    "signed_science_claim_bundle.json": "sha256:641e25c8a9df3faeaf098cf2428ef9564d9687ec82ca6b34c365ad7f83d07011",
+    "scientific_memory_import_report.json": "sha256:80121a81b118cfe077a0054e8ec83d0e811a1af50dbf3effed1eeb5f903656b9"
   }
 }
