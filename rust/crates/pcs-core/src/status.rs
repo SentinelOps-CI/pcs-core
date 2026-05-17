@@ -24,3 +24,6 @@ pub const TRACE_CERTIFICATE_STATUSES: &[&str] = &[
 
 pub const CERTIFIED_CLAIM_STATUSES: &[&str] =
     &["CertificateChecked", "ProofChecked", "RuntimeChecked"];
+
+pub const IMPORT_READY_VERIFICATION_STATUSES: &[&str] =
+    &["ProofChecked", "CertificateChecked", "RuntimeChecked"];

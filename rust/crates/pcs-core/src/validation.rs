@@ -1,7 +1,10 @@
 use serde_json::Value;
 
 use crate::schema::{compile_schema, validate_schema};
-use crate::status::{ARTIFACT_STATUSES, CERTIFIED_CLAIM_STATUSES, TRACE_CERTIFICATE_STATUSES};
+use crate::status::{
+    ARTIFACT_STATUSES, CERTIFIED_CLAIM_STATUSES, IMPORT_READY_VERIFICATION_STATUSES,
+    TRACE_CERTIFICATE_STATUSES,
+};
 
 #[derive(Debug)]
 pub struct ValidationError {
@@ -164,6 +167,30 @@ fn validate_science_claim_bundle(obj: &serde_json::Map<String, Value>, errors: &
     }
 }
 
+fn validate_verification_result(obj: &serde_json::Map<String, Value>, errors: &mut Vec<String>) {
+    let checks = match obj.get("checks").and_then(|v| v.as_array()) {
+        Some(c) => c,
+        None => return,
+    };
+    let has_failed = checks.iter().any(|check| {
+        check
+            .as_object()
+            .and_then(|c| c.get("status"))
+            .and_then(|s| s.as_str())
+            == Some("failed")
+    });
+    let top_status = obj.get("status").and_then(|v| v.as_str()).unwrap_or("");
+    if has_failed
+        && IMPORT_READY_VERIFICATION_STATUSES
+            .iter()
+            .any(|s| *s == top_status)
+    {
+        errors.push(format!(
+            "VerificationResult.v0 with failed checks cannot use import-ready status {top_status:?} (Scientific Memory import contract)"
+        ));
+    }
+}
+
 pub fn validate_semantics(value: &Value, artifact_type: &str) -> Result<(), ValidationError> {
     let mut errors = Vec::new();
     check_source_commits(value, "", &mut errors, false);
@@ -179,9 +206,15 @@ pub fn validate_semantics(value: &Value, artifact_type: &str) -> Result<(), Vali
         if artifact_type == "ScienceClaimBundle.v0" {
             validate_science_claim_bundle(obj, &mut errors);
         }
+        if artifact_type == "VerificationResult.v0" {
+            validate_verification_result(obj, &mut errors);
+        }
         if artifact_type == "SignedScienceClaimBundle.v0" {
             if let Some(scb) = obj.get("science_claim_bundle").and_then(|v| v.as_object()) {
                 validate_science_claim_bundle(scb, &mut errors);
+            }
+            if let Some(vr) = obj.get("verification_result").and_then(|v| v.as_object()) {
+                validate_verification_result(vr, &mut errors);
             }
         }
         if artifact_type == "TraceCertificate.v0" {
@@ -239,7 +272,10 @@ mod tests {
 
     #[test]
     fn valid_examples_pass_jsonschema_and_semantics() {
-        for entry in WalkDir::new(examples_dir()).into_iter().filter_map(Result::ok) {
+        for entry in WalkDir::new(examples_dir())
+            .into_iter()
+            .filter_map(Result::ok)
+        {
             let path = entry.path();
             if !entry.file_type().is_file() {
                 continue;

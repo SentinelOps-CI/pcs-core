@@ -18,6 +18,12 @@ const CERTIFIED_CLAIM_STATUSES = new Set([
   "RuntimeChecked",
 ]);
 
+const IMPORT_READY_VERIFICATION_STATUSES = new Set([
+  "ProofChecked",
+  "CertificateChecked",
+  "RuntimeChecked",
+]);
+
 export type ArtifactType =
   | "AssumptionSet.v0"
   | "SourceSpan.v0"
@@ -113,6 +119,27 @@ function validateScienceClaimBundle(data: Record<string, unknown>): string[] {
   return errors;
 }
 
+function validateVerificationResult(data: Record<string, unknown>): string[] {
+  const errors: string[] = [];
+  const checks = data.checks;
+  if (!Array.isArray(checks)) {
+    return errors;
+  }
+  const hasFailed = checks.some(
+    (check) =>
+      check &&
+      typeof check === "object" &&
+      (check as Record<string, unknown>).status === "failed",
+  );
+  const topStatus = String(data.status ?? "");
+  if (hasFailed && IMPORT_READY_VERIFICATION_STATUSES.has(topStatus)) {
+    errors.push(
+      `VerificationResult.v0 with failed checks cannot use import-ready status ${topStatus} (Scientific Memory import contract)`,
+    );
+  }
+  return errors;
+}
+
 export function validateArtifact(
   data: Record<string, unknown>,
   artifactType?: ArtifactType,
@@ -133,10 +160,17 @@ export function validateArtifact(
   if (type === "ScienceClaimBundle.v0") {
     errors.push(...validateScienceClaimBundle(data));
   }
+  if (type === "VerificationResult.v0") {
+    errors.push(...validateVerificationResult(data));
+  }
   if (type === "SignedScienceClaimBundle.v0") {
     const scb = data.science_claim_bundle;
     if (scb && typeof scb === "object") {
       errors.push(...validateScienceClaimBundle(scb as Record<string, unknown>));
+    }
+    const vr = data.verification_result;
+    if (vr && typeof vr === "object") {
+      errors.push(...validateVerificationResult(vr as Record<string, unknown>));
     }
   }
   if (type === "TraceCertificate.v0") {

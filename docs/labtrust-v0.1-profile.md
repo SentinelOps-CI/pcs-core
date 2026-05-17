@@ -15,6 +15,25 @@ Downstream repos must depend on **pcs-core** for schemas, validation, and hash. 
 
 Conformance fixtures: `examples/labtrust/`.
 
+## Release fixture authority
+
+For PCS v0.1, `examples/labtrust/` is the **canonical conformance fixture set**. Downstream repos may copy these fixtures for CI and integration tests, but any local copy must be **byte-for-byte identical** to the pcs-core fixture at the pinned release commit (for example tag `v0.1.0`). Schema mirrors follow the same rule; see [downstream-schema-sync.md](downstream-schema-sync.md).
+
+| Valid fixture | Producer stage |
+|---------------|----------------|
+| `science_claim_bundle.pending.valid.json` | LabTrust-Gym |
+| `trace_certificate.valid.json` | CertifyEdge |
+| `science_claim_bundle.certified.valid.json` | LabTrust-Gym |
+| `verification_result.valid.json` | Provability Fabric |
+| `signed_science_claim_bundle.valid.json` | Provability Fabric → Scientific Memory |
+
+| Invalid fixture | Expected failure |
+|-----------------|-------------------|
+| `invalid_singular_runtime_receipt_bundle.json` | `runtime_receipt` instead of `runtime_receipts` |
+| `invalid_signed_schema_version_artifact_name.json` | `schema_version` encodes artifact class |
+| `invalid_failed_verification_result.json` | failed checks with import-ready status |
+| `invalid_missing_trace_certificate.json` | certified bundle without certificates |
+
 ## Repos in scope
 
 | Repo | Role |

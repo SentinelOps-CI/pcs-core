@@ -45,8 +45,12 @@ Negative fixtures (must fail validation):
 |------|----------------|
 | `invalid_signed_schema_version_artifact_name.json` | `schema_version: "SignedScienceClaimBundle.v0"` instead of `"v0"` |
 | `invalid_singular_runtime_receipt_bundle.json` | `runtime_receipt` instead of required `runtime_receipts` |
+| `invalid_failed_verification_result.json` | failed verification checks with import-ready top-level status |
+| `invalid_missing_trace_certificate.json` | certified claim without attached `TraceCertificate` |
 
 Downstream test suites should copy or reference these paths and assert pass/fail accordingly. Python conformance tests live in `python/tests/test_labtrust_conformance.py`.
+
+Fixture authority is defined in [labtrust-v0.1-profile.md](labtrust-v0.1-profile.md#release-fixture-authority).
 
 ## Validation and hash
 

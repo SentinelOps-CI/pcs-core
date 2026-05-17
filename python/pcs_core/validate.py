@@ -35,6 +35,14 @@ CERTIFIED_CLAIM_STATUSES = frozenset(
     }
 )
 
+IMPORT_READY_VERIFICATION_STATUSES = frozenset(
+    {
+        "ProofChecked",
+        "CertificateChecked",
+        "RuntimeChecked",
+    }
+)
+
 _ZERO_COMMIT_RE = re.compile(r"^0+$")
 
 
@@ -233,6 +241,23 @@ def _validate_science_claim_bundle(data: dict[str, Any]) -> list[str]:
     return errors
 
 
+def _validate_verification_result(data: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    checks = data.get("checks")
+    if not isinstance(checks, list):
+        return errors
+    has_failed = any(
+        isinstance(check, dict) and check.get("status") == "failed" for check in checks
+    )
+    top_status = str(data.get("status") or "")
+    if has_failed and top_status in IMPORT_READY_VERIFICATION_STATUSES:
+        errors.append(
+            "VerificationResult.v0 with failed checks cannot use import-ready status "
+            f"{top_status!r} (Scientific Memory import contract)"
+        )
+    return errors
+
+
 def _validate_signed_bundle(data: dict[str, Any]) -> list[str]:
     errors: list[str] = []
     scb = data.get("science_claim_bundle")
@@ -241,6 +266,7 @@ def _validate_signed_bundle(data: dict[str, Any]) -> list[str]:
     vr = data.get("verification_result")
     if isinstance(vr, dict):
         _validate_status_fields(vr, "verification_result", errors)
+        errors.extend(_validate_verification_result(vr))
     return errors
 
 
@@ -257,6 +283,9 @@ def validate_semantics(data: dict[str, Any], artifact_type: str) -> list[str]:
 
     if artifact_type == "ScienceClaimBundle.v0":
         errors.extend(_validate_science_claim_bundle(data))
+
+    if artifact_type == "VerificationResult.v0":
+        errors.extend(_validate_verification_result(data))
 
     if artifact_type == "SignedScienceClaimBundle.v0":
         errors.extend(_validate_signed_bundle(data))
@@ -329,6 +358,8 @@ def check_invalid_examples(examples_dir: Path | None = None) -> None:
         "invalid_zero_source_commit.release.json": "RuntimeReceipt.v0",
         "labtrust/invalid_singular_runtime_receipt_bundle.json": "ScienceClaimBundle.v0",
         "labtrust/invalid_signed_schema_version_artifact_name.json": "SignedScienceClaimBundle.v0",
+        "labtrust/invalid_failed_verification_result.json": "VerificationResult.v0",
+        "labtrust/invalid_missing_trace_certificate.json": "ScienceClaimBundle.v0",
     }
     for filename, artifact_type in invalid_cases.items():
         path = examples_dir / filename

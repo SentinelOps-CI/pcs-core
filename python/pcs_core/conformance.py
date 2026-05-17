@@ -17,6 +17,8 @@ LABTRUST_VALID_FIXTURES: tuple[str, ...] = (
 LABTRUST_INVALID_FIXTURES: tuple[str, ...] = (
     "invalid_signed_schema_version_artifact_name.json",
     "invalid_singular_runtime_receipt_bundle.json",
+    "invalid_failed_verification_result.json",
+    "invalid_missing_trace_certificate.json",
 )
 
 

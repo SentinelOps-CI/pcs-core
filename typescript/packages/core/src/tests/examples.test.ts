@@ -80,6 +80,16 @@ test("labtrust invalid signed schema_version artifact name", () => {
   );
 });
 
+test("labtrust invalid failed verification result", () => {
+  assert.throws(() => validateArtifact(load("labtrust/invalid_failed_verification_result.json")));
+});
+
+test("labtrust invalid missing trace certificate", () => {
+  assert.throws(() =>
+    validateArtifact(load("labtrust/invalid_missing_trace_certificate.json")),
+  );
+});
+
 test("canonical hash stable", () => {
   const data = load("science_claim_bundle.certified.valid.json");
   assert.equal(canonicalHash(data), canonicalHash(data));
