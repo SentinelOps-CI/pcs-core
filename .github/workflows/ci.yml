@@ -20,6 +20,7 @@ jobs:
           pytest -q
           pcs schema check
           pcs examples check
+          pcs validate-release-chain ../examples/labtrust-release/
           python -m pcs_core.hash_vectors --verify
           ruff check pcs_core tests
           ruff format --check pcs_core tests
@@ -75,3 +76,4 @@ jobs:
           pcs validate ../examples/labtrust/signed_science_claim_bundle.valid.json
           pcs hash ../examples/science_claim_bundle.certified.valid.json
           pcs examples check
+          pcs validate-release-chain ../examples/labtrust-release/

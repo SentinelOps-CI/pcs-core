@@ -7,6 +7,15 @@ from pathlib import Path
 import pytest
 
 from pcs_core.paths import resolve_release_chain_directory
+from pcs_core.release_canonical import (
+    LABTRUST_RC_CERTIFICATE_ID,
+    LABTRUST_RC_CERTIFIED_BUNDLE_HASH,
+    LABTRUST_RC_CERTIFYEDGE_COMMIT,
+    LABTRUST_RC_LABTRUST_GYM_COMMIT,
+    LABTRUST_RC_PROVABILITY_FABRIC_COMMIT,
+    LABTRUST_RC_SCIENTIFIC_MEMORY_COMMIT,
+    LABTRUST_RC_TRACE_HASH,
+)
 from pcs_core.release_chain import validate_release_chain
 from pcs_core.release_fixtures import (
     MANIFEST_ARTIFACTS,
@@ -42,6 +51,25 @@ def test_validate_release_manifest_passes_on_current_fixture() -> None:
 
 def test_validate_release_chain_passes_on_current_fixture() -> None:
     assert validate_release_chain(release_dir()) == []
+
+
+def test_canonical_rc_pin_values_in_manifest_and_artifacts() -> None:
+    manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
+    assert manifest["labtrust_gym_commit"] == LABTRUST_RC_LABTRUST_GYM_COMMIT
+    assert manifest["certifyedge_commit"] == LABTRUST_RC_CERTIFYEDGE_COMMIT
+    assert manifest["provability_fabric_commit"] == LABTRUST_RC_PROVABILITY_FABRIC_COMMIT
+    assert manifest["scientific_memory_commit"] == LABTRUST_RC_SCIENTIFIC_MEMORY_COMMIT
+    assert (
+        manifest["artifacts"]["science_claim_bundle.certified.json"]
+        == LABTRUST_RC_CERTIFIED_BUNDLE_HASH
+    )
+
+    trace_cert = json.loads((release_dir() / "trace_certificate.json").read_text())
+    assert trace_cert["certificate_id"] == LABTRUST_RC_CERTIFICATE_ID
+    assert trace_cert["trace_hash"] == LABTRUST_RC_TRACE_HASH
+
+    trace = json.loads((release_dir() / "trace.json").read_text())
+    assert trace["trace_hash"] == LABTRUST_RC_TRACE_HASH
 
 
 def test_validate_release_manifest_rejects_placeholder_commits() -> None:

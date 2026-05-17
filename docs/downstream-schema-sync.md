@@ -52,7 +52,18 @@ Downstream test suites should copy or reference these paths and assert pass/fail
 
 Fixture authority is defined in [labtrust-v0.1-profile.md](labtrust-v0.1-profile.md#release-fixture-authority).
 
-Release evidence lives under `examples/labtrust-release/` with `RELEASE_FIXTURE_MANIFEST.json`. Regenerate via `just generate-labtrust-release-fixtures` when pipeline outputs change; verify with `just validate-labtrust-release-fixtures`.
+## Release-candidate fixtures (canonical)
+
+**Authority:** `pcs-core/examples/labtrust-release/` is the only canonical PCS v0.1 release-candidate fixture set.
+
+| Rule | Detail |
+|------|--------|
+| Source of truth | Copy files from pcs-core at the pinned commit; do not regenerate partial fixtures in downstream repos |
+| Atomic refresh | Regenerate only via the full clean-checkout chain and atomic promote (`just generate-labtrust-release-fixtures` in pcs-core) |
+| Pin values | See [labtrust-rc-canonical.md](labtrust-rc-canonical.md) (`certificate_id`, `trace_hash`, certified bundle hash, per-repo commits) |
+| Verification | `pcs validate-release-chain examples/labtrust-release/` or `just validate-labtrust-release-fixtures` |
+
+Downstream release fixture tests must assert the same pin values as pcs-core. Schema conformance fixtures remain under `examples/labtrust/` (separate from release evidence).
 
 ## Validation and hash
 

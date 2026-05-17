@@ -46,12 +46,24 @@ just pcs-schema-diff schemas
 just ci
 ```
 
+## PCS v0.1 release-candidate fixtures
+
+**Canonical set:** [`examples/labtrust-release/`](examples/labtrust-release/) with [`RELEASE_FIXTURE_MANIFEST.json`](examples/labtrust-release/RELEASE_FIXTURE_MANIFEST.json).
+
+Downstream repos must sync release fixture tests from this directory (copy, do not partially regenerate). Pin values and sync policy: [docs/labtrust-rc-canonical.md](docs/labtrust-rc-canonical.md).
+
+```bash
+pcs validate-release-chain examples/labtrust-release/
+just validate-labtrust-release-fixtures
+```
+
 ## CLI
 
 | Command | Description |
 |---------|-------------|
 | `pcs validate <file>` | JSON Schema + semantic validation |
 | `pcs hash <file>` | Canonical `sha256:` digest |
+| `pcs validate-release-chain [dir]` | Atomic LabTrust RC chain consistency (default: `examples/labtrust-release/`) |
 | `pcs schema check` | Validate all JSON schemas |
 | `pcs examples check` | Validate valid/invalid fixtures |
 | `pcs hash-vectors verify` | Verify frozen canonical hash vectors |
@@ -81,6 +93,7 @@ python/tests/hash_vectors/   Frozen canonical hash test vectors
 6. Validate cross-repo fixtures under `examples/labtrust/`.
 7. Follow [docs/labtrust-v0.1-profile.md](docs/labtrust-v0.1-profile.md) for the QC-release workflow.
 8. Run the **PCS v0.1 clean-checkout chain** from LabTrust-Gym (`scripts/run-pcs-v01-clean-chain.ps1` here delegates to the sibling repo).
+9. Copy [`examples/labtrust-release/`](examples/labtrust-release/) for cross-repo release fixture tests; verify with `pcs validate-release-chain`.
 
 ## License
 

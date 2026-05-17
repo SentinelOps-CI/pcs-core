@@ -52,6 +52,18 @@ def _first_certificate_id(bundle: dict[str, Any]) -> str | None:
     return None
 
 
+def _certificate_ref_ids(bundle: dict[str, Any]) -> list[str]:
+    refs: list[str] = []
+    for key in ("claim_artifact", "evidence_bundle"):
+        part = bundle.get(key)
+        if not isinstance(part, dict):
+            continue
+        certificate_refs = part.get("certificate_refs")
+        if isinstance(certificate_refs, list):
+            refs.extend(ref for ref in certificate_refs if isinstance(ref, str))
+    return refs
+
+
 def _verified_input_certificate_id(vr: dict[str, Any]) -> str | None:
     verified = vr.get("verified_input")
     if isinstance(verified, dict):
@@ -133,7 +145,7 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
         if expected != actual:
             issues.append(
                 _issue(
-                    "manifest_artifact_hash_mismatch",
+                    "manifest_hash_mismatch",
                     f"{name}: manifest digest mismatch (expected {expected}, got {actual})",
                 ),
             )
@@ -149,8 +161,10 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
             continue
         _scan_forbidden_values(doc, label=name, errors=scan_errors)
     for msg in scan_errors:
-        if "placeholder" in msg or "local_dev" in msg:
-            issues.append(_issue("invalid_artifact", msg))
+        if "placeholder" in msg:
+            issues.append(_issue("placeholder_commit_detected", msg))
+        elif "local_dev" in msg:
+            issues.append(_issue("placeholder_commit_detected", msg))
         else:
             issues.append(_issue("invalid_artifact", msg))
 
@@ -185,14 +199,14 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
         if receipt and receipt.get("source_commit") != lt_commit:
             issues.append(
                 _issue(
-                    "mixed_runtime_receipt_commit",
+                    "manifest_labtrust_commit_mismatch",
                     f"runtime_receipt.source_commit {receipt.get('source_commit')!r} "
                     f"!= manifest.labtrust_gym_commit {lt_commit}",
                 ),
             )
-        for label, doc, code in (
-            ("science_claim_bundle.pending.json", pending, "manifest_labtrust_commit_mismatch"),
-            ("science_claim_bundle.certified.json", certified, "mixed_certified_bundle_commit"),
+        for label, doc in (
+            ("science_claim_bundle.pending.json", pending),
+            ("science_claim_bundle.certified.json", certified),
         ):
             if not isinstance(doc, dict):
                 continue
@@ -200,8 +214,9 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
                 if _repo_matches(repo, LABTRUST_SOURCE_REPO) and commit != lt_commit:
                     issues.append(
                         _issue(
-                            code,
-                            f"{label}: LabTrust source_commit {commit} != manifest.labtrust_gym_commit {lt_commit}",
+                            "manifest_labtrust_commit_mismatch",
+                            f"{label}: LabTrust source_commit {commit} "
+                            f"!= manifest.labtrust_gym_commit {lt_commit}",
                         ),
                     )
         if signed:
@@ -211,7 +226,7 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
                     if _repo_matches(repo, LABTRUST_SOURCE_REPO) and commit != lt_commit:
                         issues.append(
                             _issue(
-                                "mixed_signed_bundle_commit",
+                                "manifest_labtrust_commit_mismatch",
                                 "signed.science_claim_bundle: LabTrust source_commit "
                                 f"{commit} != manifest.labtrust_gym_commit {lt_commit}",
                             ),
@@ -271,7 +286,7 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
         if sm_src != sm_commit:
             issues.append(
                 _issue(
-                    "manifest_sm_commit_mismatch",
+                    "manifest_scientific_memory_commit_mismatch",
                     f"scientific_memory_import_report.source_commit {sm_src!r} "
                     f"!= manifest.scientific_memory_commit {sm_commit}",
                 ),
@@ -279,7 +294,7 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
         if sm_pin is not None and sm_pin != sm_commit:
             issues.append(
                 _issue(
-                    "manifest_sm_commit_mismatch",
+                    "manifest_scientific_memory_commit_mismatch",
                     f"scientific_memory_import_report.scientific_memory_commit {sm_pin!r} "
                     f"!= manifest.scientific_memory_commit {sm_commit}",
                 ),
@@ -311,7 +326,7 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
                 f"verification_result.verified_input, and signed bundle ({cert_ids})",
             ),
         )
-    elif certified_cert_id:
+    elif certified_cert_id and certified:
         if trace_cert_id and trace_cert_id != certified_cert_id:
             issues.append(
                 _issue(
@@ -335,11 +350,32 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
                     f"{signed_cert_id} != certified {certified_cert_id}",
                 ),
             )
+        for ref_id in _certificate_ref_ids(certified):
+            if ref_id != certified_cert_id:
+                issues.append(
+                    _issue(
+                        "mixed_certificate_id",
+                        f"certified bundle certificate_refs entry {ref_id!r} "
+                        f"!= {certified_cert_id}",
+                    ),
+                )
+        if signed:
+            scb = signed.get("science_claim_bundle")
+            if isinstance(scb, dict):
+                for ref_id in _certificate_ref_ids(scb):
+                    if ref_id != certified_cert_id:
+                        issues.append(
+                            _issue(
+                                "mixed_certificate_id",
+                                f"signed bundle certificate_refs entry {ref_id!r} "
+                                f"!= {certified_cert_id}",
+                            ),
+                        )
 
     if verification and verification.get("status") != "ProofChecked":
         issues.append(
             _issue(
-                "manifest_pf_commit_mismatch",
+                "invalid_artifact",
                 "verification_result.status must be ProofChecked",
             ),
         )
@@ -348,7 +384,7 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
         if isinstance(embedded_vr, dict) and embedded_vr.get("status") != "ProofChecked":
             issues.append(
                 _issue(
-                    "manifest_pf_commit_mismatch",
+                    "invalid_artifact",
                     "signed.verification_result.status must be ProofChecked",
                 ),
             )
@@ -362,6 +398,25 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
         )
 
     certified_hash = artifacts.get("science_claim_bundle.certified.json")
+    if certified_hash and verification:
+        verified = verification.get("verified_input")
+        if isinstance(verified, dict):
+            bundle_hash = verified.get("bundle_hash")
+            if not bundle_hash:
+                issues.append(
+                    _issue(
+                        "verified_input_hash_mismatch",
+                        "verification_result.verified_input.bundle_hash is required",
+                    ),
+                )
+            elif bundle_hash != certified_hash:
+                issues.append(
+                    _issue(
+                        "verified_input_hash_mismatch",
+                        f"verified_input.bundle_hash {bundle_hash} != manifest certified bundle hash "
+                        f"{certified_hash}",
+                    ),
+                )
     if signed and certified_hash:
         signed_hash = signed.get("signed_input_bundle_hash")
         if not signed_hash:
@@ -379,16 +434,6 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
                     f"{certified_hash}",
                 ),
             )
-        verified = verification.get("verified_input") if verification else None
-        if isinstance(verified, dict):
-            bundle_hash = verified.get("bundle_hash")
-            if bundle_hash and bundle_hash != certified_hash:
-                issues.append(
-                    _issue(
-                        "signed_input_bundle_hash_mismatch",
-                        "verified_input.bundle_hash does not match manifest certified bundle hash",
-                    ),
-                )
 
     if trace_cert and trace_cert.get("status") != "CertificateChecked":
         issues.append(
