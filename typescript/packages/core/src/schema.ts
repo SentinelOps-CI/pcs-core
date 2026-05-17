@@ -34,6 +34,10 @@ const ARTIFACT_SCHEMAS: Record<ArtifactType, string> = {
   "ScienceClaimBundle.v0": "ScienceClaimBundle.v0.schema.json",
   "VerificationResult.v0": "VerificationResult.v0.schema.json",
   "SignedScienceClaimBundle.v0": "SignedScienceClaimBundle.v0.schema.json",
+  "ReleaseManifest.v0": "ReleaseManifest.v0.schema.json",
+  "HandoffManifest.v0": "HandoffManifest.v0.schema.json",
+  "ReleaseChainValidationResult.v0": "ReleaseChainValidationResult.v0.schema.json",
+  "ArtifactRegistry.v0": "ArtifactRegistry.v0.schema.json",
 };
 
 type Ajv = InstanceType<typeof Ajv2020>;

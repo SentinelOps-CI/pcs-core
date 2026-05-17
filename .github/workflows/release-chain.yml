@@ -38,7 +38,11 @@ jobs:
       - name: Validate canonical RC fixture chain
         run: |
           cd python
+          test -f ../examples/labtrust-release/release_manifest.v0.json
           pcs validate-release-chain ../examples/labtrust-release/
           pcs validate-release-chain ../examples/labtrust-release/ --json
+          pcs validate ../examples/labtrust-release/release_manifest.v0.json
       - name: Release-chain tests
-        run: cd python && pytest -q tests/test_release_chain.py
+        run: |
+          cd python
+          pytest -q tests/test_release_chain.py tests/test_labtrust_protocol_artifacts.py

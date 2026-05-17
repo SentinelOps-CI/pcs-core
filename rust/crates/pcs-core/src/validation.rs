@@ -32,10 +32,42 @@ const ARTIFACT_SCHEMAS: &[(&str, &str)] = &[
         "SignedScienceClaimBundle.v0",
         "SignedScienceClaimBundle.v0.schema.json",
     ),
+    ("ReleaseManifest.v0", "ReleaseManifest.v0.schema.json"),
+    ("HandoffManifest.v0", "HandoffManifest.v0.schema.json"),
+    (
+        "ReleaseChainValidationResult.v0",
+        "ReleaseChainValidationResult.v0.schema.json",
+    ),
+    ("ArtifactRegistry.v0", "ArtifactRegistry.v0.schema.json"),
+];
+
+const PROTOCOL_ARTIFACT_TYPES: &[&str] = &[
+    "ReleaseManifest.v0",
+    "HandoffManifest.v0",
+    "ReleaseChainValidationResult.v0",
+    "ArtifactRegistry.v0",
 ];
 
 pub fn detect_artifact_type(value: &Value) -> Option<&'static str> {
     let obj = value.as_object()?;
+    if obj.contains_key("validation_id") && obj.contains_key("artifacts_checked") {
+        return Some("ReleaseChainValidationResult.v0");
+    }
+    if obj.contains_key("handoff_id") && obj.contains_key("handoff_kind") {
+        return Some("HandoffManifest.v0");
+    }
+    if obj.contains_key("registry_id")
+        && obj.contains_key("entries")
+        && obj.contains_key("registry_version")
+    {
+        return Some("ArtifactRegistry.v0");
+    }
+    if obj.contains_key("release_id")
+        && obj.contains_key("producer_repos")
+        && obj.contains_key("validation_profile")
+    {
+        return Some("ReleaseManifest.v0");
+    }
     if obj.contains_key("signed_bundle_id") && obj.contains_key("science_claim_bundle") {
         return Some("SignedScienceClaimBundle.v0");
     }
@@ -192,6 +224,9 @@ fn validate_verification_result(obj: &serde_json::Map<String, Value>, errors: &m
 }
 
 pub fn validate_semantics(value: &Value, artifact_type: &str) -> Result<(), ValidationError> {
+    if PROTOCOL_ARTIFACT_TYPES.contains(&artifact_type) {
+        return Ok(());
+    }
     let mut errors = Vec::new();
     check_source_commits(value, "", &mut errors, false);
 
@@ -270,6 +305,10 @@ mod tests {
         PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../python/tests/hash_vectors")
     }
 
+    fn shared_hash_vectors_dir() -> PathBuf {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../test_vectors/hash")
+    }
+
     #[test]
     fn valid_examples_pass_jsonschema_and_semantics() {
         for entry in WalkDir::new(examples_dir())
@@ -311,6 +350,28 @@ mod tests {
                 .to_string();
             assert_eq!(canonical_json_string(&data), expected, "{name} canonical");
             assert_eq!(canonical_hash(&data), expected_digest, "{name} digest");
+        }
+    }
+
+    #[test]
+    fn shared_hash_vectors_match_repo_fixtures() {
+        let examples = examples_dir();
+        for file_name in std::fs::read_dir(shared_hash_vectors_dir()).unwrap() {
+            let path = file_name.unwrap().path();
+            if path.extension().and_then(|s| s.to_str()) != Some("json") {
+                continue;
+            }
+            let vector: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
+            let artifact_type = vector["artifact_type"].as_str().unwrap();
+            let example_name = vector["input_file"].as_str().unwrap();
+            let data: Value = serde_json::from_str(
+                &fs::read_to_string(examples.join(example_name)).unwrap(),
+            )
+            .unwrap();
+            let expected_digest = vector["expected_digest"].as_str().unwrap();
+            let expected_canonical = vector["canonical_json"].as_str().unwrap();
+            assert_eq!(canonical_json_string(&data), expected_canonical, "{artifact_type}");
+            assert_eq!(canonical_hash(&data), expected_digest, "{artifact_type}");
         }
     }
 }

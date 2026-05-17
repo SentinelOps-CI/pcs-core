@@ -21,7 +21,11 @@ jobs:
           pcs schema check
           pcs examples check
           pcs validate-release-chain ../examples/labtrust-release/
+          test -f ../examples/labtrust-release/release_manifest.v0.json
+          pcs validate ../examples/labtrust-release/release_manifest.v0.json
           python -m pcs_core.hash_vectors --verify
+          pcs shared-hash-vectors verify
+          pcs registry validate ../examples/artifact_registry.valid.json
           ruff check pcs_core tests
           ruff format --check pcs_core tests
       - name: Schema drift check (reference)

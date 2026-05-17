@@ -17,6 +17,9 @@ This repo is the single source of truth for LabTrust-Gym, CertifyEdge, Provabili
 | ScienceClaimBundle.v0 | `schemas/ScienceClaimBundle.v0.schema.json` |
 | VerificationResult.v0 | `schemas/VerificationResult.v0.schema.json` |
 | SignedScienceClaimBundle.v0 | `schemas/SignedScienceClaimBundle.v0.schema.json` |
+| ReleaseManifest.v0 | `schemas/ReleaseManifest.v0.schema.json` |
+| HandoffManifest.v0 | `schemas/HandoffManifest.v0.schema.json` |
+| ReleaseChainValidationResult.v0 | `schemas/ReleaseChainValidationResult.v0.schema.json` |
 
 ## Release pin
 
@@ -48,7 +51,7 @@ just ci
 
 ## PCS v0.1 release-candidate fixtures
 
-**Canonical set:** [`examples/labtrust-release/`](examples/labtrust-release/) with [`RELEASE_FIXTURE_MANIFEST.json`](examples/labtrust-release/RELEASE_FIXTURE_MANIFEST.json).
+**Canonical set:** [`examples/labtrust-release/`](examples/labtrust-release/) with [`RELEASE_FIXTURE_MANIFEST.json`](examples/labtrust-release/RELEASE_FIXTURE_MANIFEST.json) and Phase 2 protocol artifacts (`release_manifest.v0.json`, handoff manifests, `release_chain_validation_result.v0.json`). See [docs/protocol-phase2.md](docs/protocol-phase2.md).
 
 Downstream repos must sync against this directory or prove canonical-hash equivalence to the manifest (do not partially regenerate). Pin values and the 30-check validator: [docs/labtrust-rc-canonical.md](docs/labtrust-rc-canonical.md). RC tag checklist: [docs/releases/pcs-v0.1.0-rc1.md](docs/releases/pcs-v0.1.0-rc1.md).
 
@@ -67,6 +70,11 @@ just validate-labtrust-release-fixtures
 | `pcs schema check` | Validate all JSON schemas |
 | `pcs examples check` | Validate valid/invalid fixtures |
 | `pcs hash-vectors verify` | Verify frozen canonical hash vectors |
+| `pcs shared-hash-vectors verify` | Verify cross-language vectors in `test_vectors/hash/` |
+| `pcs registry list` | List registered PCS artifact types |
+| `pcs registry validate <file>` | Validate `ArtifactRegistry.v0` drift |
+| `pcs explain-status <status>` | Explain status transitions |
+| `pcs migrate --from v0 --to v0 <file>` | Identity migration report |
 | `just pcs-schema-diff <dir>` | Compare vendored schemas to pcs-core |
 
 ## Layout
@@ -81,6 +89,7 @@ python/           `pcs` CLI and validation library
 rust/             Rust bindings (semantic checks + hash)
 typescript/       `@pcs/core` package
 python/tests/hash_vectors/   Frozen canonical hash test vectors
+test_vectors/hash/           Shared cross-language hash vectors
 ```
 
 ## Downstream integration

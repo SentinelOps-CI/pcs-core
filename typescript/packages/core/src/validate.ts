@@ -33,9 +33,32 @@ export type ArtifactType =
   | "EvidenceBundle.v0"
   | "ScienceClaimBundle.v0"
   | "VerificationResult.v0"
-  | "SignedScienceClaimBundle.v0";
+  | "SignedScienceClaimBundle.v0"
+  | "ReleaseManifest.v0"
+  | "HandoffManifest.v0"
+  | "ReleaseChainValidationResult.v0"
+  | "ArtifactRegistry.v0";
+
+const PROTOCOL_ARTIFACT_TYPES = new Set<ArtifactType>([
+  "ReleaseManifest.v0",
+  "HandoffManifest.v0",
+  "ReleaseChainValidationResult.v0",
+  "ArtifactRegistry.v0",
+]);
 
 export function detectArtifactType(data: Record<string, unknown>): ArtifactType | null {
+  if ("validation_id" in data && "artifacts_checked" in data) {
+    return "ReleaseChainValidationResult.v0";
+  }
+  if ("handoff_id" in data && "handoff_kind" in data) {
+    return "HandoffManifest.v0";
+  }
+  if ("registry_id" in data && "entries" in data && "registry_version" in data) {
+    return "ArtifactRegistry.v0";
+  }
+  if ("release_id" in data && "producer_repos" in data && "validation_profile" in data) {
+    return "ReleaseManifest.v0";
+  }
   if ("signed_bundle_id" in data && "science_claim_bundle" in data) {
     return "SignedScienceClaimBundle.v0";
   }
@@ -149,6 +172,12 @@ export function validateArtifact(
     throw new ValidationError("Could not detect artifact type");
   }
   const errors: string[] = [...validateSchema(data, type)];
+  if (PROTOCOL_ARTIFACT_TYPES.has(type)) {
+    if (errors.length > 0) {
+      throw new ValidationError(`Validation failed for ${type}`, errors);
+    }
+    return;
+  }
   checkSourceCommits(data, "", errors, false);
 
   if (type === "RuntimeReceipt.v0") {

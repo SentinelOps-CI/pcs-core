@@ -10,12 +10,12 @@ from pathlib import Path
 from typing import Any
 
 from pcs_core.release_fixtures import (
+    CERTIFYEDGE_SOURCE_REPO,
     COMMIT_KEYS,
     LABTRUST_SOURCE_REPO,
-    CERTIFYEDGE_SOURCE_REPO,
-    PF_SOURCE_REPO,
     MANIFEST_ARTIFACTS,
     MANIFEST_NAME,
+    PF_SOURCE_REPO,
     RELEASE_PCS_ARTIFACTS,
     _load_json,
     _scan_forbidden_values,
@@ -241,9 +241,13 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
         missing = sorted(set(MANIFEST_ARTIFACTS) - set(artifacts))
         extra = sorted(set(artifacts) - set(MANIFEST_ARTIFACTS))
         if missing:
-            issues.append(_issue("schema_validation_failed", f"manifest artifacts missing keys: {missing}"))
+            issues.append(
+                _issue("schema_validation_failed", f"manifest artifacts missing keys: {missing}")
+            )
         if extra:
-            issues.append(_issue("schema_validation_failed", f"manifest artifacts unexpected keys: {extra}"))
+            issues.append(
+                _issue("schema_validation_failed", f"manifest artifacts unexpected keys: {extra}")
+            )
 
     for name in MANIFEST_ARTIFACTS:
         path = base / name
@@ -553,8 +557,8 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
                 issues.append(
                     _issue(
                         "verified_input_hash_mismatch",
-                        f"verified_input.bundle_hash {bundle_hash} != manifest certified bundle hash "
-                        f"{certified_hash}",
+                        f"verified_input.bundle_hash {bundle_hash} "
+                        f"!= manifest certified bundle hash {certified_hash}",
                     ),
                 )
     if signed and certified_hash:

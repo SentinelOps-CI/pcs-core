@@ -13,6 +13,11 @@ from referencing.jsonschema import DRAFT202012
 
 from pcs_core.paths import examples_dir as default_examples_dir
 from pcs_core.paths import schemas_dir
+from pcs_core.protocol_validate import (
+    validate_handoff_manifest_semantics,
+    validate_release_chain_validation_result_semantics,
+    validate_release_manifest_semantics,
+)
 from pcs_core.status import ARTIFACT_STATUSES, TRACE_CERTIFICATE_STATUSES
 
 ARTIFACT_SCHEMAS: dict[str, str] = {
@@ -25,6 +30,10 @@ ARTIFACT_SCHEMAS: dict[str, str] = {
     "ScienceClaimBundle.v0": "ScienceClaimBundle.v0.schema.json",
     "VerificationResult.v0": "VerificationResult.v0.schema.json",
     "SignedScienceClaimBundle.v0": "SignedScienceClaimBundle.v0.schema.json",
+    "ReleaseManifest.v0": "ReleaseManifest.v0.schema.json",
+    "HandoffManifest.v0": "HandoffManifest.v0.schema.json",
+    "ReleaseChainValidationResult.v0": "ReleaseChainValidationResult.v0.schema.json",
+    "ArtifactRegistry.v0": "ArtifactRegistry.v0.schema.json",
 }
 
 CERTIFIED_CLAIM_STATUSES = frozenset(
@@ -55,6 +64,14 @@ class ValidationError(Exception):
 
 
 def detect_artifact_type(data: dict[str, Any]) -> str | None:
+    if "validation_id" in data and "artifacts_checked" in data:
+        return "ReleaseChainValidationResult.v0"
+    if "handoff_id" in data and "handoff_kind" in data:
+        return "HandoffManifest.v0"
+    if "registry_id" in data and "entries" in data and "registry_version" in data:
+        return "ArtifactRegistry.v0"
+    if "release_id" in data and "producer_repos" in data and "validation_profile" in data:
+        return "ReleaseManifest.v0"
     if "signed_bundle_id" in data and "science_claim_bundle" in data:
         return "SignedScienceClaimBundle.v0"
     if "bundle_id" in data and "claim_artifact" in data:
@@ -273,6 +290,26 @@ def _validate_signed_bundle(data: dict[str, Any]) -> list[str]:
 def validate_semantics(data: dict[str, Any], artifact_type: str) -> list[str]:
     errors: list[str] = []
 
+    if artifact_type == "ArtifactRegistry.v0":
+        return errors
+
+    if artifact_type == "ReleaseManifest.v0":
+        errors.extend(validate_release_manifest_semantics(data))
+        return errors
+
+    if artifact_type == "HandoffManifest.v0":
+        errors.extend(validate_handoff_manifest_semantics(data))
+        return errors
+
+    if artifact_type == "ReleaseChainValidationResult.v0":
+        errors.extend(validate_release_chain_validation_result_semantics(data))
+        checks = data.get("checks")
+        if isinstance(checks, list):
+            for index, check in enumerate(checks):
+                if isinstance(check, dict):
+                    _validate_status_fields(check, f"checks[{index}]", errors)
+        return errors
+
     _check_source_commits(data, "", errors)
     _validate_status_fields(data, "", errors)
 
@@ -347,6 +384,13 @@ def check_valid_examples(examples_dir: Path | None = None) -> None:
     for path in iter_example_json_files(examples_dir):
         if _is_valid_example(path):
             validate_file(path)
+    for name in (
+        "release_manifest.valid.json",
+        "handoff_manifest.valid.json",
+        "release_chain_validation_result.valid.json",
+        "artifact_registry.valid.json",
+    ):
+        validate_file(examples_dir / name)
 
 
 def check_invalid_examples(examples_dir: Path | None = None) -> None:
@@ -360,6 +404,9 @@ def check_invalid_examples(examples_dir: Path | None = None) -> None:
         "labtrust/invalid_signed_schema_version_artifact_name.json": "SignedScienceClaimBundle.v0",
         "labtrust/invalid_failed_verification_result.json": "VerificationResult.v0",
         "labtrust/invalid_missing_trace_certificate.json": "ScienceClaimBundle.v0",
+        "invalid_release_manifest_placeholder_commit.json": "ReleaseManifest.v0",
+        "invalid_handoff_manifest_missing_input_hash.json": "HandoffManifest.v0",
+        "invalid_release_chain_validation_failed_status.json": "ReleaseChainValidationResult.v0",
     }
     for filename, artifact_type in invalid_cases.items():
         path = examples_dir / filename

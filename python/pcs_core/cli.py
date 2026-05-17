@@ -9,10 +9,18 @@ from pathlib import Path
 
 from pcs_core.hash import canonical_hash
 from pcs_core.hash_vectors import verify_vectors, write_vectors
+from pcs_core.migrate import migrate_file
 from pcs_core.paths import examples_dir, resolve_release_chain_directory
-from pcs_core.release_fixtures import release_dir
-from pcs_core.release_chain import validate_release_chain_messages, validate_release_chain_report
-from pcs_core.release_fixtures import validate_release_manifest
+from pcs_core.registry import (
+    check_artifact_against_registry,
+    explain_artifact_type,
+    list_artifact_types,
+    validate_registry_file,
+)
+from pcs_core.release_chain import validate_release_chain_report
+from pcs_core.release_fixtures import release_dir, validate_release_manifest
+from pcs_core.shared_hash_vectors import verify_shared_vectors, write_shared_vectors
+from pcs_core.status_policy import check_status_transition, explain_status
 from pcs_core.validate import (
     ValidationError,
     check_all_schemas,
@@ -67,13 +75,80 @@ def _collect_statuses(data: dict, prefix: str = "") -> list[tuple[str, str]]:
     return found
 
 
-def cmd_status(path: Path) -> int:
+def cmd_status_fields(path: Path) -> int:
     data = _load_json(path)
     artifact_type = detect_artifact_type(data) or "unknown"
     statuses = _collect_statuses(data)
     print(f"artifact_type: {artifact_type}")
     for key, value in statuses:
         print(f"{key}: {value}")
+    return 0
+
+
+def cmd_explain_status(status: str) -> int:
+    print(explain_status(status))
+    return 0
+
+
+def cmd_check_status_transition(old_path: Path, new_path: Path) -> int:
+    old_status = _load_json(old_path).get("status")
+    new_status = _load_json(new_path).get("status")
+    if not isinstance(old_status, str) or not isinstance(new_status, str):
+        print("FAIL both artifacts must include top-level status", file=sys.stderr)
+        return 1
+    verdict = check_status_transition(old_status, new_status)
+    if verdict.allowed:
+        print(f"OK {verdict.message}")
+        return 0
+    print(f"FAIL {verdict.message}", file=sys.stderr)
+    return 1
+
+
+def cmd_migrate(path: Path, from_version: str, to_version: str) -> int:
+    report = migrate_file(path, from_version=from_version, to_version=to_version)
+    print(json.dumps(report, indent=2))
+    return 0
+
+
+def cmd_registry_list() -> int:
+    for name in list_artifact_types():
+        print(name)
+    return 0
+
+
+def cmd_registry_explain(artifact_type: str) -> int:
+    entry = explain_artifact_type(artifact_type)
+    print(json.dumps(entry, indent=2))
+    return 0
+
+
+def cmd_registry_validate(path: Path) -> int:
+    drift = validate_registry_file(path)
+    if drift:
+        for err in drift:
+            print(f"FAIL {err}", file=sys.stderr)
+        return 1
+    print(f"OK artifact registry {path}")
+    return 0
+
+
+def cmd_registry_check_artifact(path: Path) -> int:
+    drift = check_artifact_against_registry(path)
+    if drift:
+        for err in drift:
+            print(f"FAIL {err}", file=sys.stderr)
+        return 1
+    print(f"OK registry check {path}")
+    return 0
+
+
+def cmd_shared_hash_vectors_verify() -> int:
+    drift = verify_shared_vectors()
+    if drift:
+        for err in drift:
+            print(f"FAIL {err}", file=sys.stderr)
+        return 1
+    print("OK shared hash vectors")
     return 0
 
 
@@ -142,8 +217,45 @@ def main(argv: list[str] | None = None) -> int:
     p_hash = sub.add_parser("hash", help="Compute canonical hash")
     p_hash.add_argument("path", type=Path)
 
-    p_status = sub.add_parser("status", help="Print status fields")
-    p_status.add_argument("path", type=Path)
+    p_status = sub.add_parser("status", help="Status inspection and policy")
+    status_sub = p_status.add_subparsers(dest="status_cmd", required=True)
+    p_status_fields = status_sub.add_parser("fields", help="Print status fields from an artifact")
+    p_status_fields.add_argument("path", type=Path)
+    p_explain_status = status_sub.add_parser("explain", help="Explain a PCS status value")
+    p_explain_status.add_argument("status_name")
+    p_check_transition = status_sub.add_parser(
+        "check-transition",
+        help="Check whether transition between two artifacts is allowed",
+    )
+    p_check_transition.add_argument("old_path", type=Path)
+    p_check_transition.add_argument("new_path", type=Path)
+
+    p_explain_status_top = sub.add_parser("explain-status", help="Explain a PCS status value")
+    p_explain_status_top.add_argument("status_name")
+
+    p_check_transition_top = sub.add_parser(
+        "check-status-transition",
+        help="Check status transition between two artifact files",
+    )
+    p_check_transition_top.add_argument("old_path", type=Path)
+    p_check_transition_top.add_argument("new_path", type=Path)
+
+    p_migrate = sub.add_parser("migrate", help="Migrate a PCS artifact between schema versions")
+    p_migrate.add_argument("path", type=Path)
+    p_migrate.add_argument("--from", dest="from_version", default="v0")
+    p_migrate.add_argument("--to", dest="to_version", default="v0")
+
+    registry_parser = sub.add_parser("registry", help="Artifact registry commands")
+    registry_sub = registry_parser.add_subparsers(dest="registry_cmd", required=True)
+    registry_sub.add_parser("list", help="List registered artifact types")
+    p_registry_explain = registry_sub.add_parser("explain", help="Explain a registry entry")
+    p_registry_explain.add_argument("artifact_type")
+    p_registry_validate = registry_sub.add_parser("validate", help="Validate registry file")
+    p_registry_validate.add_argument("path", type=Path)
+    p_registry_check = registry_sub.add_parser(
+        "check-artifact", help="Check artifact against registry"
+    )
+    p_registry_check.add_argument("path", type=Path)
 
     p_release = sub.add_parser(
         "validate-release-manifest",
@@ -182,14 +294,38 @@ def main(argv: list[str] | None = None) -> int:
     hash_write = hash_sub.add_parser("write", help="Regenerate frozen hash vectors")
     hash_write.add_argument("--force", action="store_true")
 
+    shared_hash_parser = sub.add_parser("shared-hash-vectors", help="Cross-language hash vectors")
+    shared_hash_sub = shared_hash_parser.add_subparsers(dest="shared_hash_cmd", required=True)
+    shared_hash_sub.add_parser("verify", help="Verify test_vectors/hash parity")
+    shared_hash_write = shared_hash_sub.add_parser("write", help="Regenerate test_vectors/hash")
+    shared_hash_write.add_argument("--force", action="store_true")
+
     args = parser.parse_args(argv)
 
     if args.command == "validate":
         return cmd_validate(args.path)
     if args.command == "hash":
         return cmd_hash(args.path)
-    if args.command == "status":
-        return cmd_status(args.path)
+    if args.command == "status" and args.status_cmd == "fields":
+        return cmd_status_fields(args.path)
+    if args.command == "status" and args.status_cmd == "explain":
+        return cmd_explain_status(args.status_name)
+    if args.command == "status" and args.status_cmd == "check-transition":
+        return cmd_check_status_transition(args.old_path, args.new_path)
+    if args.command == "explain-status":
+        return cmd_explain_status(args.status_name)
+    if args.command == "check-status-transition":
+        return cmd_check_status_transition(args.old_path, args.new_path)
+    if args.command == "migrate":
+        return cmd_migrate(args.path, args.from_version, args.to_version)
+    if args.command == "registry" and args.registry_cmd == "list":
+        return cmd_registry_list()
+    if args.command == "registry" and args.registry_cmd == "explain":
+        return cmd_registry_explain(args.artifact_type)
+    if args.command == "registry" and args.registry_cmd == "validate":
+        return cmd_registry_validate(args.path)
+    if args.command == "registry" and args.registry_cmd == "check-artifact":
+        return cmd_registry_check_artifact(args.path)
     if args.command == "validate-release-manifest":
         return cmd_validate_release_manifest(args.path)
     if args.command == "validate-release-chain":
@@ -203,6 +339,12 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "hash-vectors" and args.hash_cmd == "write":
         write_vectors(force=args.force)
         print("Wrote hash vectors")
+        return 0
+    if args.command == "shared-hash-vectors" and args.shared_hash_cmd == "verify":
+        return cmd_shared_hash_vectors_verify()
+    if args.command == "shared-hash-vectors" and args.shared_hash_cmd == "write":
+        write_shared_vectors(force=args.force)
+        print("Wrote shared hash vectors")
         return 0
 
     parser.print_help()

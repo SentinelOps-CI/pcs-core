@@ -25,6 +25,7 @@ All repos use the same status strings:
 4. **Attach** — Bundle updated; claim status moves toward `CertificateChecked`.
 5. **Verify & sign** — Provability Fabric emits `VerificationResult.v0`.
 6. **Import** — Scientific Memory renders with guarantee-type labels.
+7. **Record** — pcs-core publishes `ReleaseManifest.v0`, stage `HandoffManifest.v0` files, and `ReleaseChainValidationResult.v0` under `examples/labtrust-release/`.
 
 ## Pending vs certified bundles
 
@@ -36,3 +37,7 @@ All repos use the same status strings:
 - Checker returns `Rejected` on `TraceCertificate.v0`.
 - Verifier records `failed` checks on `VerificationResult.v0`.
 - Invalid schema or semantic mismatch: reject at validation (no artifact promotion).
+
+## Registry enforcement
+
+`pcs registry check-artifact` verifies JSON Schema validity, registry-allowed status, required release fields, and schema file presence. See [artifact-registry.md](artifact-registry.md) and [status-transition-policy.md](status-transition-policy.md).

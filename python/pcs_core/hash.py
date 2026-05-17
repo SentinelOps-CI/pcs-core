@@ -7,6 +7,7 @@ import json
 from typing import Any
 
 SIGNATURE_FIELD = "signature_or_digest"
+PLACEHOLDER_DIGEST = f"sha256:{'0' * 64}"
 
 
 def _sort_keys(value: Any) -> Any:

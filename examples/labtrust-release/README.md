@@ -24,6 +24,18 @@ Schema conformance fixtures live in [`../labtrust/`](../labtrust/) and must not 
 
 `RELEASE_FIXTURE_MANIFEST.json` records five repository commits (derived from artifact provenance) and SHA-256 digests of every file.
 
+Phase 2 protocol artifacts (same RC pins, digest-signed):
+
+- `release_manifest.v0.json` — `ReleaseManifest.v0` (superset of the legacy manifest)
+- `handoff_manifest.*.v0.json` — stage handoffs (`runtime_to_certificate`, `certificate_to_bundle`, `bundle_to_verifier`, `signed_bundle_to_memory`)
+- `release_chain_validation_result.v0.json` — validator attestation
+
+Regenerate protocol JSON:
+
+```bash
+just materialize-labtrust-protocol
+```
+
 ## Validation
 
 ```bash

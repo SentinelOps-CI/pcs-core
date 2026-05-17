@@ -1,0 +1,6 @@
+{
+  "artifact_type": "TraceCertificate.v0",
+  "input_file": "trace_certificate.valid.json",
+  "expected_digest": "sha256:d80e26aa8164403a834b2491a6bb783cbab292afbe1b422fb810fcfa0fff205d",
+  "canonical_json": "{\"certificate_id\":\"cert-trace-qc-release-v0.1\",\"checker\":\"certifyedge\",\"checker_version\":\"0.1.0\",\"counterexample_ref\":null,\"created_at\":\"2026-05-16T12:10:00Z\",\"producer\":\"certifyedge\",\"producer_version\":\"0.1.0\",\"property_id\":\"qc_release.temporal.safety\",\"schema_version\":\"v0\",\"source_commit\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"source_repo\":\"https://github.com/fraware/CertifyEdge\",\"spec_hash\":\"sha256:6666666666666666666666666666666666666666666666666666666666666666\",\"status\":\"CertificateChecked\",\"trace_hash\":\"sha256:5555555555555555555555555555555555555555555555555555555555555555\"}"
+}

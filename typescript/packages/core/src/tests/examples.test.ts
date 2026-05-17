@@ -12,6 +12,10 @@ const vectorsDir = join(
   dirname(fileURLToPath(import.meta.url)),
   "../../../../../python/tests/hash_vectors",
 );
+const sharedVectorsDir = join(
+  dirname(fileURLToPath(import.meta.url)),
+  "../../../../../test_vectors/hash",
+);
 
 function load(rel: string): Record<string, unknown> {
   return JSON.parse(readFileSync(join(examplesDir, rel), "utf8")) as Record<string, unknown>;
@@ -111,5 +115,24 @@ test("hash vectors match frozen fixtures", () => {
     const expectedDigest = readFileSync(join(dir, "digest.txt"), "utf8").trim();
     assert.equal(Buffer.from(canonicalJsonBytes(data)).toString("utf8"), expectedCanonical);
     assert.equal(canonicalHash(data), expectedDigest);
+  }
+});
+
+test("shared hash vectors match test_vectors/hash fixtures", () => {
+  for (const fileName of readdirSync(sharedVectorsDir)) {
+    if (!fileName.endsWith(".vector.json")) {
+      continue;
+    }
+    const vector = JSON.parse(
+      readFileSync(join(sharedVectorsDir, fileName), "utf8"),
+    ) as {
+      artifact_type: string;
+      input_file: string;
+      expected_digest: string;
+      canonical_json: string;
+    };
+    const data = load(vector.input_file);
+    assert.equal(Buffer.from(canonicalJsonBytes(data)).toString("utf8"), vector.canonical_json);
+    assert.equal(canonicalHash(data), vector.expected_digest);
   }
 });

@@ -118,14 +118,11 @@ def manifest_commit_key(source_repo: str) -> str | None:
 
 def git_commit_at(path: Path) -> str:
     try:
-        return (
-            subprocess.check_output(
-                ["git", "rev-parse", "HEAD"],
-                cwd=path,
-                text=True,
-            )
-            .strip()
-        )
+        return subprocess.check_output(
+            ["git", "rev-parse", "HEAD"],
+            cwd=path,
+            text=True,
+        ).strip()
     except (subprocess.CalledProcessError, FileNotFoundError):
         return "0000000000000000000000000000000000000000"
 
@@ -315,7 +312,10 @@ def build_release_run(
     manifest: dict[str, Any] = {
         "schema_version": "v0",
         "release_candidate": release_candidate,
-        "generated_at": datetime.now(UTC).replace(microsecond=0).isoformat().replace(
+        "generated_at": datetime.now(UTC)
+        .replace(microsecond=0)
+        .isoformat()
+        .replace(
             "+00:00",
             "Z",
         ),
@@ -350,6 +350,9 @@ def promote_release_run(run_dir: Path, *, target: Path | None = None) -> Path:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(content)
 
+    from pcs_core.protocol_fixtures import write_labtrust_protocol_artifacts
+
+    write_labtrust_protocol_artifacts(target_dir)
     return target_dir
 
 
@@ -439,7 +442,9 @@ def _validate_nested_provenance(
     if certified is None:
         errors.append("science_claim_bundle.certified.json: invalid JSON")
     else:
-        _scan_forbidden_values(certified, label="science_claim_bundle.certified.json", errors=errors)
+        _scan_forbidden_values(
+            certified, label="science_claim_bundle.certified.json", errors=errors
+        )
         for key in ("claim_artifact", "assumption_set", "evidence_bundle"):
             part = certified.get(key)
             if isinstance(part, dict):
@@ -622,8 +627,12 @@ def _validate_trace_hash_alignment(base: Path, errors: list[str]) -> None:
         bundle_doc = _load_json(base / bundle_name)
         if not bundle_doc:
             continue
-        scb = bundle_doc if bundle_name.startswith("science") else bundle_doc.get(
-            "science_claim_bundle",
+        scb = (
+            bundle_doc
+            if bundle_name.startswith("science")
+            else bundle_doc.get(
+                "science_claim_bundle",
+            )
         )
         if not isinstance(scb, dict):
             continue
@@ -655,7 +664,8 @@ def _validate_trace_hash_alignment(base: Path, errors: list[str]) -> None:
             verified = embedded_vr.get("verified_input")
             if isinstance(verified, dict) and verified.get("trace_hash") != trace_hash:
                 errors.append(
-                    "signed.verification_result.verified_input.trace_hash != canonical trace trace_hash",
+                    "signed.verification_result.verified_input.trace_hash "
+                    "!= canonical trace trace_hash",
                 )
 
 
@@ -745,7 +755,9 @@ def validate_release_manifest(manifest_path: Path) -> list[str]:
         else:
             vr = signed.get("verification_result")
             if not isinstance(vr, dict):
-                errors.append("signed_science_claim_bundle.json: missing verification_result object")
+                errors.append(
+                    "signed_science_claim_bundle.json: missing verification_result object"
+                )
             elif vr.get("status") != "ProofChecked":
                 errors.append(
                     "signed_science_claim_bundle.json: "
@@ -777,7 +789,9 @@ def verify_release_fixtures() -> list[str]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="PCS LabTrust release fixtures")
-    parser.add_argument("--write", action="store_true", help="Import chain outputs into release fixtures")
+    parser.add_argument(
+        "--write", action="store_true", help="Import chain outputs into release fixtures"
+    )
     parser.add_argument("--verify", action="store_true", help="Verify release fixtures")
     parser.add_argument(
         "--workdir",

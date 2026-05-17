@@ -43,11 +43,22 @@ hash-vectors-write:
 hash-vectors-verify:
     cd "{{root}}/python" && python -m pcs_core.hash_vectors --verify
 
+shared-hash-vectors-write:
+    cd "{{root}}/python" && pcs shared-hash-vectors write
+
+shared-hash-vectors-verify:
+    cd "{{root}}/python" && pcs shared-hash-vectors verify
+
+materialize-labtrust-protocol:
+    cd "{{root}}/python" && python scripts/materialize_labtrust_protocol_artifacts.py
+    cd "{{root}}/python" && pcs shared-hash-vectors verify
+
 pcs-schema-diff vendor_dir="schemas":
     bash "{{root}}/scripts/pcs-schema-diff.sh" "{{root}}/{{vendor_dir}}"
 
-ci: build python-test rust-test ts-test validate-examples labtrust-check validate-labtrust-release-fixtures hash-vectors-verify pcs-schema-diff
+ci: build python-test rust-test ts-test validate-examples labtrust-check validate-labtrust-release-fixtures hash-vectors-verify shared-hash-vectors-verify pcs-schema-diff
     cd "{{root}}/python" && pcs schema check
+    cd "{{root}}/python" && pcs registry validate ../examples/artifact_registry.valid.json
     cd "{{root}}/python" && ruff check pcs_core tests
     cd "{{root}}/python" && ruff format --check pcs_core tests
     cd "{{root}}/rust" && cargo fmt --check

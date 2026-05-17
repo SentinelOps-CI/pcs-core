@@ -4,7 +4,14 @@
 
 **Trust loop:** LabTrust-Gym → `RuntimeReceipt.v0` → CertifyEdge `TraceCertificate.v0` → `ScienceClaimBundle.v0` → Provability Fabric `VerificationResult.v0` → `SignedScienceClaimBundle.v0` → Scientific Memory import and rendering.
 
-**Authority:** `examples/labtrust-release/` in [pcs-core](https://github.com/SentinelOps-CI/pcs-core) is the canonical PCS v0.1 RC fixture chain. `RELEASE_FIXTURE_MANIFEST.json` records artifact hashes and producer commits (`pcs_core_commit`, `labtrust_gym_commit`, `certifyedge_commit`, `provability_fabric_commit`, `scientific_memory_commit`).
+**Authority:** `examples/labtrust-release/` in [pcs-core](https://github.com/SentinelOps-CI/pcs-core) is the canonical PCS v0.1 RC fixture chain.
+
+- `RELEASE_FIXTURE_MANIFEST.json` — legacy manifest (hashes + five producer commits)
+- `release_manifest.v0.json` — `ReleaseManifest.v0` (same pins, digest-signed)
+- `handoff_manifest.*.v0.json` — stage handoffs for the QC-release chain
+- `release_chain_validation_result.v0.json` — validator attestation
+
+Regenerate protocol JSON after promoting fixtures: `just materialize-labtrust-protocol`.
 
 Downstream repos must **sync against this directory** at the pinned pcs-core commit or **prove canonical-hash equivalence** to the manifest. Do not regenerate partial fixtures. Refresh only via the full atomic clean-checkout chain and promote into `examples/labtrust-release/`.
 
@@ -17,7 +24,7 @@ just validate-labtrust-release-fixtures
 
 CI runs `pcs validate-release-chain` on every push to `main`.
 
-## `pcs validate-release-chain` (26 checks)
+## `pcs validate-release-chain` (30 checks)
 
 | # | Check |
 |---|--------|
