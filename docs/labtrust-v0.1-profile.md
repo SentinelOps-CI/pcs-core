@@ -53,35 +53,64 @@ Only `examples/labtrust-release/` may be used as **PCS v0.1 release evidence**. 
 | [provability-fabric](https://github.com/SentinelOps-CI/provability-fabric) | Verify and sign |
 | [scientific-memory](https://github.com/fraware/scientific-memory) | Import and render |
 
-## Command sketch
+## PCS v0.1 clean-checkout chain (release gate)
+
+PCS v0.1 is **release-ready** only when the full cross-repo chain succeeds. Run from a **LabTrust-Gym** checkout with sibling repos (`pcs-core`, `CertifyEdge`, `provability-fabric`, `scientific-memory`):
+
+```powershell
+$env:PCS_DETERMINISTIC = "1"
+& examples\pcs_qc_release\scripts\run_pcs_v01_clean_chain.ps1
+```
+
+```bash
+export PCS_DETERMINISTIC=1
+bash examples/pcs_qc_release/scripts/run_pcs_v01_clean_chain.sh
+```
+
+Canonical manual steps and environment variables: [LabTrust-Gym `docs/pcs_v01_clean_chain.md`](https://github.com/fraware/LabTrust-Gym/blob/main/docs/pcs_v01_clean_chain.md).
+
+### Manual chain (same commands as the release gate)
 
 ```bash
 # LabTrust-Gym
-labtrust run-demo qc-release
+PCS_DETERMINISTIC=1 labtrust run-demo qc-release
+PCS_DETERMINISTIC=1 labtrust run-demo qc-release-invalid-missing-qc
+PCS_DETERMINISTIC=1 labtrust run-demo qc-release-invalid-unauthorized
+
 labtrust export-trace --run runs/qc-release --out trace.json
 labtrust export-runtime-receipt --run runs/qc-release --out runtime_receipt.json
 labtrust export-pcs --run runs/qc-release --out science_claim_bundle.pending.json
+pcs validate science_claim_bundle.pending.json
 
 # CertifyEdge
 certifyedge emit-pcs-certificate \
   --spec templates/hospital_lab/qc_release.stl \
   --trace trace.json \
   --out trace_certificate.json
+pcs validate trace_certificate.json
+certifyedge verify-certificate trace_certificate.json --trace trace.json
 
 # LabTrust-Gym
 labtrust attach-certificate \
   --bundle science_claim_bundle.pending.json \
   --certificate trace_certificate.json \
   --out science_claim_bundle.certified.json
+pcs validate science_claim_bundle.certified.json
 
 # Provability Fabric
-pf verify science-claim science_claim_bundle.certified.json
+pf verify science-claim science_claim_bundle.certified.json \
+  --out verification_result.json
+pcs validate verification_result.json
+
 pf sign science-claim science_claim_bundle.certified.json \
   --out signed_science_claim_bundle.json
+pcs validate signed_science_claim_bundle.json
+pf inspect science-claim signed_science_claim_bundle.json
 
-# Scientific Memory
-just pcs-import-bundle BUNDLE=signed_science_claim_bundle.json
-just pcs-render-claim CLAIM_ID=<claim_id>
+# Scientific Memory (positional just args)
+cd ../scientific-memory
+just pcs-import-bundle ../LabTrust-Gym/signed_science_claim_bundle.json
+just pcs-render-claim claim-pcs-qc-release-v0.1
 ```
 
 ## pcs-core validation highlights

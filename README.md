@@ -80,6 +80,7 @@ python/tests/hash_vectors/   Frozen canonical hash test vectors
 5. Follow [docs/downstream-schema-sync.md](docs/downstream-schema-sync.md) for vendoring and `just pcs-schema-diff`.
 6. Validate cross-repo fixtures under `examples/labtrust/`.
 7. Follow [docs/labtrust-v0.1-profile.md](docs/labtrust-v0.1-profile.md) for the QC-release workflow.
+8. Run the **PCS v0.1 clean-checkout chain** from LabTrust-Gym (`scripts/run-pcs-v01-clean-chain.ps1` here delegates to the sibling repo).
 
 ## License
 
