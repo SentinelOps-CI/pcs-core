@@ -1,0 +1,18 @@
+{
+  "run_id": "runs/qc-release-rc1",
+  "schema_version": "v0",
+  "exported_at": "2026-05-16T12:00:00Z",
+  "producer": "labtrust-gym",
+  "producer_version": "0.1.0",
+  "events": [
+    {
+      "event_id": "evt-1",
+      "kind": "simulation_step",
+      "timestamp": "2026-05-16T11:59:00Z",
+      "payload": {
+        "step": "qc_release_check",
+        "outcome": "pass"
+      }
+    }
+  ]
+}

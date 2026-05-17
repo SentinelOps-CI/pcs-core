@@ -25,6 +25,10 @@ jobs:
           ruff format --check pcs_core tests
       - name: Schema drift check (reference)
         run: bash scripts/pcs-schema-diff.sh schemas
+      - name: LabTrust release fixtures
+        run: |
+          cd python
+          python -m pcs_core.release_fixtures --verify
 
   rust:
     runs-on: ubuntu-latest

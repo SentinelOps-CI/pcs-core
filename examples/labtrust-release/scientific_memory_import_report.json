@@ -1,0 +1,27 @@
+{
+  "schema_version": "v0",
+  "report_id": "sm-import-qc-release-rc1",
+  "signed_bundle_id": "signed-scb-qc-release-rc1",
+  "import_status": "success",
+  "imported_at": "2026-05-16T12:30:00Z",
+  "importer": "scientific-memory",
+  "importer_version": "0.1.0",
+  "source_repo": "https://github.com/fraware/scientific-memory",
+  "source_commit": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "checks": [
+    {
+      "check_id": "pcs-validate",
+      "status": "passed"
+    },
+    {
+      "check_id": "schema-version-v0",
+      "status": "passed"
+    },
+    {
+      "check_id": "import-contract",
+      "status": "passed"
+    }
+  ],
+  "rendered_guarantee": "certificate_checked",
+  "signature_or_digest": "sha256:e7670fd2ed5432d17e95a04b23506acdcc36593b35e86d34ad3baf2d65ee9a9c"
+}

@@ -62,7 +62,8 @@ just ci
 ```
 schemas/          JSON Schema (Draft 2020-12)
 examples/         Valid and invalid fixtures
-examples/labtrust/  Cross-repo conformance fixtures (LabTrust → PF → SM)
+examples/labtrust/          Schema conformance fixtures (stable `pcs validate` examples)
+examples/labtrust-release/  Generated release evidence (`RELEASE_FIXTURE_MANIFEST.json`)
 docs/             Protocol, trust model, LabTrust profile
 python/           `pcs` CLI and validation library
 rust/             Rust bindings (semantic checks + hash)

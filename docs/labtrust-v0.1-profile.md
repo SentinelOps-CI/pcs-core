@@ -13,11 +13,20 @@
 
 Downstream repos must depend on **pcs-core** for schemas, validation, and hash. Vendored schema mirrors are allowed only as read-only copies; see [downstream-schema-sync.md](downstream-schema-sync.md). All artifacts use `schema_version: "v0"` including `SignedScienceClaimBundle.v0`.
 
-Conformance fixtures: `examples/labtrust/`.
+## Fixture types
+
+| Directory | Purpose |
+|-----------|---------|
+| `examples/labtrust/` | **Schema conformance** fixtures — stable example values for `pcs validate`, CI, and bindings tests |
+| `examples/labtrust-release/` | **Generated release** fixtures — end-to-end cross-repo pipeline outputs and `RELEASE_FIXTURE_MANIFEST.json` |
+
+Only `examples/labtrust-release/` may be used as **PCS v0.1 release evidence**. Regenerate with `just generate-labtrust-release-fixtures` and verify with `just validate-labtrust-release-fixtures`.
 
 ## Release fixture authority
 
-For PCS v0.1, `examples/labtrust/` is the **canonical conformance fixture set**. Downstream repos may copy these fixtures for CI and integration tests, but any local copy must be **byte-for-byte identical** to the pcs-core fixture at the pinned release commit (for example tag `v0.1.0`). Schema mirrors follow the same rule; see [downstream-schema-sync.md](downstream-schema-sync.md).
+`examples/labtrust/` is the canonical **conformance** fixture set. Downstream repos may copy these fixtures for schema tests, but any local copy must be **byte-for-byte identical** to pcs-core at the pinned commit. Schema mirrors follow the same rule; see [downstream-schema-sync.md](downstream-schema-sync.md).
+
+`examples/labtrust-release/` is the canonical **release** fixture set. The manifest records exact commits for pcs-core, LabTrust-Gym, CertifyEdge, Provability Fabric, and Scientific Memory plus the SHA-256 digest of every release artifact file.
 
 | Valid fixture | Producer stage |
 |---------------|----------------|

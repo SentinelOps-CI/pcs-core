@@ -52,6 +52,8 @@ Downstream test suites should copy or reference these paths and assert pass/fail
 
 Fixture authority is defined in [labtrust-v0.1-profile.md](labtrust-v0.1-profile.md#release-fixture-authority).
 
+Release evidence lives under `examples/labtrust-release/` with `RELEASE_FIXTURE_MANIFEST.json`. Regenerate via `just generate-labtrust-release-fixtures` when pipeline outputs change; verify with `just validate-labtrust-release-fixtures`.
+
 ## Validation and hash
 
 - Use `pcs validate` or pcs-core language bindings for schema + semantic checks.
