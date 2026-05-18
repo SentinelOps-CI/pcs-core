@@ -28,6 +28,7 @@ Phase 2 protocol artifacts (same RC pins, digest-signed):
 
 - `release_manifest.v0.json` — `ReleaseManifest.v0` (superset of the legacy manifest)
 - `handoff_manifest.*.v0.json` — stage handoffs (`runtime_to_certificate`, `certificate_to_bundle`, `bundle_to_verifier`, `signed_bundle_to_memory`)
+- `handoff_to_pf.json` — PF `--handoff` alias for `handoff_manifest.bundle_to_verifier.v0.json` (`HandoffManifest.v0`; legacy `pf_handoff.json` is not used in release mode)
 - `release_chain_validation_result.v0.json` — 30-check `ReleaseChainValidationResult.v0` attestation (pinned `checked_at` to legacy `generated_at`)
 
 Regenerate protocol JSON:

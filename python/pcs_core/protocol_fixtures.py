@@ -462,6 +462,11 @@ def write_labtrust_protocol_artifacts(directory: Path) -> None:
     for filename, builder in LABTRUST_HANDOFF_ARTIFACTS.items():
         path = directory / filename
         path.write_text(json.dumps(builder(), indent=2) + "\n", encoding="utf-8")
+    # PF CLI alias (HandoffManifest.v0); same payload as bundle_to_verifier stage handoff.
+    (directory / "handoff_to_pf.json").write_text(
+        json.dumps(handoff_bundle_to_verifier(), indent=2) + "\n",
+        encoding="utf-8",
+    )
     (directory / "labtrust_release_fragment.json").write_text(
         json.dumps(labtrust_release_fragment_valid(directory), indent=2) + "\n",
         encoding="utf-8",

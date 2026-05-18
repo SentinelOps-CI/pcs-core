@@ -77,6 +77,7 @@ Committed under `examples/labtrust-release/`:
 | `handoff_manifest.runtime_to_certificate.v0.json` | `HandoffManifest.v0` |
 | `handoff_manifest.certificate_to_bundle.v0.json` | `HandoffManifest.v0` |
 | `handoff_manifest.bundle_to_verifier.v0.json` | `HandoffManifest.v0` |
+| `handoff_to_pf.json` | PF `--handoff` alias (same as bundle-to-verifier handoff) |
 | `handoff_manifest.signed_bundle_to_memory.v0.json` | `HandoffManifest.v0` |
 | `release_chain_validation_result.v0.json` | `ReleaseChainValidationResult.v0` |
 | `labtrust_release_fragment.json` | `ComponentReleaseFragment.v0` |
