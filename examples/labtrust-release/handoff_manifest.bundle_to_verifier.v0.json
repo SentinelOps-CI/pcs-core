@@ -6,7 +6,7 @@
   "to_component": "Provability Fabric",
   "created_at": "2026-05-17T17:01:22Z",
   "source_repo": "https://github.com/fraware/LabTrust-Gym",
-  "source_commit": "4c5439ae358733f9a4c4a58e33fdaed1ab0d29de",
+  "source_commit": "17ed831acfd775889ab497d11004cceb083a9c2d",
   "input_artifacts": {
     "science_claim_bundle.certified.json": {
       "artifact_type": "ScienceClaimBundle.v0",
@@ -27,5 +27,5 @@
     "certified_bundle_hash": "sha256:30b5b731a298922c41432de82c4ea407ec732f1e54f85b45ed9344ee5ec2c536"
   },
   "status": "Validated",
-  "signature_or_digest": "sha256:dc805de2250fb80b9516c16565f57444f13752a380db07026267eb993ef85f06"
+  "signature_or_digest": "sha256:70d44fd475511bf7678b7efcccab9dafd1900ab73c9e80b39b32af8891b198c8"
 }
