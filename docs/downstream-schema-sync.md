@@ -70,5 +70,11 @@ Downstream release fixture tests must assert the same pin values as pcs-core. Sc
 - Use `pcs validate` or pcs-core language bindings for schema + semantic checks.
 - Use `pcs hash` for canonical digests; do not reimplement canonicalization locally.
 - Pin the same pcs-core version across all repos in a release train.
+- Run `pcs registry audit` after upgrading the registry pin.
+- Run `pcs conformance run --suite all` (or a subset from `conformance/`) in downstream CI.
+
+Shared hash vectors: `pcs shared-hash-vectors verify` (Python, Rust, TypeScript must agree).
+
+Protocol authority: [artifact-registry.md](artifact-registry.md), [semantic-check-policy.md](semantic-check-policy.md), [protocol-phase2.md](protocol-phase2.md).
 
 See also [protocol.md](protocol.md) and [labtrust-v0.1-profile.md](labtrust-v0.1-profile.md).

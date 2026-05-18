@@ -9,6 +9,7 @@ from typing import Any
 from pcs_core.hash import PLACEHOLDER_DIGEST, canonical_hash
 from pcs_core.paths import examples_dir, schemas_dir
 from pcs_core.registry_data import registry_entries
+from pcs_core.registry_semantics import audit_registry_catalog
 from pcs_core.validate import ValidationError, detect_artifact_type, validate_artifact
 
 REGISTRY_ID = "pcs-artifact-registry-v0.1"
@@ -60,6 +61,7 @@ def explain_artifact_type(
 
 def validate_registry_file(path: Path) -> list[str]:
     errors: list[str] = []
+    errors.extend(audit_registry_catalog())
     try:
         data = load_registry(path)
     except ValidationError as exc:

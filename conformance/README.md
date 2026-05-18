@@ -11,7 +11,13 @@ pcs conformance run --suite release-chain
 pcs conformance run --suite hash
 ```
 
-Available suites: `release-manifest`, `handoff-manifest`, `artifact-registry`, `release-chain-validation`, `release-chain`, `hash`, `migration`, `status-transition`, `all`.
+Available suites: `release-manifest`, `handoff-manifest`, `artifact-registry`, `release-chain-validation`, `release-chain`, `component-release-fragment`, `hash`, `migration`, `status-transition`, `all`.
+
+Registry semantic-check catalog:
+
+```bash
+pcs registry audit
+```
 
 ## Per-suite docs
 

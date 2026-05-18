@@ -32,15 +32,19 @@ Builders: `pcs_core.protocol_fixtures`.
 | Artifact | Schema |
 |----------|--------|
 | `ArtifactRegistry.v0` | `schemas/ArtifactRegistry.v0.schema.json` |
+| `ComponentReleaseFragment.v0` | `schemas/ComponentReleaseFragment.v0.schema.json` |
+
+Registry entries distinguish **schema_owner** (`pcs-core`) from **runtime_producer** and **allowed_runtime_producers**. Semantic checks are structured objects with `severity` and `responsible_component`.
 
 ```bash
 pcs registry list
-pcs registry explain TraceCertificate.v0
+pcs registry explain HandoffManifest.v0
+pcs registry audit
 pcs registry validate examples/artifact_registry.valid.json
 pcs registry check-artifact examples/labtrust-release/trace_certificate.json
 ```
 
-Docs: [artifact-registry.md](artifact-registry.md).
+Docs: [artifact-registry.md](artifact-registry.md), [semantic-check-policy.md](semantic-check-policy.md).
 
 ## PR 3: shared canonical hash vectors
 
@@ -75,8 +79,9 @@ Committed under `examples/labtrust-release/`:
 | `handoff_manifest.bundle_to_verifier.v0.json` | `HandoffManifest.v0` |
 | `handoff_manifest.signed_bundle_to_memory.v0.json` | `HandoffManifest.v0` |
 | `release_chain_validation_result.v0.json` | `ReleaseChainValidationResult.v0` |
+| `labtrust_release_fragment.json` | `ComponentReleaseFragment.v0` |
 
-`release_manifest.v0.json` is derived from `RELEASE_FIXTURE_MANIFEST.json` (same artifact hashes and producer commits).
+`release_manifest.v0.json` is derived from `RELEASE_FIXTURE_MANIFEST.json` (same artifact hashes and producer commits). Each release-chain check includes `registry_check_refs` linking to registry semantic checks.
 
 Regenerate after a full chain promotion (writes validation result first, then manifest digest pin):
 
@@ -88,15 +93,13 @@ just materialize-labtrust-protocol
 
 ## Protocol conformance suite
 
-Downstream repos can run subsets from `conformance/`:
+```bash
+pcs conformance run --suite all
+pcs conformance run --suite handoff-manifest
+pcs conformance run --suite release-chain
+```
 
-| Suite | Command |
-|-------|---------|
-| Release chain | `pcs validate-release-chain examples/labtrust-release/` |
-| Registry | `pcs registry validate examples/artifact_registry.valid.json` |
-| Hash | `pcs shared-hash-vectors verify` |
-| Migration | `pcs migrate --from v0 --to v0 <artifact>` |
-| Status | `pcs check-status-transition Rejected ProofChecked` |
+Downstream repos can run subsets from `conformance/` (see [conformance/README.md](../conformance/README.md)).
 
 Integration tests: `pytest tests/test_protocol_conformance.py` (also `just protocol-conformance`).
 

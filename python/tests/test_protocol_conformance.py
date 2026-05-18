@@ -19,6 +19,10 @@ from pcs_core.registry import (
     registry_entries,
 )
 from pcs_core.registry_data import all_registry_semantic_check_refs
+from pcs_core.registry_semantics import (
+    audit_registry_catalog,
+    audit_release_chain_ref_catalog,
+)
 from pcs_core.release_chain_checks import RELEASE_CHAIN_CHECK_SPECS
 from pcs_core.release_chain_registry_refs import RELEASE_CHAIN_REGISTRY_CHECK_REFS
 from pcs_core.release_chain_report import build_release_chain_validation_result
@@ -149,6 +153,24 @@ def test_conformance_suite_runs_handoff_manifest() -> None:
 
 def test_conformance_suite_runs_release_chain() -> None:
     code, errors = run_conformance("release-chain")
+    assert code == 0, errors
+
+
+def test_registry_semantic_check_catalog_audits_clean() -> None:
+    assert audit_registry_catalog() == []
+    assert audit_release_chain_ref_catalog() == []
+
+
+def test_release_blocking_registry_checks_referenced_in_chain_catalog() -> None:
+    """Every registry_check_ref emitted by the chain catalog must exist in the registry."""
+    known = all_registry_semantic_check_refs()
+    for refs in RELEASE_CHAIN_REGISTRY_CHECK_REFS.values():
+        for ref in refs:
+            assert ref in known
+
+
+def test_conformance_suite_runs_component_release_fragment() -> None:
+    code, errors = run_conformance("component-release-fragment")
     assert code == 0, errors
 
 

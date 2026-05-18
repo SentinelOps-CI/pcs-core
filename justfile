@@ -77,6 +77,7 @@ commit MESSAGE:
 ci: build python-test rust-test ts-test validate-examples labtrust-check validate-labtrust-release-fixtures protocol-conformance hash-vectors-verify shared-hash-vectors-verify pcs-schema-diff
     cd "{{root}}/python" && pcs schema check
     cd "{{root}}/python" && pcs registry validate ../examples/artifact_registry.valid.json
+    cd "{{root}}/python" && pcs registry audit
     cd "{{root}}/python" && pcs validate ../examples/labtrust-release/release_manifest.v0.json
     cd "{{root}}/python" && pcs validate-release-chain ../examples/labtrust-release/ --out ../examples/labtrust-release/.ci_validation_result.json
     cd "{{root}}/python" && pcs validate ../examples/labtrust-release/.ci_validation_result.json

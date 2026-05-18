@@ -27,10 +27,23 @@ ArtifactRegistry.v0 entries declare **semantic checks** as structured objects. E
 
 `ReleaseChainValidationResult.v0` checks include `registry_check_refs` (for example `TraceCertificate.v0.trace_hash_matches_runtime_receipt`). Each ref must match `ArtifactType.check_id` in the registry.
 
+## Enforcement layers (pcs-core v0.1)
+
+| Layer | Meaning |
+|-------|---------|
+| `artifact_validate` | Enforced by `pcs validate` / `pcs registry check-artifact` semantics on a single file. |
+| `release_chain` | Enforced by `pcs validate-release-chain` (30-check catalog). |
+| `consumer` | Enforced by downstream import/admission (`consumer_responsible` / `producer_responsible`). |
+| `registry_metadata` | Enforced when validating `ArtifactRegistry.v0` itself. |
+
+Catalog mapping lives in `python/pcs_core/registry_semantics.py` (`CHECK_ENFORCEMENT`).
+
 ## Reference commands
 
 ```bash
 pcs registry validate examples/artifact_registry.valid.json
+pcs registry audit
 pcs registry explain HandoffManifest.v0
 pcs validate-release-chain examples/labtrust-release/
+pcs conformance run --suite all
 ```

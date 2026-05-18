@@ -124,6 +124,25 @@ def _suite_migration() -> list[str]:
     return errors
 
 
+@_record("component-release-fragment")
+def _suite_component_release_fragment() -> list[str]:
+    errors: list[str] = []
+    paths = (
+        examples_dir() / "component_release_fragment.valid.json",
+        release_dir() / "labtrust_release_fragment.json",
+    )
+    for path in paths:
+        if not path.is_file():
+            errors.append(f"missing {path}")
+            continue
+        try:
+            validate_file(path)
+        except ValidationError as exc:
+            errors.append(f"{path.name}: {exc}")
+            errors.extend(f"{path.name}: {err}" for err in exc.errors)
+    return errors
+
+
 @_record("status-transition")
 def _suite_status_transition() -> list[str]:
     from pcs_core.status_policy import check_status_transition

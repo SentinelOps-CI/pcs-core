@@ -195,6 +195,9 @@ def validate_release_chain_validation_result_semantics(data: dict[str, Any]) -> 
             "or failure_codes",
         )
     if isinstance(checks, list):
+        from pcs_core.registry_semantics import audit_release_chain_registry_coverage
+
+        errors.extend(audit_release_chain_registry_coverage(checks))
         for index, check in enumerate(checks):
             if not isinstance(check, dict):
                 continue

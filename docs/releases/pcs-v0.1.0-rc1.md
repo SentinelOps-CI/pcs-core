@@ -31,6 +31,8 @@ pcs validate-release-chain examples/labtrust-release/ --json
 pcs validate-release-chain examples/labtrust-release/ --out examples/labtrust-release/release_chain_validation_result.v0.json
 pcs validate examples/labtrust-release/release_manifest.v0.json
 pcs registry validate examples/artifact_registry.valid.json
+pcs registry audit
+pcs conformance run --suite all
 pcs shared-hash-vectors verify
 just materialize-labtrust-protocol
 just protocol-conformance
@@ -52,7 +54,7 @@ CI runs `pcs validate-release-chain ../examples/labtrust-release/` on every push
 | `labtrust_gym_commit` | `4c5439ae358733f9a4c4a58e33fdaed1ab0d29de` |
 | `certifyedge_commit` | `cb6848001e2e60a484e04eba5ad6be3fe2e4eccc` |
 | `provability_fabric_commit` | `0f659b90c80c46a6bbfd51b0d37ea723b032fb9d` |
-| `scientific_memory_commit` | `18c411b15b802a930e79a599e6e77247ababd85f` |
+| `scientific_memory_commit` | `c4259a4cb79fe7b195fd156feb346c08fc334d33` |
 | `science_claim_bundle.certified.json` | `sha256:9b42d792199eb6f358d26f822699f0ed65bb4366eee306d4958d42121c656833` |
 | `certificate_id` | `cert-trace-886c95f0-5d63-42d6-aa13-5891c12c5a6a` |
 | `trace_hash` | `sha256:c3e8a3dc4ad86d533de1dfa4ae7fe2a338c2cff3c945404c96a75216524d58cd` |

@@ -31,6 +31,7 @@ jobs:
           pcs shared-hash-vectors verify
           pcs conformance run --suite all
           pcs registry validate ../examples/artifact_registry.valid.json
+          pcs registry audit
           ruff check pcs_core tests
           ruff format --check pcs_core tests
       - name: Schema drift check (reference)

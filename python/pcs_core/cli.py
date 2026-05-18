@@ -17,6 +17,12 @@ from pcs_core.registry import (
     list_artifact_types,
     validate_registry_file,
 )
+from pcs_core.registry_semantics import (
+    audit_registry_catalog,
+    audit_release_chain_ref_catalog,
+    enforcement_layer,
+    iter_registry_checks,
+)
 from pcs_core.release_chain_report import (
     build_release_chain_report,
     build_release_chain_validation_result,
@@ -145,6 +151,22 @@ def cmd_registry_check_artifact(path: Path) -> int:
             print(f"FAIL {err}", file=sys.stderr)
         return 1
     print(f"OK registry check {path}")
+    return 0
+
+
+def cmd_registry_audit() -> int:
+    errors = [*audit_registry_catalog(), *audit_release_chain_ref_catalog()]
+    if errors:
+        for err in errors:
+            print(f"FAIL {err}", file=sys.stderr)
+        return 1
+    print("OK registry semantic-check catalog")
+    print(f"{'ARTIFACT':<32} {'CHECK':<42} {'SEVERITY':<20} ENFORCEMENT")
+    for artifact_type, check in iter_registry_checks():
+        check_id = str(check.get("check_id", ""))
+        severity = str(check.get("severity", ""))
+        layer = enforcement_layer(check)
+        print(f"{artifact_type:<32} {check_id:<42} {severity:<20} {layer}")
     return 0
 
 
@@ -284,6 +306,10 @@ def main(argv: list[str] | None = None) -> int:
         "check-artifact", help="Check artifact against registry"
     )
     p_registry_check.add_argument("path", type=Path)
+    registry_sub.add_parser(
+        "audit",
+        help="Audit registry semantic checks and release-chain ref catalog",
+    )
 
     p_release = sub.add_parser(
         "validate-release-manifest",
@@ -369,6 +395,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_registry_validate(args.path)
     if args.command == "registry" and args.registry_cmd == "check-artifact":
         return cmd_registry_check_artifact(args.path)
+    if args.command == "registry" and args.registry_cmd == "audit":
+        return cmd_registry_audit()
     if args.command == "validate-release-manifest":
         return cmd_validate_release_manifest(args.path)
     if args.command == "validate-release-chain":
