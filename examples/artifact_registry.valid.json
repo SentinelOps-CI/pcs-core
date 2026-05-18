@@ -204,6 +204,7 @@
       ],
       "consumer_repos": [
         "CertifyEdge",
+        "LabTrust-Gym",
         "Provability Fabric",
         "Scientific Memory"
       ],
@@ -595,5 +596,5 @@
       "release_mode_required": false
     }
   },
-  "signature_or_digest": "sha256:5f7525e29d38feeea38697e063479712e7d4d2541114d42335a4766396320ebb"
+  "signature_or_digest": "sha256:9707d9922e3dd881f9d133e27e12f746d1d9b6a4ca8e81265e0c0af963d302dd"
 }

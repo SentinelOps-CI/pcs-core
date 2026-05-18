@@ -164,7 +164,7 @@ _REGISTRY_ENTRIES: dict[str, dict[str, Any]] = {
             _sc("status_is_certificate_checked_for_release", "release_blocking", CERTIFYEDGE),
             _sc("source_commit_matches_release_manifest", "release_blocking", CERTIFYEDGE),
         ],
-        consumer_repos=[CERTIFYEDGE, PF, SM],
+        consumer_repos=[CERTIFYEDGE, LABTRUST, PF, SM],
     ),
     "EvidenceBundle.v0": _entry(
         artifact_type="EvidenceBundle.v0",
