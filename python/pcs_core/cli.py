@@ -18,8 +18,6 @@ from pcs_core.registry import (
     validate_registry_file,
 )
 from pcs_core.registry_semantics import (
-    audit_registry_catalog,
-    audit_release_chain_ref_catalog,
     enforcement_layer,
     iter_registry_checks,
 )
@@ -157,7 +155,9 @@ def cmd_registry_check_artifact(path: Path) -> int:
 
 
 def cmd_registry_audit() -> int:
-    errors = [*audit_registry_catalog(), *audit_release_chain_ref_catalog()]
+    from pcs_core.registry_semantics import audit_registry_enforcement
+
+    errors = audit_registry_enforcement()
     if errors:
         for err in errors:
             print(f"FAIL {err}", file=sys.stderr)

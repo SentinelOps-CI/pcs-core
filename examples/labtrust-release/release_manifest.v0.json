@@ -4,6 +4,7 @@
   "release_candidate": "pcs-v0.1.0-rc1",
   "generated_at": "2026-05-17T22:32:01Z",
   "validation_profile": "labtrust-v0.1-release-chain",
+  "workflow_profile_id": "labtrust.qc_release_v0.1",
   "chain_root": {
     "trace_hash": "sha256:c3e8a3dc4ad86d533de1dfa4ae7fe2a338c2cff3c945404c96a75216524d58cd",
     "certificate_id": "cert-trace-886c95f0-5d63-42d6-aa13-5891c12c5a6a",
@@ -12,7 +13,7 @@
   },
   "release_chain_validation_result": {
     "path": "release_chain_validation_result.v0.json",
-    "sha256": "sha256:b84c40f97a4cc9e3a85e4c4a74f043359a30fc4ff18f1022a2c86d98cb4fd594"
+    "sha256": "sha256:6519f99f5d74e235ab6d2f4c1b9884250c52cb8e0d09bb27c127c8379ef62fc8"
   },
   "canonical_signed_bundle": {
     "path": "signed_science_claim_bundle.json",
@@ -109,5 +110,5 @@
     }
   },
   "release_status": "Validated",
-  "signature_or_digest": "sha256:bd0c1c76a61533a04ade4e66ef8a28df4679b2a94aafcfc5f2827108f94ee2ad"
+  "signature_or_digest": "sha256:7d51b2a737104a39ccc8b2cff93417c2ed4e7e5acc1c2956d8211ae041cd5243"
 }

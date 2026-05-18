@@ -1,0 +1,27 @@
+{
+  "schema_version": "v0",
+  "trace_id": "trace-agent-safety-001",
+  "workflow_id": "agent_tool_use.safety_v0",
+  "agent_id": "agent-safety-conformance-001",
+  "policy_id": "policy-no-secret-exfiltration-v0",
+  "started_at": "2026-05-18T00:00:00Z",
+  "completed_at": "2026-05-18T00:00:05Z",
+  "tool_calls": [
+    {
+      "event_id": "evt-001",
+      "timestamp": "2026-05-18T00:00:01Z",
+      "tool_name": "filesystem.read",
+      "tool_category": "filesystem",
+      "input_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "output_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "authorization_status": "unknown",
+      "policy_refs": [
+        "policy-no-secret-exfiltration-v0"
+      ]
+    }
+  ],
+  "trace_hash": "sha256:efcafc5447b36d4fde727befc949e4877b983b1a7ac4737b34304d2fc9f9e648",
+  "source_repo": "https://github.com/example/agent-runtime",
+  "source_commit": "a111111111111111111111111111111111111111",
+  "signature_or_digest": "sha256:f15c70a6987d61a51ff04e82517281076d5ce2d488270261ffd6038c3a566513"
+}

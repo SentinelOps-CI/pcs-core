@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from pcs_core.release_chain import ReleaseChainIssue
+from pcs_core.registry_semantics import responsible_component_for_registry_refs
 from pcs_core.release_chain_registry_refs import RELEASE_CHAIN_REGISTRY_CHECK_REFS
 
 
@@ -210,6 +211,7 @@ def build_checks_from_issues(issues: list[ReleaseChainIssue]) -> list[dict[str, 
                 "status": status,
                 "details": details,
                 "registry_check_refs": sorted(refs),
+                "responsible_component": responsible_component_for_registry_refs(refs),
             },
         )
     return checks

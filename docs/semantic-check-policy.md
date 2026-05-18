@@ -72,16 +72,66 @@ Downstream validators should emit the same `registry_check_refs` when they execu
 
 Catalog: `python/pcs_core/registry_semantics.py` (`CHECK_ENFORCEMENT`).
 
+## Skipped checks
+
+When `allowed_to_skip` is `true` and a check is not executed, record it in
+`deferred_registry_checks` with `status: "skipped"`:
+
+```json
+{
+  "registry_ref": "ArtifactRegistry.v0.entries_cover_required_artifact_types",
+  "status": "skipped",
+  "enforcement_location": "registry_metadata",
+  "responsible_component": "pcs-core",
+  "reason": "Optional catalog audit not run in this release train."
+}
+```
+
+Skipped checks must not be `release_blocking` with `allowed_to_skip: false`.
+
+## Deferred checks
+
+Release-blocking checks enforced outside the 30-check release-chain catalog are
+listed in `deferred_registry_checks` with `status: "deferred"`. Each entry
+requires:
+
+| Field | Required | Meaning |
+|-------|----------|---------|
+| `registry_ref` | Yes | `ArtifactType.check_id` |
+| `enforcement_location` | Yes | Where the check actually runs |
+| `responsible_component` | Yes | Must match the registry entry |
+| `reason` | Yes | Human-readable justification |
+
+Deferred checks are **forbidden** when `enforcement_location` is `release_chain`:
+those checks must appear in a chain check's `registry_check_refs` with
+`status: "passed"` or `"failed"`.
+
+## Release-chain coverage rule
+
+For every `release_blocking` registry check on an artifact type with
+`release_mode_required: true`, the union of:
+
+1. all `registry_check_refs` on `checks`, and
+2. all `registry_ref` values in `deferred_registry_checks`
+
+must equal the required release-blocking set. Any omitted check fails
+`ReleaseChainValidationResult` validation.
+
 ## Downstream reporting contract
 
 When a component runs a registry semantic check, it should record:
 
 1. `registry_ref` — `ArtifactType.check_id`
-2. `status` — `passed` | `failed` | `skipped`
+2. `status` — `passed` | `failed` | `skipped` | `deferred`
 3. `responsible_component` — must match registry entry
 4. `fatal` — `true` when `allowed_to_skip` is `false` and status is not `passed`
 
-Attach these records to component validation reports or import into `ReleaseChainValidationResult.v0` via `registry_check_refs`.
+Attach these records to component validation reports or import into
+`ReleaseChainValidationResult.v0` via `registry_check_refs` and
+`deferred_registry_checks`.
+
+Each release-chain check must include `responsible_component`, derived from the
+first cited registry ref when present.
 
 ## Reference commands
 

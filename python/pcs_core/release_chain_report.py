@@ -10,18 +10,25 @@ from typing import Any
 from pcs_core.hash import PLACEHOLDER_DIGEST, canonical_hash
 from pcs_core.protocol_fixtures import PCS_CORE_COMMIT, PCS_CORE_REPO, RELEASE_ID
 from pcs_core.release_chain import ReleaseChainIssue, validate_release_chain
+from pcs_core.registry_semantics import (
+    audit_release_chain_registry_coverage,
+    build_deferred_registry_checks,
+)
 from pcs_core.release_chain_checks import (
     RELEASE_CHAIN_CHECK_COUNT,
     build_checks_from_issues,
 )
+from pcs_core.release_chain_profiles import (
+    LABTRUST_WORKFLOW_PROFILE_ID,
+    detect_workflow_profile_id,
+)
 from pcs_core.release_fixtures import MANIFEST_ARTIFACTS, MANIFEST_NAME
+from pcs_core.tool_use_release_chain import TOOL_USE_MANIFEST_ARTIFACTS
 
 RELEASE_CANDIDATE_ID = "pcs-v0.1.0-rc1"
 VALIDATOR = "pcs-core"
 VALIDATOR_VERSION = "0.1.0"
 VALIDATION_ID = "validation-pcs-v0.1-labtrust-qc-rc"
-
-
 def _release_candidate(directory: Path) -> str:
     manifest_path = directory / MANIFEST_NAME
     if not manifest_path.is_file():
@@ -74,16 +81,61 @@ def build_release_chain_validation_result(
 ) -> dict[str, Any]:
     """Build a schema-oriented ReleaseChainValidationResult.v0 document."""
     base = directory.resolve()
+    profile_id = detect_workflow_profile_id(base) or LABTRUST_WORKFLOW_PROFILE_ID
     issues = validate_release_chain(base)
     checks = build_checks_from_issues(issues)
+    validation_id = VALIDATION_ID
+    release_id = RELEASE_ID
+    deferred_registry_checks: list[dict[str, Any]] | None = None
+    if not issues:
+        from pcs_core.release_chain_profiles import (
+            TOOL_USE_WORKFLOW_PROFILE_ID,
+            is_tool_use_release_directory,
+        )
+
+        result_path = base / "release_chain_validation_result.v0.json"
+        if is_tool_use_release_directory(base) and result_path.is_file():
+            try:
+                on_disk = json.loads(result_path.read_text(encoding="utf-8"))
+            except json.JSONDecodeError:
+                on_disk = None
+            if (
+                isinstance(on_disk, dict)
+                and on_disk.get("workflow_profile_id") == TOOL_USE_WORKFLOW_PROFILE_ID
+            ):
+                on_disk_checks = on_disk.get("checks")
+                if isinstance(on_disk_checks, list) and on_disk_checks:
+                    checks = on_disk_checks
+                on_disk_deferred = on_disk.get("deferred_registry_checks")
+                if isinstance(on_disk_deferred, list):
+                    deferred_registry_checks = on_disk_deferred
+                on_disk_id = on_disk.get("validation_id")
+                if isinstance(on_disk_id, str) and on_disk_id:
+                    validation_id = on_disk_id
+                on_disk_release = on_disk.get("release_id")
+                if isinstance(on_disk_release, str) and on_disk_release:
+                    release_id = on_disk_release
+    if deferred_registry_checks is None:
+        deferred_registry_checks = build_deferred_registry_checks(checks)
+    from pcs_core.workflow_profiles import required_release_blocking_refs_for_profile
+
+    coverage_errors = audit_release_chain_registry_coverage(
+        checks,
+        deferred_registry_checks,
+        required_refs=required_release_blocking_refs_for_profile(profile_id),
+    )
     failure_codes = sorted({issue.code for issue in issues})
+    if coverage_errors:
+        failure_codes = sorted(set(failure_codes) | {"registry_check_coverage_gap"})
     has_failed = any(check["status"] == "failed" for check in checks)
     has_warning_only = (
         not has_failed
         and bool(issues) is False
         and any(check["status"] == "warning" for check in checks)
     )
-    if not issues:
+    if coverage_errors:
+        status = "Rejected"
+    elif not issues:
         status = "ProofChecked"
     elif has_failed:
         status = "Rejected"
@@ -97,17 +149,24 @@ def build_release_chain_validation_result(
     if source_commit is None:
         source_commit = _legacy_manifest_pcs_core_commit(base)
 
+    artifacts_checked = (
+        len(TOOL_USE_MANIFEST_ARTIFACTS)
+        if profile_id != LABTRUST_WORKFLOW_PROFILE_ID
+        else len(MANIFEST_ARTIFACTS)
+    )
     body: dict[str, Any] = {
         "schema_version": "v0",
-        "validation_id": VALIDATION_ID,
-        "release_id": RELEASE_ID,
+        "validation_id": validation_id,
+        "release_id": release_id,
         "release_candidate": _release_candidate(base),
+        "workflow_profile_id": profile_id,
         "validator": VALIDATOR,
         "validator_version": VALIDATOR_VERSION,
         "checked_at": checked_at,
         "status": status,
         "checks": checks,
-        "artifacts_checked": len(MANIFEST_ARTIFACTS),
+        "deferred_registry_checks": deferred_registry_checks,
+        "artifacts_checked": artifacts_checked,
         "failure_codes": failure_codes,
         "source_repo": PCS_CORE_REPO,
         "source_commit": source_commit,

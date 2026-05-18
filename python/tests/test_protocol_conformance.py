@@ -12,7 +12,7 @@ from pcs_core.legacy_manifest import legacy_manifest_equivalent_to_release_manif
 from pcs_core.migrate import migrate_file
 from pcs_core.paths import examples_dir
 from pcs_core.protocol_fixtures import release_manifest_valid
-from pcs_core.conformance import build_conformance_report_data, run_conformance
+from pcs_core.conformance import build_conformance_report_data, list_suites, run_conformance
 from pcs_core.registry import audit_registry_producer_fields, validate_registry_file
 from pcs_core.semantic_check_execution import build_semantic_check_execution
 from pcs_core.registry import (
@@ -22,14 +22,14 @@ from pcs_core.registry import (
 )
 from pcs_core.registry_data import all_registry_semantic_check_refs
 from pcs_core.registry_semantics import (
-    audit_registry_catalog,
-    audit_release_chain_ref_catalog,
+    audit_registry_enforcement,
+    audit_release_blocking_chain_catalog_coverage,
 )
 from pcs_core.release_chain_checks import RELEASE_CHAIN_CHECK_SPECS
 from pcs_core.release_chain_registry_refs import RELEASE_CHAIN_REGISTRY_CHECK_REFS
 from pcs_core.release_chain_report import build_release_chain_validation_result
 from pcs_core.release_fixtures import release_dir
-from pcs_core.shared_hash_vectors import VECTOR_FILENAMES, verify_shared_vectors
+from pcs_core.shared_hash_vectors import VECTOR_FILENAMES, VECTOR_SPECS, verify_shared_vectors
 from pcs_core.status_policy import check_status_transition
 from pcs_core.validate import ValidationError, validate_artifact, validate_file
 
@@ -67,6 +67,7 @@ def test_on_disk_release_chain_validation_has_full_checks() -> None:
     data = json.loads(
         (RELEASE / "release_chain_validation_result.v0.json").read_text(encoding="utf-8"),
     )
+    assert data.get("workflow_profile_id") == "labtrust.qc_release_v0.1"
     assert len(data["checks"]) == 30
 
 
@@ -215,8 +216,11 @@ def test_conformance_release_chain_suite_passes() -> None:
 
 
 def test_registry_semantic_check_catalog_audits_clean() -> None:
-    assert audit_registry_catalog() == []
-    assert audit_release_chain_ref_catalog() == []
+    assert audit_registry_enforcement() == []
+
+
+def test_release_blocking_chain_layer_refs_in_chain_catalog() -> None:
+    assert audit_release_blocking_chain_catalog_coverage() == []
 
 
 def test_release_blocking_registry_checks_referenced_in_chain_catalog() -> None:
@@ -225,6 +229,61 @@ def test_release_blocking_registry_checks_referenced_in_chain_catalog() -> None:
     for refs in RELEASE_CHAIN_REGISTRY_CHECK_REFS.values():
         for ref in refs:
             assert ref in known
+
+
+def test_release_chain_result_covers_release_blocking_registry_checks() -> None:
+    from pcs_core.registry_semantics import (
+        audit_release_chain_registry_coverage,
+        collect_required_release_blocking_refs,
+    )
+
+    result = build_release_chain_validation_result(release_dir())
+    checks = result["checks"]
+    deferred = result["deferred_registry_checks"]
+    assert audit_release_chain_registry_coverage(checks, deferred) == []
+    cited = {
+        ref
+        for check in checks
+        for ref in check.get("registry_check_refs", [])
+    }
+    deferred_refs = {item["registry_ref"] for item in deferred}
+    required = collect_required_release_blocking_refs()
+    assert required <= cited | deferred_refs
+    for check in checks:
+        assert "responsible_component" in check
+
+
+def test_conformance_report_emits_checks_passed_failed() -> None:
+    report = build_conformance_report_data("artifact-registry")
+    assert "checks_passed" in report
+    assert "checks_failed" in report
+    assert "failures" in report
+    assert report["checks_failed"] == 0
+    validate_artifact(report, "ConformanceReport.v0")
+
+
+@pytest.mark.parametrize("suite_name", list_suites())
+def test_conformance_suite_passes_individually(suite_name: str) -> None:
+    code, errors = run_conformance(suite_name)
+    assert code == 0, errors
+    report = build_conformance_report_data(suite_name)
+    validate_artifact(report, "ConformanceReport.v0")
+    assert report["status"] == "passed"
+    assert report["suite"] == suite_name
+
+
+def test_conformance_all_suite_passes() -> None:
+    code, errors = run_conformance("all")
+    assert code == 0, errors
+    report = build_conformance_report_data("all")
+    validate_artifact(report, "ConformanceReport.v0")
+    assert report["status"] == "passed"
+    assert report["suites_run"] == len(list_suites())
+
+
+def test_shared_hash_vectors_cover_all_catalog_types() -> None:
+    assert set(VECTOR_SPECS) == set(VECTOR_FILENAMES)
+    assert verify_shared_vectors() == []
 
 
 def test_conformance_suite_runs_component_release_fragment() -> None:

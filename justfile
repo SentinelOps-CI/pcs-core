@@ -58,12 +58,31 @@ materialize-labtrust-protocol:
 materialize-labtrust-protocol:
     powershell.exe -NoProfile -ExecutionPolicy Bypass -File "{{root}}/scripts/materialize-labtrust-protocol.ps1"
 
+[unix]
+materialize-tool-use-protocol:
+    bash "{{root}}/scripts/materialize-tool-use-protocol.sh"
+
+[windows]
+materialize-tool-use-protocol:
+    cd "{{root}}/python" && python scripts/materialize_tool_use_fixtures.py
+
+[unix]
+materialize-protocol:
+    bash "{{root}}/scripts/materialize-protocol.sh"
+
+[windows]
+materialize-protocol:
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File "{{root}}/scripts/materialize-protocol.ps1"
+
 pcs-schema-diff vendor_dir="schemas":
     bash "{{root}}/scripts/pcs-schema-diff.sh" "{{root}}/{{vendor_dir}}"
 
 protocol-conformance:
     cd "{{root}}/python" && pytest -q tests/test_protocol_conformance.py
     cd "{{root}}/python" && pcs conformance run --suite all
+
+multidomain-conformance:
+    cd "{{root}}/python" && pcs conformance run --suite multidomain
 
 # Commit without running Git hooks (avoids Cursor Co-authored-by trailers).
 [unix]

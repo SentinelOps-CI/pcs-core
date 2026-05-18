@@ -197,7 +197,26 @@ def validate_release_chain_validation_result_semantics(data: dict[str, Any]) -> 
     if isinstance(checks, list):
         from pcs_core.registry_semantics import audit_release_chain_registry_coverage
 
-        errors.extend(audit_release_chain_registry_coverage(checks))
+        deferred = data.get("deferred_registry_checks")
+        if deferred is None:
+            errors.append("deferred_registry_checks required")
+            deferred = []
+        elif not isinstance(deferred, list):
+            errors.append("deferred_registry_checks must be an array")
+            deferred = []
+        from pcs_core.workflow_profiles import required_release_blocking_refs_for_profile
+
+        profile_id = data.get("workflow_profile_id")
+        required_refs = required_release_blocking_refs_for_profile(
+            str(profile_id) if isinstance(profile_id, str) else None,
+        )
+        errors.extend(
+            audit_release_chain_registry_coverage(
+                checks,
+                deferred,
+                required_refs=required_refs,
+            ),
+        )
         for index, check in enumerate(checks):
             if not isinstance(check, dict):
                 continue
@@ -211,4 +230,40 @@ def validate_release_chain_validation_result_semantics(data: dict[str, Any]) -> 
             for ref in refs:
                 if isinstance(ref, str) and ref not in known_refs:
                     errors.append(f"checks[{index}]: unknown registry check ref {ref!r}")
+    return errors
+
+
+def validate_conformance_report_semantics(data: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    status = data.get("status")
+    checks_failed = data.get("checks_failed")
+    failures = data.get("failures")
+    checks_passed = data.get("checks_passed")
+    if not isinstance(checks_passed, int) or checks_passed < 0:
+        errors.append("ConformanceReport.v0 checks_passed must be a non-negative integer")
+    if not isinstance(checks_failed, int) or checks_failed < 0:
+        errors.append("ConformanceReport.v0 checks_failed must be a non-negative integer")
+    failure_items = failures if isinstance(failures, list) else []
+    if status == "failed":
+        if checks_failed == 0 and not failure_items:
+            errors.append(
+                "ConformanceReport.v0 with status failed requires checks_failed > 0 or failures",
+            )
+    if status == "passed":
+        if checks_failed != 0:
+            errors.append("ConformanceReport.v0 with status passed requires checks_failed == 0")
+        if failure_items:
+            errors.append("ConformanceReport.v0 with status passed requires empty failures")
+    results = data.get("results")
+    if isinstance(results, list) and isinstance(checks_passed, int) and isinstance(checks_failed, int):
+        run_total = sum(
+            int(item.get("checks_run", 0))
+            for item in results
+            if isinstance(item, dict)
+        )
+        if run_total != checks_passed + checks_failed:
+            errors.append(
+                "ConformanceReport.v0 checks_passed + checks_failed must equal "
+                "sum(results[].checks_run)",
+            )
     return errors

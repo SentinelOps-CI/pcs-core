@@ -98,11 +98,31 @@ just materialize-labtrust-protocol
 pcs conformance run --suite all
 pcs conformance run --suite handoff-manifest
 pcs conformance run --suite release-chain
+pcs conformance run --suite all --json   # ConformanceReport.v0
 ```
 
-Downstream repos can run subsets from `conformance/` (see [conformance/README.md](../conformance/README.md)).
+Reports validate against `schemas/ConformanceReport.v0.schema.json` (`checks_passed`, `checks_failed`, `failures`).
+
+Downstream repos can run subsets from `conformance/` (see [conformance/README.md](../conformance/README.md)) or import `pcs_core.conformance`.
 
 Integration tests: `pytest tests/test_protocol_conformance.py` (also `just protocol-conformance`).
+
+### Multi-domain workflows
+
+`WorkflowProfile.v0` maps a domain onto the shared PCS trust loop. LabTrust RC remains the default 30-check catalog; tool-use safety uses profile-scoped `ReleaseChainValidationResult.workflow_profile_id` so registry coverage does not require LabTrust-only checks.
+
+```bash
+just materialize-protocol
+pcs validate-release-chain examples/labtrust-release/
+pcs validate-release-chain examples/tool-use-release/
+pcs conformance run --suite workflow-profile
+pcs conformance run --suite tool-use
+pcs conformance run --suite multidomain
+```
+
+See [workflow-profiles.md](workflow-profiles.md). Formal trust-boundary placeholders: `lean/PCS/`.
+
+Tool-use invalid fixtures (`examples/tool-use-release-invalid/`) are enforced via `pcs examples check` and the `tool-use` conformance suite; each case must fail release-mode semantic validation.
 
 ## Release-mode semantics (protocol artifacts)
 

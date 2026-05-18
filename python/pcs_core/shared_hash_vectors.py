@@ -19,6 +19,10 @@ VECTOR_SPECS: dict[str, str] = {
     "ReleaseChainValidationResult.v0": "examples/release_chain_validation_result.valid.json",
     "ComponentReleaseFragment.v0": "examples/component_release_fragment.valid.json",
     "ArtifactRegistry.v0": "examples/artifact_registry.valid.json",
+    "SemanticCheckExecution.v0": "examples/semantic_check_execution.valid.json",
+    "WorkflowProfile.v0": "examples/workflow_profiles/agent_tool_use_safety.valid.json",
+    "ToolUseTrace.v0": "examples/tool_use_trace.valid.json",
+    "ToolUseCertificate.v0": "examples/tool_use_certificate.valid.json",
 }
 
 VECTOR_FILENAMES: dict[str, str] = {
@@ -31,6 +35,10 @@ VECTOR_FILENAMES: dict[str, str] = {
     "ReleaseChainValidationResult.v0": "release_chain_validation_result.vector.json",
     "ComponentReleaseFragment.v0": "component_release_fragment.vector.json",
     "ArtifactRegistry.v0": "artifact_registry.vector.json",
+    "SemanticCheckExecution.v0": "semantic_check_execution.vector.json",
+    "WorkflowProfile.v0": "workflow_profile.vector.json",
+    "ToolUseTrace.v0": "tool_use_trace.vector.json",
+    "ToolUseCertificate.v0": "tool_use_certificate.vector.json",
 }
 
 
@@ -62,10 +70,12 @@ def write_shared_vectors(*, force: bool = False) -> None:
         if path.exists() and not force:
             continue
         example = _example_path(relative)
+        if not example.is_file():
+            continue
         data = json.loads(example.read_text(encoding="utf-8"))
         payload = {
             "artifact_type": artifact_type,
-            "input": relative,
+            "input_file": relative,
             "expected_digest": canonical_hash(data),
             "canonical_json": canonical_json_bytes(data).decode("utf-8"),
         }

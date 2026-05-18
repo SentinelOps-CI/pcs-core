@@ -7,7 +7,7 @@
   "generated_at": "2026-05-17T22:32:01Z",
   "upstream_release_manifest": {
     "path": "release_manifest.v0.json",
-    "sha256": "sha256:dee1cf4449669a1580eb3854dd385fb5af713eda6d00858a554f3055cd908695"
+    "sha256": "sha256:c955a9fd8a5b60501849e68fd4bc586a32826b172a5f7a35352c6980e62ac5d4"
   },
   "handoff_artifacts": [
     "handoff_manifest.runtime_to_certificate.v0.json"
@@ -35,5 +35,5 @@
       "sha256": "sha256:30b5b731a298922c41432de82c4ea407ec732f1e54f85b45ed9344ee5ec2c536"
     }
   },
-  "signature_or_digest": "sha256:16e333ad7e5feac44efe5a7839a81e3530a85f369dcb4c0317ada63c1d706620"
+  "signature_or_digest": "sha256:fd550acf168667b560285a17e81a80d4b366fa84d650a4b28efa29bd501a12e0"
 }

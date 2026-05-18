@@ -72,6 +72,16 @@ Downstream release fixture tests must assert the same pin values as pcs-core. Sc
 - Pin the same pcs-core version across all repos in a release train.
 - Run `pcs registry audit` after upgrading the registry pin.
 - Run `pcs conformance run --suite all` (or a subset from `conformance/`) in downstream CI.
+- Conformance reports are `ConformanceReport.v0` artifacts (`checks_passed`, `checks_failed`, `failures`).
+
+Python API (same behavior as the CLI):
+
+```python
+from pcs_core.conformance import build_conformance_report_data, run_conformance
+
+exit_code, errors = run_conformance("hash")
+report = build_conformance_report_data("hash")
+```
 
 Shared hash vectors: `pcs shared-hash-vectors verify` (Python, Rust, TypeScript must agree).
 

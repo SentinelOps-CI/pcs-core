@@ -147,6 +147,7 @@ def labtrust_release_manifest_body(
         "release_candidate": str(legacy.get("release_candidate", "pcs-v0.1.0-rc1")),
         "generated_at": str(legacy.get("generated_at", "2026-05-17T17:01:22Z")),
         "validation_profile": "labtrust-v0.1-release-chain",
+        "workflow_profile_id": "labtrust.qc_release_v0.1",
         "chain_root": {
             "trace_hash": LABTRUST_RC_TRACE_HASH,
             "certificate_id": LABTRUST_RC_CERTIFICATE_ID,

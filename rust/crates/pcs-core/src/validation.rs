@@ -40,6 +40,18 @@ const ARTIFACT_SCHEMAS: &[(&str, &str)] = &[
     ),
     ("ArtifactRegistry.v0", "ArtifactRegistry.v0.schema.json"),
     ("MigrationReport.v0", "MigrationReport.v0.schema.json"),
+    ("WorkflowProfile.v0", "WorkflowProfile.v0.schema.json"),
+    ("ToolUseTrace.v0", "ToolUseTrace.v0.schema.json"),
+    ("ToolUseCertificate.v0", "ToolUseCertificate.v0.schema.json"),
+    ("ConformanceReport.v0", "ConformanceReport.v0.schema.json"),
+    (
+        "SemanticCheckExecution.v0",
+        "SemanticCheckExecution.v0.schema.json",
+    ),
+    (
+        "ComponentReleaseFragment.v0",
+        "ComponentReleaseFragment.v0.schema.json",
+    ),
 ];
 
 const PROTOCOL_ARTIFACT_TYPES: &[&str] = &[
@@ -52,6 +64,19 @@ const PROTOCOL_ARTIFACT_TYPES: &[&str] = &[
 
 pub fn detect_artifact_type(value: &Value) -> Option<&'static str> {
     let obj = value.as_object()?;
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("suite").is_some()
+        && obj.get("checks_passed").is_some()
+        && obj.get("failures").map(|v| v.is_array()).unwrap_or(false)
+    {
+        return Some("ConformanceReport.v0");
+    }
+    if obj.contains_key("policy_id")
+        && obj.contains_key("severity_definitions")
+        && obj.get("checks").map(|v| v.is_array()).unwrap_or(false)
+    {
+        return Some("SemanticCheckExecution.v0");
+    }
     if obj.contains_key("from_version")
         && obj.contains_key("to_version")
         && obj.contains_key("changes")
@@ -61,6 +86,36 @@ pub fn detect_artifact_type(value: &Value) -> Option<&'static str> {
     }
     if obj.contains_key("validation_id") && obj.contains_key("artifacts_checked") {
         return Some("ReleaseChainValidationResult.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("component").is_some()
+        && obj.get("artifacts").map(|v| v.is_object()).unwrap_or(false)
+        && obj.contains_key("signature_or_digest")
+        && obj.contains_key("source_commit")
+    {
+        return Some("ComponentReleaseFragment.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("workflow_id").is_some()
+        && obj.get("domain").is_some()
+        && obj.get("handoff_sequence").map(|v| v.is_array()).unwrap_or(false)
+        && obj.get("runtime_artifacts").map(|v| v.is_array()).unwrap_or(false)
+    {
+        return Some("WorkflowProfile.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("trace_id").is_some()
+        && obj.get("tool_calls").map(|v| v.is_array()).unwrap_or(false)
+    {
+        return Some("ToolUseTrace.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("certificate_id").is_some()
+        && obj.contains_key("policy_hash")
+        && obj.get("violations").map(|v| v.is_array()).unwrap_or(false)
+        && !obj.contains_key("spec_hash")
+    {
+        return Some("ToolUseCertificate.v0");
     }
     if obj.contains_key("handoff_id") && obj.contains_key("handoff_kind") {
         return Some("HandoffManifest.v0");
@@ -74,6 +129,7 @@ pub fn detect_artifact_type(value: &Value) -> Option<&'static str> {
     if obj.contains_key("release_id")
         && obj.contains_key("producer_repos")
         && obj.contains_key("validation_profile")
+        && obj.contains_key("workflow_profile_id")
     {
         return Some("ReleaseManifest.v0");
     }
@@ -326,6 +382,10 @@ mod tests {
         {
             let path = entry.path();
             if !entry.file_type().is_file() {
+                continue;
+            }
+            let path_str = path.to_string_lossy();
+            if path_str.contains("tool-use-release-invalid") {
                 continue;
             }
             let name = path.file_name().unwrap().to_string_lossy();

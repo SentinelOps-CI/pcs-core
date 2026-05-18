@@ -15,10 +15,16 @@ from pcs_core.paths import examples_dir as default_examples_dir
 from pcs_core.paths import schemas_dir
 from pcs_core.protocol_validate import (
     validate_artifact_registry_semantics,
+    validate_conformance_report_semantics,
     validate_handoff_manifest_semantics,
     validate_release_chain_validation_result_semantics,
     validate_release_manifest_fixture_refs,
     validate_release_manifest_semantics,
+)
+from pcs_core.tool_use_validate import (
+    validate_tool_use_certificate_semantics,
+    validate_tool_use_trace_semantics,
+    validate_workflow_profile_semantics,
 )
 from pcs_core.status import ARTIFACT_STATUSES, TRACE_CERTIFICATE_STATUSES
 
@@ -39,6 +45,10 @@ ARTIFACT_SCHEMAS: dict[str, str] = {
     "MigrationReport.v0": "MigrationReport.v0.schema.json",
     "ComponentReleaseFragment.v0": "ComponentReleaseFragment.v0.schema.json",
     "SemanticCheckExecution.v0": "SemanticCheckExecution.v0.schema.json",
+    "ConformanceReport.v0": "ConformanceReport.v0.schema.json",
+    "WorkflowProfile.v0": "WorkflowProfile.v0.schema.json",
+    "ToolUseTrace.v0": "ToolUseTrace.v0.schema.json",
+    "ToolUseCertificate.v0": "ToolUseCertificate.v0.schema.json",
 }
 
 CERTIFIED_CLAIM_STATUSES = frozenset(
@@ -69,6 +79,14 @@ class ValidationError(Exception):
 
 
 def detect_artifact_type(data: dict[str, Any]) -> str | None:
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("suite"), str)
+        and "checks_passed" in data
+        and "checks_failed" in data
+        and isinstance(data.get("failures"), list)
+    ):
+        return "ConformanceReport.v0"
     if "policy_id" in data and "severity_definitions" in data and isinstance(data.get("checks"), list):
         return "SemanticCheckExecution.v0"
     if "from_version" in data and "to_version" in data and "changes" in data and "artifact_type" in data:
@@ -83,11 +101,30 @@ def detect_artifact_type(data: dict[str, Any]) -> str | None:
         and "source_commit" in data
     ):
         return "ComponentReleaseFragment.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("workflow_id"), str)
+        and isinstance(data.get("domain"), str)
+        and isinstance(data.get("handoff_sequence"), list)
+        and isinstance(data.get("runtime_artifacts"), list)
+    ):
+        return "WorkflowProfile.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("trace_id"), str)
+        and isinstance(data.get("tool_calls"), list)
+    ):
+        return "ToolUseTrace.v0"
     if "handoff_id" in data and "handoff_kind" in data:
         return "HandoffManifest.v0"
     if "registry_id" in data and "entries" in data and "registry_version" in data:
         return "ArtifactRegistry.v0"
-    if "release_id" in data and "producer_repos" in data and "validation_profile" in data:
+    if (
+        "release_id" in data
+        and "producer_repos" in data
+        and "validation_profile" in data
+        and "workflow_profile_id" in data
+    ):
         return "ReleaseManifest.v0"
     if "signed_bundle_id" in data and "science_claim_bundle" in data:
         return "SignedScienceClaimBundle.v0"
@@ -97,6 +134,14 @@ def detect_artifact_type(data: dict[str, Any]) -> str | None:
         return "VerificationResult.v0"
     if "receipt_id" in data:
         return "RuntimeReceipt.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("certificate_id"), str)
+        and "policy_hash" in data
+        and isinstance(data.get("violations"), list)
+        and "spec_hash" not in data
+    ):
+        return "ToolUseCertificate.v0"
     if "certificate_id" in data:
         return "TraceCertificate.v0"
     if "assumption_set_id" in data:
@@ -326,6 +371,22 @@ def validate_semantics(data: dict[str, Any], artifact_type: str) -> list[str]:
         errors.extend(validate_handoff_manifest_semantics(data))
         return errors
 
+    if artifact_type == "ConformanceReport.v0":
+        errors.extend(validate_conformance_report_semantics(data))
+        return errors
+
+    if artifact_type == "WorkflowProfile.v0":
+        errors.extend(validate_workflow_profile_semantics(data))
+        return errors
+
+    if artifact_type == "ToolUseTrace.v0":
+        errors.extend(validate_tool_use_trace_semantics(data))
+        return errors
+
+    if artifact_type == "ToolUseCertificate.v0":
+        errors.extend(validate_tool_use_certificate_semantics(data))
+        return errors
+
     if artifact_type == "ReleaseChainValidationResult.v0":
         errors.extend(validate_release_chain_validation_result_semantics(data))
         checks = data.get("checks")
@@ -396,6 +457,8 @@ def validate_file(path: Path | str) -> str:
 
 
 def _is_valid_example(path: Path) -> bool:
+    if "tool-use-release-invalid" in path.parts:
+        return False
     return path.suffix == ".json" and ".valid." in path.name
 
 
@@ -441,6 +504,16 @@ def check_invalid_examples(examples_dir: Path | None = None) -> None:
         "invalid_handoff_manifest_missing_input_hash.json": "HandoffManifest.v0",
         "invalid_release_chain_validation_failed_status.json": "ReleaseChainValidationResult.v0",
     }
+    invalid_tool_use = examples_dir / "tool-use-release-invalid"
+    if invalid_tool_use.is_dir():
+        from pcs_core.tool_use_validate import validate_tool_use_invalid_case
+
+        for case_dir in sorted(p for p in invalid_tool_use.iterdir() if p.is_dir()):
+            harness_errors = validate_tool_use_invalid_case(case_dir)
+            if harness_errors:
+                raise ValidationError(
+                    f"tool-use invalid case {case_dir.name}: {'; '.join(harness_errors)}",
+                )
     for filename, artifact_type in invalid_cases.items():
         path = examples_dir / filename
         data = json.loads(path.read_text(encoding="utf-8"))

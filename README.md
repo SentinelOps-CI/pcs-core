@@ -20,6 +20,25 @@ This repo is the single source of truth for LabTrust-Gym, CertifyEdge, Provabili
 | ReleaseManifest.v0 | `schemas/ReleaseManifest.v0.schema.json` |
 | HandoffManifest.v0 | `schemas/HandoffManifest.v0.schema.json` |
 | ReleaseChainValidationResult.v0 | `schemas/ReleaseChainValidationResult.v0.schema.json` |
+| WorkflowProfile.v0 | `schemas/WorkflowProfile.v0.schema.json` |
+| ToolUseTrace.v0 | `schemas/ToolUseTrace.v0.schema.json` |
+| ToolUseCertificate.v0 | `schemas/ToolUseCertificate.v0.schema.json` |
+
+## Multi-domain workflows (v0.1 extension)
+
+Workflows are declared in `WorkflowProfile.v0` (see [docs/workflow-profiles.md](docs/workflow-profiles.md)):
+
+| Workflow | Profile | Conformance train |
+|----------|---------|-------------------|
+| LabTrust QC release | `examples/workflow_profiles/labtrust_qc_release.valid.json` | `examples/labtrust-release/` |
+| Agent tool-use safety | `examples/workflow_profiles/agent_tool_use_safety.valid.json` | `examples/tool-use-release/` |
+
+```bash
+pcs conformance run --suite workflow-profile
+pcs conformance run --suite tool-use
+pcs conformance run --suite multidomain
+just materialize-protocol
+```
 
 ## Release pin
 
@@ -73,6 +92,8 @@ just validate-labtrust-release-fixtures
 | `pcs shared-hash-vectors verify` | Verify cross-language vectors in `test_vectors/hash/` |
 | `pcs registry list` | List registered PCS artifact types |
 | `pcs registry validate <file>` | Validate `ArtifactRegistry.v0` drift |
+| `pcs conformance run --suite <name>` | Protocol conformance (`multidomain`, `tool-use`, …) |
+| `pcs shared-hash-vectors verify` | Cross-language hash parity (`test_vectors/hash/`) |
 | `pcs explain-status <status>` | Explain status transitions |
 | `pcs migrate --from v0 --to v0 <file>` | Identity migration report |
 | `just pcs-schema-diff <dir>` | Compare vendored schemas to pcs-core |

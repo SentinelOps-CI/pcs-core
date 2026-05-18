@@ -58,7 +58,7 @@
       "responsible_component": "LabTrust-Gym",
       "execution_required_in_release_mode": true,
       "allowed_to_skip": false,
-      "enforcement_layer": "release_chain"
+      "enforcement_layer": "artifact_validate"
     },
     {
       "registry_ref": "ClaimArtifact.v0.assumption_set_ref_present",
@@ -78,7 +78,7 @@
       "responsible_component": "pcs-core",
       "execution_required_in_release_mode": true,
       "allowed_to_skip": false,
-      "enforcement_layer": "release_chain"
+      "enforcement_layer": "artifact_validate"
     },
     {
       "registry_ref": "EvidenceBundle.v0.certificate_refs_resolve",
@@ -198,7 +198,87 @@
       "responsible_component": "LabTrust-Gym",
       "execution_required_in_release_mode": true,
       "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ToolUseCertificate.v0.certificate_status_checked_for_release",
+      "artifact_type": "ToolUseCertificate.v0",
+      "check_id": "certificate_status_checked_for_release",
+      "severity": "release_blocking",
+      "responsible_component": "CertifyEdge",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
       "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "ToolUseCertificate.v0.no_unauthorized_tool_calls",
+      "artifact_type": "ToolUseCertificate.v0",
+      "check_id": "no_unauthorized_tool_calls",
+      "severity": "release_blocking",
+      "responsible_component": "CertifyEdge",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ToolUseCertificate.v0.policy_hash_matches_certificate",
+      "artifact_type": "ToolUseCertificate.v0",
+      "check_id": "policy_hash_matches_certificate",
+      "severity": "release_blocking",
+      "responsible_component": "CertifyEdge",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ToolUseCertificate.v0.signature_or_digest_valid",
+      "artifact_type": "ToolUseCertificate.v0",
+      "check_id": "signature_or_digest_valid",
+      "severity": "release_blocking",
+      "responsible_component": "CertifyEdge",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ToolUseCertificate.v0.source_commit_matches_release_manifest",
+      "artifact_type": "ToolUseCertificate.v0",
+      "check_id": "source_commit_matches_release_manifest",
+      "severity": "release_blocking",
+      "responsible_component": "CertifyEdge",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "ToolUseCertificate.v0.tool_trace_hash_matches_certificate",
+      "artifact_type": "ToolUseCertificate.v0",
+      "check_id": "tool_trace_hash_matches_certificate",
+      "severity": "release_blocking",
+      "responsible_component": "CertifyEdge",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ToolUseTrace.v0.no_unknown_authorization_status",
+      "artifact_type": "ToolUseTrace.v0",
+      "check_id": "no_unknown_authorization_status",
+      "severity": "release_blocking",
+      "responsible_component": "agent-tool-use demo producer",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ToolUseTrace.v0.trace_hash_present",
+      "artifact_type": "ToolUseTrace.v0",
+      "check_id": "trace_hash_present",
+      "severity": "release_blocking",
+      "responsible_component": "agent-tool-use demo producer",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
     },
     {
       "registry_ref": "TraceCertificate.v0.source_commit_matches_release_manifest",
@@ -249,7 +329,17 @@
       "execution_required_in_release_mode": true,
       "allowed_to_skip": false,
       "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "WorkflowProfile.v0.required_registry_entries_registered",
+      "artifact_type": "WorkflowProfile.v0",
+      "check_id": "required_registry_entries_registered",
+      "severity": "required",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "registry_metadata"
     }
   ],
-  "signature_or_digest": "sha256:b447b473f785168d1e709c5c5bf8cdbdd37788508fe2ed3e231c91cfcbc2aad7"
+  "signature_or_digest": "sha256:9ef0de33d19d4c6293cef8a15b5b50d69be74e20571e4cd914a7c04658d6f213"
 }

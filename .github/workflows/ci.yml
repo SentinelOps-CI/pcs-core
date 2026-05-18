@@ -30,8 +30,20 @@ jobs:
           python -m pcs_core.hash_vectors --verify
           pcs shared-hash-vectors verify
           pcs conformance run --suite all
+          pcs conformance run --suite multidomain
+          pcs conformance run --suite all --json > /tmp/conformance_report.json
+          pcs validate /tmp/conformance_report.json
           pcs registry validate ../examples/artifact_registry.valid.json
           pcs registry audit
+          test -f ../examples/tool-use-release/tool_use_trace.valid.json
+          test -f ../examples/tool-use-release/tool_use_certificate.valid.json
+          test -f ../examples/tool-use-release/RELEASE_FIXTURE_MANIFEST.json
+          pcs validate ../examples/workflow_profiles/labtrust_qc_release.valid.json
+          pcs validate ../examples/workflow_profiles/agent_tool_use_safety.valid.json
+          pcs validate-release-chain ../examples/tool-use-release/
+          pcs validate ../examples/tool_use_trace.valid.json
+          pcs validate ../examples/tool_use_certificate.valid.json
+          pytest -q tests/test_multidomain_workflows.py
           ruff check pcs_core tests
           ruff format --check pcs_core tests
       - name: Schema drift check (reference)
@@ -71,6 +83,17 @@ jobs:
           npm run test:hash-vectors -w @pcs/core
           npm run lint
 
+  lean:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Lean
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain stable
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - name: Build Lean trust-boundary skeleton
+        run: cd lean && lake build
+
   validate-cli-contract:
     runs-on: ubuntu-latest
     needs: python
@@ -86,6 +109,12 @@ jobs:
           pcs validate ../examples/science_claim_bundle.certified.valid.json
           pcs validate ../examples/signed_science_claim_bundle.valid.json
           pcs validate ../examples/labtrust/signed_science_claim_bundle.valid.json
+          pcs validate ../examples/tool_use_trace.valid.json
+          pcs validate ../examples/tool_use_certificate.valid.json
           pcs hash ../examples/science_claim_bundle.certified.valid.json
           pcs examples check
           pcs validate-release-chain ../examples/labtrust-release/
+          pcs validate-release-chain ../examples/tool-use-release/
+          pcs conformance run --suite workflow-profile
+          pcs conformance run --suite tool-use
+          pcs conformance run --suite multidomain

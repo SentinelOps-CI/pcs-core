@@ -41,6 +41,10 @@ const ARTIFACT_SCHEMAS: Record<ArtifactType, string> = {
   "SemanticCheckExecution.v0": "SemanticCheckExecution.v0.schema.json",
   "ComponentReleaseFragment.v0": "ComponentReleaseFragment.v0.schema.json",
   "MigrationReport.v0": "MigrationReport.v0.schema.json",
+  "WorkflowProfile.v0": "WorkflowProfile.v0.schema.json",
+  "ToolUseTrace.v0": "ToolUseTrace.v0.schema.json",
+  "ToolUseCertificate.v0": "ToolUseCertificate.v0.schema.json",
+  "ConformanceReport.v0": "ConformanceReport.v0.schema.json",
 };
 
 type Ajv = InstanceType<typeof Ajv2020>;

@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pcs.sentinelops.ci/schemas/ComputationWitness.v0.schema.json",
+  "title": "ComputationWitness.v0",
+  "description": "Draft placeholder schema for second-workflow integration planning.",
+  "type": "object",
+  "required": ["schema_version"],
+  "additionalProperties": true,
+  "properties": {
+    "schema_version": { "$ref": "common.defs.json#/$defs/schema_version" }
+  }
+}
