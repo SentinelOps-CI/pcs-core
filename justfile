@@ -50,14 +50,28 @@ shared-hash-vectors-write:
 shared-hash-vectors-verify:
     cd "{{root}}/python" && pcs shared-hash-vectors verify
 
+[unix]
 materialize-labtrust-protocol:
-    bash "{{root_native}}/scripts/materialize-labtrust-protocol.sh"
+    bash "{{root}}/scripts/materialize-labtrust-protocol.sh"
+
+[windows]
+materialize-labtrust-protocol:
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File "{{root}}/scripts/materialize-labtrust-protocol.ps1"
 
 pcs-schema-diff vendor_dir="schemas":
     bash "{{root}}/scripts/pcs-schema-diff.sh" "{{root}}/{{vendor_dir}}"
 
 protocol-conformance:
     cd "{{root}}/python" && pytest -q tests/test_protocol_conformance.py
+
+# Commit without running Git hooks (avoids Cursor Co-authored-by trailers).
+[unix]
+commit MESSAGE:
+    bash "{{root}}/scripts/pcs-commit.sh" -m "{{MESSAGE}}"
+
+[windows]
+commit MESSAGE:
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File "{{root}}/scripts/pcs-commit.ps1" -m "{{MESSAGE}}"
 
 ci: build python-test rust-test ts-test validate-examples labtrust-check validate-labtrust-release-fixtures protocol-conformance hash-vectors-verify shared-hash-vectors-verify pcs-schema-diff
     cd "{{root}}/python" && pcs schema check
