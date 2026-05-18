@@ -363,7 +363,16 @@ mod tests {
     }
 
     #[test]
+    fn hash_vectors_match_shared_fixtures() {
+        shared_hash_vectors_match_repo_fixtures_inner();
+    }
+
+    #[test]
     fn shared_hash_vectors_match_repo_fixtures() {
+        shared_hash_vectors_match_repo_fixtures_inner();
+    }
+
+    fn shared_hash_vectors_match_repo_fixtures_inner() {
         let examples = examples_dir();
         for file_name in std::fs::read_dir(shared_hash_vectors_dir()).unwrap() {
             let path = file_name.unwrap().path();

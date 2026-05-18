@@ -126,9 +126,53 @@ def validate_handoff_manifest_semantics(data: dict[str, Any]) -> list[str]:
     return errors
 
 
+def validate_artifact_registry_semantics(data: dict[str, Any]) -> list[str]:
+    from pcs_core.registry_data import all_registry_semantic_check_refs
+
+    errors: list[str] = []
+    known_refs = all_registry_semantic_check_refs()
+    entries = data.get("entries")
+    if not isinstance(entries, dict):
+        return errors
+    for artifact_type, entry in entries.items():
+        if not isinstance(entry, dict):
+            continue
+        schema_owner = entry.get("schema_owner")
+        runtime_producer = entry.get("runtime_producer")
+        allowed = entry.get("allowed_runtime_producers")
+        if isinstance(runtime_producer, str) and isinstance(allowed, list):
+            if runtime_producer not in allowed:
+                errors.append(
+                    f"entries.{artifact_type}: runtime_producer {runtime_producer!r} "
+                    f"not in allowed_runtime_producers",
+                )
+        if isinstance(schema_owner, str) and schema_owner != "pcs-core":
+            errors.append(
+                f"entries.{artifact_type}: schema_owner must be pcs-core for v0 registry",
+            )
+        checks = entry.get("semantic_checks")
+        if isinstance(checks, list):
+            for index, check in enumerate(checks):
+                if not isinstance(check, dict):
+                    continue
+                if not check.get("responsible_component"):
+                    errors.append(
+                        f"entries.{artifact_type}.semantic_checks[{index}]: "
+                        "responsible_component required",
+                    )
+                if not check.get("severity"):
+                    errors.append(
+                        f"entries.{artifact_type}.semantic_checks[{index}]: severity required",
+                    )
+    return errors
+
+
 def validate_release_chain_validation_result_semantics(data: dict[str, Any]) -> list[str]:
+    from pcs_core.registry_data import all_registry_semantic_check_refs
+
     errors: list[str] = []
     _scan_commit_fields(data, "", errors)
+    known_refs = all_registry_semantic_check_refs()
     status = data.get("status")
     checks = data.get("checks")
     failed_checks = (
@@ -150,4 +194,18 @@ def validate_release_chain_validation_result_semantics(data: dict[str, Any]) -> 
             "ReleaseChainValidationResult.v0 with status Rejected requires failed checks "
             "or failure_codes",
         )
+    if isinstance(checks, list):
+        for index, check in enumerate(checks):
+            if not isinstance(check, dict):
+                continue
+            refs = check.get("registry_check_refs")
+            if refs is None:
+                errors.append(f"checks[{index}]: registry_check_refs required")
+                continue
+            if not isinstance(refs, list):
+                errors.append(f"checks[{index}]: registry_check_refs must be an array")
+                continue
+            for ref in refs:
+                if isinstance(ref, str) and ref not in known_refs:
+                    errors.append(f"checks[{index}]: unknown registry check ref {ref!r}")
     return errors

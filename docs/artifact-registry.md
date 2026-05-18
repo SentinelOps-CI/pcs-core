@@ -1,6 +1,19 @@
 # PCS artifact registry (v0.1)
 
-The artifact registry is the canonical map from **artifact type** to schema file, producer, allowed statuses, required release fields, and semantic checks. Downstream repos must not invent local PCS schema variants; they consume this registry from pcs-core.
+The artifact registry is the canonical map from **artifact type** to schema file, **schema ownership**, **runtime producers**, allowed statuses, required release fields, and structured semantic checks. Downstream repos must not invent local PCS schema variants; they consume this registry from pcs-core.
+
+## Schema owner vs runtime producer
+
+| Field | Meaning |
+|-------|---------|
+| `schema_owner` | Repo that authors the JSON Schema (`pcs-core` for all v0 types). |
+| `runtime_producer` | Default component that emits instances in the reference chain. |
+| `allowed_runtime_producers` | Components permitted to emit instances at runtime. |
+| `producer` | Deprecated alias on emitted artifacts; must match an allowed runtime producer. |
+
+`HandoffManifest.v0` is **schema-owned by pcs-core** but may be **produced at runtime** by LabTrust-Gym, CertifyEdge, Provability Fabric, or Scientific Memory.
+
+Semantic check severities and responsibilities: [semantic-check-policy.md](semantic-check-policy.md).
 
 ## Source of truth
 

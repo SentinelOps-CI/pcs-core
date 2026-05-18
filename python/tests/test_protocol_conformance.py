@@ -12,11 +12,15 @@ from pcs_core.legacy_manifest import legacy_manifest_equivalent_to_release_manif
 from pcs_core.migrate import migrate_file
 from pcs_core.paths import examples_dir
 from pcs_core.protocol_fixtures import release_manifest_valid
+from pcs_core.conformance import run_conformance
 from pcs_core.registry import (
     build_artifact_registry,
     check_artifact_against_registry,
     registry_entries,
 )
+from pcs_core.registry_data import all_registry_semantic_check_refs
+from pcs_core.release_chain_checks import RELEASE_CHAIN_CHECK_SPECS
+from pcs_core.release_chain_registry_refs import RELEASE_CHAIN_REGISTRY_CHECK_REFS
 from pcs_core.release_chain_report import build_release_chain_validation_result
 from pcs_core.release_fixtures import release_dir
 from pcs_core.shared_hash_vectors import VECTOR_FILENAMES, verify_shared_vectors
@@ -73,6 +77,35 @@ def test_artifact_registry_contains_all_v0_artifacts() -> None:
     assert expected == set(on_disk.keys())
 
 
+def test_registry_distinguishes_schema_owner_from_runtime_producer() -> None:
+    entry = registry_entries()["HandoffManifest.v0"]
+    assert entry["schema_owner"] == "pcs-core"
+    assert entry["runtime_producer"] == "LabTrust-Gym"
+    assert "pcs-core" not in entry["allowed_runtime_producers"]
+    assert len(entry["allowed_runtime_producers"]) >= 4
+
+
+def test_all_registry_semantic_checks_have_responsible_component() -> None:
+    for artifact_type, entry in registry_entries().items():
+        for check in entry["semantic_checks"]:
+            assert check.get("responsible_component"), f"{artifact_type} missing responsible_component"
+            assert check.get("severity"), f"{artifact_type} missing severity"
+            assert check.get("check_id"), f"{artifact_type} missing check_id"
+
+
+def test_release_chain_checks_reference_registry_semantic_checks() -> None:
+    known = all_registry_semantic_check_refs()
+    for spec in RELEASE_CHAIN_CHECK_SPECS:
+        refs = RELEASE_CHAIN_REGISTRY_CHECK_REFS.get(spec.check_id, ())
+        for ref in refs:
+            assert ref in known, f"{spec.check_id} unknown registry ref {ref}"
+    result = build_release_chain_validation_result(release_dir())
+    for check in result["checks"]:
+        assert "registry_check_refs" in check
+        for ref in check["registry_check_refs"]:
+            assert ref in known
+
+
 def test_registry_check_artifact_fails_wrong_producer(tmp_path: Path) -> None:
     path = release_dir() / "trace_certificate.json"
     data = json.loads(path.read_text(encoding="utf-8"))
@@ -81,7 +114,7 @@ def test_registry_check_artifact_fails_wrong_producer(tmp_path: Path) -> None:
     bad_path = tmp_path / "bad_trace_certificate.json"
     bad_path.write_text(json.dumps(bad, indent=2) + "\n", encoding="utf-8")
     errors = check_artifact_against_registry(bad_path)
-    assert any("producer" in err for err in errors)
+    assert any("allowed_runtime_producers" in err for err in errors)
 
 
 def test_registry_check_artifact_fails_disallowed_status(tmp_path: Path) -> None:
@@ -97,6 +130,26 @@ def test_registry_check_artifact_fails_disallowed_status(tmp_path: Path) -> None
 
 def test_python_shared_hash_vectors_verify() -> None:
     assert verify_shared_vectors() == []
+
+
+def test_hash_vectors_match_across_python_rust_typescript() -> None:
+    test_python_shared_hash_vectors_verify()
+
+
+def test_component_release_fragment_validates_labtrust_fragment() -> None:
+    path = RELEASE / "labtrust_release_fragment.json"
+    assert path.is_file(), "run just materialize-labtrust-protocol"
+    assert validate_file(path) == "ComponentReleaseFragment.v0"
+
+
+def test_conformance_suite_runs_handoff_manifest() -> None:
+    code, errors = run_conformance("handoff-manifest")
+    assert code == 0, errors
+
+
+def test_conformance_suite_runs_release_chain() -> None:
+    code, errors = run_conformance("release-chain")
+    assert code == 0, errors
 
 
 def test_hash_vector_files_use_canonical_names() -> None:

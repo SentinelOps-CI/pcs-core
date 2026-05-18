@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from pcs_core.release_chain import ReleaseChainIssue
+from pcs_core.release_chain_registry_refs import RELEASE_CHAIN_REGISTRY_CHECK_REFS
 
 
 @dataclass(frozen=True)
@@ -13,6 +14,7 @@ class ReleaseChainCheckSpec:
     check_id: str
     description: str
     failure_codes: frozenset[str]
+    registry_check_refs: frozenset[str] = frozenset()
 
 
 RELEASE_CHAIN_CHECK_SPECS: tuple[ReleaseChainCheckSpec, ...] = (
@@ -198,12 +200,16 @@ def build_checks_from_issues(issues: list[ReleaseChainIssue]) -> list[dict[str, 
             }
             if matching[0].artifact:
                 details["artifact"] = matching[0].artifact
+        refs = spec.registry_check_refs or frozenset(
+            RELEASE_CHAIN_REGISTRY_CHECK_REFS.get(spec.check_id, ()),
+        )
         checks.append(
             {
                 "check_id": spec.check_id,
                 "description": spec.description,
                 "status": status,
                 "details": details,
+                "registry_check_refs": sorted(refs),
             },
         )
     return checks

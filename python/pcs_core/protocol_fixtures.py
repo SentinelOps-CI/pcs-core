@@ -352,6 +352,62 @@ def handoff_signed_bundle_to_memory() -> dict[str, Any]:
     )
 
 
+_LABTRUST_FRAGMENT_ARTIFACTS = (
+    "trace.json",
+    "runtime_receipt.json",
+    "science_claim_bundle.pending.json",
+    "science_claim_bundle.certified.json",
+)
+
+
+def labtrust_release_fragment_valid(directory: Path | None = None) -> dict[str, Any]:
+    """ComponentReleaseFragment.v0 for LabTrust-owned release evidence."""
+    from pcs_core.paths import examples_dir
+    from pcs_core.release_fixtures import file_digest
+
+    legacy = _load_legacy_release_manifest()
+    release_dir = directory or (examples_dir() / "labtrust-release")
+    legacy_artifacts = legacy.get("artifacts")
+    if not isinstance(legacy_artifacts, dict):
+        raise ValueError("RELEASE_FIXTURE_MANIFEST.json missing artifacts object")
+    artifacts: dict[str, Any] = {}
+    for name in _LABTRUST_FRAGMENT_ARTIFACTS:
+        digest = legacy_artifacts.get(name)
+        if not isinstance(digest, str):
+            continue
+        meta = _ARTIFACT_MANIFEST_META[str(name)]
+        artifacts[str(name)] = {
+            "artifact_type": meta["artifact_type"],
+            "sha256": digest,
+        }
+    manifest_path = release_dir / "release_manifest.v0.json"
+    manifest_ref = {"path": "release_manifest.v0.json", "sha256": PLACEHOLDER_DIGEST}
+    if manifest_path.is_file():
+        manifest_ref["sha256"] = file_digest(manifest_path.read_bytes())
+    body: dict[str, Any] = {
+        "schema_version": "v0",
+        "component": "LabTrust-Gym",
+        "source_repo": LABTRUST_REPO,
+        "source_commit": str(legacy["labtrust_gym_commit"]),
+        "component_version": str(legacy.get("release_candidate", "pcs-v0.1.0-rc1")),
+        "generated_at": str(legacy.get("generated_at", "2026-05-17T17:01:22Z")),
+        "upstream_release_manifest": manifest_ref,
+        "handoff_artifacts": ["handoff_manifest.runtime_to_certificate.v0.json"],
+        "validation_summary": {
+            "status": "ProofChecked",
+            "checks_passed": 30,
+            "checks_failed": 0,
+        },
+        "artifacts": artifacts,
+        "signature_or_digest": PLACEHOLDER_DIGEST,
+    }
+    return _with_digest(body)
+
+
+def component_release_fragment_valid() -> dict[str, Any]:
+    return labtrust_release_fragment_valid()
+
+
 def release_chain_validation_result_valid() -> dict[str, Any]:
     """Full 30-check result for examples/, pinned to legacy manifest generated_at."""
     from pcs_core.paths import examples_dir
@@ -406,3 +462,7 @@ def write_labtrust_protocol_artifacts(directory: Path) -> None:
     for filename, builder in LABTRUST_HANDOFF_ARTIFACTS.items():
         path = directory / filename
         path.write_text(json.dumps(builder(), indent=2) + "\n", encoding="utf-8")
+    (directory / "labtrust_release_fragment.json").write_text(
+        json.dumps(labtrust_release_fragment_valid(directory), indent=2) + "\n",
+        encoding="utf-8",
+    )

@@ -14,6 +14,7 @@ from referencing.jsonschema import DRAFT202012
 from pcs_core.paths import examples_dir as default_examples_dir
 from pcs_core.paths import schemas_dir
 from pcs_core.protocol_validate import (
+    validate_artifact_registry_semantics,
     validate_handoff_manifest_semantics,
     validate_release_chain_validation_result_semantics,
     validate_release_manifest_fixture_refs,
@@ -304,6 +305,11 @@ def validate_semantics(data: dict[str, Any], artifact_type: str) -> list[str]:
     errors: list[str] = []
 
     if artifact_type == "ArtifactRegistry.v0":
+        errors.extend(validate_artifact_registry_semantics(data))
+        return errors
+
+    if artifact_type == "ComponentReleaseFragment.v0":
+        _check_source_commits(data, "", errors)
         return errors
 
     if artifact_type == "MigrationReport.v0":

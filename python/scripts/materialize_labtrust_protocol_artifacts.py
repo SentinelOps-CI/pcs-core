@@ -12,6 +12,7 @@ sys.path.insert(0, str(ROOT / "python"))
 
 from pcs_core.paths import examples_dir  # noqa: E402
 from pcs_core.protocol_fixtures import (  # noqa: E402
+    component_release_fragment_valid,
     handoff_manifest_valid,
     release_chain_validation_result_valid,
     release_manifest_valid,
@@ -33,6 +34,7 @@ def main() -> int:
             "release_chain_validation_result.valid.json",
             release_chain_validation_result_valid(),
         ),
+        ("component_release_fragment.valid.json", component_release_fragment_valid()),
     ):
         (examples / name).write_text(json.dumps(doc, indent=2) + "\n", encoding="utf-8")
     registry_path = examples_dir() / "artifact_registry.valid.json"

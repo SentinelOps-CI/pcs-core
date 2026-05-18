@@ -23,6 +23,7 @@ from pcs_core.release_chain_report import (
     write_release_chain_validation_result,
 )
 from pcs_core.release_fixtures import release_dir, validate_release_manifest
+from pcs_core.conformance import list_suites, run_conformance
 from pcs_core.shared_hash_vectors import verify_shared_vectors, write_shared_vectors
 from pcs_core.status_policy import check_status_transition, explain_status
 from pcs_core.validate import (
@@ -155,6 +156,16 @@ def cmd_shared_hash_vectors_verify() -> int:
         return 1
     print("OK shared hash vectors")
     return 0
+
+
+def cmd_conformance_run(suite: str) -> int:
+    code, errors = run_conformance(suite)
+    if code == 0:
+        print(f"OK conformance suite {suite}")
+        return 0
+    for err in errors:
+        print(f"FAIL {err}", file=sys.stderr)
+    return code
 
 
 def cmd_schema_check() -> int:
@@ -323,6 +334,15 @@ def main(argv: list[str] | None = None) -> int:
     shared_hash_write = shared_hash_sub.add_parser("write", help="Regenerate test_vectors/hash")
     shared_hash_write.add_argument("--force", action="store_true")
 
+    conformance_parser = sub.add_parser("conformance", help="Protocol conformance suites")
+    conformance_sub = conformance_parser.add_subparsers(dest="conformance_cmd", required=True)
+    p_conformance_run = conformance_sub.add_parser("run", help="Run a conformance suite")
+    p_conformance_run.add_argument(
+        "--suite",
+        default="all",
+        help=f"Suite name or all (available: {', '.join(list_suites())}, all)",
+    )
+
     args = parser.parse_args(argv)
 
     if args.command == "validate":
@@ -373,6 +393,8 @@ def main(argv: list[str] | None = None) -> int:
         write_shared_vectors(force=args.force)
         print("Wrote shared hash vectors")
         return 0
+    if args.command == "conformance" and args.conformance_cmd == "run":
+        return cmd_conformance_run(args.suite)
 
     parser.print_help()
     return 2

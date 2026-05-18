@@ -63,6 +63,7 @@ pcs-schema-diff vendor_dir="schemas":
 
 protocol-conformance:
     cd "{{root}}/python" && pytest -q tests/test_protocol_conformance.py
+    cd "{{root}}/python" && pcs conformance run --suite all
 
 # Commit without running Git hooks (avoids Cursor Co-authored-by trailers).
 [unix]

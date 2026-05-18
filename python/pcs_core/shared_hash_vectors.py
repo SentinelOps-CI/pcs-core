@@ -17,16 +17,20 @@ VECTOR_SPECS: dict[str, str] = {
     "ReleaseManifest.v0": "examples/release_manifest.valid.json",
     "HandoffManifest.v0": "examples/handoff_manifest.valid.json",
     "ReleaseChainValidationResult.v0": "examples/release_chain_validation_result.valid.json",
+    "ComponentReleaseFragment.v0": "examples/component_release_fragment.valid.json",
+    "ArtifactRegistry.v0": "examples/artifact_registry.valid.json",
 }
 
 VECTOR_FILENAMES: dict[str, str] = {
     "RuntimeReceipt.v0": "runtime_receipt.vector.json",
     "TraceCertificate.v0": "trace_certificate.vector.json",
-    "ScienceClaimBundle.v0": "science_claim_bundle_certified.vector.json",
+    "ScienceClaimBundle.v0": "science_claim_bundle.vector.json",
     "SignedScienceClaimBundle.v0": "signed_science_claim_bundle.vector.json",
     "ReleaseManifest.v0": "release_manifest.vector.json",
     "HandoffManifest.v0": "handoff_manifest.vector.json",
     "ReleaseChainValidationResult.v0": "release_chain_validation_result.vector.json",
+    "ComponentReleaseFragment.v0": "component_release_fragment.vector.json",
+    "ArtifactRegistry.v0": "artifact_registry.vector.json",
 }
 
 

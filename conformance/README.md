@@ -1,14 +1,30 @@
 # PCS protocol conformance suite
 
-Downstream repositories can run subsets of these checks against a vendored or installed **pcs-core** pin.
+Downstream repos can run subsets against a pinned **pcs-core** install.
 
-| Suite | Path | Entry command |
-|-------|------|----------------|
-| Release chain | `conformance/release-chain/` | `pcs validate-release-chain <fixtures>/` |
-| Handoff | `conformance/handoff/` | `pcs validate examples/handoff_manifest.valid.json` |
-| Registry | `conformance/registry/` | `pcs registry validate examples/artifact_registry.valid.json` |
-| Hash | `conformance/hash/` | `pcs shared-hash-vectors verify` |
-| Migration | `conformance/migration/` | `pcs migrate --from v0 --to v0 <artifact>` |
-| Status | `conformance/status/` | `pcs check-status-transition <old> <new>` |
+## CLI
 
-Python integration tests live in `python/tests/test_protocol_conformance.py`.
+```bash
+pcs conformance run --suite all
+pcs conformance run --suite handoff-manifest
+pcs conformance run --suite release-chain
+pcs conformance run --suite hash
+```
+
+Available suites: `release-manifest`, `handoff-manifest`, `artifact-registry`, `release-chain-validation`, `release-chain`, `hash`, `migration`, `status-transition`, `all`.
+
+## Per-suite docs
+
+| Suite | Directory |
+|-------|-----------|
+| Release manifest | `conformance/release-manifest/` |
+| Handoff manifest | `conformance/handoff-manifest/` |
+| Artifact registry | `conformance/artifact-registry/` |
+| Release chain validation | `conformance/release-chain-validation/` |
+| Hash vectors | `conformance/hash/` |
+| Migration | `conformance/migration/` |
+| Status transitions | `conformance/status-transition/` |
+
+Integration tests: `pytest tests/test_protocol_conformance.py`.
+
+Semantic check policy: [docs/semantic-check-policy.md](../docs/semantic-check-policy.md).

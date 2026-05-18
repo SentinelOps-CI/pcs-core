@@ -29,6 +29,7 @@ jobs:
           pcs validate ../examples/labtrust-release/release_manifest.v0.json
           python -m pcs_core.hash_vectors --verify
           pcs shared-hash-vectors verify
+          pcs conformance run --suite all
           pcs registry validate ../examples/artifact_registry.valid.json
           ruff check pcs_core tests
           ruff format --check pcs_core tests
@@ -52,7 +53,7 @@ jobs:
           cargo fmt --check
           cargo clippy --all-targets -- -D warnings
           cargo test
-          cargo test shared_hash_vectors
+          cargo test hash_vectors
 
   typescript:
     runs-on: ubuntu-latest
@@ -66,6 +67,7 @@ jobs:
           cd typescript
           npm install
           npm test
+          npm run test:hash-vectors -w @pcs/core
           npm run lint
 
   validate-cli-contract:

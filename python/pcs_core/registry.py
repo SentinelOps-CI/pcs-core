@@ -104,11 +104,18 @@ def check_artifact_against_registry(
     except ValidationError as exc:
         errors.extend(exc.errors)
     producer = str(data.get("producer") or "")
-    expected_producer = str(entry.get("producer") or "")
-    if producer and expected_producer and producer != expected_producer:
+    allowed_producers = entry.get("allowed_runtime_producers")
+    runtime_producer = str(entry.get("runtime_producer") or entry.get("producer") or "")
+    if producer and isinstance(allowed_producers, list):
+        if producer not in allowed_producers:
+            errors.append(
+                f"{path}: producer {producer!r} not in registry "
+                f"allowed_runtime_producers {allowed_producers!r}",
+            )
+    elif producer and runtime_producer and producer != runtime_producer:
         errors.append(
-            f"{path}: producer {producer!r} does not match registry producer "
-            f"{expected_producer!r}",
+            f"{path}: producer {producer!r} does not match registry runtime_producer "
+            f"{runtime_producer!r}",
         )
     status = data.get("status")
     allowed = entry.get("allowed_statuses")
