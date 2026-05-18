@@ -43,6 +43,11 @@ const ARTIFACT_SCHEMAS: &[(&str, &str)] = &[
     ("WorkflowProfile.v0", "WorkflowProfile.v0.schema.json"),
     ("ToolUseTrace.v0", "ToolUseTrace.v0.schema.json"),
     ("ToolUseCertificate.v0", "ToolUseCertificate.v0.schema.json"),
+    ("DatasetReceipt.v0", "DatasetReceipt.v0.schema.json"),
+    ("EnvironmentReceipt.v0", "EnvironmentReceipt.v0.schema.json"),
+    ("ComputationRunReceipt.v0", "ComputationRunReceipt.v0.schema.json"),
+    ("ResultArtifact.v0", "ResultArtifact.v0.schema.json"),
+    ("ComputationWitness.v0", "ComputationWitness.v0.schema.json"),
     ("ConformanceReport.v0", "ConformanceReport.v0.schema.json"),
     (
         "SemanticCheckExecution.v0",
@@ -102,6 +107,39 @@ pub fn detect_artifact_type(value: &Value) -> Option<&'static str> {
         && obj.get("runtime_artifacts").map(|v| v.is_array()).unwrap_or(false)
     {
         return Some("WorkflowProfile.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("witness_id").is_some()
+        && obj.get("dataset_hash").is_some()
+        && obj.get("run_receipt_hash").is_some()
+    {
+        return Some("ComputationWitness.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("dataset_id").is_some()
+        && obj.get("aggregate_hash").is_some()
+        && obj.get("files").map(|v| v.is_array()).unwrap_or(false)
+    {
+        return Some("DatasetReceipt.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("environment_id").is_some()
+        && obj.get("environment_kind").is_some()
+    {
+        return Some("EnvironmentReceipt.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("run_id").is_some()
+        && obj.get("command").is_some()
+        && obj.contains_key("dataset_receipt_ref")
+    {
+        return Some("ComputationRunReceipt.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("result_id").is_some()
+        && obj.get("result_kind").is_some()
+    {
+        return Some("ResultArtifact.v0");
     }
     if obj.get("schema_version") == Some(&Value::String("v0".into()))
         && obj.get("trace_id").is_some()
@@ -385,7 +423,9 @@ mod tests {
                 continue;
             }
             let path_str = path.to_string_lossy();
-            if path_str.contains("tool-use-release-invalid") {
+            if path_str.contains("tool-use-release-invalid")
+                || path_str.contains("computation-release-invalid")
+            {
                 continue;
             }
             let name = path.file_name().unwrap().to_string_lossy();

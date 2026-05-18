@@ -94,6 +94,21 @@ test("labtrust invalid missing trace certificate", () => {
   );
 });
 
+test("computation artifacts detect and validate", () => {
+  for (const rel of [
+    "dataset_receipt.valid.json",
+    "environment_receipt.valid.json",
+    "computation_run_receipt.valid.json",
+    "result_artifact.valid.json",
+    "computation_witness.valid.json",
+  ]) {
+    const data = load(rel);
+    const type = detectArtifactType(data);
+    assert.ok(type, `detect type for ${rel}`);
+    validateArtifact(data, type);
+  }
+});
+
 test("canonical hash stable", () => {
   const data = load("science_claim_bundle.certified.valid.json");
   assert.equal(canonicalHash(data), canonicalHash(data));

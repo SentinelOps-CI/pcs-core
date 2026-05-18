@@ -37,6 +37,12 @@ CHECK_ENFORCEMENT: dict[str, EnforcementLayer] = {
     "no_unauthorized_tool_calls": "artifact_validate",
     "no_unknown_authorization_status": "artifact_validate",
     "required_registry_entries_registered": "registry_metadata",
+    "dataset_hash_matches_receipt": "artifact_validate",
+    "environment_hash_matches_receipt": "artifact_validate",
+    "run_receipt_hash_matches_declared_run": "artifact_validate",
+    "result_hashes_match_result_artifacts": "artifact_validate",
+    "code_commit_present": "artifact_validate",
+    "computation_status_checked_for_release": "release_chain",
 }
 
 DEFERRAL_REASONS: dict[str, str] = {
@@ -69,6 +75,24 @@ DEFERRAL_REASONS: dict[str, str] = {
     ),
     "status_matches_check_outcomes": (
         "Validator-responsible invariant enforced when constructing ReleaseChainValidationResult."
+    ),
+    "dataset_hash_matches_receipt": (
+        "Verified during ComputationWitness alignment against DatasetReceipt.v0 in release mode."
+    ),
+    "environment_hash_matches_receipt": (
+        "Verified during ComputationWitness alignment against EnvironmentReceipt.v0 in release mode."
+    ),
+    "run_receipt_hash_matches_declared_run": (
+        "Verified during ComputationWitness alignment against ComputationRunReceipt.v0."
+    ),
+    "result_hashes_match_result_artifacts": (
+        "Verified during ComputationWitness alignment against ResultArtifact.v0 instances."
+    ),
+    "code_commit_present": (
+        "Verified during ComputationWitness and ComputationRunReceipt semantic validation."
+    ),
+    "computation_status_checked_for_release": (
+        "Enforced via pcs validate-release-chain on computation-release fixtures."
     ),
 }
 

@@ -40,7 +40,12 @@ jobs:
           test -f ../examples/tool-use-release/RELEASE_FIXTURE_MANIFEST.json
           pcs validate ../examples/workflow_profiles/labtrust_qc_release.valid.json
           pcs validate ../examples/workflow_profiles/agent_tool_use_safety.valid.json
+          pcs validate ../examples/workflow_profiles/scientific_computation_reproducibility.valid.json
           pcs validate-release-chain ../examples/tool-use-release/
+          test -f ../examples/computation-release/computation_witness.json
+          test -f ../examples/computation-release/RELEASE_FIXTURE_MANIFEST.json
+          pcs validate-release-chain ../examples/computation-release/
+          pcs conformance run --suite computation
           pcs validate ../examples/tool_use_trace.valid.json
           pcs validate ../examples/tool_use_certificate.valid.json
           pytest -q tests/test_multidomain_workflows.py
@@ -115,6 +120,8 @@ jobs:
           pcs examples check
           pcs validate-release-chain ../examples/labtrust-release/
           pcs validate-release-chain ../examples/tool-use-release/
+          pcs validate-release-chain ../examples/computation-release/
           pcs conformance run --suite workflow-profile
           pcs conformance run --suite tool-use
+          pcs conformance run --suite computation
           pcs conformance run --suite multidomain

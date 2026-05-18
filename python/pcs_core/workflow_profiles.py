@@ -23,11 +23,12 @@ def load_workflow_profile(workflow_id: str) -> dict[str, Any] | None:
             continue
         if isinstance(data, dict) and data.get("workflow_id") == workflow_id:
             return data
-    release_profile = examples_dir() / "tool-use-release" / "workflow_profile.v0.json"
-    if release_profile.is_file():
-        data = json.loads(release_profile.read_text(encoding="utf-8"))
-        if isinstance(data, dict) and data.get("workflow_id") == workflow_id:
-            return data
+    for release_name in ("tool-use-release", "computation-release"):
+        release_profile = examples_dir() / release_name / "workflow_profile.v0.json"
+        if release_profile.is_file():
+            data = json.loads(release_profile.read_text(encoding="utf-8"))
+            if isinstance(data, dict) and data.get("workflow_id") == workflow_id:
+                return data
     return None
 
 
@@ -64,6 +65,18 @@ def audit_workflow_profile_files() -> list[str]:
                 if isinstance(required, list) and artifact_type not in required:
                     errors.append(
                         f"{path.name}: tool-use profile must require {artifact_type}",
+                    )
+        if workflow_id == "scientific_computation.reproducibility_v0":
+            for artifact_type in (
+                "DatasetReceipt.v0",
+                "EnvironmentReceipt.v0",
+                "ComputationRunReceipt.v0",
+                "ResultArtifact.v0",
+                "ComputationWitness.v0",
+            ):
+                if isinstance(required, list) and artifact_type not in required:
+                    errors.append(
+                        f"{path.name}: computation profile must require {artifact_type}",
                     )
     return errors
 

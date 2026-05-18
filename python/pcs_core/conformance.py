@@ -293,10 +293,31 @@ def _suite_tool_use() -> tuple[list[str], list[str], int]:
     return errors, [], checks_run
 
 
+@_record("computation")
+def _suite_computation() -> tuple[list[str], list[str], int]:
+    from pcs_core.computation_validate import (
+        validate_computation_invalid_case,
+        validate_computation_release_directory,
+    )
+
+    errors: list[str] = []
+    release = examples_dir() / "computation-release"
+    errors.extend(validate_computation_release_directory(release))
+    checks_run = 10
+    invalid_root = examples_dir() / "computation-release-invalid"
+    if invalid_root.is_dir():
+        for case_dir in sorted(p for p in invalid_root.iterdir() if p.is_dir()):
+            checks_run += 1
+            case_errors = validate_computation_invalid_case(case_dir)
+            errors.extend(case_errors)
+    return errors, [], checks_run
+
+
 @_record("multidomain")
 def _suite_multidomain() -> tuple[list[str], list[str], int]:
     profile_errors, _, profile_checks = _suite_workflow_profile()
     tool_errors, _, tool_checks = _suite_tool_use()
+    computation_errors, _, computation_checks = _suite_computation()
     chain_errors, _, chain_checks = _suite_release_chain_validation()
     tool_use_release = examples_dir() / "tool-use-release"
     if tool_use_release.is_dir():
@@ -307,8 +328,17 @@ def _suite_multidomain() -> tuple[list[str], list[str], int]:
                 f"[tool-use-release] {issue.code}: {issue.message}"
                 for issue in tool_chain_issues
             )
-    errors = [*profile_errors, *tool_errors, *chain_errors]
-    return errors, [], profile_checks + tool_checks + chain_checks
+    computation_release = examples_dir() / "computation-release"
+    if computation_release.is_dir():
+        computation_chain_issues = validate_release_chain(computation_release)
+        chain_checks += len(computation_chain_issues) or 1
+        if computation_chain_issues:
+            chain_errors.extend(
+                f"[computation-release] {issue.code}: {issue.message}"
+                for issue in computation_chain_issues
+            )
+    errors = [*profile_errors, *tool_errors, *computation_errors, *chain_errors]
+    return errors, [], profile_checks + tool_checks + computation_checks + chain_checks
 
 
 @_record("status-transition")

@@ -44,6 +44,11 @@ export type ArtifactType =
   | "WorkflowProfile.v0"
   | "ToolUseTrace.v0"
   | "ToolUseCertificate.v0"
+  | "DatasetReceipt.v0"
+  | "EnvironmentReceipt.v0"
+  | "ComputationRunReceipt.v0"
+  | "ResultArtifact.v0"
+  | "ComputationWitness.v0"
   | "ConformanceReport.v0";
 
 const PROTOCOL_ARTIFACT_TYPES = new Set<ArtifactType>([
@@ -92,6 +97,44 @@ export function detectArtifactType(data: Record<string, unknown>): ArtifactType 
     Array.isArray(data.runtime_artifacts)
   ) {
     return "WorkflowProfile.v0";
+  }
+  if (
+    data.schema_version === "v0" &&
+    typeof data.witness_id === "string" &&
+    typeof data.dataset_hash === "string" &&
+    typeof data.run_receipt_hash === "string"
+  ) {
+    return "ComputationWitness.v0";
+  }
+  if (
+    data.schema_version === "v0" &&
+    typeof data.dataset_id === "string" &&
+    typeof data.aggregate_hash === "string" &&
+    Array.isArray(data.files)
+  ) {
+    return "DatasetReceipt.v0";
+  }
+  if (
+    data.schema_version === "v0" &&
+    typeof data.environment_id === "string" &&
+    typeof data.environment_kind === "string"
+  ) {
+    return "EnvironmentReceipt.v0";
+  }
+  if (
+    data.schema_version === "v0" &&
+    typeof data.run_id === "string" &&
+    typeof data.command === "string" &&
+    "dataset_receipt_ref" in data
+  ) {
+    return "ComputationRunReceipt.v0";
+  }
+  if (
+    data.schema_version === "v0" &&
+    typeof data.result_id === "string" &&
+    typeof data.result_kind === "string"
+  ) {
+    return "ResultArtifact.v0";
   }
   if (
     data.schema_version === "v0" &&

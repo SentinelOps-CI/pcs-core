@@ -23,6 +23,11 @@ VECTOR_SPECS: dict[str, str] = {
     "WorkflowProfile.v0": "examples/workflow_profiles/agent_tool_use_safety.valid.json",
     "ToolUseTrace.v0": "examples/tool_use_trace.valid.json",
     "ToolUseCertificate.v0": "examples/tool_use_certificate.valid.json",
+    "DatasetReceipt.v0": "examples/dataset_receipt.valid.json",
+    "EnvironmentReceipt.v0": "examples/environment_receipt.valid.json",
+    "ComputationRunReceipt.v0": "examples/computation_run_receipt.valid.json",
+    "ResultArtifact.v0": "examples/result_artifact.valid.json",
+    "ComputationWitness.v0": "examples/computation_witness.valid.json",
 }
 
 VECTOR_FILENAMES: dict[str, str] = {
@@ -39,6 +44,11 @@ VECTOR_FILENAMES: dict[str, str] = {
     "WorkflowProfile.v0": "workflow_profile.vector.json",
     "ToolUseTrace.v0": "tool_use_trace.vector.json",
     "ToolUseCertificate.v0": "tool_use_certificate.vector.json",
+    "DatasetReceipt.v0": "dataset_receipt.vector.json",
+    "EnvironmentReceipt.v0": "environment_receipt.vector.json",
+    "ComputationRunReceipt.v0": "computation_run_receipt.vector.json",
+    "ResultArtifact.v0": "result_artifact.vector.json",
+    "ComputationWitness.v0": "computation_witness.vector.json",
 }
 
 

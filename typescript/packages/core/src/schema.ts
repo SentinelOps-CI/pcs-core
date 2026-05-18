@@ -44,6 +44,11 @@ const ARTIFACT_SCHEMAS: Record<ArtifactType, string> = {
   "WorkflowProfile.v0": "WorkflowProfile.v0.schema.json",
   "ToolUseTrace.v0": "ToolUseTrace.v0.schema.json",
   "ToolUseCertificate.v0": "ToolUseCertificate.v0.schema.json",
+  "DatasetReceipt.v0": "DatasetReceipt.v0.schema.json",
+  "EnvironmentReceipt.v0": "EnvironmentReceipt.v0.schema.json",
+  "ComputationRunReceipt.v0": "ComputationRunReceipt.v0.schema.json",
+  "ResultArtifact.v0": "ResultArtifact.v0.schema.json",
+  "ComputationWitness.v0": "ComputationWitness.v0.schema.json",
   "ConformanceReport.v0": "ConformanceReport.v0.schema.json",
 };
 

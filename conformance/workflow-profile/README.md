@@ -4,4 +4,4 @@
 pcs conformance run --suite workflow-profile
 ```
 
-Validates `examples/workflow_profiles/*.valid.json` and the tool-use release profile copy.
+Validates `examples/workflow_profiles/*.valid.json` (LabTrust, tool-use, scientific computation).

@@ -21,6 +21,13 @@ from pcs_core.protocol_validate import (
     validate_release_manifest_fixture_refs,
     validate_release_manifest_semantics,
 )
+from pcs_core.computation_validate import (
+    validate_computation_run_receipt_semantics,
+    validate_computation_witness_semantics,
+    validate_dataset_receipt_semantics,
+    validate_environment_receipt_semantics,
+    validate_result_artifact_semantics,
+)
 from pcs_core.tool_use_validate import (
     validate_tool_use_certificate_semantics,
     validate_tool_use_trace_semantics,
@@ -49,6 +56,11 @@ ARTIFACT_SCHEMAS: dict[str, str] = {
     "WorkflowProfile.v0": "WorkflowProfile.v0.schema.json",
     "ToolUseTrace.v0": "ToolUseTrace.v0.schema.json",
     "ToolUseCertificate.v0": "ToolUseCertificate.v0.schema.json",
+    "DatasetReceipt.v0": "DatasetReceipt.v0.schema.json",
+    "EnvironmentReceipt.v0": "EnvironmentReceipt.v0.schema.json",
+    "ComputationRunReceipt.v0": "ComputationRunReceipt.v0.schema.json",
+    "ResultArtifact.v0": "ResultArtifact.v0.schema.json",
+    "ComputationWitness.v0": "ComputationWitness.v0.schema.json",
 }
 
 CERTIFIED_CLAIM_STATUSES = frozenset(
@@ -109,6 +121,39 @@ def detect_artifact_type(data: dict[str, Any]) -> str | None:
         and isinstance(data.get("runtime_artifacts"), list)
     ):
         return "WorkflowProfile.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("witness_id"), str)
+        and isinstance(data.get("dataset_hash"), str)
+        and isinstance(data.get("run_receipt_hash"), str)
+    ):
+        return "ComputationWitness.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("dataset_id"), str)
+        and isinstance(data.get("aggregate_hash"), str)
+        and isinstance(data.get("files"), list)
+    ):
+        return "DatasetReceipt.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("environment_id"), str)
+        and isinstance(data.get("environment_kind"), str)
+    ):
+        return "EnvironmentReceipt.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("run_id"), str)
+        and isinstance(data.get("command"), str)
+        and "dataset_receipt_ref" in data
+    ):
+        return "ComputationRunReceipt.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("result_id"), str)
+        and isinstance(data.get("result_kind"), str)
+    ):
+        return "ResultArtifact.v0"
     if (
         data.get("schema_version") == "v0"
         and isinstance(data.get("trace_id"), str)
@@ -387,6 +432,26 @@ def validate_semantics(data: dict[str, Any], artifact_type: str) -> list[str]:
         errors.extend(validate_tool_use_certificate_semantics(data))
         return errors
 
+    if artifact_type == "DatasetReceipt.v0":
+        errors.extend(validate_dataset_receipt_semantics(data))
+        return errors
+
+    if artifact_type == "EnvironmentReceipt.v0":
+        errors.extend(validate_environment_receipt_semantics(data))
+        return errors
+
+    if artifact_type == "ComputationRunReceipt.v0":
+        errors.extend(validate_computation_run_receipt_semantics(data))
+        return errors
+
+    if artifact_type == "ResultArtifact.v0":
+        errors.extend(validate_result_artifact_semantics(data))
+        return errors
+
+    if artifact_type == "ComputationWitness.v0":
+        errors.extend(validate_computation_witness_semantics(data))
+        return errors
+
     if artifact_type == "ReleaseChainValidationResult.v0":
         errors.extend(validate_release_chain_validation_result_semantics(data))
         checks = data.get("checks")
@@ -457,7 +522,7 @@ def validate_file(path: Path | str) -> str:
 
 
 def _is_valid_example(path: Path) -> bool:
-    if "tool-use-release-invalid" in path.parts:
+    if "tool-use-release-invalid" in path.parts or "computation-release-invalid" in path.parts:
         return False
     return path.suffix == ".json" and ".valid." in path.name
 
@@ -513,6 +578,16 @@ def check_invalid_examples(examples_dir: Path | None = None) -> None:
             if harness_errors:
                 raise ValidationError(
                     f"tool-use invalid case {case_dir.name}: {'; '.join(harness_errors)}",
+                )
+    invalid_computation = examples_dir / "computation-release-invalid"
+    if invalid_computation.is_dir():
+        from pcs_core.computation_validate import validate_computation_invalid_case
+
+        for case_dir in sorted(p for p in invalid_computation.iterdir() if p.is_dir()):
+            harness_errors = validate_computation_invalid_case(case_dir)
+            if harness_errors:
+                raise ValidationError(
+                    f"computation invalid case {case_dir.name}: {'; '.join(harness_errors)}",
                 )
     for filename, artifact_type in invalid_cases.items():
         path = examples_dir / filename

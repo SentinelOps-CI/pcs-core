@@ -38,12 +38,17 @@ Core chain: `RuntimeReceipt.v0`, `TraceCertificate.v0`, `ScienceClaimBundle.v0`,
 
 Protocol layer: `ReleaseManifest.v0`, `HandoffManifest.v0`, `ReleaseChainValidationResult.v0`, `ArtifactRegistry.v0`, `WorkflowProfile.v0`.
 
-Multi-domain (v0.1 extension): `ToolUseTrace.v0`, `ToolUseCertificate.v0` (agent tool-use safety workflow; `release_mode_required` without weakening LabTrust RC). See [workflow-profiles.md](workflow-profiles.md).
+Multi-domain (v0.1 extension): `ToolUseTrace.v0`, `ToolUseCertificate.v0` (agent tool-use safety); computation receipts and `ComputationWitness.v0` (scientific computation reproducibility). See [workflow-profiles.md](workflow-profiles.md).
 
 | Artifact | Schema owner | Runtime producer | Release-blocking semantic checks (responsible) |
 |----------|--------------|------------------|--------------------------------------------------|
 | `ToolUseTrace.v0` | pcs-core | agent-tool-use demo producer | `trace_hash_present`, `no_unknown_authorization_status` (AgentRuntime) |
 | `ToolUseCertificate.v0` | pcs-core | CertifyEdge | `tool_trace_hash_matches_certificate`, `policy_hash_matches_certificate`, `certificate_status_checked_for_release`, `no_unauthorized_tool_calls`, `source_commit_matches_release_manifest`, `signature_or_digest_valid` (CertifyEdge) |
+| `DatasetReceipt.v0` | pcs-core | scientific-computation demo producer | `source_commit_not_placeholder`, `signature_or_digest_valid` |
+| `EnvironmentReceipt.v0` | pcs-core | scientific-computation demo producer | `source_commit_not_placeholder`, `signature_or_digest_valid` |
+| `ComputationRunReceipt.v0` | pcs-core | scientific-computation demo producer | `source_commit_not_placeholder`, `signature_or_digest_valid` |
+| `ResultArtifact.v0` | pcs-core | scientific-computation demo producer | `source_commit_not_placeholder`, `signature_or_digest_valid` |
+| `ComputationWitness.v0` | pcs-core | CertifyEdge | `dataset_hash_matches_receipt`, `environment_hash_matches_receipt`, `run_receipt_hash_matches_declared_run`, `result_hashes_match_result_artifacts`, `code_commit_present`, `computation_status_checked_for_release`, `source_commit_matches_release_manifest`, `signature_or_digest_valid` (CertifyEdge) |
 | `WorkflowProfile.v0` | pcs-core | pcs-core | `required_registry_entries_registered` (pcs-core) |
 
 ## Downstream sync

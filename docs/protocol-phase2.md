@@ -115,14 +115,16 @@ Integration tests: `pytest tests/test_protocol_conformance.py` (also `just proto
 just materialize-protocol
 pcs validate-release-chain examples/labtrust-release/
 pcs validate-release-chain examples/tool-use-release/
+pcs validate-release-chain examples/computation-release/
 pcs conformance run --suite workflow-profile
 pcs conformance run --suite tool-use
+pcs conformance run --suite computation
 pcs conformance run --suite multidomain
 ```
 
-See [workflow-profiles.md](workflow-profiles.md). Formal trust-boundary placeholders: `lean/PCS/`.
+See [workflow-profiles.md](workflow-profiles.md). Formal trust-boundary placeholders: `lean/PCS/` (`ComputationWitness.lean`, `HashBinding.lean`, `ReleaseChain.lean`).
 
-Tool-use invalid fixtures (`examples/tool-use-release-invalid/`) are enforced via `pcs examples check` and the `tool-use` conformance suite; each case must fail release-mode semantic validation.
+Tool-use invalid fixtures (`examples/tool-use-release-invalid/`) and computation invalid fixtures (`examples/computation-release-invalid/`) are enforced via `pcs examples check` and their conformance suites; each case must fail release-mode semantic validation with one precise failure class.
 
 ## Release-mode semantics (protocol artifacts)
 

@@ -1,4 +1,7 @@
 import PCS.Claim
+import PCS.ComputationWitness
+import PCS.HashBinding
+import PCS.ReleaseChain
 import PCS.Status
 
 namespace PCS.Examples
@@ -22,5 +25,27 @@ def sampleClaim : ClaimArtifactV0 :=
     signatureOrDigest := "sha256:2222222222222222222222222222222222222222222222222222222222222222" }
 
 #check sampleClaim
+
+/-- Computation reproducibility witness stub (trust boundary only, not scientific truth). -/
+def sampleComputationWitness : ComputationWitnessV0 :=
+  { witnessId := "witness-sci-comp-repro-001"
+    workflowId := "scientific_computation.reproducibility_v0"
+    datasetHash := "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+    environmentHash := "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+    runReceiptHash := "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+    resultHashes := ["sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"]
+    status := ArtifactStatus.certificateChecked.toJsonString }
+
+example witnessResultsAdmissible :
+    witnessResultHashesAdmissible sampleComputationWitness.resultHashes
+      sampleComputationWitness.resultHashes :=
+  by intro h _; exact h
+
+example proofCheckedNeedsCheckedWitness :
+    proofCheckedRequiresCertificateCheckedWitness "ProofChecked"
+      sampleComputationWitness.status :=
+  by simp [proofCheckedRequiresCertificateCheckedWitness, ArtifactStatus.certificateChecked]
+
+#check sampleComputationWitness
 
 end PCS.Examples

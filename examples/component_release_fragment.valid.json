@@ -2,12 +2,12 @@
   "schema_version": "v0",
   "component": "LabTrust-Gym",
   "source_repo": "https://github.com/fraware/LabTrust-Gym",
-  "source_commit": "4c5439ae358733f9a4c4a58e33fdaed1ab0d29de",
+  "source_commit": "17ed831acfd775889ab497d11004cceb083a9c2d",
   "component_version": "pcs-v0.1.0-rc1",
-  "generated_at": "2026-05-17T22:32:01Z",
+  "generated_at": "2026-05-18T21:29:17Z",
   "upstream_release_manifest": {
     "path": "release_manifest.v0.json",
-    "sha256": "sha256:c955a9fd8a5b60501849e68fd4bc586a32826b172a5f7a35352c6980e62ac5d4"
+    "sha256": "sha256:ea0d110deabd9b960b85c7a23047de976002c73107982c4b1e97102ffb388bcc"
   },
   "handoff_artifacts": [
     "handoff_manifest.runtime_to_certificate.v0.json"
@@ -20,20 +20,20 @@
   "artifacts": {
     "trace.json": {
       "artifact_type": "LabTrust.Trace.v0",
-      "sha256": "sha256:0b356b952c0eb5c033e4e7166113f5e34aa76af7f473362bcbc0d2b337dabb04"
+      "sha256": "sha256:f99eb0a90cd2b9819816a25ec4e938663d26ae8d40868cd8188665e940f7ad5c"
     },
     "runtime_receipt.json": {
       "artifact_type": "RuntimeReceipt.v0",
-      "sha256": "sha256:1c163441e003db5e2ffbac97d3d6c96fef3dfbb0a0084a57083ebb870b7bce68"
+      "sha256": "sha256:3ad5c55458a79ef502508f86cd215c746d42b4f0cc5c9aa4feeba9c03b4e1d60"
     },
     "science_claim_bundle.pending.json": {
       "artifact_type": "ScienceClaimBundle.v0",
-      "sha256": "sha256:817de92d8642910b0c5cd1ac3a0d49674faed6dc1bbf67f8285c696b8925a7b5"
+      "sha256": "sha256:406d376c6d26eb949c32f2b6c6f6578aa877f24c9ea0cb0a8b87bd377c72cfe0"
     },
     "science_claim_bundle.certified.json": {
       "artifact_type": "ScienceClaimBundle.v0",
-      "sha256": "sha256:30b5b731a298922c41432de82c4ea407ec732f1e54f85b45ed9344ee5ec2c536"
+      "sha256": "sha256:bb740698a01c4e918ca0f346e5bfaed83e6665da8df84e931c0d50e03ce82ffe"
     }
   },
-  "signature_or_digest": "sha256:fd550acf168667b560285a17e81a80d4b366fa84d650a4b28efa29bd501a12e0"
+  "signature_or_digest": "sha256:492a4378ce5de225b7be344dbfb5dd734313d8f53d9af15f29722d9df524f0ea"
 }

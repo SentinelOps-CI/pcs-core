@@ -25,6 +25,7 @@ Downstream repos declare workflows in data, not hardcoded assumptions:
 |---------|------|
 | LabTrust QC release | `examples/workflow_profiles/labtrust_qc_release.valid.json` |
 | Agent tool-use safety | `examples/workflow_profiles/agent_tool_use_safety.valid.json` |
+| Scientific computation reproducibility | `examples/workflow_profiles/scientific_computation_reproducibility.valid.json` |
 
 ## Tool-use policy hash convention
 
@@ -55,5 +56,12 @@ pcs conformance run --suite multidomain
 
 Valid tool-use train: `examples/tool-use-release/`.  
 Invalid cases: `examples/tool-use-release-invalid/`.
+
+Valid computation train: `examples/computation-release/`.  
+Invalid cases: `examples/computation-release-invalid/` (one precise failure class per directory).
+
+```bash
+pcs conformance run --suite computation
+```
 
 See [artifact-registry.md](artifact-registry.md) and [semantic-check-policy.md](semantic-check-policy.md).

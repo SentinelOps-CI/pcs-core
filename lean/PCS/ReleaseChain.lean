@@ -20,4 +20,12 @@ def proofCheckedHasNoFailedBlocking (checks : List ValidationCheck) : Prop :=
 def signedBundleMatchesVerifiedInput (signedHash verifiedHash : HexDigest) : Prop :=
   signedHash = verifiedHash
 
+/-- Invariant: ProofChecked computation release requires CertificateChecked witness. -/
+def proofCheckedComputationRequiresCheckedWitness (releaseStatus witnessStatus : String) : Prop :=
+  releaseStatus ≠ "ProofChecked" ∨ witnessStatus = "CertificateChecked"
+
+/-- Invariant: signed computation bundle binds PF-verified certified bundle hash. -/
+def signedComputationBundleMatchesCertified (signedHash certifiedHash : HexDigest) : Prop :=
+  signedHash = certifiedHash
+
 end PCS

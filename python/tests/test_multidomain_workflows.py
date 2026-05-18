@@ -1,4 +1,4 @@
-"""Multi-domain workflow profile and tool-use conformance tests."""
+"""Multi-domain workflow profile, tool-use, and computation conformance tests."""
 
 from __future__ import annotations
 
@@ -26,6 +26,23 @@ def test_workflow_profile_artifacts_registered() -> None:
     assert "WorkflowProfile.v0" in entries
     assert "ToolUseTrace.v0" in entries
     assert "ToolUseCertificate.v0" in entries
+    assert "ComputationWitness.v0" in entries
+    assert "DatasetReceipt.v0" in entries
+
+
+def test_computation_witness_semantic_checks_present() -> None:
+    checks = registry_entries()["ComputationWitness.v0"]["semantic_checks"]
+    check_ids = {check["check_id"] for check in checks}
+    assert check_ids == {
+        "dataset_hash_matches_receipt",
+        "environment_hash_matches_receipt",
+        "run_receipt_hash_matches_declared_run",
+        "result_hashes_match_result_artifacts",
+        "code_commit_present",
+        "computation_status_checked_for_release",
+        "source_commit_matches_release_manifest",
+        "signature_or_digest_valid",
+    }
 
 
 def test_tool_use_certificate_semantic_checks_present() -> None:
@@ -42,7 +59,11 @@ def test_tool_use_certificate_semantic_checks_present() -> None:
 
 
 def test_workflow_profile_examples_validate() -> None:
-    for name in ("labtrust_qc_release.valid.json", "agent_tool_use_safety.valid.json"):
+    for name in (
+        "labtrust_qc_release.valid.json",
+        "agent_tool_use_safety.valid.json",
+        "scientific_computation_reproducibility.valid.json",
+    ):
         assert validate_file(examples_dir() / "workflow_profiles" / name) == "WorkflowProfile.v0"
 
 
@@ -77,6 +98,8 @@ def test_tool_use_invalid_cases_fail(case: str) -> None:
 
 
 def test_multidomain_conformance_suite_passes() -> None:
+    if not (examples_dir() / "computation-release" / "computation_witness.json").is_file():
+        pytest.skip("run python/scripts/materialize_computation_fixtures.py")
     if not (examples_dir() / "tool-use-release" / "tool_use_trace.valid.json").is_file():
         pytest.skip("run python/scripts/materialize_tool_use_fixtures.py")
     code, errors = run_conformance("multidomain")
@@ -90,6 +113,7 @@ def test_new_conformance_suites_listed() -> None:
     names = list_suites()
     assert "workflow-profile" in names
     assert "tool-use" in names
+    assert "computation" in names
     assert "multidomain" in names
 
 
@@ -102,6 +126,20 @@ def test_tool_use_hash_vectors_in_shared_catalog() -> None:
     from pcs_core.shared_hash_vectors import VECTOR_SPECS, verify_shared_vectors
 
     for artifact_type in ("WorkflowProfile.v0", "ToolUseTrace.v0", "ToolUseCertificate.v0"):
+        assert artifact_type in VECTOR_SPECS
+    assert verify_shared_vectors() == []
+
+
+def test_computation_hash_vectors_in_shared_catalog() -> None:
+    from pcs_core.shared_hash_vectors import VECTOR_SPECS, verify_shared_vectors
+
+    for artifact_type in (
+        "DatasetReceipt.v0",
+        "EnvironmentReceipt.v0",
+        "ComputationRunReceipt.v0",
+        "ResultArtifact.v0",
+        "ComputationWitness.v0",
+    ):
         assert artifact_type in VECTOR_SPECS
     assert verify_shared_vectors() == []
 

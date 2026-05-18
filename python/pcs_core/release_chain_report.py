@@ -19,10 +19,15 @@ from pcs_core.release_chain_checks import (
     build_checks_from_issues,
 )
 from pcs_core.release_chain_profiles import (
+    COMPUTATION_WORKFLOW_PROFILE_ID,
     LABTRUST_WORKFLOW_PROFILE_ID,
+    TOOL_USE_WORKFLOW_PROFILE_ID,
     detect_workflow_profile_id,
+    is_computation_release_directory,
+    is_tool_use_release_directory,
 )
 from pcs_core.release_fixtures import MANIFEST_ARTIFACTS, MANIFEST_NAME
+from pcs_core.computation_release_chain import COMPUTATION_MANIFEST_ARTIFACTS
 from pcs_core.tool_use_release_chain import TOOL_USE_MANIFEST_ARTIFACTS
 
 RELEASE_CANDIDATE_ID = "pcs-v0.1.0-rc1"
@@ -88,20 +93,22 @@ def build_release_chain_validation_result(
     release_id = RELEASE_ID
     deferred_registry_checks: list[dict[str, Any]] | None = None
     if not issues:
-        from pcs_core.release_chain_profiles import (
-            TOOL_USE_WORKFLOW_PROFILE_ID,
-            is_tool_use_release_directory,
-        )
-
         result_path = base / "release_chain_validation_result.v0.json"
-        if is_tool_use_release_directory(base) and result_path.is_file():
+        profile_matches_on_disk = (
+            is_tool_use_release_directory(base)
+            and profile_id == TOOL_USE_WORKFLOW_PROFILE_ID
+        ) or (
+            is_computation_release_directory(base)
+            and profile_id == COMPUTATION_WORKFLOW_PROFILE_ID
+        )
+        if profile_matches_on_disk and result_path.is_file():
             try:
                 on_disk = json.loads(result_path.read_text(encoding="utf-8"))
             except json.JSONDecodeError:
                 on_disk = None
             if (
                 isinstance(on_disk, dict)
-                and on_disk.get("workflow_profile_id") == TOOL_USE_WORKFLOW_PROFILE_ID
+                and on_disk.get("workflow_profile_id") == profile_id
             ):
                 on_disk_checks = on_disk.get("checks")
                 if isinstance(on_disk_checks, list) and on_disk_checks:
@@ -149,11 +156,12 @@ def build_release_chain_validation_result(
     if source_commit is None:
         source_commit = _legacy_manifest_pcs_core_commit(base)
 
-    artifacts_checked = (
-        len(TOOL_USE_MANIFEST_ARTIFACTS)
-        if profile_id != LABTRUST_WORKFLOW_PROFILE_ID
-        else len(MANIFEST_ARTIFACTS)
-    )
+    if profile_id == COMPUTATION_WORKFLOW_PROFILE_ID:
+        artifacts_checked = len(COMPUTATION_MANIFEST_ARTIFACTS)
+    elif profile_id == TOOL_USE_WORKFLOW_PROFILE_ID:
+        artifacts_checked = len(TOOL_USE_MANIFEST_ARTIFACTS)
+    else:
+        artifacts_checked = len(MANIFEST_ARTIFACTS)
     body: dict[str, Any] = {
         "schema_version": "v0",
         "validation_id": validation_id,

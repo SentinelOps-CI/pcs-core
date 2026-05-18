@@ -84,6 +84,12 @@ protocol-conformance:
 multidomain-conformance:
     cd "{{root}}/python" && pcs conformance run --suite multidomain
 
+computation-conformance:
+    cd "{{root}}/python" && pcs conformance run --suite computation
+
+validate-computation-release-fixtures:
+    cd "{{root}}/python" && pcs validate-release-chain ../examples/computation-release/
+
 # Commit without running Git hooks (avoids Cursor Co-authored-by trailers).
 [unix]
 commit MESSAGE:
@@ -93,7 +99,7 @@ commit MESSAGE:
 commit MESSAGE:
     powershell.exe -NoProfile -ExecutionPolicy Bypass -File "{{root}}/scripts/pcs-commit.ps1" -m "{{MESSAGE}}"
 
-ci: build python-test rust-test ts-test validate-examples labtrust-check validate-labtrust-release-fixtures protocol-conformance hash-vectors-verify shared-hash-vectors-verify pcs-schema-diff
+ci: build python-test rust-test ts-test validate-examples labtrust-check validate-labtrust-release-fixtures validate-computation-release-fixtures protocol-conformance computation-conformance multidomain-conformance hash-vectors-verify shared-hash-vectors-verify pcs-schema-diff
     cd "{{root}}/python" && pcs schema check
     cd "{{root}}/python" && pcs registry validate ../examples/artifact_registry.valid.json
     cd "{{root}}/python" && pcs registry audit

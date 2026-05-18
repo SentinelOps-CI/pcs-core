@@ -1,6 +1,7 @@
 /-!
-Domain-specific payloads (LabTrust science, agent tool-use) share trust-boundary
-types in `CertificateRef.lean`, `ReleaseChain.lean`, and `WorkflowProfile.lean`.
+Domain-specific payloads (LabTrust science, agent tool-use, scientific computation)
+share trust-boundary types in `CertificateRef.lean`, `ComputationWitness.lean`,
+`HashBinding.lean`, `ReleaseChain.lean`, and `WorkflowProfile.lean`.
 -/
 
 namespace PCS

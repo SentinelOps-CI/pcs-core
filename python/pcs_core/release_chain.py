@@ -192,12 +192,18 @@ def _repo_matches(repo: str, expected_repo: str) -> bool:
 
 def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
     """Validate a complete release directory for single-run atomic consistency."""
-    from pcs_core.release_chain_profiles import is_tool_use_release_directory
+    from pcs_core.computation_release_chain import validate_computation_release_chain
+    from pcs_core.release_chain_profiles import (
+        is_computation_release_directory,
+        is_tool_use_release_directory,
+    )
     from pcs_core.tool_use_release_chain import validate_tool_use_release_chain
 
     base = directory.resolve()
     if is_tool_use_release_directory(base):
         return validate_tool_use_release_chain(base)
+    if is_computation_release_directory(base):
+        return validate_computation_release_chain(base)
 
     issues: list[ReleaseChainIssue] = []
 

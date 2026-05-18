@@ -8,6 +8,7 @@ from typing import Any
 
 LABTRUST_WORKFLOW_PROFILE_ID = "labtrust.qc_release_v0.1"
 TOOL_USE_WORKFLOW_PROFILE_ID = "agent_tool_use.safety_v0"
+COMPUTATION_WORKFLOW_PROFILE_ID = "scientific_computation.reproducibility_v0"
 
 TOOL_USE_TRACE_NAMES = ("tool_use_trace.valid.json", "tool_use_trace.json")
 TOOL_USE_CERTIFICATE_NAMES = ("tool_use_certificate.valid.json", "tool_use_certificate.json")
@@ -50,6 +51,8 @@ def detect_workflow_profile_id(directory: Path) -> str | None:
             return workflow_id
     if resolve_tool_use_artifact(directory, TOOL_USE_TRACE_NAMES):
         return TOOL_USE_WORKFLOW_PROFILE_ID
+    if (directory / "computation_witness.json").is_file():
+        return COMPUTATION_WORKFLOW_PROFILE_ID
     if (directory / "trace.json").is_file():
         return LABTRUST_WORKFLOW_PROFILE_ID
     return None
@@ -57,3 +60,7 @@ def detect_workflow_profile_id(directory: Path) -> str | None:
 
 def is_tool_use_release_directory(directory: Path) -> bool:
     return detect_workflow_profile_id(directory) == TOOL_USE_WORKFLOW_PROFILE_ID
+
+
+def is_computation_release_directory(directory: Path) -> bool:
+    return detect_workflow_profile_id(directory) == COMPUTATION_WORKFLOW_PROFILE_ID

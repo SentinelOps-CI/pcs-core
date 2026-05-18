@@ -10,6 +10,7 @@ from pcs_core.hash import PLACEHOLDER_DIGEST, canonical_hash
 from pcs_core.release_canonical import (
     LABTRUST_RC_CERTIFICATE_ID,
     LABTRUST_RC_CERTIFIED_BUNDLE_HASH,
+    LABTRUST_RC_PCS_CORE_COMMIT,
     LABTRUST_RC_TRACE_HASH,
 )
 
@@ -20,8 +21,7 @@ PF_REPO = "https://github.com/SentinelOps-CI/provability-fabric"
 SM_REPO = "https://github.com/fraware/scientific-memory"
 
 RELEASE_ID = "release-pcs-v0.1-labtrust-qc"
-# Default when legacy manifest is absent; live fixtures pin via RELEASE_FIXTURE_MANIFEST.json.
-PCS_CORE_COMMIT = "b133c2ed32293b02c4e28971da7b3a7fffcedc2a"
+PCS_CORE_COMMIT = LABTRUST_RC_PCS_CORE_COMMIT
 
 _ARTIFACT_MANIFEST_META: dict[str, dict[str, str]] = {
     "trace.json": {

@@ -81,6 +81,146 @@
       "enforcement_layer": "artifact_validate"
     },
     {
+      "registry_ref": "ComputationRunReceipt.v0.signature_or_digest_valid",
+      "artifact_type": "ComputationRunReceipt.v0",
+      "check_id": "signature_or_digest_valid",
+      "severity": "release_blocking",
+      "responsible_component": "scientific-computation demo producer",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ComputationRunReceipt.v0.source_commit_not_placeholder",
+      "artifact_type": "ComputationRunReceipt.v0",
+      "check_id": "source_commit_not_placeholder",
+      "severity": "release_blocking",
+      "responsible_component": "scientific-computation demo producer",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ComputationWitness.v0.code_commit_present",
+      "artifact_type": "ComputationWitness.v0",
+      "check_id": "code_commit_present",
+      "severity": "release_blocking",
+      "responsible_component": "CertifyEdge",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ComputationWitness.v0.computation_status_checked_for_release",
+      "artifact_type": "ComputationWitness.v0",
+      "check_id": "computation_status_checked_for_release",
+      "severity": "release_blocking",
+      "responsible_component": "CertifyEdge",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "ComputationWitness.v0.dataset_hash_matches_receipt",
+      "artifact_type": "ComputationWitness.v0",
+      "check_id": "dataset_hash_matches_receipt",
+      "severity": "release_blocking",
+      "responsible_component": "CertifyEdge",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ComputationWitness.v0.environment_hash_matches_receipt",
+      "artifact_type": "ComputationWitness.v0",
+      "check_id": "environment_hash_matches_receipt",
+      "severity": "release_blocking",
+      "responsible_component": "CertifyEdge",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ComputationWitness.v0.result_hashes_match_result_artifacts",
+      "artifact_type": "ComputationWitness.v0",
+      "check_id": "result_hashes_match_result_artifacts",
+      "severity": "release_blocking",
+      "responsible_component": "CertifyEdge",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ComputationWitness.v0.run_receipt_hash_matches_declared_run",
+      "artifact_type": "ComputationWitness.v0",
+      "check_id": "run_receipt_hash_matches_declared_run",
+      "severity": "release_blocking",
+      "responsible_component": "CertifyEdge",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ComputationWitness.v0.signature_or_digest_valid",
+      "artifact_type": "ComputationWitness.v0",
+      "check_id": "signature_or_digest_valid",
+      "severity": "release_blocking",
+      "responsible_component": "CertifyEdge",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ComputationWitness.v0.source_commit_matches_release_manifest",
+      "artifact_type": "ComputationWitness.v0",
+      "check_id": "source_commit_matches_release_manifest",
+      "severity": "release_blocking",
+      "responsible_component": "CertifyEdge",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "DatasetReceipt.v0.signature_or_digest_valid",
+      "artifact_type": "DatasetReceipt.v0",
+      "check_id": "signature_or_digest_valid",
+      "severity": "release_blocking",
+      "responsible_component": "scientific-computation demo producer",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "DatasetReceipt.v0.source_commit_not_placeholder",
+      "artifact_type": "DatasetReceipt.v0",
+      "check_id": "source_commit_not_placeholder",
+      "severity": "release_blocking",
+      "responsible_component": "scientific-computation demo producer",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "EnvironmentReceipt.v0.signature_or_digest_valid",
+      "artifact_type": "EnvironmentReceipt.v0",
+      "check_id": "signature_or_digest_valid",
+      "severity": "release_blocking",
+      "responsible_component": "scientific-computation demo producer",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "EnvironmentReceipt.v0.source_commit_not_placeholder",
+      "artifact_type": "EnvironmentReceipt.v0",
+      "check_id": "source_commit_not_placeholder",
+      "severity": "release_blocking",
+      "responsible_component": "scientific-computation demo producer",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
       "registry_ref": "EvidenceBundle.v0.certificate_refs_resolve",
       "artifact_type": "EvidenceBundle.v0",
       "check_id": "certificate_refs_resolve",
@@ -126,6 +266,26 @@
       "check_id": "release_mode_commit_policy",
       "severity": "release_blocking",
       "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ResultArtifact.v0.signature_or_digest_valid",
+      "artifact_type": "ResultArtifact.v0",
+      "check_id": "signature_or_digest_valid",
+      "severity": "release_blocking",
+      "responsible_component": "scientific-computation demo producer",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ResultArtifact.v0.source_commit_not_placeholder",
+      "artifact_type": "ResultArtifact.v0",
+      "check_id": "source_commit_not_placeholder",
+      "severity": "release_blocking",
+      "responsible_component": "scientific-computation demo producer",
       "execution_required_in_release_mode": true,
       "allowed_to_skip": false,
       "enforcement_layer": "artifact_validate"
@@ -341,5 +501,5 @@
       "enforcement_layer": "registry_metadata"
     }
   ],
-  "signature_or_digest": "sha256:9ef0de33d19d4c6293cef8a15b5b50d69be74e20571e4cd914a7c04658d6f213"
+  "signature_or_digest": "sha256:9ee30742d83c60e68d9c3743a91952639d7be6c28fa803610c93c9f1a612e333"
 }
