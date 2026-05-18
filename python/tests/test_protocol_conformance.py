@@ -12,7 +12,9 @@ from pcs_core.legacy_manifest import legacy_manifest_equivalent_to_release_manif
 from pcs_core.migrate import migrate_file
 from pcs_core.paths import examples_dir
 from pcs_core.protocol_fixtures import release_manifest_valid
-from pcs_core.conformance import run_conformance
+from pcs_core.conformance import build_conformance_report_data, run_conformance
+from pcs_core.registry import audit_registry_producer_fields, validate_registry_file
+from pcs_core.semantic_check_execution import build_semantic_check_execution
 from pcs_core.registry import (
     build_artifact_registry,
     check_artifact_against_registry,
@@ -97,6 +99,50 @@ def test_all_registry_semantic_checks_have_responsible_component() -> None:
             assert check.get("check_id"), f"{artifact_type} missing check_id"
 
 
+def test_registry_semantic_checks_have_execution_policy() -> None:
+    built = build_artifact_registry()
+    for artifact_type, entry in built["entries"].items():
+        for check in entry["semantic_checks"]:
+            assert "execution_required_in_release_mode" in check, artifact_type
+            assert "allowed_to_skip" in check, artifact_type
+    policy = build_semantic_check_execution()
+    validate_artifact(policy, "SemanticCheckExecution.v0")
+    assert len(policy["checks"]) >= len(list(all_registry_semantic_check_refs()))
+
+
+def test_release_chain_result_references_registry_checks() -> None:
+    result = build_release_chain_validation_result(release_dir())
+    known = all_registry_semantic_check_refs()
+    executed: set[str] = set()
+    for check in result["checks"]:
+        refs = check.get("registry_check_refs", [])
+        assert isinstance(refs, list)
+        for ref in refs:
+            assert ref in known
+            executed.add(ref)
+    assert executed, "expected at least one registry check ref in validation result"
+
+
+def test_registry_warns_when_legacy_producer_differs_from_runtime_producer(
+    tmp_path: Path,
+) -> None:
+    registry = build_artifact_registry()
+    entry = dict(registry["entries"]["HandoffManifest.v0"])
+    entry["producer"] = "legacy-producer"
+    entry["runtime_producer"] = "LabTrust-Gym"
+    registry["entries"]["HandoffManifest.v0"] = entry
+    warnings = audit_registry_producer_fields(registry)
+    assert any("producer" in warn and "runtime_producer" in warn for warn in warnings)
+
+
+def test_conformance_artifact_registry_suite_passes() -> None:
+    code, errors = run_conformance("artifact-registry")
+    assert code == 0, errors
+    report = build_conformance_report_data("artifact-registry")
+    assert report["status"] == "passed"
+    assert report["results"][0]["suite"] == "artifact-registry"
+
+
 def test_release_chain_checks_reference_registry_semantic_checks() -> None:
     known = all_registry_semantic_check_refs()
     for spec in RELEASE_CHAIN_CHECK_SPECS:
@@ -147,13 +193,25 @@ def test_component_release_fragment_validates_labtrust_fragment() -> None:
 
 
 def test_conformance_suite_runs_handoff_manifest() -> None:
+    test_conformance_handoff_manifest_suite_passes()
+
+
+def test_conformance_handoff_manifest_suite_passes() -> None:
     code, errors = run_conformance("handoff-manifest")
     assert code == 0, errors
+    report = build_conformance_report_data("handoff-manifest")
+    assert report["status"] == "passed"
 
 
 def test_conformance_suite_runs_release_chain() -> None:
+    test_conformance_release_chain_suite_passes()
+
+
+def test_conformance_release_chain_suite_passes() -> None:
     code, errors = run_conformance("release-chain")
     assert code == 0, errors
+    report = build_conformance_report_data("release-chain")
+    assert report["status"] == "passed"
 
 
 def test_registry_semantic_check_catalog_audits_clean() -> None:

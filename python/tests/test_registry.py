@@ -31,7 +31,9 @@ def test_build_registry_matches_on_disk() -> None:
 
 
 def test_registry_validate_no_drift() -> None:
-    assert validate_registry_file(default_registry_path()) == []
+    errors, warnings = validate_registry_file(default_registry_path())
+    assert errors == []
+    assert warnings == []
 
 
 def test_list_artifact_types_includes_core_chain() -> None:
@@ -43,7 +45,9 @@ def test_list_artifact_types_includes_core_chain() -> None:
 
 def test_explain_trace_certificate() -> None:
     entry = explain_artifact_type("TraceCertificate.v0")
-    assert entry["producer"] == "CertifyEdge"
+    assert entry["runtime_producer"] == "CertifyEdge"
+    assert entry["producer"] == entry["runtime_producer"]
+    assert entry["schema_owner"] == "pcs-core"
     assert "CertificateChecked" in entry["allowed_statuses"]
 
 

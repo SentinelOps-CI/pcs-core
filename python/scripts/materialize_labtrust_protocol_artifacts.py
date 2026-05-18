@@ -18,13 +18,16 @@ from pcs_core.protocol_fixtures import (  # noqa: E402
     release_manifest_valid,
     write_labtrust_protocol_artifacts,
 )
+from pcs_core.release_fixtures import sync_legacy_manifest_artifact_hashes  # noqa: E402
 from pcs_core.registry import build_artifact_registry  # noqa: E402
+from pcs_core.semantic_check_execution import build_semantic_check_execution  # noqa: E402
 from pcs_core.shared_hash_vectors import write_shared_vectors  # noqa: E402
 from pcs_core.validate import validate_file  # noqa: E402
 
 
 def main() -> int:
     release_dir = examples_dir() / "labtrust-release"
+    sync_legacy_manifest_artifact_hashes(release_dir)
     write_labtrust_protocol_artifacts(release_dir)
     examples = examples_dir()
     for name, doc in (
@@ -35,6 +38,7 @@ def main() -> int:
             release_chain_validation_result_valid(),
         ),
         ("component_release_fragment.valid.json", component_release_fragment_valid()),
+        ("semantic_check_execution.valid.json", build_semantic_check_execution()),
     ):
         (examples / name).write_text(json.dumps(doc, indent=2) + "\n", encoding="utf-8")
     registry_path = examples_dir() / "artifact_registry.valid.json"

@@ -88,6 +88,25 @@ def file_digest(content: bytes) -> str:
     return f"sha256:{hashlib.sha256(content).hexdigest()}"
 
 
+def sync_legacy_manifest_artifact_hashes(directory: Path | None = None) -> dict[str, str]:
+    """Align RELEASE_FIXTURE_MANIFEST.json artifact digests with on-disk bytes."""
+    base = directory or release_dir()
+    manifest_path = base / MANIFEST_NAME
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    artifacts = manifest.get("artifacts")
+    if not isinstance(artifacts, dict):
+        raise ValueError(f"{manifest_path}: missing artifacts object")
+    updated: dict[str, str] = {}
+    for name in MANIFEST_ARTIFACTS:
+        path = base / name
+        digest = file_digest(path.read_bytes())
+        artifacts[str(name)] = digest
+        updated[str(name)] = digest
+    manifest["artifacts"] = artifacts
+    write_json(manifest_path, manifest)
+    return updated
+
+
 def write_json(path: Path, data: dict[str, Any]) -> None:
     text = json.dumps(data, indent=2, ensure_ascii=False) + "\n"
     path.write_text(text, encoding="utf-8")

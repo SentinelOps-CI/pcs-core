@@ -9,6 +9,7 @@ from typing import Any
 from pcs_core.hash import PLACEHOLDER_DIGEST, canonical_hash
 from pcs_core.paths import examples_dir, schemas_dir
 from pcs_core.registry_data import registry_entries
+from pcs_core.registry_semantics import enrich_semantic_check
 from pcs_core.registry_semantics import audit_registry_catalog
 from pcs_core.validate import ValidationError, detect_artifact_type, validate_artifact
 
@@ -17,11 +18,18 @@ REGISTRY_VERSION = "0.1.0"
 
 
 def build_artifact_registry() -> dict[str, Any]:
+    entries: dict[str, Any] = {}
+    for key, entry in registry_entries().items():
+        copy = dict(entry)
+        checks = copy.get("semantic_checks")
+        if isinstance(checks, list):
+            copy["semantic_checks"] = [enrich_semantic_check(dict(c)) for c in checks]
+        entries[key] = copy
     body = {
         "schema_version": "v0",
         "registry_id": REGISTRY_ID,
         "registry_version": REGISTRY_VERSION,
-        "entries": registry_entries(),
+        "entries": entries,
         "signature_or_digest": PLACEHOLDER_DIGEST,
     }
     body["signature_or_digest"] = canonical_hash(body)
@@ -59,13 +67,14 @@ def explain_artifact_type(
     return dict(entries[artifact_type])
 
 
-def validate_registry_file(path: Path) -> list[str]:
+def validate_registry_file(path: Path) -> tuple[list[str], list[str]]:
     errors: list[str] = []
+    warnings: list[str] = []
     errors.extend(audit_registry_catalog())
     try:
         data = load_registry(path)
     except ValidationError as exc:
-        return [str(exc), *exc.errors]
+        return [str(exc), *exc.errors], warnings
     canonical = build_artifact_registry()
     expected_types = set(canonical["entries"].keys())
     actual_types = set(data.get("entries", {}).keys())
@@ -80,7 +89,31 @@ def validate_registry_file(path: Path) -> list[str]:
         actual = data["entries"][artifact_type]
         if actual != expected:
             errors.append(f"registry entry drift for {artifact_type}")
-    return errors
+    warnings.extend(audit_registry_producer_fields(data))
+    return errors, warnings
+
+
+def audit_registry_producer_fields(registry: dict[str, Any]) -> list[str]:
+    warnings: list[str] = []
+    entries = registry.get("entries")
+    if not isinstance(entries, dict):
+        return warnings
+    for artifact_type, entry in entries.items():
+        if not isinstance(entry, dict):
+            continue
+        producer = entry.get("producer")
+        runtime_producer = entry.get("runtime_producer")
+        if (
+            isinstance(producer, str)
+            and isinstance(runtime_producer, str)
+            and producer != runtime_producer
+        ):
+            warnings.append(
+                f"registry warning: entries.{artifact_type}.producer ({producer!r}) "
+                f"differs from runtime_producer ({runtime_producer!r}); "
+                "producer is deprecated — use runtime_producer",
+            )
+    return warnings
 
 
 def check_artifact_against_registry(
@@ -116,8 +149,8 @@ def check_artifact_against_registry(
             )
     elif producer and runtime_producer and producer != runtime_producer:
         errors.append(
-            f"{path}: producer {producer!r} does not match registry runtime_producer "
-            f"{runtime_producer!r}",
+            f"{path}: warning: artifact producer {producer!r} differs from registry "
+            f"runtime_producer {runtime_producer!r} (legacy producer field is deprecated)",
         )
     status = data.get("status")
     allowed = entry.get("allowed_statuses")

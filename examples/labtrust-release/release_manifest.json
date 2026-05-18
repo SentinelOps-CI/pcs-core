@@ -12,7 +12,7 @@
   },
   "release_chain_validation_result": {
     "path": "release_chain_validation_result.v0.json",
-    "sha256": "sha256:5dd2f70398fccf80dfdf968d9b9bbc4f8e7408b0f4c0f4b3fcbeb516e6b83746"
+    "sha256": "sha256:b84c40f97a4cc9e3a85e4c4a74f043359a30fc4ff18f1022a2c86d98cb4fd594"
   },
   "canonical_signed_bundle": {
     "path": "signed_science_claim_bundle.json",

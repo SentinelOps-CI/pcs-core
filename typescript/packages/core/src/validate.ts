@@ -38,6 +38,8 @@ export type ArtifactType =
   | "HandoffManifest.v0"
   | "ReleaseChainValidationResult.v0"
   | "ArtifactRegistry.v0"
+  | "SemanticCheckExecution.v0"
+  | "ComponentReleaseFragment.v0"
   | "MigrationReport.v0";
 
 const PROTOCOL_ARTIFACT_TYPES = new Set<ArtifactType>([
@@ -45,15 +47,29 @@ const PROTOCOL_ARTIFACT_TYPES = new Set<ArtifactType>([
   "HandoffManifest.v0",
   "ReleaseChainValidationResult.v0",
   "ArtifactRegistry.v0",
+  "SemanticCheckExecution.v0",
   "MigrationReport.v0",
 ] as ArtifactType[]);
 
 export function detectArtifactType(data: Record<string, unknown>): ArtifactType | null {
+  if ("policy_id" in data && "severity_definitions" in data && Array.isArray(data.checks)) {
+    return "SemanticCheckExecution.v0";
+  }
   if ("from_version" in data && "to_version" in data && "changes" in data && "artifact_type" in data) {
     return "MigrationReport.v0";
   }
   if ("validation_id" in data && "artifacts_checked" in data) {
     return "ReleaseChainValidationResult.v0";
+  }
+  if (
+    data.schema_version === "v0" &&
+    typeof data.component === "string" &&
+    data.artifacts &&
+    typeof data.artifacts === "object" &&
+    "signature_or_digest" in data &&
+    "source_commit" in data
+  ) {
+    return "ComponentReleaseFragment.v0";
   }
   if ("handoff_id" in data && "handoff_kind" in data) {
     return "HandoffManifest.v0";

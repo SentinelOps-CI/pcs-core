@@ -39,7 +39,7 @@ def labtrust_fixture_path(name: str) -> Path:
     return path
 
 
-SuiteFn = Callable[[], list[str]]
+SuiteFn = Callable[[], tuple[list[str], list[str]]]
 
 SUITES: dict[str, SuiteFn] = {}
 
@@ -53,7 +53,7 @@ def _record(name: str) -> Callable[[SuiteFn], SuiteFn]:
 
 
 @_record("release-manifest")
-def _suite_release_manifest() -> list[str]:
+def _suite_release_manifest() -> tuple[list[str], list[str]]:
     errors: list[str] = []
     path = release_dir() / "release_manifest.v0.json"
     try:
@@ -61,11 +61,11 @@ def _suite_release_manifest() -> list[str]:
     except ValidationError as exc:
         errors.append(str(exc))
         errors.extend(exc.errors)
-    return errors
+    return errors, []
 
 
 @_record("handoff-manifest")
-def _suite_handoff_manifest() -> list[str]:
+def _suite_handoff_manifest() -> tuple[list[str], list[str]]:
     errors: list[str] = []
     for path in sorted(release_dir().glob("handoff_manifest.*.v0.json")):
         try:
@@ -78,18 +78,18 @@ def _suite_handoff_manifest() -> list[str]:
         validate_file(example)
     except ValidationError as exc:
         errors.append(f"{example.name}: {exc}")
-    return errors
+    return errors, []
 
 
 @_record("artifact-registry")
-def _suite_artifact_registry() -> list[str]:
+def _suite_artifact_registry() -> tuple[list[str], list[str]]:
     from pcs_core.registry import validate_registry_file
 
     return validate_registry_file(examples_dir() / "artifact_registry.valid.json")
 
 
 @_record("release-chain-validation")
-def _suite_release_chain_validation() -> list[str]:
+def _suite_release_chain_validation() -> tuple[list[str], list[str]]:
     errors: list[str] = []
     issues = validate_release_chain(release_dir())
     if issues:
@@ -100,32 +100,32 @@ def _suite_release_chain_validation() -> list[str]:
     except ValidationError as exc:
         errors.append(str(exc))
         errors.extend(exc.errors)
-    return errors
+    return errors, []
 
 
 @_record("release-chain")
-def _suite_release_chain() -> list[str]:
+def _suite_release_chain() -> tuple[list[str], list[str]]:
     return _suite_release_chain_validation()
 
 
 @_record("hash")
-def _suite_hash() -> list[str]:
-    return verify_shared_vectors()
+def _suite_hash() -> tuple[list[str], list[str]]:
+    return verify_shared_vectors(), []
 
 
 @_record("migration")
-def _suite_migration() -> list[str]:
+def _suite_migration() -> tuple[list[str], list[str]]:
     errors: list[str] = []
     path = examples_dir() / "migration_report.valid.json"
     try:
         validate_file(path)
     except ValidationError as exc:
         errors.append(str(exc))
-    return errors
+    return errors, []
 
 
 @_record("component-release-fragment")
-def _suite_component_release_fragment() -> list[str]:
+def _suite_component_release_fragment() -> tuple[list[str], list[str]]:
     errors: list[str] = []
     paths = (
         examples_dir() / "component_release_fragment.valid.json",
@@ -140,11 +140,11 @@ def _suite_component_release_fragment() -> list[str]:
         except ValidationError as exc:
             errors.append(f"{path.name}: {exc}")
             errors.extend(f"{path.name}: {err}" for err in exc.errors)
-    return errors
+    return errors, []
 
 
 @_record("status-transition")
-def _suite_status_transition() -> list[str]:
+def _suite_status_transition() -> tuple[list[str], list[str]]:
     from pcs_core.status_policy import check_status_transition
 
     errors: list[str] = []
@@ -156,7 +156,7 @@ def _suite_status_transition() -> list[str]:
         verdict = check_status_transition(old_status, new_status)
         if verdict.allowed:
             errors.append(f"forbidden transition allowed: {old_status} -> {new_status}")
-    return errors
+    return errors, []
 
 
 def list_suites() -> list[str]:
@@ -164,15 +164,34 @@ def list_suites() -> list[str]:
 
 
 def run_conformance(suite: str) -> tuple[int, list[str]]:
-    """Run one suite or `all`. Returns (exit_code, error_lines)."""
+    """Run one suite or `all`. Returns (exit_code, human-readable error lines)."""
+    report = build_conformance_report_data(suite)
+    lines: list[str] = []
+    if report["status"] == "failed":
+        for result in report["results"]:
+            if result.get("status") == "failed":
+                lines.append(f"[{result['suite']}]")
+                lines.extend(str(err) for err in result.get("errors", []))
+    return (0 if report["status"] == "passed" else 1, lines)
+
+
+def build_conformance_report_data(suite: str) -> dict:
+    from pcs_core.conformance_report import build_conformance_report, suite_result
+
     names = list_suites() if suite == "all" else [suite]
     if suite != "all" and suite not in SUITES:
-        return 2, [f"unknown suite: {suite}", f"available: {', '.join(list_suites())}"]
+        return build_conformance_report(
+            suite=suite,
+            suite_results=[
+                suite_result(
+                    suite,
+                    [f"unknown suite: {suite}", f"available: {', '.join(list_suites())}"],
+                ),
+            ],
+        )
 
-    all_errors: list[str] = []
+    results: list[dict] = []
     for name in names:
-        errors = SUITES[name]()
-        if errors:
-            all_errors.append(f"[{name}]")
-            all_errors.extend(errors)
-    return (1 if all_errors else 0, all_errors)
+        errors, warnings = SUITES[name]()
+        results.append(suite_result(name, errors, warnings))
+    return build_conformance_report(suite=suite, suite_results=results)

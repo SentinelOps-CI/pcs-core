@@ -38,6 +38,7 @@ ARTIFACT_SCHEMAS: dict[str, str] = {
     "ArtifactRegistry.v0": "ArtifactRegistry.v0.schema.json",
     "MigrationReport.v0": "MigrationReport.v0.schema.json",
     "ComponentReleaseFragment.v0": "ComponentReleaseFragment.v0.schema.json",
+    "SemanticCheckExecution.v0": "SemanticCheckExecution.v0.schema.json",
 }
 
 CERTIFIED_CLAIM_STATUSES = frozenset(
@@ -68,6 +69,8 @@ class ValidationError(Exception):
 
 
 def detect_artifact_type(data: dict[str, Any]) -> str | None:
+    if "policy_id" in data and "severity_definitions" in data and isinstance(data.get("checks"), list):
+        return "SemanticCheckExecution.v0"
     if "from_version" in data and "to_version" in data and "changes" in data and "artifact_type" in data:
         return "MigrationReport.v0"
     if "validation_id" in data and "artifacts_checked" in data:

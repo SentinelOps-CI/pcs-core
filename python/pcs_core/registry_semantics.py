@@ -27,9 +27,30 @@ CHECK_ENFORCEMENT: dict[str, EnforcementLayer] = {
     "artifact_hashes_match_files": "release_chain",
     "handoff_input_hashes_when_validated": "artifact_validate",
     "component_artifacts_match_release_pins": "release_chain",
-    "status_matches_check_outcomes": "artifact_validate",
+    "status_matches_check_outcomes": "release_chain",
     "entries_cover_required_artifact_types": "registry_metadata",
 }
+
+
+def default_execution_flags(severity: str) -> tuple[bool, bool]:
+    """Return (execution_required_in_release_mode, allowed_to_skip)."""
+    if severity in {"optional", "warning_only"}:
+        return False, True
+    return True, False
+
+
+def enrich_semantic_check(check: dict[str, Any]) -> dict[str, Any]:
+    severity = str(check["severity"])
+    required, skippable = default_execution_flags(severity)
+    execution_required = bool(check.get("execution_required_in_release_mode", required))
+    allowed_to_skip = bool(check.get("allowed_to_skip", skippable))
+    if execution_required and allowed_to_skip:
+        allowed_to_skip = False
+    return {
+        **check,
+        "execution_required_in_release_mode": execution_required,
+        "allowed_to_skip": allowed_to_skip,
+    }
 
 
 def enforcement_layer(check: dict[str, Any]) -> EnforcementLayer:
@@ -37,6 +58,8 @@ def enforcement_layer(check: dict[str, Any]) -> EnforcementLayer:
     check_id = str(check.get("check_id") or "")
     if severity in {"consumer_responsible", "producer_responsible"}:
         return "consumer"
+    if severity == "validator_responsible":
+        return "release_chain"
     return CHECK_ENFORCEMENT.get(check_id, "release_chain")
 
 
@@ -62,7 +85,12 @@ def audit_registry_catalog() -> list[str]:
         if ref in seen_ids:
             errors.append(f"duplicate semantic check ref {ref}")
         seen_ids.add(ref)
-        if check_id not in CHECK_ENFORCEMENT and enforcement_layer(check) != "consumer":
+        layer = enforcement_layer(check)
+        if (
+            check_id not in CHECK_ENFORCEMENT
+            and layer not in {"consumer", "release_chain"}
+            and severity != "validator_responsible"
+        ):
             errors.append(
                 f"{ref}: not listed in CHECK_ENFORCEMENT "
                 "(add mapping or use consumer/producer_responsible severity)",
@@ -71,6 +99,18 @@ def audit_registry_catalog() -> list[str]:
             errors.append(f"{ref}: missing severity")
         if not check.get("responsible_component"):
             errors.append(f"{ref}: missing responsible_component")
+        if "execution_required_in_release_mode" not in check:
+            errors.append(f"{ref}: missing execution_required_in_release_mode")
+        if "allowed_to_skip" not in check:
+            errors.append(f"{ref}: missing allowed_to_skip")
+        severity = str(check.get("severity") or "")
+        exec_required = bool(check.get("execution_required_in_release_mode"))
+        allowed_skip = bool(check.get("allowed_to_skip"))
+        fatal_default, _ = default_execution_flags(severity)
+        if fatal_default and not exec_required:
+            errors.append(f"{ref}: execution_required_in_release_mode must be true")
+        if fatal_default and allowed_skip:
+            errors.append(f"{ref}: allowed_to_skip must be false for severity {severity}")
     return errors
 
 

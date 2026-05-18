@@ -13,11 +13,17 @@ SM = "Scientific Memory"
 _HANDOFF_PRODUCERS = [LABTRUST, CERTIFYEDGE, PF, SM]
 
 
-def _sc(check_id: str, severity: str, responsible_component: str) -> dict[str, str]:
+def _sc(check_id: str, severity: str, responsible_component: str) -> dict[str, Any]:
+    if severity in {"optional", "warning_only"}:
+        execution_required, allowed_to_skip = False, True
+    else:
+        execution_required, allowed_to_skip = True, False
     return {
         "check_id": check_id,
         "severity": severity,
         "responsible_component": responsible_component,
+        "execution_required_in_release_mode": execution_required,
+        "allowed_to_skip": allowed_to_skip,
     }
 
 
@@ -369,7 +375,7 @@ _REGISTRY_ENTRIES: dict[str, dict[str, Any]] = {
             "signature_or_digest",
         ],
         semantic_checks=[
-            _sc("status_matches_check_outcomes", "release_blocking", PCS_CORE),
+            _sc("status_matches_check_outcomes", "validator_responsible", PCS_CORE),
         ],
         consumer_repos=[PCS_CORE, SM],
     ),

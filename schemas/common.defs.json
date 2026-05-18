@@ -146,18 +146,27 @@
         "optional",
         "warning_only",
         "release_blocking",
+        "producer_responsible",
         "consumer_responsible",
-        "producer_responsible"
+        "validator_responsible"
       ]
     },
     "registry_semantic_check": {
       "type": "object",
-      "required": ["check_id", "severity", "responsible_component"],
+      "required": [
+        "check_id",
+        "severity",
+        "responsible_component",
+        "execution_required_in_release_mode",
+        "allowed_to_skip"
+      ],
       "additionalProperties": false,
       "properties": {
         "check_id": { "type": "string", "minLength": 1 },
         "severity": { "$ref": "#/$defs/semantic_check_severity" },
-        "responsible_component": { "type": "string", "minLength": 1 }
+        "responsible_component": { "type": "string", "minLength": 1 },
+        "execution_required_in_release_mode": { "type": "boolean" },
+        "allowed_to_skip": { "type": "boolean" }
       }
     },
     "release_validation_check": {

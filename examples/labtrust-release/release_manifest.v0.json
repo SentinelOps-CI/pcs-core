@@ -12,7 +12,7 @@
   },
   "release_chain_validation_result": {
     "path": "release_chain_validation_result.v0.json",
-    "sha256": "sha256:5dd2f70398fccf80dfdf968d9b9bbc4f8e7408b0f4c0f4b3fcbeb516e6b83746"
+    "sha256": "sha256:b84c40f97a4cc9e3a85e4c4a74f043359a30fc4ff18f1022a2c86d98cb4fd594"
   },
   "canonical_signed_bundle": {
     "path": "signed_science_claim_bundle.json",
@@ -49,7 +49,7 @@
       "producer": "LabTrust-Gym",
       "source_repo": "https://github.com/fraware/LabTrust-Gym",
       "source_commit": "4c5439ae358733f9a4c4a58e33fdaed1ab0d29de",
-      "sha256": "sha256:f99eb0a90cd2b9819816a25ec4e938663d26ae8d40868cd8188665e940f7ad5c"
+      "sha256": "sha256:0b356b952c0eb5c033e4e7166113f5e34aa76af7f473362bcbc0d2b337dabb04"
     },
     "runtime_receipt.json": {
       "artifact_type": "RuntimeReceipt.v0",
@@ -57,7 +57,7 @@
       "producer": "LabTrust-Gym",
       "source_repo": "https://github.com/fraware/LabTrust-Gym",
       "source_commit": "4c5439ae358733f9a4c4a58e33fdaed1ab0d29de",
-      "sha256": "sha256:8e642b59657d70b408be354323006421b963bb0c9fc9514f6abc7aab305345b6"
+      "sha256": "sha256:1c163441e003db5e2ffbac97d3d6c96fef3dfbb0a0084a57083ebb870b7bce68"
     },
     "trace_certificate.json": {
       "artifact_type": "TraceCertificate.v0",
@@ -73,7 +73,7 @@
       "producer": "LabTrust-Gym",
       "source_repo": "https://github.com/fraware/LabTrust-Gym",
       "source_commit": "4c5439ae358733f9a4c4a58e33fdaed1ab0d29de",
-      "sha256": "sha256:677e0171743c4c129ad4b1931c62ba3fa0323f10c7d6d8d76290f8a4aabae45e"
+      "sha256": "sha256:817de92d8642910b0c5cd1ac3a0d49674faed6dc1bbf67f8285c696b8925a7b5"
     },
     "science_claim_bundle.certified.json": {
       "artifact_type": "ScienceClaimBundle.v0",
@@ -105,9 +105,9 @@
       "producer": "Scientific Memory",
       "source_repo": "https://github.com/fraware/scientific-memory",
       "source_commit": "c4259a4cb79fe7b195fd156feb346c08fc334d33",
-      "sha256": "sha256:0c04ffde0926302aca32de7fc4425d457ee59e00481aa9b73e58dc5107c3cd6b"
+      "sha256": "sha256:0cba8cc61698e6e093ed7172d617bc67701eb45505724b9d27e73fe3b627f3c7"
     }
   },
   "release_status": "Validated",
-  "signature_or_digest": "sha256:bd449c7d635feb25405f65b0e4e58d95c08ce4d9c97c3ab713c1068ed2aa60f4"
+  "signature_or_digest": "sha256:bd0c1c76a61533a04ade4e66ef8a28df4679b2a94aafcfc5f2827108f94ee2ad"
 }

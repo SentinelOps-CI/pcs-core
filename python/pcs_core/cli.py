@@ -29,7 +29,7 @@ from pcs_core.release_chain_report import (
     write_release_chain_validation_result,
 )
 from pcs_core.release_fixtures import release_dir, validate_release_manifest
-from pcs_core.conformance import list_suites, run_conformance
+from pcs_core.conformance import build_conformance_report_data, list_suites, run_conformance
 from pcs_core.shared_hash_vectors import verify_shared_vectors, write_shared_vectors
 from pcs_core.status_policy import check_status_transition, explain_status
 from pcs_core.validate import (
@@ -135,9 +135,11 @@ def cmd_registry_explain(artifact_type: str) -> int:
 
 
 def cmd_registry_validate(path: Path) -> int:
-    drift = validate_registry_file(path)
-    if drift:
-        for err in drift:
+    errors, warnings = validate_registry_file(path)
+    for warn in warnings:
+        print(f"WARN {warn}", file=sys.stderr)
+    if errors:
+        for err in errors:
             print(f"FAIL {err}", file=sys.stderr)
         return 1
     print(f"OK artifact registry {path}")
@@ -180,13 +182,21 @@ def cmd_shared_hash_vectors_verify() -> int:
     return 0
 
 
-def cmd_conformance_run(suite: str) -> int:
+def cmd_conformance_run(suite: str, *, json_output: bool = False, out_path: Path | None = None) -> int:
+    report = build_conformance_report_data(suite)
+    if out_path is not None:
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    if json_output:
+        print(json.dumps(report, indent=2))
     code, errors = run_conformance(suite)
     if code == 0:
-        print(f"OK conformance suite {suite}")
+        if not json_output:
+            print(f"OK conformance suite {suite}")
         return 0
-    for err in errors:
-        print(f"FAIL {err}", file=sys.stderr)
+    if not json_output:
+        for err in errors:
+            print(f"FAIL {err}", file=sys.stderr)
     return code
 
 
@@ -368,6 +378,8 @@ def main(argv: list[str] | None = None) -> int:
         default="all",
         help=f"Suite name or all (available: {', '.join(list_suites())}, all)",
     )
+    p_conformance_run.add_argument("--json", action="store_true", help="Emit machine-readable report")
+    p_conformance_run.add_argument("--out", type=Path, default=None, help="Write report JSON to path")
 
     args = parser.parse_args(argv)
 
@@ -422,7 +434,7 @@ def main(argv: list[str] | None = None) -> int:
         print("Wrote shared hash vectors")
         return 0
     if args.command == "conformance" and args.conformance_cmd == "run":
-        return cmd_conformance_run(args.suite)
+        return cmd_conformance_run(args.suite, json_output=args.json, out_path=args.out)
 
     parser.print_help()
     return 2
