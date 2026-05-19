@@ -1,0 +1,17 @@
+{
+  "schema_version": "v0",
+  "case_id": "formal-labtrust-lean-check",
+  "task_id": "formal-trust-kernel-v0",
+  "workflow_id": "cross-domain",
+  "case_kind": "valid_release",
+  "input_artifacts": {
+    "release_directory": "examples/labtrust-release"
+  },
+  "expected_status": "passed",
+  "expected_failure_code": "",
+  "expected_responsible_component": "formal_kernel",
+  "expected_repair_hint_kind": "none",
+  "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+  "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
+  "signature_or_digest": "sha256:bf892bbc3654bc4a8ba5421be51c55ab7e4733155b8062c979aa7ffffad86ed7"
+}

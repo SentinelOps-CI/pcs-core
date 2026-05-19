@@ -1,0 +1,23 @@
+{
+  "schema_version": "v0",
+  "run_id": "bench-run-invalid-certified-bundle-hash",
+  "task_id": "labtrust-qc-release-v0",
+  "case_id": "invalid-certified-bundle-hash",
+  "started_at": "2026-05-19T15:12:19Z",
+  "completed_at": "2026-05-19T15:12:19Z",
+  "commands": [
+    {
+      "command": "validate_release_chain C:/Users/mateo/pcs-core/examples/labtrust-release-invalid/mismatched_certified_bundle_hash",
+      "exit_code": 1
+    }
+  ],
+  "artifacts_produced": [],
+  "observed_status": "passed",
+  "observed_failure_code": "verified_input_hash_mismatch",
+  "observed_responsible_component": "verifier",
+  "observed_repair_hint": "rerun_verification",
+  "duration_ms": 68,
+  "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+  "source_commit": "d444444444444444444444444444444444444444",
+  "signature_or_digest": "sha256:0ffeb376e0671883d0a417d1fd6d13a9f841266c7aed90736dd1f355e98ef682"
+}

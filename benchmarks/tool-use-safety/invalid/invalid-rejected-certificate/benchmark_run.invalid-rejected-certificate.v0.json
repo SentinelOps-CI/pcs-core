@@ -1,0 +1,23 @@
+{
+  "schema_version": "v0",
+  "run_id": "bench-run-invalid-rejected-certificate",
+  "task_id": "tool-use-safety-v0",
+  "case_id": "invalid-rejected-certificate",
+  "started_at": "2026-05-19T15:12:20Z",
+  "completed_at": "2026-05-19T15:12:20Z",
+  "commands": [
+    {
+      "command": "validate_release_chain C:/Users/mateo/pcs-core/benchmarks/tool-use-safety/input_releases/invalid-rejected-certificate",
+      "exit_code": 1
+    }
+  ],
+  "artifacts_produced": [],
+  "observed_status": "passed",
+  "observed_failure_code": "rejected_certificate",
+  "observed_responsible_component": "certificate_producer",
+  "observed_repair_hint": "align_certificate_id",
+  "duration_ms": 56,
+  "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+  "source_commit": "d444444444444444444444444444444444444444",
+  "signature_or_digest": "sha256:cd1e5f8da712a19dac490384d65e3031aa07c69e235b091853a015aa70691e9d"
+}

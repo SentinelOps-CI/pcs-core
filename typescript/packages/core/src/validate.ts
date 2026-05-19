@@ -51,6 +51,15 @@ export type ArtifactType =
   | "ComputationWitness.v0"
   | "ProofObligation.v0"
   | "LeanCheckResult.v0"
+  | "BenchmarkRegistry.v0"
+  | "BenchmarkTask.v0"
+  | "BenchmarkCase.v0"
+  | "BenchmarkRun.v0"
+  | "BenchmarkReport.v0"
+  | "ConformanceRun.v0"
+  | "FailureCaseManifest.v0"
+  | "FailureLocalizationResult.v0"
+  | "CoverageReport.v0"
   | "ConformanceReport.v0";
 
 const PROTOCOL_ARTIFACT_TYPES = new Set<ArtifactType>([
@@ -63,6 +72,81 @@ const PROTOCOL_ARTIFACT_TYPES = new Set<ArtifactType>([
 ] as ArtifactType[]);
 
 export function detectArtifactType(data: Record<string, unknown>): ArtifactType | null {
+  if (
+    data.schema_version === "v0" &&
+    typeof data.registry_id === "string" &&
+    typeof data.suites === "object" &&
+    data.suites !== null &&
+    "registry_version" in data
+  ) {
+    return "BenchmarkRegistry.v0";
+  }
+  if (
+    data.schema_version === "v0" &&
+    typeof data.report_id === "string" &&
+    typeof data.benchmark_suite_id === "string" &&
+    typeof data.summary === "object" &&
+    data.summary !== null
+  ) {
+    return "BenchmarkReport.v0";
+  }
+  if (
+    data.schema_version === "v0" &&
+    typeof data.run_id === "string" &&
+    typeof data.case_id === "string" &&
+    "duration_ms" in data &&
+    "observed_status" in data
+  ) {
+    return "BenchmarkRun.v0";
+  }
+  if (
+    data.schema_version === "v0" &&
+    typeof data.case_id === "string" &&
+    typeof data.case_kind === "string" &&
+    "input_artifacts" in data
+  ) {
+    return "BenchmarkCase.v0";
+  }
+  if (
+    data.schema_version === "v0" &&
+    typeof data.task_id === "string" &&
+    Array.isArray(data.metrics) &&
+    "success_criteria" in data
+  ) {
+    return "BenchmarkTask.v0";
+  }
+  if (
+    data.schema_version === "v0" &&
+    typeof data.coverage_id === "string" &&
+    "coverage_ratio" in data &&
+    "numerator" in data
+  ) {
+    return "CoverageReport.v0";
+  }
+  if (
+    data.schema_version === "v0" &&
+    typeof data.result_id === "string" &&
+    "localized_correctly" in data
+  ) {
+    return "FailureLocalizationResult.v0";
+  }
+  if (
+    data.schema_version === "v0" &&
+    typeof data.manifest_id === "string" &&
+    typeof data.failure_code === "string" &&
+    "repair_hint_kind" in data
+  ) {
+    return "FailureCaseManifest.v0";
+  }
+  if (
+    data.schema_version === "v0" &&
+    typeof data.run_id === "string" &&
+    typeof data.suite === "string" &&
+    "started_at" in data &&
+    "completed_at" in data
+  ) {
+    return "ConformanceRun.v0";
+  }
   if (
     data.schema_version === "v0" &&
     typeof data.suite === "string" &&

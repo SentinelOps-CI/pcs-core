@@ -420,6 +420,19 @@ def main(argv: list[str] | None = None) -> int:
         help="Skip lake build (for tests only)",
     )
 
+    benchmark_parser = sub.add_parser("benchmark", help="PCS benchmark evaluation protocol")
+    benchmark_sub = benchmark_parser.add_subparsers(dest="benchmark_cmd", required=True)
+    benchmark_sub.add_parser("list", help="List registered benchmark suite ids")
+    benchmark_sub.add_parser("validate", help="Validate benchmark fixture tree")
+    p_benchmark_run = benchmark_sub.add_parser("run", help="Run a benchmark suite")
+    p_benchmark_run.add_argument(
+        "--suite",
+        required=True,
+        help="Benchmark suite id (e.g. labtrust-qc-release-v0)",
+    )
+    p_benchmark_run.add_argument("--json", action="store_true", help="Emit BenchmarkReport.v0 JSON")
+    p_benchmark_run.add_argument("--out", type=Path, default=None, help="Write report JSON to path")
+
     args = parser.parse_args(argv)
 
     if args.command == "validate":
@@ -478,9 +491,62 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_extract_proof_obligations(args.release, args.out)
     if args.command == "lean-check":
         return cmd_lean_check(args.obligations, args.out, skip_lean_build=args.skip_lean_build)
+    if args.command == "benchmark" and args.benchmark_cmd == "list":
+        return cmd_benchmark_list()
+    if args.command == "benchmark" and args.benchmark_cmd == "validate":
+        return cmd_benchmark_validate()
+    if args.command == "benchmark" and args.benchmark_cmd == "run":
+        return cmd_benchmark_run(args.suite, json_output=args.json, out_path=args.out)
 
     parser.print_help()
     return 2
+
+
+def cmd_benchmark_list() -> int:
+    from pcs_core.benchmark_runner import list_benchmark_suite_ids
+
+    for suite_id in list_benchmark_suite_ids():
+        print(suite_id)
+    return 0
+
+
+def cmd_benchmark_validate() -> int:
+    from pcs_core.benchmark_runner import validate_benchmark_fixtures
+
+    errors = validate_benchmark_fixtures()
+    if not errors:
+        print("OK benchmark fixtures")
+        return 0
+    for err in errors:
+        print(f"FAIL {err}", file=sys.stderr)
+    return 1
+
+
+def cmd_benchmark_run(suite: str, *, json_output: bool = False, out_path: Path | None = None) -> int:
+    from pcs_core.benchmark_runner import run_benchmark_suite
+
+    try:
+        report = run_benchmark_suite(suite)
+        if out_path is not None:
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            out_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+            validate_file(out_path)
+        if json_output:
+            print(json.dumps(report, indent=2))
+        summary = report.get("summary", {})
+        passed = summary.get("passed_cases", 0)
+        total = summary.get("total_cases", 0)
+        if passed == total:
+            if not json_output:
+                print(f"OK benchmark suite {suite} ({passed}/{total} cases)")
+            return 0
+        if not json_output:
+            for failure in report.get("failures", []):
+                print(f"FAIL {failure.get('case_id')}: {failure.get('message')}", file=sys.stderr)
+        return 1
+    except (ValidationError, ValueError, FileNotFoundError) as exc:
+        print(f"FAIL benchmark run: {exc}", file=sys.stderr)
+        return 1
 
 
 def cmd_extract_proof_obligations(release: Path, out_path: Path) -> int:

@@ -1,0 +1,117 @@
+{
+  "schema_version": "v0",
+  "report_id": "benchmark-report-formal-trust-kernel-v0",
+  "benchmark_suite_id": "formal-trust-kernel-v0",
+  "runs": [
+    {
+      "run_id": "bench-run-formal-computation-lean-check",
+      "case_id": "formal-computation-lean-check",
+      "path": "benchmarks/cross-domain/valid/formal-computation-lean-check/benchmark_run.formal-computation-lean-check.v0.json",
+      "observed_status": "passed"
+    },
+    {
+      "run_id": "bench-run-formal-labtrust-lean-check",
+      "case_id": "formal-labtrust-lean-check",
+      "path": "benchmarks/cross-domain/valid/formal-labtrust-lean-check/benchmark_run.formal-labtrust-lean-check.v0.json",
+      "observed_status": "passed"
+    },
+    {
+      "run_id": "bench-run-formal-tool-use-lean-check",
+      "case_id": "formal-tool-use-lean-check",
+      "path": "benchmarks/cross-domain/valid/formal-tool-use-lean-check/benchmark_run.formal-tool-use-lean-check.v0.json",
+      "observed_status": "passed"
+    }
+  ],
+  "metrics": [
+    "formal_check_coverage",
+    "failure_localization"
+  ],
+  "summary": {
+    "total_cases": 3,
+    "passed_cases": 3,
+    "failed_cases": 0,
+    "expected_failures_detected": 0,
+    "unexpected_passes": 0,
+    "unexpected_failures": 0,
+    "failure_localization_accuracy": 0.0,
+    "repair_hint_accuracy": 1.0,
+    "formal_check_coverage": 1.0,
+    "registry_coverage": 0.8333333333333334,
+    "scientific_memory_render_coverage": 0.9444444444444445
+  },
+  "coverage": {
+    "registry": {
+      "schema_version": "v0",
+      "coverage_id": "formal-trust-kernel-v0-registry",
+      "metric": "registry_coverage",
+      "numerator": 2.5,
+      "denominator": 3.0,
+      "coverage_ratio": 0.8333333333333334,
+      "details": {
+        "registry_entry_count": 33
+      },
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:64476ef73ee54687508d189752b3cd33bd0ed0d3cbc4048bc3803bfed860d7cf"
+    },
+    "formal_checks": {
+      "schema_version": "v0",
+      "coverage_id": "formal-trust-kernel-v0-formal",
+      "metric": "formal_check_coverage",
+      "numerator": 6.916666666666666,
+      "denominator": 3.0,
+      "coverage_ratio": 1.0,
+      "details": {},
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:d27171169e87b108be0f6659b2229ab1d28c12f3a1a38b417fee545ea256c476"
+    },
+    "scientific_memory": {
+      "schema_version": "v0",
+      "coverage_id": "formal-trust-kernel-v0-sm",
+      "metric": "scientific_memory_interpretability",
+      "numerator": 2.8333333333333335,
+      "denominator": 3.0,
+      "coverage_ratio": 0.9444444444444445,
+      "details": {},
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:273b994d92637241169ffe76863fecd49b1a6e52c295560443463ce8c4ad7337"
+    },
+    "release_reproducibility": {
+      "schema_version": "v0",
+      "coverage_id": "formal-trust-kernel-v0-repro",
+      "metric": "release_reproducibility",
+      "numerator": 3.0,
+      "denominator": 3.0,
+      "coverage_ratio": 1.0,
+      "details": {},
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:cd37d706e5b671a2b6633444ab19e9fa27cb2d6f067db0adbf3e6e80aef921d3"
+    },
+    "certificate_completeness": {
+      "schema_version": "v0",
+      "coverage_id": "formal-trust-kernel-v0-cert",
+      "metric": "certificate_completeness",
+      "numerator": 3.0,
+      "denominator": 3.0,
+      "coverage_ratio": 1.0,
+      "details": {},
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:e42376d036d97ff8ef9fa92d0d6f94bcd5e3dd14e578169bf1f7bf360bd68179"
+    }
+  },
+  "failures": [],
+  "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+  "source_commit": "d444444444444444444444444444444444444444",
+  "signature_or_digest": "sha256:47dab5d42c69a6ca52f21a47edc38f42b3bfed23304007c1a5c8d7426396492d",
+  "conformance_refs": [
+    {
+      "suite": "lean-trust",
+      "run_id": "conf-run-lean-trust-20260519T145839Z",
+      "status": "passed"
+    }
+  ]
+}

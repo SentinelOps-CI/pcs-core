@@ -51,6 +51,15 @@ const ARTIFACT_SCHEMAS: Record<ArtifactType, string> = {
   "ComputationWitness.v0": "ComputationWitness.v0.schema.json",
   "ProofObligation.v0": "ProofObligation.v0.schema.json",
   "LeanCheckResult.v0": "LeanCheckResult.v0.schema.json",
+  "BenchmarkRegistry.v0": "BenchmarkRegistry.v0.schema.json",
+  "BenchmarkTask.v0": "BenchmarkTask.v0.schema.json",
+  "BenchmarkCase.v0": "BenchmarkCase.v0.schema.json",
+  "BenchmarkRun.v0": "BenchmarkRun.v0.schema.json",
+  "BenchmarkReport.v0": "BenchmarkReport.v0.schema.json",
+  "ConformanceRun.v0": "ConformanceRun.v0.schema.json",
+  "FailureCaseManifest.v0": "FailureCaseManifest.v0.schema.json",
+  "FailureLocalizationResult.v0": "FailureLocalizationResult.v0.schema.json",
+  "CoverageReport.v0": "CoverageReport.v0.schema.json",
   "ConformanceReport.v0": "ConformanceReport.v0.schema.json",
 };
 

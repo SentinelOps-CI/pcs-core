@@ -1,0 +1,23 @@
+{
+  "schema_version": "v0",
+  "run_id": "bench-run-invalid-scientific-memory-import",
+  "task_id": "labtrust-qc-release-v0",
+  "case_id": "invalid-scientific-memory-import",
+  "started_at": "2026-05-19T15:12:20Z",
+  "completed_at": "2026-05-19T15:12:20Z",
+  "commands": [
+    {
+      "command": "validate_release_chain C:/Users/mateo/pcs-core/examples/labtrust-release-invalid/failed_scientific_memory_import",
+      "exit_code": 1
+    }
+  ],
+  "artifacts_produced": [],
+  "observed_status": "passed",
+  "observed_failure_code": "scientific_memory_import_failed",
+  "observed_responsible_component": "scientific_memory",
+  "observed_repair_hint": "fix_import_report",
+  "duration_ms": 54,
+  "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+  "source_commit": "d444444444444444444444444444444444444444",
+  "signature_or_digest": "sha256:63914655bffe5a0b12c6e7d6a9380b7f4de6300aee4bfddb20a077a55a364f01"
+}

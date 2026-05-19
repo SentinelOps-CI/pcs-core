@@ -313,6 +313,49 @@ def _suite_computation() -> tuple[list[str], list[str], int]:
     return errors, [], checks_run
 
 
+@_record("benchmark")
+def _suite_benchmark() -> tuple[list[str], list[str], int]:
+    errors: list[str] = []
+    checks = 0
+    registry_path = examples_dir() / "benchmark_registry.valid.json"
+    if not registry_path.is_file():
+        errors.append("missing examples/benchmark_registry.valid.json")
+    else:
+        try:
+            validate_file(registry_path)
+            checks += 1
+        except ValidationError as exc:
+            errors.append(f"benchmark_registry.valid.json: {exc}")
+    from pcs_core.benchmark_runner import (
+        list_benchmark_suite_ids,
+        run_benchmark_suite,
+        validate_benchmark_fixtures,
+    )
+
+    errors.extend(validate_benchmark_fixtures())
+    checks += len(list_benchmark_suite_ids())
+    for suite_id in list_benchmark_suite_ids():
+        checks += 1
+        try:
+            report = run_benchmark_suite(suite_id)
+            from pcs_core.validate import validate_artifact
+
+            validate_artifact(report, "BenchmarkReport.v0")
+            summary = report.get("summary", {})
+            if summary.get("passed_cases") != summary.get("total_cases"):
+                errors.append(
+                    f"{suite_id}: {summary.get('passed_cases')}/{summary.get('total_cases')} cases passed",
+                )
+                for failure in report.get("failures", []):
+                    if isinstance(failure, dict):
+                        errors.append(
+                            f"{suite_id}/{failure.get('case_id')}: {failure.get('message')}",
+                        )
+        except (ValidationError, ValueError, FileNotFoundError) as exc:
+            errors.append(f"{suite_id}: {exc}")
+    return errors, [], checks
+
+
 @_record("lean-trust")
 def _suite_lean_trust() -> tuple[list[str], list[str], int]:
     errors: list[str] = []

@@ -1,0 +1,13 @@
+{
+  "schema_version": "v0",
+  "manifest_id": "failure-manifest-invalid-placeholder-commit",
+  "case_id": "invalid-placeholder-commit",
+  "task_id": "labtrust-qc-release-v0",
+  "failure_code": "placeholder_commit_detected",
+  "responsible_component": "runtime_producer",
+  "repair_hint_kind": "align_provenance",
+  "message": "Replace placeholder commits with pinned release commits.",
+  "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+  "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
+  "signature_or_digest": "sha256:e23e23cd52244bd060378d3274b508fbe0cf36fafd1b783c1d075cc550874a56"
+}

@@ -1,0 +1,17 @@
+{
+  "schema_version": "v0",
+  "case_id": "invalid-trace-hash",
+  "task_id": "labtrust-qc-release-v0",
+  "workflow_id": "labtrust.qc_release_v0.1",
+  "case_kind": "invalid_hash_mismatch",
+  "input_artifacts": {
+    "release_directory": "examples/labtrust-release-invalid/mismatched_trace_hash"
+  },
+  "expected_status": "failed",
+  "expected_failure_code": "trace_hash_mismatch",
+  "expected_responsible_component": "hashing",
+  "expected_repair_hint_kind": "align_hash",
+  "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+  "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
+  "signature_or_digest": "sha256:6bb9e78b8618c1dd958c4795f07d30dd0be7f9e79df82b752776a92fb8cc80c3"
+}

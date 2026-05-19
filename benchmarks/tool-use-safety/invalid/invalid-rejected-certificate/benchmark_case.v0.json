@@ -1,0 +1,17 @@
+{
+  "schema_version": "v0",
+  "case_id": "invalid-rejected-certificate",
+  "task_id": "tool-use-safety-v0",
+  "workflow_id": "agent_tool_use.safety_v0",
+  "case_kind": "invalid_certificate",
+  "input_artifacts": {
+    "release_directory": "benchmarks/tool-use-safety/input_releases/invalid-rejected-certificate"
+  },
+  "expected_status": "failed",
+  "expected_failure_code": "rejected_certificate",
+  "expected_responsible_component": "certificate_producer",
+  "expected_repair_hint_kind": "align_certificate_id",
+  "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+  "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
+  "signature_or_digest": "sha256:a1e2597ec6809b329e6233715c9349ea1add5e07a1a409dd0d8990466eb0b49d"
+}

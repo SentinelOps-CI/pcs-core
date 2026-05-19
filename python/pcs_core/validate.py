@@ -21,6 +21,11 @@ from pcs_core.protocol_validate import (
     validate_release_manifest_fixture_refs,
     validate_release_manifest_semantics,
 )
+from pcs_core.benchmark_validate import (
+    validate_benchmark_case_semantics,
+    validate_benchmark_registry_semantics,
+    validate_benchmark_task_semantics,
+)
 from pcs_core.lean_validate import (
     validate_lean_check_result_semantics,
     validate_proof_obligation_semantics,
@@ -67,6 +72,15 @@ ARTIFACT_SCHEMAS: dict[str, str] = {
     "ComputationWitness.v0": "ComputationWitness.v0.schema.json",
     "ProofObligation.v0": "ProofObligation.v0.schema.json",
     "LeanCheckResult.v0": "LeanCheckResult.v0.schema.json",
+    "BenchmarkTask.v0": "BenchmarkTask.v0.schema.json",
+    "BenchmarkCase.v0": "BenchmarkCase.v0.schema.json",
+    "BenchmarkRun.v0": "BenchmarkRun.v0.schema.json",
+    "BenchmarkReport.v0": "BenchmarkReport.v0.schema.json",
+    "BenchmarkRegistry.v0": "BenchmarkRegistry.v0.schema.json",
+    "ConformanceRun.v0": "ConformanceRun.v0.schema.json",
+    "FailureCaseManifest.v0": "FailureCaseManifest.v0.schema.json",
+    "FailureLocalizationResult.v0": "FailureLocalizationResult.v0.schema.json",
+    "CoverageReport.v0": "CoverageReport.v0.schema.json",
 }
 
 CERTIFIED_CLAIM_STATUSES = frozenset(
@@ -97,6 +111,70 @@ class ValidationError(Exception):
 
 
 def detect_artifact_type(data: dict[str, Any]) -> str | None:
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("registry_id"), str)
+        and isinstance(data.get("suites"), dict)
+        and "registry_version" in data
+    ):
+        return "BenchmarkRegistry.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("report_id"), str)
+        and isinstance(data.get("benchmark_suite_id"), str)
+        and isinstance(data.get("summary"), dict)
+    ):
+        return "BenchmarkReport.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("run_id"), str)
+        and isinstance(data.get("case_id"), str)
+        and "duration_ms" in data
+        and "observed_status" in data
+    ):
+        return "BenchmarkRun.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("case_id"), str)
+        and isinstance(data.get("case_kind"), str)
+        and "input_artifacts" in data
+    ):
+        return "BenchmarkCase.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("task_id"), str)
+        and isinstance(data.get("metrics"), list)
+        and "success_criteria" in data
+    ):
+        return "BenchmarkTask.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("coverage_id"), str)
+        and "coverage_ratio" in data
+        and "numerator" in data
+    ):
+        return "CoverageReport.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("result_id"), str)
+        and "localized_correctly" in data
+    ):
+        return "FailureLocalizationResult.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("manifest_id"), str)
+        and isinstance(data.get("failure_code"), str)
+        and "repair_hint_kind" in data
+    ):
+        return "FailureCaseManifest.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("run_id"), str)
+        and isinstance(data.get("suite"), str)
+        and "started_at" in data
+        and "completed_at" in data
+    ):
+        return "ConformanceRun.v0"
     if (
         data.get("schema_version") == "v0"
         and isinstance(data.get("suite"), str)
@@ -481,6 +559,36 @@ def validate_semantics(data: dict[str, Any], artifact_type: str) -> list[str]:
         errors.extend(validate_lean_check_result_semantics(data))
         return errors
 
+    if artifact_type == "BenchmarkRegistry.v0":
+        errors.extend(validate_benchmark_registry_semantics(data))
+        return errors
+
+    if artifact_type == "BenchmarkTask.v0":
+        errors.extend(validate_benchmark_task_semantics(data))
+        return errors
+
+    if artifact_type == "BenchmarkCase.v0":
+        errors.extend(validate_benchmark_case_semantics(data))
+        return errors
+
+    if artifact_type == "BenchmarkRun.v0":
+        return errors
+
+    if artifact_type == "BenchmarkReport.v0":
+        return errors
+
+    if artifact_type == "ConformanceRun.v0":
+        return errors
+
+    if artifact_type == "FailureCaseManifest.v0":
+        return errors
+
+    if artifact_type == "FailureLocalizationResult.v0":
+        return errors
+
+    if artifact_type == "CoverageReport.v0":
+        return errors
+
     if artifact_type == "ReleaseChainValidationResult.v0":
         errors.extend(validate_release_chain_validation_result_semantics(data))
         checks = data.get("checks")
@@ -581,6 +689,7 @@ def check_valid_examples(examples_dir: Path | None = None) -> None:
         "migration_report.valid.json",
         "proof_obligation.valid.json",
         "lean_check_result.valid.json",
+        "benchmark_registry.valid.json",
     ):
         validate_file(examples_dir / name)
 

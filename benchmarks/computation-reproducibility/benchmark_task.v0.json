@@ -1,0 +1,32 @@
+{
+  "schema_version": "v0",
+  "task_id": "computation-reproducibility-v0",
+  "workflow_id": "scientific_computation.reproducibility_v0",
+  "domain": "scientific_computation",
+  "description": "PCS benchmark task for computation-reproducibility-v0",
+  "input_case_set": {
+    "path": "benchmarks/computation-reproducibility",
+    "case_count": 2
+  },
+  "expected_outputs": {
+    "report_artifact_type": "BenchmarkReport.v0",
+    "minimum_pass_rate": 1.0
+  },
+  "metrics": [
+    "release_reproducibility",
+    "failure_localization",
+    "certificate_completeness",
+    "registry_coverage",
+    "formal_check_coverage",
+    "scientific_memory_interpretability"
+  ],
+  "success_criteria": {
+    "minimum_pass_rate": 1.0,
+    "minimum_failure_localization_accuracy": 1.0,
+    "minimum_formal_check_coverage": 1.0,
+    "minimum_registry_coverage": 0.95
+  },
+  "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+  "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
+  "signature_or_digest": "sha256:19847478840cd858b68ecdc29f8b4531289b6a7c9004892cb7869b4dc5e15c32"
+}

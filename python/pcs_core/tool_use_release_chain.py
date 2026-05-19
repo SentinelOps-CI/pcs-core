@@ -405,10 +405,24 @@ def validate_tool_use_release_chain(directory: Path) -> list[ReleaseChainIssue]:
     if tool_cert and tool_cert.get("status") != "CertificateChecked":
         issues.append(
             _issue(
-                "schema_validation_failed",
-                "tool_use_certificate.status must be CertificateChecked",
+                "rejected_certificate",
+                f"tool_use_certificate.status must be CertificateChecked (got {tool_cert.get('status')!r})",
             ),
         )
+
+    if trace:
+        tool_calls = trace.get("tool_calls")
+        if isinstance(tool_calls, list):
+            for index, call in enumerate(tool_calls):
+                if not isinstance(call, dict):
+                    continue
+                if call.get("authorization_status") == "rejected":
+                    issues.append(
+                        _issue(
+                            "unauthorized_tool_call",
+                            f"tool_calls[{index}].authorization_status is rejected",
+                        ),
+                    )
 
     manifest_v0 = _load_json(base / "release_manifest.v0.json")
     if manifest_v0:

@@ -1,0 +1,17 @@
+{
+  "schema_version": "v0",
+  "case_id": "invalid-scientific-memory-import",
+  "task_id": "labtrust-qc-release-v0",
+  "workflow_id": "labtrust.qc_release_v0.1",
+  "case_kind": "invalid_import",
+  "input_artifacts": {
+    "release_directory": "examples/labtrust-release-invalid/failed_scientific_memory_import"
+  },
+  "expected_status": "failed",
+  "expected_failure_code": "scientific_memory_import_failed",
+  "expected_responsible_component": "scientific_memory",
+  "expected_repair_hint_kind": "fix_import_report",
+  "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+  "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
+  "signature_or_digest": "sha256:f9f8d7dd028245f0e8876953eabe41a3f73d80351f8a15424cc5245108d80f29"
+}

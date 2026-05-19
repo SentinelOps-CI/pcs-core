@@ -1,0 +1,4 @@
+{
+  "repair_hint_kind": "align_provenance",
+  "message": "Remove or authorize tool calls flagged in the trace."
+}

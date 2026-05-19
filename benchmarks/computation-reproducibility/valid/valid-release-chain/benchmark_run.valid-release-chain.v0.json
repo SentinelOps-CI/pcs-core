@@ -1,0 +1,23 @@
+{
+  "schema_version": "v0",
+  "run_id": "bench-run-valid-release-chain",
+  "task_id": "computation-reproducibility-v0",
+  "case_id": "valid-release-chain",
+  "started_at": "2026-05-19T15:12:18Z",
+  "completed_at": "2026-05-19T15:12:18Z",
+  "commands": [
+    {
+      "command": "validate_release_chain C:/Users/mateo/pcs-core/examples/computation-release",
+      "exit_code": 0
+    }
+  ],
+  "artifacts_produced": [],
+  "observed_status": "passed",
+  "observed_failure_code": "",
+  "observed_responsible_component": "unknown",
+  "observed_repair_hint": "unknown",
+  "duration_ms": 69,
+  "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+  "source_commit": "d444444444444444444444444444444444444444",
+  "signature_or_digest": "sha256:e2a28d9def9aebf4024122cb72a959a9ba8f52de60649646b064c4768efe8a8c"
+}

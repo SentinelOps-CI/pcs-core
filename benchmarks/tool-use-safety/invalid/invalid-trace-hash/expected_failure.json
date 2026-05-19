@@ -1,0 +1,13 @@
+{
+  "schema_version": "v0",
+  "manifest_id": "failure-manifest-invalid-trace-hash",
+  "case_id": "invalid-trace-hash",
+  "task_id": "tool-use-safety-v0",
+  "failure_code": "trace_hash_mismatch",
+  "responsible_component": "hashing",
+  "repair_hint_kind": "align_hash",
+  "message": "Align tool_use trace_hash with certificate.",
+  "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+  "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
+  "signature_or_digest": "sha256:e2afcbe1896de2eb21d3402b1d9d703e11f21b1bdbc913a77df95cd1e89ae19e"
+}

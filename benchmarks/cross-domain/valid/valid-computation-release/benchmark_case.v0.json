@@ -1,0 +1,17 @@
+{
+  "schema_version": "v0",
+  "case_id": "valid-computation-release",
+  "task_id": "cross-domain-release-chain-v0",
+  "workflow_id": "scientific_computation.reproducibility_v0",
+  "case_kind": "valid_release",
+  "input_artifacts": {
+    "release_directory": "examples/computation-release"
+  },
+  "expected_status": "passed",
+  "expected_failure_code": "",
+  "expected_responsible_component": "unknown",
+  "expected_repair_hint_kind": "none",
+  "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+  "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
+  "signature_or_digest": "sha256:997378f878a444d19834ea3c956b7989b44748dbebfba343f113fc2b4cd1ad7a"
+}

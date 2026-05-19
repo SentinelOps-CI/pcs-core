@@ -1,0 +1,23 @@
+{
+  "schema_version": "v0",
+  "run_id": "bench-run-invalid-unauthorized-tool-call",
+  "task_id": "tool-use-safety-v0",
+  "case_id": "invalid-unauthorized-tool-call",
+  "started_at": "2026-05-19T15:12:20Z",
+  "completed_at": "2026-05-19T15:12:20Z",
+  "commands": [
+    {
+      "command": "validate_release_chain C:/Users/mateo/pcs-core/benchmarks/tool-use-safety/input_releases/invalid-unauthorized-tool-call",
+      "exit_code": 1
+    }
+  ],
+  "artifacts_produced": [],
+  "observed_status": "passed",
+  "observed_failure_code": "unauthorized_tool_call",
+  "observed_responsible_component": "runtime_producer",
+  "observed_repair_hint": "align_provenance",
+  "duration_ms": 56,
+  "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+  "source_commit": "d444444444444444444444444444444444444444",
+  "signature_or_digest": "sha256:2b8d67fef4bf5c6809720666d71e9b8b3cf7ad5d1f4969d50c45da93e7d2966d"
+}

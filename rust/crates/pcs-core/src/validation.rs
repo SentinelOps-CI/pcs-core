@@ -50,6 +50,18 @@ const ARTIFACT_SCHEMAS: &[(&str, &str)] = &[
     ("ComputationWitness.v0", "ComputationWitness.v0.schema.json"),
     ("ProofObligation.v0", "ProofObligation.v0.schema.json"),
     ("LeanCheckResult.v0", "LeanCheckResult.v0.schema.json"),
+    ("BenchmarkRegistry.v0", "BenchmarkRegistry.v0.schema.json"),
+    ("BenchmarkTask.v0", "BenchmarkTask.v0.schema.json"),
+    ("BenchmarkCase.v0", "BenchmarkCase.v0.schema.json"),
+    ("BenchmarkRun.v0", "BenchmarkRun.v0.schema.json"),
+    ("BenchmarkReport.v0", "BenchmarkReport.v0.schema.json"),
+    ("ConformanceRun.v0", "ConformanceRun.v0.schema.json"),
+    ("FailureCaseManifest.v0", "FailureCaseManifest.v0.schema.json"),
+    (
+        "FailureLocalizationResult.v0",
+        "FailureLocalizationResult.v0.schema.json",
+    ),
+    ("CoverageReport.v0", "CoverageReport.v0.schema.json"),
     ("ConformanceReport.v0", "ConformanceReport.v0.schema.json"),
     (
         "SemanticCheckExecution.v0",
@@ -71,6 +83,70 @@ const PROTOCOL_ARTIFACT_TYPES: &[&str] = &[
 
 pub fn detect_artifact_type(value: &Value) -> Option<&'static str> {
     let obj = value.as_object()?;
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("registry_id").and_then(|v| v.as_str()).is_some()
+        && obj.get("suites").map(|v| v.is_object()).unwrap_or(false)
+        && obj.contains_key("registry_version")
+    {
+        return Some("BenchmarkRegistry.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("report_id").and_then(|v| v.as_str()).is_some()
+        && obj.get("benchmark_suite_id").and_then(|v| v.as_str()).is_some()
+        && obj.get("summary").map(|v| v.is_object()).unwrap_or(false)
+    {
+        return Some("BenchmarkReport.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("run_id").and_then(|v| v.as_str()).is_some()
+        && obj.get("case_id").and_then(|v| v.as_str()).is_some()
+        && obj.contains_key("duration_ms")
+        && obj.contains_key("observed_status")
+    {
+        return Some("BenchmarkRun.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("case_id").and_then(|v| v.as_str()).is_some()
+        && obj.get("case_kind").and_then(|v| v.as_str()).is_some()
+        && obj.contains_key("input_artifacts")
+    {
+        return Some("BenchmarkCase.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("task_id").and_then(|v| v.as_str()).is_some()
+        && obj.get("metrics").map(|v| v.is_array()).unwrap_or(false)
+        && obj.contains_key("success_criteria")
+    {
+        return Some("BenchmarkTask.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("coverage_id").and_then(|v| v.as_str()).is_some()
+        && obj.contains_key("coverage_ratio")
+        && obj.contains_key("numerator")
+    {
+        return Some("CoverageReport.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("result_id").and_then(|v| v.as_str()).is_some()
+        && obj.contains_key("localized_correctly")
+    {
+        return Some("FailureLocalizationResult.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("manifest_id").and_then(|v| v.as_str()).is_some()
+        && obj.get("failure_code").and_then(|v| v.as_str()).is_some()
+        && obj.contains_key("repair_hint_kind")
+    {
+        return Some("FailureCaseManifest.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("run_id").and_then(|v| v.as_str()).is_some()
+        && obj.get("suite").and_then(|v| v.as_str()).is_some()
+        && obj.contains_key("started_at")
+        && obj.contains_key("completed_at")
+    {
+        return Some("ConformanceRun.v0");
+    }
     if obj.get("schema_version") == Some(&Value::String("v0".into()))
         && obj.get("suite").is_some()
         && obj.get("checks_passed").is_some()
@@ -487,6 +563,17 @@ mod tests {
     #[test]
     fn shared_hash_vectors_match_repo_fixtures() {
         shared_hash_vectors_match_repo_fixtures_inner();
+    }
+
+    #[test]
+    fn detect_benchmark_registry() {
+        let examples = examples_dir();
+        let path = examples.join("benchmark_registry.valid.json");
+        if !path.is_file() {
+            return;
+        }
+        let data: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
+        assert_eq!(detect_artifact_type(&data), Some("BenchmarkRegistry.v0"));
     }
 
     fn shared_hash_vectors_match_repo_fixtures_inner() {

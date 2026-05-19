@@ -1,0 +1,23 @@
+{
+  "schema_version": "v0",
+  "run_id": "bench-run-invalid-witness-hash",
+  "task_id": "computation-reproducibility-v0",
+  "case_id": "invalid-witness-hash",
+  "started_at": "2026-05-19T15:12:18Z",
+  "completed_at": "2026-05-19T15:12:18Z",
+  "commands": [
+    {
+      "command": "validate_release_chain C:/Users/mateo/pcs-core/benchmarks/computation-reproducibility/input_releases/invalid-witness-hash",
+      "exit_code": 1
+    }
+  ],
+  "artifacts_produced": [],
+  "observed_status": "passed",
+  "observed_failure_code": "rejected_computation_witness",
+  "observed_responsible_component": "certificate_producer",
+  "observed_repair_hint": "align_certificate_id",
+  "duration_ms": 69,
+  "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+  "source_commit": "d444444444444444444444444444444444444444",
+  "signature_or_digest": "sha256:58788aa4891688bae2c26faf389a4465bc4c248dcb26612c7472119f7d44dec0"
+}

@@ -1,0 +1,17 @@
+{
+  "schema_version": "v0",
+  "case_id": "valid-tool-use-release",
+  "task_id": "cross-domain-release-chain-v0",
+  "workflow_id": "agent_tool_use.safety_v0",
+  "case_kind": "valid_release",
+  "input_artifacts": {
+    "release_directory": "examples/tool-use-release"
+  },
+  "expected_status": "passed",
+  "expected_failure_code": "",
+  "expected_responsible_component": "unknown",
+  "expected_repair_hint_kind": "none",
+  "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+  "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
+  "signature_or_digest": "sha256:9f20d83a8bee39c92d634200af7bc985996117898ee1263e12786df6a28fa422"
+}

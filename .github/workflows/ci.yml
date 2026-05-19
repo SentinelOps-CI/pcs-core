@@ -46,6 +46,12 @@ jobs:
           test -f ../examples/computation-release/RELEASE_FIXTURE_MANIFEST.json
           pcs validate-release-chain ../examples/computation-release/
           pcs conformance run --suite computation
+          pcs benchmark validate
+          pcs benchmark run --suite labtrust-qc-release-v0
+          pcs benchmark run --suite tool-use-safety-v0
+          pcs benchmark run --suite formal-trust-kernel-v0
+          pcs conformance run --suite benchmark
+          pcs validate ../examples/benchmark_registry.valid.json
           pcs validate ../examples/tool_use_trace.valid.json
           pcs validate ../examples/tool_use_certificate.valid.json
           pytest -q tests/test_multidomain_workflows.py

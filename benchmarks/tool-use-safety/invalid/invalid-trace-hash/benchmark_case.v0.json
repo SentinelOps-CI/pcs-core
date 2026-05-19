@@ -1,0 +1,17 @@
+{
+  "schema_version": "v0",
+  "case_id": "invalid-trace-hash",
+  "task_id": "tool-use-safety-v0",
+  "workflow_id": "agent_tool_use.safety_v0",
+  "case_kind": "invalid_hash_mismatch",
+  "input_artifacts": {
+    "release_directory": "benchmarks/tool-use-safety/input_releases/invalid-trace-hash"
+  },
+  "expected_status": "failed",
+  "expected_failure_code": "trace_hash_mismatch",
+  "expected_responsible_component": "hashing",
+  "expected_repair_hint_kind": "align_hash",
+  "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+  "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
+  "signature_or_digest": "sha256:847c3036edd1d9f9969b08692d596aba9b2a16be837e347cd3e0d39ee5765660"
+}
