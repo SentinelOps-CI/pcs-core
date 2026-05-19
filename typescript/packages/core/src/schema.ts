@@ -49,6 +49,8 @@ const ARTIFACT_SCHEMAS: Record<ArtifactType, string> = {
   "ComputationRunReceipt.v0": "ComputationRunReceipt.v0.schema.json",
   "ResultArtifact.v0": "ResultArtifact.v0.schema.json",
   "ComputationWitness.v0": "ComputationWitness.v0.schema.json",
+  "ProofObligation.v0": "ProofObligation.v0.schema.json",
+  "LeanCheckResult.v0": "LeanCheckResult.v0.schema.json",
   "ConformanceReport.v0": "ConformanceReport.v0.schema.json",
 };
 

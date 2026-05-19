@@ -88,6 +88,136 @@ def file_digest(content: bytes) -> str:
     return f"sha256:{hashlib.sha256(content).hexdigest()}"
 
 
+def sync_legacy_manifest_provenance(directory: Path | None = None) -> dict[str, str]:
+    """Align RELEASE_FIXTURE_MANIFEST.json repo pins with pcs-core RC canonical values."""
+    from pcs_core.release_canonical import (
+        LABTRUST_RC_CERTIFYEDGE_COMMIT,
+        LABTRUST_RC_LABTRUST_GYM_COMMIT,
+        LABTRUST_RC_PCS_CORE_COMMIT,
+        LABTRUST_RC_PROVABILITY_FABRIC_COMMIT,
+        LABTRUST_RC_SCIENTIFIC_MEMORY_COMMIT,
+    )
+
+    base = directory or release_dir()
+    manifest_path = base / MANIFEST_NAME
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    updates = {
+        "pcs_core_commit": LABTRUST_RC_PCS_CORE_COMMIT,
+        "labtrust_gym_commit": LABTRUST_RC_LABTRUST_GYM_COMMIT,
+        "certifyedge_commit": LABTRUST_RC_CERTIFYEDGE_COMMIT,
+        "provability_fabric_commit": LABTRUST_RC_PROVABILITY_FABRIC_COMMIT,
+        "scientific_memory_commit": LABTRUST_RC_SCIENTIFIC_MEMORY_COMMIT,
+    }
+    manifest.update(updates)
+    write_json(manifest_path, manifest)
+    return updates
+
+
+def sync_release_artifact_provenance(directory: Path | None = None) -> int:
+    """Rewrite artifact source_commit fields to match RELEASE_FIXTURE_MANIFEST pins."""
+    from pcs_core.hash import canonical_hash
+
+    base = directory or release_dir()
+    manifest_path = base / MANIFEST_NAME
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    pins = {key: str(manifest[key]) for key in COMMIT_KEYS if key in manifest}
+
+    def commit_for_repo(repo: str) -> str | None:
+        key = manifest_commit_key(repo)
+        return pins.get(key) if key else None
+
+    def patch_node(obj: Any) -> bool:
+        changed = False
+        if isinstance(obj, dict):
+            repo = obj.get("source_repo")
+            if isinstance(repo, str):
+                expected = commit_for_repo(repo)
+                if expected and obj.get("source_commit") != expected:
+                    obj["source_commit"] = expected
+                    changed = True
+            for value in obj.values():
+                if patch_node(value):
+                    changed = True
+        elif isinstance(obj, list):
+            for item in obj:
+                if patch_node(item):
+                    changed = True
+        return changed
+
+    updated = 0
+    for name in MANIFEST_ARTIFACTS:
+        path = base / name
+        if not path.is_file():
+            continue
+        doc = json.loads(path.read_text(encoding="utf-8"))
+        if not patch_node(doc):
+            continue
+        if "signature_or_digest" in doc:
+            body = {k: v for k, v in doc.items() if k != "signature_or_digest"}
+            doc["signature_or_digest"] = canonical_hash(body)
+        write_json(path, doc)
+        updated += 1
+
+    sm_path = base / "scientific_memory_import_report.json"
+    if sm_path.is_file():
+        sm = json.loads(sm_path.read_text(encoding="utf-8"))
+        sm_commit = pins.get("scientific_memory_commit")
+        if sm_commit:
+            sm["scientific_memory_commit"] = sm_commit
+            sm["source_commit"] = sm_commit
+            write_json(sm_path, sm)
+            updated += 1
+    return updated
+
+
+def sync_release_chain_identity_pins(directory: Path | None = None) -> int:
+    """Align certificate_id and trace_hash fields with pcs-core RC canonical pins."""
+    from pcs_core.hash import canonical_hash
+    from pcs_core.release_canonical import LABTRUST_RC_CERTIFICATE_ID, LABTRUST_RC_TRACE_HASH
+
+    base = directory or release_dir()
+    cert_id = LABTRUST_RC_CERTIFICATE_ID
+    trace_hash = LABTRUST_RC_TRACE_HASH
+
+    def patch_node(obj: Any) -> bool:
+        changed = False
+        if isinstance(obj, dict):
+            if "certificate_id" in obj and obj.get("certificate_id") != cert_id:
+                obj["certificate_id"] = cert_id
+                changed = True
+            if "trace_hash" in obj and obj.get("trace_hash") != trace_hash:
+                obj["trace_hash"] = trace_hash
+                changed = True
+            if "certificate_refs" in obj and isinstance(obj["certificate_refs"], list):
+                refs = obj["certificate_refs"]
+                if refs != [cert_id]:
+                    obj["certificate_refs"] = [cert_id]
+                    changed = True
+            for value in obj.values():
+                if patch_node(value):
+                    changed = True
+        elif isinstance(obj, list):
+            for item in obj:
+                if patch_node(item):
+                    changed = True
+        return changed
+
+    updated = 0
+    for name in MANIFEST_ARTIFACTS:
+        path = base / name
+        if not path.is_file():
+            continue
+        doc = json.loads(path.read_text(encoding="utf-8"))
+        if not patch_node(doc):
+            continue
+        if "signature_or_digest" in doc:
+            body = {k: v for k, v in doc.items() if k != "signature_or_digest"}
+            doc["signature_or_digest"] = canonical_hash(body)
+        write_json(path, doc)
+        updated += 1
+    return updated
+
+
 def sync_legacy_manifest_artifact_hashes(directory: Path | None = None) -> dict[str, str]:
     """Align RELEASE_FIXTURE_MANIFEST.json artifact digests with on-disk bytes."""
     base = directory or release_dir()

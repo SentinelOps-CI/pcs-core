@@ -1,22 +1,16 @@
 /-!
-# PCS canonical hashing (skeleton)
-
-Cross-language digest rules are normative in pcs-core (`python/pcs_core/hash.py`).
-This module will host Lean-side definitions aligned with shared test vectors.
+# PCS canonical hashes (abstracted from JSON digests)
 -/
 
 namespace PCS
 
-/-- Placeholder for a SHA-256 digest string (`sha256:…`). -/
-abbrev HexDigest := String
+structure Hash where
+  value : String
+  deriving DecidableEq, Repr
 
-/-- Canonical JSON bytes are sorted-key UTF-8 with `signature_or_digest` stripped. -/
-structure CanonicalInput where
-  json : String
-  deriving Repr
+def Hash.ofString (value : String) : Hash := ⟨value⟩
 
-/-- Target invariant: `canonicalHash` is deterministic for a given artifact value. -/
-def canonicalHash (_input : CanonicalInput) : HexDigest :=
-  "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+instance : BEq Hash where
+  beq a b := a.value == b.value
 
 end PCS

@@ -313,6 +313,49 @@ def _suite_computation() -> tuple[list[str], list[str], int]:
     return errors, [], checks_run
 
 
+@_record("lean-trust")
+def _suite_lean_trust() -> tuple[list[str], list[str], int]:
+    errors: list[str] = []
+    checks = 0
+    for name in ("proof_obligation.valid.json", "lean_check_result.valid.json"):
+        path = examples_dir() / name
+        if not path.is_file():
+            errors.append(f"missing examples/{name}")
+            continue
+        try:
+            validate_file(path)
+            checks += 1
+        except ValidationError as exc:
+            errors.append(f"{name}: {exc}")
+    for release_name in ("labtrust-release", "tool-use-release", "computation-release"):
+        release_dir = examples_dir() / release_name
+        if not release_dir.is_dir():
+            continue
+        for artifact in ("proof_obligation.v0.json", "lean_check_result.v0.json"):
+            path = release_dir / artifact
+            if not path.is_file():
+                errors.append(f"{release_name}/{artifact} missing (run materialize-protocol.ps1)")
+                continue
+            try:
+                validate_file(path)
+                checks += 1
+            except ValidationError as exc:
+                errors.append(f"{release_name}/{artifact}: {exc}")
+        lean_result_path = release_dir / "lean_check_result.v0.json"
+        if lean_result_path.is_file():
+            lean_result = json.loads(lean_result_path.read_text(encoding="utf-8"))
+            if lean_result.get("status") != "ProofChecked":
+                errors.append(
+                    f"{release_name}/lean_check_result.v0.json: status must be ProofChecked",
+                )
+    lean_dir = repo_root() / "lean"
+    if not (lean_dir / "lakefile.lean").is_file():
+        errors.append("lean/lakefile.lean missing")
+    else:
+        checks += 1
+    return errors, [], checks
+
+
 @_record("multidomain")
 def _suite_multidomain() -> tuple[list[str], list[str], int]:
     profile_errors, _, profile_checks = _suite_workflow_profile()

@@ -122,7 +122,7 @@ pcs conformance run --suite computation
 pcs conformance run --suite multidomain
 ```
 
-See [workflow-profiles.md](workflow-profiles.md). Formal trust-boundary placeholders: `lean/PCS/` (`ComputationWitness.lean`, `HashBinding.lean`, `ReleaseChain.lean`).
+See [workflow-profiles.md](workflow-profiles.md). Formal trust envelope: [lean-trust-kernel.md](lean-trust-kernel.md) (`lean/PCS/`, `ProofObligation.v0`, `LeanCheckResult.v0`, `pcs extract-proof-obligations`, `pcs lean-check`).
 
 Tool-use invalid fixtures (`examples/tool-use-release-invalid/`) and computation invalid fixtures (`examples/computation-release-invalid/`) are enforced via `pcs examples check` and their conformance suites; each case must fail release-mode semantic validation with one precise failure class.
 

@@ -1,31 +1,46 @@
 /-!
-# Release-chain trust invariants (skeleton)
+# PCS trust-envelope predicates
 -/
+
+import PCS.Bundle
+import PCS.Certificate
+import PCS.Hash
 
 namespace PCS
 
-open PCS (HexDigest)
+def CertificateMatchesRuntime (cert : Certificate) (receipt : RuntimeReceipt) : Prop :=
+  cert.traceHash = receipt.traceHash ∧ cert.status = ArtifactStatus.CertificateChecked
 
-structure ValidationCheck where
-  checkId : String
-  status : String
-  registryRefs : List String
-  deriving Repr
+def VerificationAdmitsBundle (verification : VerificationResult) (bundleHash : Hash) : Prop :=
+  verification.status = ArtifactStatus.ProofChecked ∧
+  verification.verifiedInputBundleHash = bundleHash ∧
+  verification.releaseBlockingChecksPassed = true
 
-/-- Invariant: ProofChecked releases have no failed release-blocking checks. -/
-def proofCheckedHasNoFailedBlocking (checks : List ValidationCheck) : Prop :=
-  ∀ check ∈ checks, check.status ≠ "failed"
+def SignedBundleAdmissible (signedInputHash : Hash) (verifiedInputHash : Hash) : Prop :=
+  signedInputHash = verifiedInputHash
 
-/-- Invariant: signed bundle hash equals verified input bundle hash (PF export). -/
-def signedBundleMatchesVerifiedInput (signedHash verifiedHash : HexDigest) : Prop :=
-  signedHash = verifiedHash
+def ReleaseChainAdmissible
+    (cert : Certificate)
+    (receipt : RuntimeReceipt)
+    (verification : VerificationResult)
+    (bundleHash : Hash)
+    (signedInputHash : Hash) : Prop :=
+  CertificateMatchesRuntime cert receipt ∧
+  VerificationAdmitsBundle verification bundleHash ∧
+  SignedBundleAdmissible signedInputHash verification.verifiedInputBundleHash
 
-/-- Invariant: ProofChecked computation release requires CertificateChecked witness. -/
-def proofCheckedComputationRequiresCheckedWitness (releaseStatus witnessStatus : String) : Prop :=
-  releaseStatus ≠ "ProofChecked" ∨ witnessStatus = "CertificateChecked"
+/-- Certificate status is CertificateChecked in any admissible release. -/
+def certificateCheckedInAdmissibleRelease (cert : Certificate) (receipt : RuntimeReceipt)
+    (verification : VerificationResult) (bundleHash signedInputHash : Hash)
+    (h : ReleaseChainAdmissible cert receipt verification bundleHash signedInputHash) :
+    cert.status = ArtifactStatus.CertificateChecked :=
+  h.left.right
 
-/-- Invariant: signed computation bundle binds PF-verified certified bundle hash. -/
-def signedComputationBundleMatchesCertified (signedHash certifiedHash : HexDigest) : Prop :=
-  signedHash = certifiedHash
+/-- Verification status is ProofChecked in any admissible release. -/
+def verificationProofCheckedInAdmissibleRelease (cert : Certificate) (receipt : RuntimeReceipt)
+    (verification : VerificationResult) (bundleHash signedInputHash : Hash)
+    (h : ReleaseChainAdmissible cert receipt verification bundleHash signedInputHash) :
+    verification.status = ArtifactStatus.ProofChecked :=
+  h.right.left.left
 
 end PCS

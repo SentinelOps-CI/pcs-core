@@ -381,6 +381,45 @@ def main(argv: list[str] | None = None) -> int:
     p_conformance_run.add_argument("--json", action="store_true", help="Emit machine-readable report")
     p_conformance_run.add_argument("--out", type=Path, default=None, help="Write report JSON to path")
 
+    p_extract_obligations = sub.add_parser(
+        "extract-proof-obligations",
+        help="Extract ProofObligation.v0 from a release fixture directory",
+    )
+    p_extract_obligations.add_argument(
+        "--release",
+        type=Path,
+        required=True,
+        help="Path to release_manifest.v0.json or release directory",
+    )
+    p_extract_obligations.add_argument(
+        "--out",
+        type=Path,
+        required=True,
+        help="Output ProofObligation.v0 JSON path",
+    )
+
+    p_lean_check = sub.add_parser(
+        "lean-check",
+        help="Check ProofObligation.v0 against the PCS Lean trust kernel catalog",
+    )
+    p_lean_check.add_argument(
+        "--obligations",
+        type=Path,
+        required=True,
+        help="ProofObligation.v0 JSON path",
+    )
+    p_lean_check.add_argument(
+        "--out",
+        type=Path,
+        required=True,
+        help="Output LeanCheckResult.v0 JSON path",
+    )
+    p_lean_check.add_argument(
+        "--skip-lean-build",
+        action="store_true",
+        help="Skip lake build (for tests only)",
+    )
+
     args = parser.parse_args(argv)
 
     if args.command == "validate":
@@ -435,9 +474,53 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "conformance" and args.conformance_cmd == "run":
         return cmd_conformance_run(args.suite, json_output=args.json, out_path=args.out)
+    if args.command == "extract-proof-obligations":
+        return cmd_extract_proof_obligations(args.release, args.out)
+    if args.command == "lean-check":
+        return cmd_lean_check(args.obligations, args.out, skip_lean_build=args.skip_lean_build)
 
     parser.print_help()
     return 2
+
+
+def cmd_extract_proof_obligations(release: Path, out_path: Path) -> int:
+    from pcs_core.lean_trust import extract_proof_obligations_from_release
+
+    release_path = release.resolve()
+    if release_path.is_file():
+        release_dir = release_path.parent
+    else:
+        release_dir = release_path
+    try:
+        doc = extract_proof_obligations_from_release(release_dir)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(json.dumps(doc, indent=2) + "\n", encoding="utf-8")
+        validate_file(out_path)
+        print(f"OK ProofObligation.v0 {out_path}")
+        return 0
+    except (ValidationError, ValueError) as exc:
+        print(f"FAIL extract-proof-obligations: {exc}", file=sys.stderr)
+        return 1
+
+
+def cmd_lean_check(obligations_path: Path, out_path: Path, *, skip_lean_build: bool = False) -> int:
+    from pcs_core.lean_trust import run_lean_check
+
+    try:
+        obligations_doc = _load_json(obligations_path)
+        validate_artifact(obligations_doc, "ProofObligation.v0")
+        result = run_lean_check(
+            obligations_doc,
+            require_lean_build=not skip_lean_build,
+        )
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+        validate_file(out_path)
+        print(f"OK LeanCheckResult.v0 {out_path} status={result.get('status')}")
+        return 0 if result.get("status") == "ProofChecked" else 1
+    except (ValidationError, ValueError) as exc:
+        print(f"FAIL lean-check: {exc}", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":

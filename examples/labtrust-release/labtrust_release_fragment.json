@@ -4,10 +4,10 @@
   "source_repo": "https://github.com/fraware/LabTrust-Gym",
   "source_commit": "17ed831acfd775889ab497d11004cceb083a9c2d",
   "component_version": "pcs-v0.1.0-rc1",
-  "generated_at": "2026-05-18T21:29:17Z",
+  "generated_at": "2026-05-18T23:17:38Z",
   "upstream_release_manifest": {
     "path": "release_manifest.v0.json",
-    "sha256": "sha256:ea0d110deabd9b960b85c7a23047de976002c73107982c4b1e97102ffb388bcc"
+    "sha256": "sha256:565e63be650694f0aa5d6225e80317c67b25c80f136acecb1781a6008121c50f"
   },
   "handoff_artifacts": [
     "handoff_manifest.runtime_to_certificate.v0.json"
@@ -28,12 +28,12 @@
     },
     "science_claim_bundle.pending.json": {
       "artifact_type": "ScienceClaimBundle.v0",
-      "sha256": "sha256:406d376c6d26eb949c32f2b6c6f6578aa877f24c9ea0cb0a8b87bd377c72cfe0"
+      "sha256": "sha256:f71e6d92c910f6db94661c712e06cf04c946bf560ede48346dd15e88cc54c6c8"
     },
     "science_claim_bundle.certified.json": {
       "artifact_type": "ScienceClaimBundle.v0",
-      "sha256": "sha256:bb740698a01c4e918ca0f346e5bfaed83e6665da8df84e931c0d50e03ce82ffe"
+      "sha256": "sha256:b8af33a7b24abf12fd938a59af6be91ac5e761365d8ecf3639fd0f196969de36"
     }
   },
-  "signature_or_digest": "sha256:492a4378ce5de225b7be344dbfb5dd734313d8f53d9af15f29722d9df524f0ea"
+  "signature_or_digest": "sha256:3ed3c3f45e72180725d666334a106900278665d5177e01e1b80e217606e39a0d"
 }

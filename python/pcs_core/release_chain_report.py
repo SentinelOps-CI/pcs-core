@@ -162,6 +162,21 @@ def build_release_chain_validation_result(
         artifacts_checked = len(TOOL_USE_MANIFEST_ARTIFACTS)
     else:
         artifacts_checked = len(MANIFEST_ARTIFACTS)
+
+    formal_checks: list[dict[str, Any]] | None = None
+    lean_result_path = base / "lean_check_result.v0.json"
+    if lean_result_path.is_file():
+        try:
+            lean_result = json.loads(lean_result_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            lean_result = None
+        if isinstance(lean_result, dict):
+            from pcs_core.lean_trust import formal_checks_from_lean_result
+
+            mapped = formal_checks_from_lean_result(lean_result)
+            if mapped:
+                formal_checks = mapped
+
     body: dict[str, Any] = {
         "schema_version": "v0",
         "validation_id": validation_id,
@@ -180,6 +195,8 @@ def build_release_chain_validation_result(
         "source_commit": source_commit,
         "signature_or_digest": PLACEHOLDER_DIGEST,
     }
+    if formal_checks is not None:
+        body["formal_checks"] = formal_checks
     body["signature_or_digest"] = canonical_hash(body)
     return body
 

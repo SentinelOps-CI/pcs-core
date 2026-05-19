@@ -110,6 +110,7 @@ def _with_digest(doc: dict[str, Any]) -> dict[str, Any]:
 def labtrust_release_manifest_body(
     *,
     validation_artifact_path: str = "release_chain_validation_result.v0.json",
+    lean_digests: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """ReleaseManifest.v0 derived from RELEASE_FIXTURE_MANIFEST.json on disk."""
     legacy = _load_legacy_release_manifest()
@@ -130,7 +131,7 @@ def labtrust_release_manifest_body(
             "sha256": str(digest),
         }
     pcs_commit = str(legacy.get("pcs_core_commit", PCS_CORE_COMMIT))
-    certified_hash = str(legacy_artifacts["science_claim_bundle.certified.json"])
+    certified_file_hash = str(legacy_artifacts["science_claim_bundle.certified.json"])
     signed_hash = str(legacy_artifacts["signed_science_claim_bundle.json"])
     validation_path = "release_chain_validation_result.v0.json"
     from pcs_core.paths import examples_dir
@@ -141,7 +142,7 @@ def labtrust_release_manifest_body(
         validation_digest = file_digest(validation_file.read_bytes())
     else:
         validation_digest = PLACEHOLDER_DIGEST
-    return {
+    body: dict[str, Any] = {
         "schema_version": "v0",
         "release_id": RELEASE_ID,
         "release_candidate": str(legacy.get("release_candidate", "pcs-v0.1.0-rc1")),
@@ -151,7 +152,7 @@ def labtrust_release_manifest_body(
         "chain_root": {
             "trace_hash": LABTRUST_RC_TRACE_HASH,
             "certificate_id": LABTRUST_RC_CERTIFICATE_ID,
-            "certified_bundle_hash": certified_hash,
+            "certified_bundle_hash": LABTRUST_RC_CERTIFIED_BUNDLE_HASH,
             "signed_bundle_hash": signed_hash,
         },
         "release_chain_validation_result": {
@@ -190,16 +191,28 @@ def labtrust_release_manifest_body(
         "release_status": "Validated",
         "signature_or_digest": PLACEHOLDER_DIGEST,
     }
+    if lean_digests:
+        from pcs_core.lean_materialize import lean_trust_manifest_refs
+
+        body.update(lean_trust_manifest_refs(lean_digests))
+    return body
 
 
-def release_manifest_valid(*, for_examples_tree: bool = False) -> dict[str, Any]:
+def release_manifest_valid(
+    *,
+    for_examples_tree: bool = False,
+    lean_digests: dict[str, str] | None = None,
+) -> dict[str, Any]:
     validation_path = (
         "release_chain_validation_result.valid.json"
         if for_examples_tree
         else "release_chain_validation_result.v0.json"
     )
     return _with_digest(
-        labtrust_release_manifest_body(validation_artifact_path=validation_path),
+        labtrust_release_manifest_body(
+            validation_artifact_path=validation_path,
+            lean_digests=lean_digests,
+        ),
     )
 
 
@@ -439,7 +452,11 @@ LABTRUST_PROTOCOL_ARTIFACTS = {
 }
 
 
-def write_labtrust_protocol_artifacts(directory: Path) -> None:
+def write_labtrust_protocol_artifacts(
+    directory: Path,
+    *,
+    lean_digests: dict[str, str] | None = None,
+) -> None:
     """Write Phase 2 protocol artifacts into a release fixture directory."""
     from pcs_core.release_chain_report import build_release_chain_validation_result
 
@@ -456,8 +473,9 @@ def write_labtrust_protocol_artifacts(directory: Path) -> None:
         json.dumps(validation, indent=2) + "\n",
         encoding="utf-8",
     )
+    manifest_body = release_manifest_valid(lean_digests=lean_digests)
     (directory / "release_manifest.v0.json").write_text(
-        json.dumps(release_manifest_valid(), indent=2) + "\n",
+        json.dumps(manifest_body, indent=2) + "\n",
         encoding="utf-8",
     )
     for filename, builder in LABTRUST_HANDOFF_ARTIFACTS.items():

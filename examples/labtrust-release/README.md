@@ -43,6 +43,21 @@ Windows PowerShell (repo root, no `just` required):
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/materialize-labtrust-protocol.ps1
 ```
 
+## Formal checks (Lean trust kernel)
+
+After materializing protocol artifacts, each release directory includes:
+
+- `proof_obligation.v0.json` — extracted structural obligations
+- `lean_check_result.v0.json` — catalog check outcome (`ProofChecked` when the envelope is coherent)
+
+See [docs/lean-trust-kernel.md](../../docs/lean-trust-kernel.md).
+
+```bash
+pcs extract-proof-obligations --release examples/labtrust-release/ --out examples/labtrust-release/proof_obligation.v0.json
+pcs lean-check --obligations examples/labtrust-release/proof_obligation.v0.json --out examples/labtrust-release/lean_check_result.v0.json
+cd lean && lake build
+```
+
 ## Validation
 
 ```bash

@@ -8,8 +8,8 @@
   "chain_root": {
     "trace_hash": "sha256:42ce47fca8ec10a9c65c8d9b9384c8be52094c93d46aa9705ce7c2fa2b8c89e4",
     "certificate_id": "cert-tool-use-safety-v0",
-    "certified_bundle_hash": "sha256:e80f0303f26408c4ee7eba2be4dce097794a7ac8837b2d967e83fa50b7dd17cd",
-    "signed_bundle_hash": "sha256:6bd6088e18a82f3eef22adaba8db91d0f2942142af35b2a698d5d87b92f1331a"
+    "certified_bundle_hash": "sha256:21adad1e4817811766d484422d68ac13a056849b04e9143dcb583a87b70a9e30",
+    "signed_bundle_hash": "sha256:c1ecda744f3d3a7e55724d5555f8d97121fb8e46f6b6d83d871bab0b11985b15"
   },
   "release_chain_validation_result": {
     "path": "release_chain_validation_result.v0.json",
@@ -17,7 +17,7 @@
   },
   "canonical_signed_bundle": {
     "path": "signed_science_claim_bundle.json",
-    "sha256": "sha256:6bd6088e18a82f3eef22adaba8db91d0f2942142af35b2a698d5d87b92f1331a"
+    "sha256": "sha256:c1ecda744f3d3a7e55724d5555f8d97121fb8e46f6b6d83d871bab0b11985b15"
   },
   "canonical_claim_id": "claim-qc-release-v0.1",
   "limitations_notice": "This artifact is a proof-carrying tool-use simulation result. It is not a guarantee that a real deployed agent is safe.",
@@ -90,7 +90,7 @@
       "producer": "Provability Fabric",
       "source_repo": "https://github.com/SentinelOps-CI/provability-fabric",
       "source_commit": "c333333333333333333333333333333333333333",
-      "sha256": "sha256:62a27aa4a2378a8a1462a583e9e2aae350c8252b29e3450fe9a63034f90f6b31"
+      "sha256": "sha256:7ed898a96edbe59275a337da6b537f8563598f064fd770a887d13170f3112525"
     },
     "signed_science_claim_bundle.json": {
       "artifact_type": "SignedScienceClaimBundle.v0",
@@ -102,5 +102,13 @@
     }
   },
   "release_status": "Validated",
-  "signature_or_digest": "sha256:f1149d45cc4bd193ccc8151c5d55e2cc70621a75f55de6f95c1b32811c837b1e"
+  "signature_or_digest": "sha256:a36994d8089a3335fca0b67e50be61a46fae8d53b4e68bc1fe1adda43de87ef4",
+  "proof_obligation": {
+    "path": "proof_obligation.v0.json",
+    "sha256": "sha256:850557b7f2e5c97c8c8de3ef8ff54ffad0372068705eeea5709dc545d57c1e3e"
+  },
+  "lean_check_result": {
+    "path": "lean_check_result.v0.json",
+    "sha256": "sha256:98dd9cb225939cce5a6896dc608a290f90f429ab8a67ea58ac747b5f48f81529"
+  }
 }

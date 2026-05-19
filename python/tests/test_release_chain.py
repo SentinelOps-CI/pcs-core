@@ -78,8 +78,17 @@ def test_canonical_rc_pin_values_in_manifest_and_artifacts() -> None:
     assert manifest["certifyedge_commit"] == LABTRUST_RC_CERTIFYEDGE_COMMIT
     assert manifest["provability_fabric_commit"] == LABTRUST_RC_PROVABILITY_FABRIC_COMMIT
     assert manifest["scientific_memory_commit"] == LABTRUST_RC_SCIENTIFIC_MEMORY_COMMIT
+    from pcs_core.release_fixtures import file_digest
+
+    certified_path = release_dir() / "science_claim_bundle.certified.json"
+    assert manifest["artifacts"]["science_claim_bundle.certified.json"] == file_digest(
+        certified_path.read_bytes(),
+    )
+    release_manifest = json.loads(
+        (release_dir() / "release_manifest.v0.json").read_text(encoding="utf-8"),
+    )
     assert (
-        manifest["artifacts"]["science_claim_bundle.certified.json"]
+        release_manifest["chain_root"]["certified_bundle_hash"]
         == LABTRUST_RC_CERTIFIED_BUNDLE_HASH
     )
 

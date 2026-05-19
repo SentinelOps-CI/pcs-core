@@ -21,6 +21,10 @@ from pcs_core.protocol_validate import (
     validate_release_manifest_fixture_refs,
     validate_release_manifest_semantics,
 )
+from pcs_core.lean_validate import (
+    validate_lean_check_result_semantics,
+    validate_proof_obligation_semantics,
+)
 from pcs_core.computation_validate import (
     validate_computation_run_receipt_semantics,
     validate_computation_witness_semantics,
@@ -61,6 +65,8 @@ ARTIFACT_SCHEMAS: dict[str, str] = {
     "ComputationRunReceipt.v0": "ComputationRunReceipt.v0.schema.json",
     "ResultArtifact.v0": "ResultArtifact.v0.schema.json",
     "ComputationWitness.v0": "ComputationWitness.v0.schema.json",
+    "ProofObligation.v0": "ProofObligation.v0.schema.json",
+    "LeanCheckResult.v0": "LeanCheckResult.v0.schema.json",
 }
 
 CERTIFIED_CLAIM_STATUSES = frozenset(
@@ -103,6 +109,21 @@ def detect_artifact_type(data: dict[str, Any]) -> str | None:
         return "SemanticCheckExecution.v0"
     if "from_version" in data and "to_version" in data and "changes" in data and "artifact_type" in data:
         return "MigrationReport.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("check_id"), str)
+        and isinstance(data.get("proof_obligation_id"), str)
+        and "lean_theorem" in data
+        and "lean_version" in data
+    ):
+        return "LeanCheckResult.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("obligation_id"), str)
+        and isinstance(data.get("obligations"), list)
+        and "lean_module" in data
+    ):
+        return "ProofObligation.v0"
     if "validation_id" in data and "artifacts_checked" in data:
         return "ReleaseChainValidationResult.v0"
     if (
@@ -452,6 +473,14 @@ def validate_semantics(data: dict[str, Any], artifact_type: str) -> list[str]:
         errors.extend(validate_computation_witness_semantics(data))
         return errors
 
+    if artifact_type == "ProofObligation.v0":
+        errors.extend(validate_proof_obligation_semantics(data))
+        return errors
+
+    if artifact_type == "LeanCheckResult.v0":
+        errors.extend(validate_lean_check_result_semantics(data))
+        return errors
+
     if artifact_type == "ReleaseChainValidationResult.v0":
         errors.extend(validate_release_chain_validation_result_semantics(data))
         checks = data.get("checks")
@@ -550,6 +579,8 @@ def check_valid_examples(examples_dir: Path | None = None) -> None:
         "release_chain_validation_result.valid.json",
         "artifact_registry.valid.json",
         "migration_report.valid.json",
+        "proof_obligation.valid.json",
+        "lean_check_result.valid.json",
     ):
         validate_file(examples_dir / name)
 

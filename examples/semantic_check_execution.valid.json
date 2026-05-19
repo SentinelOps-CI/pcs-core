@@ -241,6 +241,36 @@
       "enforcement_layer": "artifact_validate"
     },
     {
+      "registry_ref": "LeanCheckResult.v0.lean_theorem_in_catalog",
+      "artifact_type": "LeanCheckResult.v0",
+      "check_id": "lean_theorem_in_catalog",
+      "severity": "required",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "registry_metadata"
+    },
+    {
+      "registry_ref": "LeanCheckResult.v0.obligation_results_match_proof_obligation",
+      "artifact_type": "LeanCheckResult.v0",
+      "check_id": "obligation_results_match_proof_obligation",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ProofObligation.v0.obligations_reference_known_kinds",
+      "artifact_type": "ProofObligation.v0",
+      "check_id": "obligations_reference_known_kinds",
+      "severity": "required",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
       "registry_ref": "ReleaseChainValidationResult.v0.status_matches_check_outcomes",
       "artifact_type": "ReleaseChainValidationResult.v0",
       "check_id": "status_matches_check_outcomes",
@@ -501,5 +531,5 @@
       "enforcement_layer": "registry_metadata"
     }
   ],
-  "signature_or_digest": "sha256:9ee30742d83c60e68d9c3743a91952639d7be6c28fa803610c93c9f1a612e333"
+  "signature_or_digest": "sha256:2eff7c2f8a2c05957db5a5223ce3fdf7e5b9ee3e5bbe7789c0e2ceb66ae9691d"
 }

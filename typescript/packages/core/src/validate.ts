@@ -49,6 +49,8 @@ export type ArtifactType =
   | "ComputationRunReceipt.v0"
   | "ResultArtifact.v0"
   | "ComputationWitness.v0"
+  | "ProofObligation.v0"
+  | "LeanCheckResult.v0"
   | "ConformanceReport.v0";
 
 const PROTOCOL_ARTIFACT_TYPES = new Set<ArtifactType>([
@@ -75,6 +77,23 @@ export function detectArtifactType(data: Record<string, unknown>): ArtifactType 
   }
   if ("from_version" in data && "to_version" in data && "changes" in data && "artifact_type" in data) {
     return "MigrationReport.v0";
+  }
+  if (
+    data.schema_version === "v0" &&
+    typeof data.check_id === "string" &&
+    typeof data.proof_obligation_id === "string" &&
+    "lean_theorem" in data &&
+    "lean_version" in data
+  ) {
+    return "LeanCheckResult.v0";
+  }
+  if (
+    data.schema_version === "v0" &&
+    typeof data.obligation_id === "string" &&
+    Array.isArray(data.obligations) &&
+    "lean_module" in data
+  ) {
+    return "ProofObligation.v0";
   }
   if ("validation_id" in data && "artifacts_checked" in data) {
     return "ReleaseChainValidationResult.v0";

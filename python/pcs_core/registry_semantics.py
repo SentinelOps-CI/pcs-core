@@ -43,6 +43,9 @@ CHECK_ENFORCEMENT: dict[str, EnforcementLayer] = {
     "result_hashes_match_result_artifacts": "artifact_validate",
     "code_commit_present": "artifact_validate",
     "computation_status_checked_for_release": "release_chain",
+    "obligations_reference_known_kinds": "artifact_validate",
+    "obligation_results_match_proof_obligation": "artifact_validate",
+    "lean_theorem_in_catalog": "registry_metadata",
 }
 
 DEFERRAL_REASONS: dict[str, str] = {

@@ -353,9 +353,12 @@ def main() -> int:
     if vrf_path.is_file():
         vrf = json.loads(vrf_path.read_text(encoding="utf-8"))
         verified = vrf.get("verified_input")
-        if isinstance(verified, dict):
-            verified["certificate_id"] = TOOL_USE_CERT_ID
-            verified["bundle_hash"] = certified_digest
+        if not isinstance(verified, dict):
+            verified = {}
+            vrf["verified_input"] = verified
+        verified["certificate_id"] = TOOL_USE_CERT_ID
+        verified["trace_hash"] = trace["trace_hash"]
+        verified["bundle_hash"] = certified_digest
         _write_json(vrf_path, _with_digest(vrf))
     signed_path = release / "signed_science_claim_bundle.json"
     if signed_path.is_file():
@@ -376,8 +379,10 @@ def main() -> int:
         "chain_root": {
             "trace_hash": trace["trace_hash"],
             "certificate_id": TOOL_USE_CERT_ID,
-            "certified_bundle_hash": canonical_hash(certified),
-            "signed_bundle_hash": canonical_hash(signed),
+            "certified_bundle_hash": certified_digest,
+            "signed_bundle_hash": file_digest(
+                (release / "signed_science_claim_bundle.json").read_bytes(),
+            ),
         },
         "release_chain_validation_result": {
             "path": "release_chain_validation_result.v0.json",
@@ -385,7 +390,9 @@ def main() -> int:
         },
         "canonical_signed_bundle": {
             "path": "signed_science_claim_bundle.json",
-            "sha256": canonical_hash(signed),
+            "sha256": file_digest(
+                (release / "signed_science_claim_bundle.json").read_bytes(),
+            ),
         },
         "canonical_claim_id": str(certified["claim_artifact"]["artifact_id"]),
         "limitations_notice": workflow_profile_tool_use()["limitations_notice"],
@@ -863,6 +870,10 @@ def main() -> int:
     }
     _write_json(release / "RELEASE_FIXTURE_MANIFEST.json", legacy_manifest)
 
+    from pcs_core.lean_materialize import patch_release_manifest_lean_refs
+
+    patch_release_manifest_lean_refs(release, source_commit=PCS_COMMIT)
+
     for rel in (
         "tool_use_trace.valid.json",
         "tool_use_certificate.valid.json",
@@ -871,6 +882,8 @@ def main() -> int:
         "release_chain_validation_result.v0.json",
         "handoff_to_certifyedge.json",
         "handoff_to_pf.json",
+        "proof_obligation.v0.json",
+        "lean_check_result.v0.json",
     ):
         validate_file(release / rel)
     validate_file(examples_dir() / "artifact_registry.valid.json")

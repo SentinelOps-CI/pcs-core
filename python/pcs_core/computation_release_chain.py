@@ -393,16 +393,22 @@ def validate_computation_release_chain(directory: Path) -> list[ReleaseChainIssu
             ),
         )
 
-    certified_hash = artifacts.get("science_claim_bundle.certified.json") if isinstance(artifacts, dict) else None
-    if certified_hash and verification:
+    from pcs_core.bundle_identity import resolve_certified_bundle_identity_hash
+
+    bundle_identity = resolve_certified_bundle_identity_hash(
+        base,
+        manifest_artifacts=artifacts if isinstance(artifacts, dict) else None,
+    )
+    if bundle_identity and verification:
         verified = verification.get("verified_input")
         if isinstance(verified, dict):
             bundle_hash = verified.get("bundle_hash")
-            if bundle_hash and bundle_hash != certified_hash:
+            if bundle_hash and bundle_hash != bundle_identity:
                 issues.append(
                     _issue(
                         "verified_input_hash_mismatch",
-                        f"verified_input.bundle_hash {bundle_hash} != manifest certified bundle hash",
+                        f"verified_input.bundle_hash {bundle_hash} "
+                        f"!= certified bundle identity hash {bundle_identity}",
                     ),
                 )
 

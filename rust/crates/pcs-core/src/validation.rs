@@ -48,6 +48,8 @@ const ARTIFACT_SCHEMAS: &[(&str, &str)] = &[
     ("ComputationRunReceipt.v0", "ComputationRunReceipt.v0.schema.json"),
     ("ResultArtifact.v0", "ResultArtifact.v0.schema.json"),
     ("ComputationWitness.v0", "ComputationWitness.v0.schema.json"),
+    ("ProofObligation.v0", "ProofObligation.v0.schema.json"),
+    ("LeanCheckResult.v0", "LeanCheckResult.v0.schema.json"),
     ("ConformanceReport.v0", "ConformanceReport.v0.schema.json"),
     (
         "SemanticCheckExecution.v0",
@@ -88,6 +90,21 @@ pub fn detect_artifact_type(value: &Value) -> Option<&'static str> {
         && obj.contains_key("artifact_type")
     {
         return Some("MigrationReport.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("check_id").and_then(|v| v.as_str()).is_some()
+        && obj.get("proof_obligation_id").and_then(|v| v.as_str()).is_some()
+        && obj.contains_key("lean_theorem")
+        && obj.contains_key("lean_version")
+    {
+        return Some("LeanCheckResult.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("obligation_id").and_then(|v| v.as_str()).is_some()
+        && obj.get("obligations").map(|v| v.is_array()).unwrap_or(false)
+        && obj.contains_key("lean_module")
+    {
+        return Some("ProofObligation.v0");
     }
     if obj.contains_key("validation_id") && obj.contains_key("artifacts_checked") {
         return Some("ReleaseChainValidationResult.v0");

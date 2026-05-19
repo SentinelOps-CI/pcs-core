@@ -24,6 +24,7 @@ from pcs_core.release_fixtures import (
     is_release_pattern_placeholder,
     is_zero_commit,
 )
+from pcs_core.bundle_identity import resolve_certified_bundle_identity_hash
 from pcs_core.validate import ValidationError, validate_file
 
 _DIGEST_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
@@ -553,8 +554,11 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
             ),
         )
 
-    certified_hash = artifacts.get("science_claim_bundle.certified.json")
-    if certified_hash and verification:
+    bundle_identity = resolve_certified_bundle_identity_hash(
+        base,
+        manifest_artifacts=artifacts if isinstance(artifacts, dict) else None,
+    )
+    if bundle_identity and verification:
         verified = verification.get("verified_input")
         if isinstance(verified, dict):
             bundle_hash = verified.get("bundle_hash")
@@ -565,15 +569,15 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
                         "verification_result.verified_input.bundle_hash is required",
                     ),
                 )
-            elif bundle_hash != certified_hash:
+            elif bundle_hash != bundle_identity:
                 issues.append(
                     _issue(
                         "verified_input_hash_mismatch",
                         f"verified_input.bundle_hash {bundle_hash} "
-                        f"!= manifest certified bundle hash {certified_hash}",
+                        f"!= certified bundle identity hash {bundle_identity}",
                     ),
                 )
-    if signed and certified_hash:
+    if signed and bundle_identity:
         signed_hash = signed.get("signed_input_bundle_hash")
         if not signed_hash:
             issues.append(
@@ -582,12 +586,12 @@ def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
                     "signed_science_claim_bundle.signed_input_bundle_hash is required",
                 ),
             )
-        elif signed_hash != certified_hash:
+        elif signed_hash != bundle_identity:
             issues.append(
                 _issue(
                     "signed_input_hash_mismatch",
-                    f"signed_input_bundle_hash {signed_hash} != manifest certified bundle hash "
-                    f"{certified_hash}",
+                    f"signed_input_bundle_hash {signed_hash} != certified bundle identity hash "
+                    f"{bundle_identity}",
                 ),
             )
 
