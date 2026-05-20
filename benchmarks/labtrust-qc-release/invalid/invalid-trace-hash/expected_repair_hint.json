@@ -1,4 +1,0 @@
-{
-  "repair_hint_kind": "align_hash",
-  "message": "Align trace.json trace_hash with runtime receipt and certificate."
-}

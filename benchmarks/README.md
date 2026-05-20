@@ -49,15 +49,25 @@ pcs conformance run --suite benchmark
 
 ## Canonical examples
 
-Validated cross-repo examples live under `examples/benchmarks/` (not this tree). Regenerate with:
+| Path | Contents |
+|------|----------|
+| `examples/benchmarks/` | pcs-core reference types (`BenchmarkCase`, `BenchmarkRun`, `BenchmarkReport`, coverage, explain-quality) |
+| `examples/benchmark/` | Producer-shaped outputs (pcs-bench, LabTrust, CertifyEdge, PF, Scientific Memory) |
+| `examples/benchmark_metric_registry.valid.json` | Canonical `benchmark_metric_id` definitions |
+
+Regenerate everything:
 
 ```bash
 cd python
+python scripts/materialize_benchmark_fixtures.py
+# or individually:
 python scripts/materialize_benchmark_examples.py
+python scripts/materialize_benchmark_producer_examples.py
 ```
 
 ## Documentation
 
+- [docs/benchmark-object-model.md](../docs/benchmark-object-model.md) — artifacts and status dimensions
 - [docs/benchmark-schema-contract-v0.md](../docs/benchmark-schema-contract-v0.md) — frozen v0 contract
 - [docs/benchmark-metrics.md](../docs/benchmark-metrics.md) — metric definitions
 - [docs/benchmark-registry.md](../docs/benchmark-registry.md) — suite registry

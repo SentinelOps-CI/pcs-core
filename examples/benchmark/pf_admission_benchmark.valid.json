@@ -1,0 +1,59 @@
+{
+  "schema_version": "v0",
+  "report_id": "pf-admission-explain-v0",
+  "suite_id": "pf-admission-v0",
+  "case_id": "bundle-admission",
+  "producer_id": "provability-fabric",
+  "workflow_id": "provability_fabric.admission_v0",
+  "required_sections": [
+    "provenance",
+    "hashes",
+    "handoffs",
+    "verification",
+    "formal_checks",
+    "limitations",
+    "lineage",
+    "repair_hints"
+  ],
+  "sections": {
+    "provenance": {
+      "present": true,
+      "score": 1.0
+    },
+    "hashes": {
+      "present": true,
+      "score": 1.0
+    },
+    "handoffs": {
+      "present": true,
+      "score": 1.0
+    },
+    "verification": {
+      "present": true,
+      "score": 1.0
+    },
+    "formal_checks": {
+      "present": true,
+      "score": 1.0
+    },
+    "limitations": {
+      "present": true,
+      "score": 1.0
+    },
+    "lineage": {
+      "present": true,
+      "score": 1.0
+    },
+    "repair_hints": {
+      "present": true,
+      "score": 1.0
+    }
+  },
+  "sections_present_count": 8,
+  "sections_required_count": 8,
+  "quality_score": 1.0,
+  "gaps": [],
+  "source_repo": "https://github.com/SentinelOps-CI/provability-fabric",
+  "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
+  "signature_or_digest": "sha256:26bc5dd43693839e2f7403de8226c262e94f28d54f6da1cef7dc457d3a2de826"
+}

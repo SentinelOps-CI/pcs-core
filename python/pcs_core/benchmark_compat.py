@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from pcs_core.benchmark_metrics import build_metric_summaries_from_report, coerce_metric_ids
 from pcs_core.benchmark_runner import build_failure_localization_result
 from pcs_core.hash import PLACEHOLDER_DIGEST, canonical_hash
 from pcs_core.paths import examples_dir, repo_root
@@ -53,9 +54,11 @@ def normalize_pcs_bench_report(raw: dict[str, Any]) -> dict[str, Any]:
             raw.get("benchmark_suite_id", raw.get("suite_id", "unknown-suite")),
         ),
         "runs": raw.get("runs", []) if isinstance(raw.get("runs"), list) else [],
-        "metrics": raw.get("metrics", ["release_reproducibility"])
-        if isinstance(raw.get("metrics"), list)
-        else ["release_reproducibility"],
+        "metrics": coerce_metric_ids(
+            raw.get("metrics", ["release_reproducibility_score"])
+            if isinstance(raw.get("metrics"), list)
+            else ["release_reproducibility_score"],
+        ),
         "summary": {
             "total_cases": int(summary.get("total_cases", 0)),
             "passed_cases": int(summary.get("passed_cases", 0)),
@@ -82,6 +85,10 @@ def normalize_pcs_bench_report(raw: dict[str, Any]) -> dict[str, Any]:
     }
     if raw.get("conformance_refs"):
         body["conformance_refs"] = raw["conformance_refs"]
+    if isinstance(raw.get("metric_summaries"), list):
+        body["metric_summaries"] = raw["metric_summaries"]
+    else:
+        body["metric_summaries"] = build_metric_summaries_from_report(body)
     return _with_digest(body)
 
 
@@ -203,12 +210,21 @@ def normalize_certifyedge_certificate_benchmark(raw: dict[str, Any]) -> dict[str
 
 def normalize_labtrust_case_manifest(raw: dict[str, Any]) -> dict[str, Any]:
     """Map LabTrust benchmark case manifests to BenchmarkCase.v0."""
+    case_kind = str(raw.get("case_kind", "valid_release"))
+    if case_kind == "valid_release":
+        expected_failure_code = None
+        expected_responsible_component = None
+        expected_repair_hint_kind = None
+    else:
+        expected_failure_code = raw.get("expected_failure_code")
+        expected_responsible_component = raw.get("expected_responsible_component", "unknown")
+        expected_repair_hint_kind = raw.get("expected_repair_hint_kind", "unknown")
     body: dict[str, Any] = {
         "schema_version": "v0",
         "case_id": str(raw.get("case_id", raw.get("id", "labtrust-case"))),
         "task_id": str(raw.get("task_id", "labtrust-qc-release-v0")),
         "workflow_id": str(raw.get("workflow_id", "labtrust.qc_release_v0.1")),
-        "case_kind": str(raw.get("case_kind", "valid_release")),
+        "case_kind": case_kind,
         "input_artifacts": raw.get("input_artifacts")
         or {
             "release_directory": str(
@@ -216,11 +232,15 @@ def normalize_labtrust_case_manifest(raw: dict[str, Any]) -> dict[str, Any]:
             ),
         },
         "expected_status": str(raw.get("expected_status", "passed")),
-        "expected_failure_code": str(raw.get("expected_failure_code", "")),
-        "expected_responsible_component": str(
-            raw.get("expected_responsible_component", "unknown"),
+        "expected_system_outcome": str(
+            raw.get(
+                "expected_system_outcome",
+                "admitted" if case_kind == "valid_release" else "rejected",
+            ),
         ),
-        "expected_repair_hint_kind": str(raw.get("expected_repair_hint_kind", "none")),
+        "expected_failure_code": expected_failure_code,
+        "expected_responsible_component": expected_responsible_component,
+        "expected_repair_hint_kind": expected_repair_hint_kind,
         "source_repo": str(raw.get("source_repo", "https://github.com/fraware/LabTrust-Gym")),
         "source_commit": str(raw.get("source_commit", PCS_COMMIT)),
         "signature_or_digest": PLACEHOLDER_DIGEST,
@@ -311,6 +331,23 @@ def validate_compatibility_corpus() -> list[str]:
     """Validate canonical examples and normalize dialect fixtures."""
     errors: list[str] = []
     examples_root = benchmarks_examples_dir()
+    producer_root = examples_dir() / "benchmark"
+    for name in (
+        "pcs_bench_report.valid.json",
+        "labtrust_case.valid.json",
+        "certifyedge_certificate_benchmark.valid.json",
+        "pf_admission_benchmark.valid.json",
+        "scientific_memory_rendering_benchmark.valid.json",
+    ):
+        path = producer_root / name
+        if not path.is_file():
+            errors.append(f"missing {path.relative_to(repo_root()).as_posix()}")
+            continue
+        try:
+            validate_file(path)
+        except ValidationError as exc:
+            errors.append(f"{name}: {exc}")
+
     for name in (
         "benchmark_case.valid.json",
         "benchmark_run.valid.json",
@@ -319,6 +356,7 @@ def validate_compatibility_corpus() -> list[str]:
         "coverage_report.valid.json",
         "explain_quality_report.valid.json",
         "profile_coverage_report.valid.json",
+        "metric_summary.valid.json",
     ):
         path = examples_root / name
         if not path.is_file():

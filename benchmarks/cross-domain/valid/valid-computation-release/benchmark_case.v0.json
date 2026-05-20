@@ -8,10 +8,11 @@
     "release_directory": "examples/computation-release"
   },
   "expected_status": "passed",
-  "expected_failure_code": "",
-  "expected_responsible_component": "unknown",
-  "expected_repair_hint_kind": "none",
+  "expected_system_outcome": "admitted",
+  "expected_failure_code": null,
+  "expected_responsible_component": null,
+  "expected_repair_hint_kind": null,
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
-  "signature_or_digest": "sha256:997378f878a444d19834ea3c956b7989b44748dbebfba343f113fc2b4cd1ad7a"
+  "signature_or_digest": "sha256:46c54324e3a68dba4bbbced2a8991e16c80b146bf2d096888c71022dd058bfa0"
 }

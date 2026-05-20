@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from pcs_core.benchmark_localization import localize_failure_code, repair_hint_for_component
+from pcs_core.benchmark_metrics import build_metric_summaries, coerce_metric_ids
 from pcs_core.benchmark_registry import load_benchmark_registry
 from pcs_core.hash import PLACEHOLDER_DIGEST, canonical_hash
 from pcs_core.paths import repo_root
@@ -92,6 +93,10 @@ def _evaluate_formal_kernel(release_dir: Path) -> tuple[bool, str, str]:
     return True, "", "formal_kernel"
 
 
+def _null_if_empty(value: str | None) -> str | None:
+    return None if value is None or value == "" else value
+
+
 def _build_benchmark_run(
     case: dict[str, Any],
     *,
@@ -100,8 +105,13 @@ def _build_benchmark_run(
     commands: list[dict[str, Any]],
     artifacts_produced: list[str],
     observed_status: str,
-    observed_failure_code: str,
-    observed_component: str,
+    observed_failure_code: str | None,
+    observed_component: str | None,
+    release_chain_status: str = "not_applicable",
+    certificate_status: str = "not_applicable",
+    scientific_memory_import_status: str = "not_applicable",
+    scientific_memory_render_status: str = "not_applicable",
+    system_admission_outcome: str = "not_evaluated",
 ) -> dict[str, Any]:
     repair_hint = repair_hint_for_component(observed_component)
     completed_at = _iso_now()
@@ -119,6 +129,11 @@ def _build_benchmark_run(
         "observed_failure_code": observed_failure_code,
         "observed_responsible_component": observed_component,
         "observed_repair_hint": repair_hint,
+        "system_admission_outcome": system_admission_outcome,
+        "release_chain_status": release_chain_status,
+        "certificate_status": certificate_status,
+        "scientific_memory_import_status": scientific_memory_import_status,
+        "scientific_memory_render_status": scientific_memory_render_status,
         "duration_ms": duration_ms,
         "source_repo": PCS_CORE_REPO,
         "source_commit": PCS_CORE_COMMIT_PLACEHOLDER,
@@ -141,12 +156,16 @@ def _execute_formal_benchmark_case(case: dict[str, Any]) -> dict[str, Any]:
     ok, failure_code, component = _evaluate_formal_kernel(release_dir)
     if case_kind == "valid_release":
         observed_status = "passed" if ok else "failed"
+        obs_code: str | None = None if ok else failure_code
+        obs_component: str | None = None if ok else component
     else:
-        expected_code = str(case.get("expected_failure_code", ""))
-        expected_component = str(case.get("expected_responsible_component", "formal_kernel"))
+        expected_code = case.get("expected_failure_code")
+        expected_component = case.get("expected_responsible_component") or "formal_kernel"
         code_ok = not ok and (not expected_code or failure_code == expected_code)
         component_ok = component == expected_component
         observed_status = "passed" if code_ok and component_ok else "failed"
+        obs_code = failure_code or None
+        obs_component = component
     return _build_benchmark_run(
         case,
         started_at=started_at,
@@ -154,8 +173,9 @@ def _execute_formal_benchmark_case(case: dict[str, Any]) -> dict[str, Any]:
         commands=commands,
         artifacts_produced=["lean_check_result.v0.json", "proof_obligation.v0.json"],
         observed_status=observed_status,
-        observed_failure_code=failure_code,
-        observed_component=component,
+        observed_failure_code=obs_code,
+        observed_component=obs_component,
+        release_chain_status="not_applicable",
     )
 
 
@@ -167,16 +187,22 @@ def _execute_scientific_memory_benchmark_case(case: dict[str, Any]) -> dict[str,
     commands: list[dict[str, Any]] = []
     sm_path = release_dir / "scientific_memory_import_report.json"
     interpretability = 0.0
-    observed_failure_code = ""
-    observed_component = "scientific_memory"
+    observed_failure_code: str | None = None
+    observed_component: str | None = "scientific_memory"
+    sm_import_status = "not_applicable"
+    sm_render_status = "not_applicable"
 
     if sm_path.is_file():
         sm_report = json.loads(sm_path.read_text(encoding="utf-8"))
         if isinstance(sm_report, dict):
             interpretability = _scientific_memory_interpretability_score(sm_report)
+            sm_import_status = (
+                "passed" if sm_report.get("verification_status") == "passed" else "failed"
+            )
             if sm_report.get("verification_status") != "passed":
                 observed_failure_code = "scientific_memory_import_failed"
     else:
+        sm_import_status = "failed"
         observed_failure_code = "scientific_memory_import_failed"
 
     try:
@@ -197,15 +223,23 @@ def _execute_scientific_memory_benchmark_case(case: dict[str, Any]) -> dict[str,
         observed_failure_code = primary.code
         observed_component = localize_failure_code(primary.code)
 
+    release_chain_status = "valid" if not issues else "invalid"
+    sm_render_status = (
+        "rendered" if interpretability >= 1.0 and sm_import_status == "passed" else "incomplete"
+    )
+
     if case_kind == "valid_release":
         sm_ok = interpretability >= 1.0 and not observed_failure_code and not issues
         observed_status = "passed" if sm_ok else "failed"
-        if not sm_ok and not observed_failure_code:
+        if sm_ok:
+            observed_failure_code = None
+            observed_component = None
+        elif not observed_failure_code:
             observed_failure_code = "scientific_memory_render_incomplete"
             observed_component = "scientific_memory"
     else:
-        expected_code = str(case.get("expected_failure_code", ""))
-        expected_component = str(case.get("expected_responsible_component", "scientific_memory"))
+        expected_code = case.get("expected_failure_code")
+        expected_component = case.get("expected_responsible_component") or "scientific_memory"
         code_ok = bool(observed_failure_code or issues) and (
             not expected_code or observed_failure_code == expected_code
         )
@@ -219,8 +253,11 @@ def _execute_scientific_memory_benchmark_case(case: dict[str, Any]) -> dict[str,
         commands=commands,
         artifacts_produced=["scientific_memory_import_report.json"],
         observed_status=observed_status,
-        observed_failure_code=observed_failure_code,
+        observed_failure_code=_null_if_empty(observed_failure_code),
         observed_component=observed_component,
+        release_chain_status=release_chain_status,
+        scientific_memory_import_status=sm_import_status,
+        scientific_memory_render_status=sm_render_status,
     )
 
 
@@ -244,10 +281,24 @@ def _execute_release_chain_benchmark_case(case: dict[str, Any]) -> dict[str, Any
         },
     )
 
-    observed_failure_code = ""
-    observed_component = "unknown"
+    observed_failure_code: str | None = None
+    observed_component: str | None = None
+    certificate_status = "not_applicable"
+    cert_path = release_dir / "trace_certificate.json"
+    if cert_path.is_file():
+        try:
+            cert = json.loads(cert_path.read_text(encoding="utf-8"))
+            if isinstance(cert, dict) and cert.get("status") in {
+                "CertificateChecked",
+                "Rejected",
+                "Stale",
+            }:
+                certificate_status = str(cert["status"])
+        except json.JSONDecodeError:
+            certificate_status = "Rejected"
+
     if issues:
-        expected_code = str(case.get("expected_failure_code", ""))
+        expected_code = case.get("expected_failure_code")
         if expected_code:
             matching = [issue for issue in issues if issue.code == expected_code]
             primary = matching[0] if matching else issues[0]
@@ -256,11 +307,16 @@ def _execute_release_chain_benchmark_case(case: dict[str, Any]) -> dict[str, Any
         observed_failure_code = primary.code
         observed_component = localize_failure_code(primary.code)
 
+    release_chain_status = "valid" if not issues else "invalid"
+
     if case_kind == "valid_release":
         observed_status = "passed" if not issues else "failed"
+        if not issues:
+            observed_failure_code = None
+            observed_component = None
     else:
-        expected_code = str(case.get("expected_failure_code", ""))
-        expected_component = str(case.get("expected_responsible_component", "unknown"))
+        expected_code = case.get("expected_failure_code")
+        expected_component = case.get("expected_responsible_component") or "unknown"
         code_ok = bool(issues) and (not expected_code or observed_failure_code == expected_code)
         component_ok = observed_component == expected_component
         observed_status = "passed" if code_ok and component_ok else "failed"
@@ -274,6 +330,8 @@ def _execute_release_chain_benchmark_case(case: dict[str, Any]) -> dict[str, Any
         observed_status=observed_status,
         observed_failure_code=observed_failure_code,
         observed_component=observed_component,
+        release_chain_status=release_chain_status,
+        certificate_status=certificate_status,
     )
 
 
@@ -291,15 +349,15 @@ def build_failure_localization_result(
     case: dict[str, Any],
     run: dict[str, Any],
 ) -> dict[str, Any]:
-    expected_component = str(case.get("expected_responsible_component", "unknown"))
-    observed_component = str(run.get("observed_responsible_component", "unknown"))
+    expected_component = str(case.get("expected_responsible_component") or "unknown")
+    observed_component = str(run.get("observed_responsible_component") or "unknown")
     body: dict[str, Any] = {
         "schema_version": "v0",
         "result_id": f"failure-loc-{run.get('run_id', 'unknown')}",
         "run_id": str(run.get("run_id", "")),
         "case_id": str(case.get("case_id", "")),
-        "expected_failure_code": str(case.get("expected_failure_code", "")),
-        "observed_failure_code": str(run.get("observed_failure_code", "")),
+        "expected_failure_code": str(case.get("expected_failure_code") or ""),
+        "observed_failure_code": str(run.get("observed_failure_code") or ""),
         "expected_responsible_component": expected_component,
         "observed_responsible_component": observed_component,
         "localized_correctly": expected_component == observed_component,
@@ -493,13 +551,16 @@ def build_benchmark_report(
         1
         for case, run in zip(cases, runs, strict=False)
         if case.get("case_kind") != "valid_release"
+        and case.get("expected_responsible_component") is not None
         and case.get("expected_responsible_component") == run.get("observed_responsible_component")
     )
     repair_hits = sum(
         1
         for case, run in zip(cases, runs, strict=False)
-        if repair_hint_for_component(str(case.get("expected_responsible_component", "unknown")))
-        == str(run.get("observed_repair_hint", ""))
+        if case.get("case_kind") != "valid_release"
+        and case.get("expected_responsible_component") is not None
+        and repair_hint_for_component(str(case.get("expected_responsible_component")))
+        == run.get("observed_repair_hint")
     )
 
     coverage = compute_suite_coverage(suite_id, runs, cases)
@@ -530,26 +591,38 @@ def build_benchmark_report(
             },
         )
 
+    metric_ids = coerce_metric_ids(
+        suite.get("metrics", []) if isinstance(suite.get("metrics"), list) else [],
+    )
+    summary = {
+        "total_cases": total,
+        "passed_cases": passed_cases,
+        "failed_cases": failed_cases,
+        "expected_failures_detected": expected_failures_detected,
+        "unexpected_passes": unexpected_passes,
+        "unexpected_failures": unexpected_failures,
+        "failure_localization_accuracy": localization_hits / loc_denom,
+        "repair_hint_accuracy": repair_hits / (loc_denom if expected_invalid else (total or 1)),
+        "formal_check_coverage": coverage["formal_checks"]["coverage_ratio"],
+        "registry_coverage": coverage["registry"]["coverage_ratio"],
+        "scientific_memory_render_coverage": coverage["scientific_memory"]["coverage_ratio"],
+    }
+
     body: dict[str, Any] = {
         "schema_version": "v0",
         "report_id": f"benchmark-report-{suite_id}",
         "benchmark_suite_id": suite_id,
         "runs": run_refs,
-        "metrics": suite.get("metrics", []),
-        "summary": {
-            "total_cases": total,
-            "passed_cases": passed_cases,
-            "failed_cases": failed_cases,
-            "expected_failures_detected": expected_failures_detected,
-            "unexpected_passes": unexpected_passes,
-            "unexpected_failures": unexpected_failures,
-            "failure_localization_accuracy": localization_hits / loc_denom,
-            "repair_hint_accuracy": repair_hits / (total or 1),
-            "formal_check_coverage": coverage["formal_checks"]["coverage_ratio"],
-            "registry_coverage": coverage["registry"]["coverage_ratio"],
-            "scientific_memory_render_coverage": coverage["scientific_memory"]["coverage_ratio"],
-        },
+        "metrics": metric_ids,
+        "summary": summary,
         "coverage": coverage,
+        "metric_summaries": build_metric_summaries(
+            metric_ids=metric_ids,
+            summary=summary,
+            coverage=coverage,
+            invalid_case_count=len(expected_invalid),
+            suite_id=suite_id,
+        ),
         "failures": failures,
         "source_repo": PCS_CORE_REPO,
         "source_commit": PCS_CORE_COMMIT_PLACEHOLDER,

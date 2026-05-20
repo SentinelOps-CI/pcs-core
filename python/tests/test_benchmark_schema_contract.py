@@ -16,6 +16,7 @@ from pcs_core.paths import examples_dir, repo_root
 from pcs_core.validate import validate_artifact, validate_file
 
 EXAMPLES = examples_dir() / "benchmarks"
+PRODUCER_EXAMPLES = examples_dir() / "benchmark"
 
 
 def test_benchmark_metric_registry_has_required_metrics() -> None:
@@ -54,12 +55,32 @@ def test_benchmark_metric_registry_matches_builder() -> None:
         ("coverage_report.valid.json", "CoverageReport.v0"),
         ("explain_quality_report.valid.json", "ExplainQualityReport.v0"),
         ("profile_coverage_report.valid.json", "ProfileCoverageReport.v0"),
+        ("metric_summary.valid.json", "MetricSummary.v0"),
     ],
 )
 def test_benchmark_valid_examples(name: str, artifact_type: str) -> None:
     path = EXAMPLES / name
     if not path.is_file():
         pytest.skip(f"run python/scripts/materialize_benchmark_examples.py ({name})")
+    doc = json.loads(path.read_text(encoding="utf-8"))
+    validate_artifact(doc, artifact_type)
+
+
+@pytest.mark.parametrize(
+    "name,artifact_type",
+    [
+        ("pcs_bench_report.valid.json", "BenchmarkReport.v0"),
+        ("labtrust_case.valid.json", "BenchmarkCase.v0"),
+        ("certifyedge_certificate_benchmark.valid.json", "CoverageReport.v0"),
+        ("pf_admission_benchmark.valid.json", "ExplainQualityReport.v0"),
+        ("scientific_memory_rendering_benchmark.valid.json", "ExplainQualityReport.v0"),
+        ("pcs_core_benchmark_report.valid.json", "BenchmarkReport.v0"),
+    ],
+)
+def test_producer_benchmark_examples(name: str, artifact_type: str) -> None:
+    path = PRODUCER_EXAMPLES / name
+    if not path.is_file():
+        pytest.skip("run python/scripts/materialize_benchmark_producer_examples.py")
     doc = json.loads(path.read_text(encoding="utf-8"))
     validate_artifact(doc, artifact_type)
 

@@ -144,13 +144,46 @@ def test_validate_benchmark_fixtures_clean() -> None:
     assert validate_benchmark_fixtures() == []
 
 
+def test_valid_benchmark_run_has_null_failure_fields() -> None:
+    from pcs_core.benchmark_runner import execute_benchmark_case, load_benchmark_case
+
+    case_path = (
+        repo_root()
+        / "benchmarks/labtrust-qc-release/valid/valid-release-chain/benchmark_case.v0.json"
+    )
+    if not case_path.is_file():
+        pytest.skip("run materialize_benchmark_fixtures.py")
+    case = load_benchmark_case(case_path)
+    run = execute_benchmark_case(case)
+    assert run["observed_status"] == "passed"
+    assert run["observed_failure_code"] is None
+    assert run["observed_responsible_component"] is None
+    assert run["observed_repair_hint"] is None
+    validate_artifact(run, "BenchmarkRun.v0")
+
+
 def test_benchmark_report_accepts_conformance_refs() -> None:
     report = {
         "schema_version": "v0",
         "report_id": "benchmark-report-test",
         "benchmark_suite_id": "labtrust-qc-release-v0",
         "runs": [],
-        "metrics": ["failure_localization"],
+        "metrics": ["failure_localization_accuracy"],
+        "metric_summaries": [
+            {
+                "schema_version": "v0",
+                "metric_id": "failure_localization_accuracy",
+                "score": 1.0,
+                "applicability": "insufficient_cases",
+                "numerator": 0,
+                "denominator": 0,
+                "reason": "no invalid cases",
+                "details": {},
+                "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+                "source_commit": "d444444444444444444444444444444444444444",
+                "signature_or_digest": "sha256:" + "0" * 64,
+            },
+        ],
         "summary": {
             "total_cases": 0,
             "passed_cases": 0,

@@ -3,8 +3,8 @@
   "run_id": "bench-run-formal-tool-use-lean-check",
   "task_id": "formal-trust-kernel-v0",
   "case_id": "formal-tool-use-lean-check",
-  "started_at": "2026-05-20T10:41:34Z",
-  "completed_at": "2026-05-20T10:41:34Z",
+  "started_at": "2026-05-20T12:06:39Z",
+  "completed_at": "2026-05-20T12:06:39Z",
   "commands": [
     {
       "command": "lean_check C:/Users/mateo/pcs-core/examples/tool-use-release",
@@ -16,11 +16,16 @@
     "proof_obligation.v0.json"
   ],
   "observed_status": "passed",
-  "observed_failure_code": "",
-  "observed_responsible_component": "formal_kernel",
-  "observed_repair_hint": "rerun_formal_check",
-  "duration_ms": 2,
+  "observed_failure_code": null,
+  "observed_responsible_component": null,
+  "observed_repair_hint": null,
+  "system_admission_outcome": "not_evaluated",
+  "release_chain_status": "not_applicable",
+  "certificate_status": "not_applicable",
+  "scientific_memory_import_status": "not_applicable",
+  "scientific_memory_render_status": "not_applicable",
+  "duration_ms": 1,
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:8e77f536a8bb685a33900c842acc91aa539f9efb44459931b5d757c61d0f487f"
+  "signature_or_digest": "sha256:1637c5136e08f9e4dfb83c9adf65fa07a8735eb3450be8e1959c8423febe003d"
 }

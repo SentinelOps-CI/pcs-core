@@ -23,6 +23,8 @@ from pcs_core.protocol_validate import (
 )
 from pcs_core.benchmark_validate import (
     validate_benchmark_case_semantics,
+    validate_benchmark_report_semantics,
+    validate_benchmark_run_semantics,
     validate_benchmark_metric_registry_semantics,
     validate_benchmark_registry_semantics,
     validate_benchmark_task_semantics,
@@ -85,6 +87,7 @@ ARTIFACT_SCHEMAS: dict[str, str] = {
     "ExplainQualityReport.v0": "ExplainQualityReport.v0.schema.json",
     "ProfileCoverageReport.v0": "ProfileCoverageReport.v0.schema.json",
     "BenchmarkMetricRegistry.v0": "BenchmarkMetricRegistry.v0.schema.json",
+    "MetricSummary.v0": "MetricSummary.v0.schema.json",
 }
 
 CERTIFIED_CLAIM_STATUSES = frozenset(
@@ -144,6 +147,15 @@ def detect_artifact_type(data: dict[str, Any]) -> str | None:
         and isinstance(data.get("artifact_types_required"), list)
     ):
         return "ProfileCoverageReport.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("metric_id"), str)
+        and "applicability" in data
+        and "score" in data
+        and "numerator" in data
+        and "benchmark_suite_id" not in data
+    ):
+        return "MetricSummary.v0"
     if (
         data.get("schema_version") == "v0"
         and isinstance(data.get("report_id"), str)
@@ -603,9 +615,14 @@ def validate_semantics(data: dict[str, Any], artifact_type: str) -> list[str]:
         return errors
 
     if artifact_type == "BenchmarkRun.v0":
+        errors.extend(validate_benchmark_run_semantics(data))
         return errors
 
     if artifact_type == "BenchmarkReport.v0":
+        errors.extend(validate_benchmark_report_semantics(data))
+        return errors
+
+    if artifact_type == "MetricSummary.v0":
         return errors
 
     if artifact_type == "ConformanceRun.v0":
@@ -739,6 +756,11 @@ def check_valid_examples(examples_dir: Path | None = None) -> None:
         if compat.is_dir():
             for path in sorted(compat.glob("*.normalized.json")):
                 validate_file(path)
+
+    producer_examples = examples_dir / "benchmark"
+    if producer_examples.is_dir():
+        for path in sorted(producer_examples.glob("*.valid.json")):
+            validate_file(path)
 
 
 def check_invalid_examples(examples_dir: Path | None = None) -> None:

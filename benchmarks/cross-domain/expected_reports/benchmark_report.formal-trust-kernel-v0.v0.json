@@ -23,8 +23,8 @@
     }
   ],
   "metrics": [
-    "formal_check_coverage",
-    "failure_localization"
+    "formal_check_coverage_score",
+    "failure_localization_accuracy"
   ],
   "summary": {
     "total_cases": 3,
@@ -34,7 +34,7 @@
     "unexpected_passes": 0,
     "unexpected_failures": 0,
     "failure_localization_accuracy": 0.0,
-    "repair_hint_accuracy": 1.0,
+    "repair_hint_accuracy": 0.0,
     "formal_check_coverage": 1.0,
     "registry_coverage": 0.8333333333333334,
     "scientific_memory_render_coverage": 0.9444444444444445
@@ -48,11 +48,11 @@
       "denominator": 3.0,
       "coverage_ratio": 0.8333333333333334,
       "details": {
-        "registry_entry_count": 36
+        "registry_entry_count": 37
       },
       "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
       "source_commit": "d444444444444444444444444444444444444444",
-      "signature_or_digest": "sha256:17365d8bf26d85fbdd7148b269d13f3ccfe5aa9d6d51cb253f6c5141986b65da"
+      "signature_or_digest": "sha256:22bc2b272a1d43dec58d10bf4407921ddd659cbc99c9017a0859c9d081a3af57"
     },
     "formal_checks": {
       "schema_version": "v0",
@@ -103,14 +103,44 @@
       "signature_or_digest": "sha256:e42376d036d97ff8ef9fa92d0d6f94bcd5e3dd14e578169bf1f7bf360bd68179"
     }
   },
+  "metric_summaries": [
+    {
+      "schema_version": "v0",
+      "metric_id": "formal_check_coverage_score",
+      "score": 1.0,
+      "applicability": "measured",
+      "numerator": 6.916666666666666,
+      "denominator": 3.0,
+      "reason": "coverage from formal-trust-kernel-v0-formal",
+      "details": {
+        "coverage_id": "formal-trust-kernel-v0-formal"
+      },
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:8c6a847feab4ca769ad37d10a4abe8095b008942c731dc63034fc577018baab8"
+    },
+    {
+      "schema_version": "v0",
+      "metric_id": "failure_localization_accuracy",
+      "score": 0.0,
+      "applicability": "insufficient_cases",
+      "numerator": 0.0,
+      "denominator": 0.0,
+      "reason": "no invalid benchmark cases in suite",
+      "details": {},
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:3b061823821b8c031847b5ca35c9e3b1d7265dc5697a64b7f45853fa855adb31"
+    }
+  ],
   "failures": [],
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:39d5fb4568e8171020772b692c698fbc997022bc6ac6d57c3392f93715400506",
+  "signature_or_digest": "sha256:c6e02e84c7355a2ffc08f8c80b3129139c2295e2d09134766d79d80b5b6fa9fe",
   "conformance_refs": [
     {
       "suite": "lean-trust",
-      "run_id": "conf-run-lean-trust-20260520T103952Z",
+      "run_id": "conf-run-lean-trust-20260520T120632Z",
       "status": "passed"
     }
   ]

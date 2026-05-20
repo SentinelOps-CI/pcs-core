@@ -23,13 +23,25 @@ from pcs_core.validate import validate_file  # noqa: E402
 
 PCS_COMMIT = LABTRUST_RC_PCS_CORE_COMMIT
 
+_SYSTEM_OUTCOME_BY_CASE_KIND: dict[str, str] = {
+    "valid_release": "admitted",
+    "invalid_certificate": "rejected",
+    "invalid_hash_mismatch": "rejected",
+    "invalid_handoff": "rejected",
+    "invalid_registry": "rejected",
+    "invalid_formal_check": "formal_failed",
+    "invalid_import": "import_failed",
+    "invalid_render": "render_failed",
+    "stale_release": "stale",
+}
+
 _STANDARD_METRICS = [
-    "release_reproducibility",
-    "failure_localization",
-    "certificate_completeness",
-    "registry_coverage",
-    "formal_check_coverage",
-    "scientific_memory_interpretability",
+    "release_reproducibility_score",
+    "failure_localization_accuracy",
+    "certificate_completeness_score",
+    "registry_coverage_score",
+    "formal_check_coverage_score",
+    "scientific_memory_interpretability_score",
 ]
 
 
@@ -86,9 +98,10 @@ def _benchmark_case(
     case_kind: str,
     release_directory: str,
     expected_status: str,
-    expected_failure_code: str,
-    expected_responsible_component: str,
-    expected_repair_hint_kind: str,
+    expected_system_outcome: str,
+    expected_failure_code: str | None,
+    expected_responsible_component: str | None,
+    expected_repair_hint_kind: str | None,
 ) -> dict[str, Any]:
     return _with_digest(
         {
@@ -99,6 +112,7 @@ def _benchmark_case(
             "case_kind": case_kind,
             "input_artifacts": {"release_directory": release_directory},
             "expected_status": expected_status,
+            "expected_system_outcome": expected_system_outcome,
             "expected_failure_code": expected_failure_code,
             "expected_responsible_component": expected_responsible_component,
             "expected_repair_hint_kind": expected_repair_hint_kind,
@@ -262,9 +276,10 @@ def _materialize_labtrust() -> None:
             case_kind="valid_release",
             release_directory="examples/labtrust-release",
             expected_status="passed",
-            expected_failure_code="",
-            expected_responsible_component="unknown",
-            expected_repair_hint_kind="none",
+            expected_system_outcome="admitted",
+            expected_failure_code=None,
+            expected_responsible_component=None,
+            expected_repair_hint_kind=None,
         ),
     )
     _write_case_bundle(
@@ -276,9 +291,10 @@ def _materialize_labtrust() -> None:
             case_kind="valid_release",
             release_directory="examples/labtrust-release",
             expected_status="passed",
-            expected_failure_code="",
-            expected_responsible_component="scientific_memory",
-            expected_repair_hint_kind="none",
+            expected_system_outcome="admitted",
+            expected_failure_code=None,
+            expected_responsible_component=None,
+            expected_repair_hint_kind=None,
         ),
     )
     invalid_map = {
@@ -298,6 +314,7 @@ def _materialize_labtrust() -> None:
                 case_kind=case_kind,
                 release_directory=invalid_map[case_id],
                 expected_status="failed",
+                expected_system_outcome=_SYSTEM_OUTCOME_BY_CASE_KIND[case_kind],
                 expected_failure_code=code,
                 expected_responsible_component=component,
                 expected_repair_hint_kind=hint_kind,
@@ -363,9 +380,10 @@ def _materialize_tool_use() -> None:
             case_kind="valid_release",
             release_directory="examples/tool-use-release",
             expected_status="passed",
-            expected_failure_code="",
-            expected_responsible_component="unknown",
-            expected_repair_hint_kind="none",
+            expected_system_outcome="admitted",
+            expected_failure_code=None,
+            expected_responsible_component=None,
+            expected_repair_hint_kind=None,
         ),
     )
     invalid_map = {
@@ -392,6 +410,7 @@ def _materialize_tool_use() -> None:
                 case_kind=case_kind,
                 release_directory=invalid_map[case_id],
                 expected_status="failed",
+                expected_system_outcome=_SYSTEM_OUTCOME_BY_CASE_KIND[case_kind],
                 expected_failure_code=code,
                 expected_responsible_component=component,
                 expected_repair_hint_kind=hint_kind,
@@ -441,9 +460,10 @@ def _materialize_computation() -> None:
             case_kind="valid_release",
             release_directory="examples/computation-release",
             expected_status="passed",
-            expected_failure_code="",
-            expected_responsible_component="unknown",
-            expected_repair_hint_kind="none",
+            expected_system_outcome="admitted",
+            expected_failure_code=None,
+            expected_responsible_component=None,
+            expected_repair_hint_kind=None,
         ),
     )
     invalid_map = {
@@ -461,6 +481,7 @@ def _materialize_computation() -> None:
                 case_kind=case_kind,
                 release_directory=invalid_map[case_id],
                 expected_status="failed",
+                expected_system_outcome=_SYSTEM_OUTCOME_BY_CASE_KIND[case_kind],
                 expected_failure_code=code,
                 expected_responsible_component=component,
                 expected_repair_hint_kind=hint_kind,
@@ -509,9 +530,10 @@ def _materialize_cross_domain() -> None:
                 case_kind="valid_release",
                 release_directory=release_directory,
                 expected_status="passed",
-                expected_failure_code="",
-                expected_responsible_component="unknown",
-                expected_repair_hint_kind="none",
+                expected_system_outcome="admitted",
+                expected_failure_code=None,
+                expected_responsible_component=None,
+                expected_repair_hint_kind=None,
             ),
         )
     formal_cases = [
@@ -529,9 +551,10 @@ def _materialize_cross_domain() -> None:
                 case_kind="valid_release",
                 release_directory=release_directory,
                 expected_status="passed",
-                expected_failure_code="",
-                expected_responsible_component="formal_kernel",
-                expected_repair_hint_kind="none",
+                expected_system_outcome="admitted",
+                expected_failure_code=None,
+                expected_responsible_component=None,
+                expected_repair_hint_kind=None,
             ),
         )
 
@@ -584,7 +607,9 @@ def main() -> int:
     import sys
 
     examples_script = Path(__file__).resolve().parent / "materialize_benchmark_examples.py"
+    producer_script = Path(__file__).resolve().parent / "materialize_benchmark_producer_examples.py"
     subprocess.run([sys.executable, str(examples_script)], check=True)
+    subprocess.run([sys.executable, str(producer_script)], check=True)
 
     for rel in (
         "benchmarks/labtrust-qc-release/benchmark_task.v0.json",

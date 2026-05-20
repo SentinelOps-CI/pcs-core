@@ -53,5 +53,7 @@ def localize_failure_code(code: str) -> str:
     return FAILURE_CODE_TO_COMPONENT.get(code, "unknown")
 
 
-def repair_hint_for_component(component: str) -> str:
+def repair_hint_for_component(component: str | None) -> str | None:
+    if not component:
+        return None
     return REPAIR_HINT_BY_COMPONENT.get(component, "unknown")

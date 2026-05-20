@@ -328,6 +328,7 @@ def _suite_benchmark_report() -> tuple[list[str], list[str], int]:
         "coverage_report.valid.json",
         "explain_quality_report.valid.json",
         "profile_coverage_report.valid.json",
+        "metric_summary.valid.json",
     ):
         path = examples_root / name
         if path.is_file():
@@ -344,6 +345,21 @@ def _suite_benchmark_report() -> tuple[list[str], list[str], int]:
                 validate_file(path)
             except ValidationError as exc:
                 errors.append(f"{path.name}: {exc}")
+    producer_root = examples_dir() / "benchmark"
+    if producer_root.is_dir():
+        for path in sorted(producer_root.glob("*.valid.json")):
+            checks += 1
+            try:
+                validate_file(path)
+            except ValidationError as exc:
+                errors.append(f"benchmark/{path.name}: {exc}")
+    metric_registry = examples_dir() / "benchmark_metric_registry.valid.json"
+    if metric_registry.is_file():
+        checks += 1
+        try:
+            validate_file(metric_registry)
+        except ValidationError as exc:
+            errors.append(f"benchmark_metric_registry.valid.json: {exc}")
     return errors, [], checks
 
 

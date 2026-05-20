@@ -8,10 +8,11 @@
     "release_directory": "examples/labtrust-release"
   },
   "expected_status": "passed",
-  "expected_failure_code": "",
-  "expected_responsible_component": "formal_kernel",
-  "expected_repair_hint_kind": "none",
+  "expected_system_outcome": "admitted",
+  "expected_failure_code": null,
+  "expected_responsible_component": null,
+  "expected_repair_hint_kind": null,
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
-  "signature_or_digest": "sha256:bf892bbc3654bc4a8ba5421be51c55ab7e4733155b8062c979aa7ffffad86ed7"
+  "signature_or_digest": "sha256:da103af904e31ebbb0c36f6d253c40822e9054e33788ef9d90dc6443bf7eb14f"
 }

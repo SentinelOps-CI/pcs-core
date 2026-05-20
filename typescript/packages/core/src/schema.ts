@@ -56,6 +56,7 @@ const ARTIFACT_SCHEMAS: Record<ArtifactType, string> = {
   "BenchmarkCase.v0": "BenchmarkCase.v0.schema.json",
   "BenchmarkRun.v0": "BenchmarkRun.v0.schema.json",
   "BenchmarkReport.v0": "BenchmarkReport.v0.schema.json",
+  "MetricSummary.v0": "MetricSummary.v0.schema.json",
   "ConformanceRun.v0": "ConformanceRun.v0.schema.json",
   "FailureCaseManifest.v0": "FailureCaseManifest.v0.schema.json",
   "FailureLocalizationResult.v0": "FailureLocalizationResult.v0.schema.json",

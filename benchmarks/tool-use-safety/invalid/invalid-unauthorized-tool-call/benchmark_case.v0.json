@@ -8,10 +8,11 @@
     "release_directory": "benchmarks/tool-use-safety/input_releases/invalid-unauthorized-tool-call"
   },
   "expected_status": "failed",
+  "expected_system_outcome": "rejected",
   "expected_failure_code": "unauthorized_tool_call",
   "expected_responsible_component": "runtime_producer",
   "expected_repair_hint_kind": "align_provenance",
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
-  "signature_or_digest": "sha256:d7759a474e8540aa65fc542a6707d33c67c071a1796efa272a3990d05a71fd88"
+  "signature_or_digest": "sha256:802ea4b382e1e14c90fbb93d9b0a76571233623888b1671731abb7759e5f1952"
 }

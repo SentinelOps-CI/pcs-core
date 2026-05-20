@@ -13,12 +13,12 @@
     "minimum_pass_rate": 1.0
   },
   "metrics": [
-    "release_reproducibility",
-    "failure_localization",
-    "certificate_completeness",
-    "registry_coverage",
-    "formal_check_coverage",
-    "scientific_memory_interpretability"
+    "release_reproducibility_score",
+    "failure_localization_accuracy",
+    "certificate_completeness_score",
+    "registry_coverage_score",
+    "formal_check_coverage_score",
+    "scientific_memory_interpretability_score"
   ],
   "success_criteria": {
     "minimum_pass_rate": 1.0,
@@ -28,5 +28,5 @@
   },
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
-  "signature_or_digest": "sha256:95af445eef42a9bb8946f73dba1699bcc7e34a65abd32da339a8ac416a7c397b"
+  "signature_or_digest": "sha256:c38a09a2c8a0e982b822e9aee824e88c1ec21c15153c306ec5863e0b834e261e"
 }

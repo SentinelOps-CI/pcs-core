@@ -69,6 +69,10 @@ def main() -> int:
     report["producer_id"] = "pcs-core"
     _write_json(EXAMPLES / "benchmark_report.valid.json", report)
 
+    summaries = report.get("metric_summaries")
+    if isinstance(summaries, list) and summaries:
+        _write_json(EXAMPLES / "metric_summary.valid.json", summaries[0])
+
     invalid_case = load_benchmark_case(
         repo_root()
         / "benchmarks/labtrust-qc-release/invalid/invalid-certificate-id/benchmark_case.v0.json",
@@ -246,6 +250,7 @@ def main() -> int:
     for rel in (
         "examples/benchmarks/benchmark_case.valid.json",
         "examples/benchmarks/benchmark_report.valid.json",
+        "examples/benchmarks/metric_summary.valid.json",
         "examples/benchmarks/explain_quality_report.valid.json",
         "examples/benchmarks/profile_coverage_report.valid.json",
         "examples/benchmarks/compatibility/pcs_bench_report.normalized.json",

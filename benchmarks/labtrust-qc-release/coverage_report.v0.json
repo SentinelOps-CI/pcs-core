@@ -1,0 +1,50 @@
+{
+  "benchmark_cases": [
+    "labtrust-certificate-id-tamper-v0",
+    "labtrust-lean-rejected-certificate-v0",
+    "labtrust-lean-signed-hash-mismatch-v0",
+    "labtrust-lean-stale-certificate-v0",
+    "labtrust-lean-trace-hash-mismatch-v0",
+    "labtrust-legacy-handoff-file-v0",
+    "labtrust-missing-qc-result-v0",
+    "labtrust-placeholder-commit-v0",
+    "labtrust-scientific-memory-import-failure-v0",
+    "labtrust-stale-trace-after-certificate-v0",
+    "labtrust-trace-hash-tamper-v0",
+    "labtrust-unauthorized-release-v0",
+    "labtrust-valid-release-v0"
+  ],
+  "case_kinds_covered": [
+    "invalid_certificate",
+    "invalid_formal_check",
+    "invalid_handoff",
+    "invalid_hash_mismatch",
+    "invalid_import",
+    "invalid_registry",
+    "invalid_render",
+    "stale_release",
+    "valid_release"
+  ],
+  "cases_covered": 13,
+  "detection_layers_covered": [
+    "CertifyEdge",
+    "LabTrust",
+    "Lean trust kernel",
+    "Provability Fabric",
+    "Scientific Memory"
+  ],
+  "repair_hint_kinds_covered": [
+    "align_certificate_id",
+    "align_handoff",
+    "align_hash",
+    "align_provenance",
+    "fix_import_report",
+    "none",
+    "rerun_formal_check",
+    "rerun_verification",
+    "unknown"
+  ],
+  "schema_version": "v0",
+  "task_id": "labtrust-qc-release-v0",
+  "workflow_id": "hospital_lab.qc_release"
+}

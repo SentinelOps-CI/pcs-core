@@ -8,10 +8,11 @@
     "release_directory": "benchmarks/tool-use-safety/input_releases/invalid-trace-hash"
   },
   "expected_status": "failed",
+  "expected_system_outcome": "rejected",
   "expected_failure_code": "trace_hash_mismatch",
   "expected_responsible_component": "hashing",
   "expected_repair_hint_kind": "align_hash",
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
-  "signature_or_digest": "sha256:847c3036edd1d9f9969b08692d596aba9b2a16be837e347cd3e0d39ee5765660"
+  "signature_or_digest": "sha256:0aed984c814bc5ccd6af58f55109a3436d4e448dafe461b4c0e6e8b521834188"
 }

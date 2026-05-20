@@ -1,0 +1,10 @@
+{
+  "expected_detection_layer": "LabTrust",
+  "failure_code": "unauthorized_release",
+  "repair_hint": {
+    "command": "labtrust run-demo qc-release --deterministic --out <run_dir>",
+    "description": "Use an authorized actor role for release_sample.",
+    "kind": "unknown"
+  },
+  "responsible_component": "runtime_producer"
+}

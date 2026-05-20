@@ -6,9 +6,9 @@
   "denominator": 1.0,
   "coverage_ratio": 1.0,
   "details": {
-    "registry_entry_count": 36
+    "registry_entry_count": 37
   },
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:0704ea476196e0c68fd8cbd75d94fdb4b49bb5f7a0f42c64ad8068d3d4bd6478"
+  "signature_or_digest": "sha256:967ec976f55d055b71b57ed575b786bf10c4707d2f1b06c40aa4ce8355b3f611"
 }

@@ -1,8 +1,14 @@
 # Benchmark metrics (v0)
 
-PCS benchmarks measure release-chain trust properties using portable `BenchmarkReport.v0` artifacts. Each metric below is referenced by `BenchmarkTask.v0.metrics` and aggregated in `BenchmarkReport.v0.summary` and `coverage`.
+PCS benchmarks measure release-chain trust properties using portable `BenchmarkReport.v0` artifacts.
 
-**Canonical machine-readable definitions:** `examples/benchmark_metric_registry.valid.json` (`BenchmarkMetricRegistry.v0`). Metric IDs use the `*_score` suffix; legacy short names in suite `metrics` arrays remain valid for v0 compatibility.
+**Report shape (v0):**
+
+- `metrics` — declared `benchmark_metric_id` values for the suite
+- `metric_summaries` — measured `MetricSummary.v0` rows (score, applicability, numerator, denominator)
+- `summary` / `coverage` — rollups and detailed coverage snapshots (legacy-friendly)
+
+**Canonical machine-readable definitions:** `examples/benchmark_metric_registry.valid.json` (`BenchmarkMetricRegistry.v0`). Metric IDs use the `*_score` suffix. Coverage blocks may still use legacy short `metric` names; scores in `metric_summaries` always use metric IDs.
 
 See also [benchmark-schema-contract-v0.md](benchmark-schema-contract-v0.md) and [benchmark-compatibility.md](benchmark-compatibility.md).
 

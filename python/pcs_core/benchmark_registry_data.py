@@ -7,12 +7,12 @@ from typing import Any
 PCS_CORE_REPO = "https://github.com/SentinelOps-CI/pcs-core"
 
 _STANDARD_METRICS = [
-    "release_reproducibility",
-    "failure_localization",
-    "certificate_completeness",
-    "registry_coverage",
-    "formal_check_coverage",
-    "scientific_memory_interpretability",
+    "release_reproducibility_score",
+    "failure_localization_accuracy",
+    "certificate_completeness_score",
+    "registry_coverage_score",
+    "formal_check_coverage_score",
+    "scientific_memory_interpretability_score",
 ]
 
 _STANDARD_THRESHOLDS = {
@@ -130,9 +130,10 @@ def benchmark_suite_entries() -> dict[str, dict[str, Any]]:
             ],
             "invalid_cases": [],
             "metrics": [
-                "release_reproducibility",
-                "failure_localization",
-                "registry_coverage",
+                "release_reproducibility_score",
+                "failure_localization_accuracy",
+                "registry_coverage_score",
+                "cross_domain_portability_score",
             ],
             "minimum_passing_thresholds": {
                 "minimum_pass_rate": 1.0,
@@ -156,7 +157,7 @@ def benchmark_suite_entries() -> dict[str, dict[str, Any]]:
                 "formal-computation-lean-check",
             ],
             "invalid_cases": [],
-            "metrics": ["formal_check_coverage", "failure_localization"],
+            "metrics": ["formal_check_coverage_score", "failure_localization_accuracy"],
             "minimum_passing_thresholds": {
                 "minimum_pass_rate": 1.0,
                 "minimum_formal_check_coverage": 1.0,
@@ -170,7 +171,10 @@ def benchmark_suite_entries() -> dict[str, dict[str, Any]]:
             "required_artifacts": ["ScientificMemory.ImportReport.v0"],
             "valid_cases": ["valid-scientific-memory-import"],
             "invalid_cases": ["invalid-scientific-memory-import"],
-            "metrics": ["scientific_memory_interpretability", "failure_localization"],
+            "metrics": [
+                "scientific_memory_interpretability_score",
+                "failure_localization_accuracy",
+            ],
             "minimum_passing_thresholds": {
                 "minimum_pass_rate": 1.0,
                 "minimum_scientific_memory_render_coverage": 1.0,

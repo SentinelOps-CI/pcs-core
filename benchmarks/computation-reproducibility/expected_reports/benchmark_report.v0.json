@@ -17,12 +17,12 @@
     }
   ],
   "metrics": [
-    "release_reproducibility",
-    "failure_localization",
-    "certificate_completeness",
-    "registry_coverage",
-    "formal_check_coverage",
-    "scientific_memory_interpretability"
+    "release_reproducibility_score",
+    "failure_localization_accuracy",
+    "certificate_completeness_score",
+    "registry_coverage_score",
+    "formal_check_coverage_score",
+    "scientific_memory_interpretability_score"
   ],
   "summary": {
     "total_cases": 2,
@@ -46,11 +46,11 @@
       "denominator": 2.0,
       "coverage_ratio": 0.7,
       "details": {
-        "registry_entry_count": 36
+        "registry_entry_count": 37
       },
       "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
       "source_commit": "d444444444444444444444444444444444444444",
-      "signature_or_digest": "sha256:6375f090a048e4ec057930f457d7f03831042b7b52b6b32a4a549ff10189c501"
+      "signature_or_digest": "sha256:70ebac81d5af17c403d461585166bf60a88430548c04a594403cb121dc0a8482"
     },
     "formal_checks": {
       "schema_version": "v0",
@@ -101,14 +101,104 @@
       "signature_or_digest": "sha256:5933e9db66537b3f6c4624ced0ec8e61855833bc0b2cc7af5a5e27342130c067"
     }
   },
+  "metric_summaries": [
+    {
+      "schema_version": "v0",
+      "metric_id": "release_reproducibility_score",
+      "score": 1.0,
+      "applicability": "measured",
+      "numerator": 2.0,
+      "denominator": 2.0,
+      "reason": "coverage from computation-reproducibility-v0-repro",
+      "details": {
+        "coverage_id": "computation-reproducibility-v0-repro"
+      },
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:0ce7b3bb6dad9a10bdc8aef6895fa880123029ab5991d70da38d2c5c4eec9faf"
+    },
+    {
+      "schema_version": "v0",
+      "metric_id": "failure_localization_accuracy",
+      "score": 1.0,
+      "applicability": "measured",
+      "numerator": 1.0,
+      "denominator": 1.0,
+      "reason": "component alignment on invalid cases",
+      "details": {},
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:a3928277b1435079004ae7f9018d672b053006d0e5eabcc83ff426e9f58bdce2"
+    },
+    {
+      "schema_version": "v0",
+      "metric_id": "certificate_completeness_score",
+      "score": 1.0,
+      "applicability": "measured",
+      "numerator": 2.0,
+      "denominator": 2.0,
+      "reason": "coverage from computation-reproducibility-v0-cert",
+      "details": {
+        "coverage_id": "computation-reproducibility-v0-cert"
+      },
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:4b419c5a8bff6ec0590d1f4a9410c33a04fc2d7d14d6f9590ac6877350366231"
+    },
+    {
+      "schema_version": "v0",
+      "metric_id": "registry_coverage_score",
+      "score": 0.7,
+      "applicability": "measured",
+      "numerator": 1.4,
+      "denominator": 2.0,
+      "reason": "coverage from computation-reproducibility-v0-registry",
+      "details": {
+        "coverage_id": "computation-reproducibility-v0-registry"
+      },
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:c9125c4fcd17207146a19e6879ee38e0266e74697eb119210301658b07e3ac64"
+    },
+    {
+      "schema_version": "v0",
+      "metric_id": "formal_check_coverage_score",
+      "score": 1.0,
+      "applicability": "measured",
+      "numerator": 4.666666666666666,
+      "denominator": 2.0,
+      "reason": "coverage from computation-reproducibility-v0-formal",
+      "details": {
+        "coverage_id": "computation-reproducibility-v0-formal"
+      },
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:3d8839637ac1025ab10c2673aa7cf795fdbc011fbc9eb3d654f665142c475870"
+    },
+    {
+      "schema_version": "v0",
+      "metric_id": "scientific_memory_interpretability_score",
+      "score": 1.0,
+      "applicability": "measured",
+      "numerator": 2.0,
+      "denominator": 2.0,
+      "reason": "coverage from computation-reproducibility-v0-sm",
+      "details": {
+        "coverage_id": "computation-reproducibility-v0-sm"
+      },
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:dab6da5ceaa4289e9b8acbabb89723c96e0ec55e8412934a95945008b1b8c699"
+    }
+  ],
   "failures": [],
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:6c915a450f37efa86146c1fdd65e998fdd8e47ac71a8b42d932c17c8fa54e15b",
+  "signature_or_digest": "sha256:d68a8a07487a1d541fe82e00b3e47b7d40b4b3a0da2b96c29ba03cec98910a53",
   "conformance_refs": [
     {
       "suite": "computation",
-      "run_id": "conf-run-computation-20260520T103949Z",
+      "run_id": "conf-run-computation-20260520T120631Z",
       "status": "passed"
     }
   ]

@@ -3,8 +3,8 @@
   "run_id": "bench-run-valid-release-chain",
   "task_id": "computation-reproducibility-v0",
   "case_id": "valid-release-chain",
-  "started_at": "2026-05-20T10:41:32Z",
-  "completed_at": "2026-05-20T10:41:32Z",
+  "started_at": "2026-05-20T12:06:39Z",
+  "completed_at": "2026-05-20T12:06:39Z",
   "commands": [
     {
       "command": "validate_release_chain examples/computation-release",
@@ -13,11 +13,16 @@
   ],
   "artifacts_produced": [],
   "observed_status": "passed",
-  "observed_failure_code": "",
-  "observed_responsible_component": "unknown",
-  "observed_repair_hint": "unknown",
-  "duration_ms": 149,
+  "observed_failure_code": null,
+  "observed_responsible_component": null,
+  "observed_repair_hint": null,
+  "system_admission_outcome": "not_evaluated",
+  "release_chain_status": "valid",
+  "certificate_status": "not_applicable",
+  "scientific_memory_import_status": "not_applicable",
+  "scientific_memory_render_status": "not_applicable",
+  "duration_ms": 93,
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:4f40e982ef28d84ed3721d9252c7638e9f74368849fba020e811a6779fa295a8"
+  "signature_or_digest": "sha256:7869c6d513adbb381b0115d32f626f81da69fd02b9c352d78c25140ed2433659"
 }
