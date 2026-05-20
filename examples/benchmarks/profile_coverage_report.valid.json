@@ -1,0 +1,40 @@
+{
+  "schema_version": "v0",
+  "coverage_id": "pf-profile-coverage-v0",
+  "workflow_profile_id": "labtrust.qc_release_v0.1",
+  "producer_id": "provability-fabric",
+  "suite_id": "labtrust-qc-release-v0",
+  "artifact_types_required": [
+    "RuntimeReceipt.v0",
+    "TraceCertificate.v0",
+    "ScienceClaimBundle.v0",
+    "VerificationResult.v0",
+    "SignedScienceClaimBundle.v0"
+  ],
+  "artifact_types_covered": [
+    "RuntimeReceipt.v0",
+    "TraceCertificate.v0",
+    "ScienceClaimBundle.v0",
+    "VerificationResult.v0",
+    "SignedScienceClaimBundle.v0"
+  ],
+  "semantic_checks_required": [
+    "trace_hash_matches_certificate"
+  ],
+  "semantic_checks_covered": [
+    "trace_hash_matches_certificate"
+  ],
+  "handoff_steps_required": [
+    "runtime_to_certificate"
+  ],
+  "handoff_steps_covered": [
+    "runtime_to_certificate"
+  ],
+  "numerator": 7.0,
+  "denominator": 7.0,
+  "coverage_ratio": 1.0,
+  "details": {},
+  "source_repo": "https://github.com/SentinelOps-CI/provability-fabric",
+  "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
+  "signature_or_digest": "sha256:63276380d3148f48311918efad1e607a7d936773d6de0cdcb70ff654b56ba511"
+}

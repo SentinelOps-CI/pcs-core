@@ -51,6 +51,8 @@ jobs:
           pcs benchmark run --suite tool-use-safety-v0
           pcs benchmark run --suite formal-trust-kernel-v0
           pcs conformance run --suite benchmark
+          pcs conformance run --suite benchmark-report
+          python scripts/materialize_benchmark_examples.py
           pcs validate ../examples/benchmark_registry.valid.json
           pcs validate ../examples/tool_use_trace.valid.json
           pcs validate ../examples/tool_use_certificate.valid.json

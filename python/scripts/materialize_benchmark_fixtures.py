@@ -554,6 +554,12 @@ def main() -> int:
 
     write_shared_vectors(force=True)
 
+    primary_report_alias = {
+        "benchmarks/labtrust-qc-release": "labtrust-qc-release-v0",
+        "benchmarks/tool-use-safety": "tool-use-safety-v0",
+        "benchmarks/computation-reproducibility": "computation-reproducibility-v0",
+        "benchmarks/cross-domain": "cross-domain-release-chain-v0",
+    }
     for suite_id in (
         "labtrust-qc-release-v0",
         "tool-use-safety-v0",
@@ -570,9 +576,15 @@ def main() -> int:
         report_path = expected_reports / f"benchmark_report.{suite_id}.v0.json"
         _write_json(report_path, report)
         validate_file(report_path)
-        if suite_id == "labtrust-qc-release-v0":
+        if primary_report_alias.get(fixture_root) == suite_id:
             _write_json(expected_reports / "benchmark_report.v0.json", report)
             validate_file(expected_reports / "benchmark_report.v0.json")
+
+    import subprocess
+    import sys
+
+    examples_script = Path(__file__).resolve().parent / "materialize_benchmark_examples.py"
+    subprocess.run([sys.executable, str(examples_script)], check=True)
 
     for rel in (
         "benchmarks/labtrust-qc-release/benchmark_task.v0.json",

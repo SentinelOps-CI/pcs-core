@@ -3,11 +3,11 @@
   "run_id": "bench-run-valid-tool-use-release",
   "task_id": "cross-domain-release-chain-v0",
   "case_id": "valid-tool-use-release",
-  "started_at": "2026-05-19T15:12:19Z",
-  "completed_at": "2026-05-19T15:12:19Z",
+  "started_at": "2026-05-20T10:41:33Z",
+  "completed_at": "2026-05-20T10:41:33Z",
   "commands": [
     {
-      "command": "validate_release_chain C:/Users/mateo/pcs-core/examples/tool-use-release",
+      "command": "validate_release_chain examples/tool-use-release",
       "exit_code": 0
     }
   ],
@@ -16,8 +16,8 @@
   "observed_failure_code": "",
   "observed_responsible_component": "unknown",
   "observed_repair_hint": "unknown",
-  "duration_ms": 65,
+  "duration_ms": 122,
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:5253f491b7d486e1479a93ae0504ef3c138660c0b6be61b3192f3f5ea63c4e42"
+  "signature_or_digest": "sha256:7dc1d04b0f8f201befe0d2262342e84a38a488c14657cf1a08937ab18ab54709"
 }

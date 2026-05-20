@@ -23,6 +23,7 @@ from pcs_core.protocol_validate import (
 )
 from pcs_core.benchmark_validate import (
     validate_benchmark_case_semantics,
+    validate_benchmark_metric_registry_semantics,
     validate_benchmark_registry_semantics,
     validate_benchmark_task_semantics,
 )
@@ -81,6 +82,9 @@ ARTIFACT_SCHEMAS: dict[str, str] = {
     "FailureCaseManifest.v0": "FailureCaseManifest.v0.schema.json",
     "FailureLocalizationResult.v0": "FailureLocalizationResult.v0.schema.json",
     "CoverageReport.v0": "CoverageReport.v0.schema.json",
+    "ExplainQualityReport.v0": "ExplainQualityReport.v0.schema.json",
+    "ProfileCoverageReport.v0": "ProfileCoverageReport.v0.schema.json",
+    "BenchmarkMetricRegistry.v0": "BenchmarkMetricRegistry.v0.schema.json",
 }
 
 CERTIFIED_CLAIM_STATUSES = frozenset(
@@ -114,10 +118,32 @@ def detect_artifact_type(data: dict[str, Any]) -> str | None:
     if (
         data.get("schema_version") == "v0"
         and isinstance(data.get("registry_id"), str)
+        and isinstance(data.get("metrics"), dict)
+        and "registry_version" in data
+        and "suites" not in data
+    ):
+        return "BenchmarkMetricRegistry.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("registry_id"), str)
         and isinstance(data.get("suites"), dict)
         and "registry_version" in data
     ):
         return "BenchmarkRegistry.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("report_id"), str)
+        and isinstance(data.get("required_sections"), list)
+        and "quality_score" in data
+    ):
+        return "ExplainQualityReport.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("coverage_id"), str)
+        and isinstance(data.get("workflow_profile_id"), str)
+        and isinstance(data.get("artifact_types_required"), list)
+    ):
+        return "ProfileCoverageReport.v0"
     if (
         data.get("schema_version") == "v0"
         and isinstance(data.get("report_id"), str)
@@ -152,6 +178,7 @@ def detect_artifact_type(data: dict[str, Any]) -> str | None:
         and isinstance(data.get("coverage_id"), str)
         and "coverage_ratio" in data
         and "numerator" in data
+        and ("metric" in data or "metric_id" in data)
     ):
         return "CoverageReport.v0"
     if (
@@ -559,6 +586,10 @@ def validate_semantics(data: dict[str, Any], artifact_type: str) -> list[str]:
         errors.extend(validate_lean_check_result_semantics(data))
         return errors
 
+    if artifact_type == "BenchmarkMetricRegistry.v0":
+        errors.extend(validate_benchmark_metric_registry_semantics(data))
+        return errors
+
     if artifact_type == "BenchmarkRegistry.v0":
         errors.extend(validate_benchmark_registry_semantics(data))
         return errors
@@ -587,6 +618,12 @@ def validate_semantics(data: dict[str, Any], artifact_type: str) -> list[str]:
         return errors
 
     if artifact_type == "CoverageReport.v0":
+        return errors
+
+    if artifact_type == "ExplainQualityReport.v0":
+        return errors
+
+    if artifact_type == "ProfileCoverageReport.v0":
         return errors
 
     if artifact_type == "ReleaseChainValidationResult.v0":
@@ -690,8 +727,18 @@ def check_valid_examples(examples_dir: Path | None = None) -> None:
         "proof_obligation.valid.json",
         "lean_check_result.valid.json",
         "benchmark_registry.valid.json",
+        "benchmark_metric_registry.valid.json",
     ):
         validate_file(examples_dir / name)
+
+    benchmarks_examples = examples_dir / "benchmarks"
+    if benchmarks_examples.is_dir():
+        for path in sorted(benchmarks_examples.rglob("*.valid.json")):
+            validate_file(path)
+        compat = benchmarks_examples / "compatibility"
+        if compat.is_dir():
+            for path in sorted(compat.glob("*.normalized.json")):
+                validate_file(path)
 
 
 def check_invalid_examples(examples_dir: Path | None = None) -> None:

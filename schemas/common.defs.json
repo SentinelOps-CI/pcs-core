@@ -311,7 +311,46 @@
         "certificate_completeness",
         "registry_coverage",
         "formal_check_coverage",
-        "scientific_memory_interpretability"
+        "scientific_memory_interpretability",
+        "repair_hint_quality",
+        "cross_domain_portability"
+      ]
+    },
+    "benchmark_metric_id": {
+      "type": "string",
+      "enum": [
+        "release_reproducibility_score",
+        "failure_localization_accuracy",
+        "certificate_completeness_score",
+        "registry_coverage_score",
+        "formal_check_coverage_score",
+        "scientific_memory_interpretability_score",
+        "repair_hint_quality_score",
+        "cross_domain_portability_score"
+      ]
+    },
+    "benchmark_producer_id": {
+      "type": "string",
+      "enum": [
+        "pcs-core",
+        "pcs-bench",
+        "provability-fabric",
+        "certifyedge",
+        "labtrust-gym",
+        "scientific-memory"
+      ]
+    },
+    "explain_quality_section_id": {
+      "type": "string",
+      "enum": [
+        "provenance",
+        "hashes",
+        "handoffs",
+        "verification",
+        "formal_checks",
+        "limitations",
+        "lineage",
+        "repair_hints"
       ]
     },
     "benchmark_observed_status": {

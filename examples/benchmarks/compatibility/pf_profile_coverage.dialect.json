@@ -1,0 +1,23 @@
+{
+  "workflow_profile_id": "provability_fabric.admission_v0",
+  "required_artifacts": [
+    "VerificationResult.v0",
+    "SignedScienceClaimBundle.v0"
+  ],
+  "covered_artifacts": [
+    "VerificationResult.v0",
+    "SignedScienceClaimBundle.v0"
+  ],
+  "required_checks": [
+    "signed_input_hash_matches_verified_input"
+  ],
+  "covered_checks": [
+    "signed_input_hash_matches_verified_input"
+  ],
+  "required_handoffs": [
+    "bundle_to_verifier"
+  ],
+  "covered_handoffs": [
+    "bundle_to_verifier"
+  ]
+}

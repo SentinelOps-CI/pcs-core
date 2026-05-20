@@ -1,30 +1,31 @@
 {
   "schema_version": "v0",
-  "report_id": "benchmark-report-formal-trust-kernel-v0",
-  "benchmark_suite_id": "formal-trust-kernel-v0",
+  "report_id": "benchmark-report-cross-domain-release-chain-v0",
+  "benchmark_suite_id": "cross-domain-release-chain-v0",
   "runs": [
     {
-      "run_id": "bench-run-formal-computation-lean-check",
-      "case_id": "formal-computation-lean-check",
-      "path": "benchmarks/cross-domain/valid/formal-computation-lean-check/benchmark_run.formal-computation-lean-check.v0.json",
+      "run_id": "bench-run-valid-computation-release",
+      "case_id": "valid-computation-release",
+      "path": "benchmarks/cross-domain/valid/valid-computation-release/benchmark_run.valid-computation-release.v0.json",
       "observed_status": "passed"
     },
     {
-      "run_id": "bench-run-formal-labtrust-lean-check",
-      "case_id": "formal-labtrust-lean-check",
-      "path": "benchmarks/cross-domain/valid/formal-labtrust-lean-check/benchmark_run.formal-labtrust-lean-check.v0.json",
+      "run_id": "bench-run-valid-labtrust-release",
+      "case_id": "valid-labtrust-release",
+      "path": "benchmarks/cross-domain/valid/valid-labtrust-release/benchmark_run.valid-labtrust-release.v0.json",
       "observed_status": "passed"
     },
     {
-      "run_id": "bench-run-formal-tool-use-lean-check",
-      "case_id": "formal-tool-use-lean-check",
-      "path": "benchmarks/cross-domain/valid/formal-tool-use-lean-check/benchmark_run.formal-tool-use-lean-check.v0.json",
+      "run_id": "bench-run-valid-tool-use-release",
+      "case_id": "valid-tool-use-release",
+      "path": "benchmarks/cross-domain/valid/valid-tool-use-release/benchmark_run.valid-tool-use-release.v0.json",
       "observed_status": "passed"
     }
   ],
   "metrics": [
-    "formal_check_coverage",
-    "failure_localization"
+    "release_reproducibility",
+    "failure_localization",
+    "registry_coverage"
   ],
   "summary": {
     "total_cases": 3,
@@ -42,21 +43,21 @@
   "coverage": {
     "registry": {
       "schema_version": "v0",
-      "coverage_id": "formal-trust-kernel-v0-registry",
+      "coverage_id": "cross-domain-release-chain-v0-registry",
       "metric": "registry_coverage",
       "numerator": 2.5,
       "denominator": 3.0,
       "coverage_ratio": 0.8333333333333334,
       "details": {
-        "registry_entry_count": 33
+        "registry_entry_count": 36
       },
       "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
       "source_commit": "d444444444444444444444444444444444444444",
-      "signature_or_digest": "sha256:64476ef73ee54687508d189752b3cd33bd0ed0d3cbc4048bc3803bfed860d7cf"
+      "signature_or_digest": "sha256:fd495beb90b989f438459f489ae6b0228aef7bdcea7d262932c8bba06d5d9365"
     },
     "formal_checks": {
       "schema_version": "v0",
-      "coverage_id": "formal-trust-kernel-v0-formal",
+      "coverage_id": "cross-domain-release-chain-v0-formal",
       "metric": "formal_check_coverage",
       "numerator": 6.916666666666666,
       "denominator": 3.0,
@@ -64,11 +65,11 @@
       "details": {},
       "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
       "source_commit": "d444444444444444444444444444444444444444",
-      "signature_or_digest": "sha256:d27171169e87b108be0f6659b2229ab1d28c12f3a1a38b417fee545ea256c476"
+      "signature_or_digest": "sha256:122d810e15c9f3d12aa9a18a3d6715dc95822600ee6446e5e1a560e8bc228f0d"
     },
     "scientific_memory": {
       "schema_version": "v0",
-      "coverage_id": "formal-trust-kernel-v0-sm",
+      "coverage_id": "cross-domain-release-chain-v0-sm",
       "metric": "scientific_memory_interpretability",
       "numerator": 2.8333333333333335,
       "denominator": 3.0,
@@ -76,11 +77,11 @@
       "details": {},
       "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
       "source_commit": "d444444444444444444444444444444444444444",
-      "signature_or_digest": "sha256:273b994d92637241169ffe76863fecd49b1a6e52c295560443463ce8c4ad7337"
+      "signature_or_digest": "sha256:797905de2e4a60a20a83fa095af0bc0a0852b7cbf5a674ea39d2475e1abe7fce"
     },
     "release_reproducibility": {
       "schema_version": "v0",
-      "coverage_id": "formal-trust-kernel-v0-repro",
+      "coverage_id": "cross-domain-release-chain-v0-repro",
       "metric": "release_reproducibility",
       "numerator": 3.0,
       "denominator": 3.0,
@@ -88,11 +89,11 @@
       "details": {},
       "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
       "source_commit": "d444444444444444444444444444444444444444",
-      "signature_or_digest": "sha256:cd37d706e5b671a2b6633444ab19e9fa27cb2d6f067db0adbf3e6e80aef921d3"
+      "signature_or_digest": "sha256:b20b0100fc5729ffeef767388fd1c424a618c065d53f3c687b2a3d2eb722fd29"
     },
     "certificate_completeness": {
       "schema_version": "v0",
-      "coverage_id": "formal-trust-kernel-v0-cert",
+      "coverage_id": "cross-domain-release-chain-v0-cert",
       "metric": "certificate_completeness",
       "numerator": 3.0,
       "denominator": 3.0,
@@ -100,17 +101,17 @@
       "details": {},
       "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
       "source_commit": "d444444444444444444444444444444444444444",
-      "signature_or_digest": "sha256:e42376d036d97ff8ef9fa92d0d6f94bcd5e3dd14e578169bf1f7bf360bd68179"
+      "signature_or_digest": "sha256:751f6063bf74901850422e70064cfcf05141d75fbdaa4030e3d1c0aa764d7014"
     }
   },
   "failures": [],
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:ea2f19c8d364594ddcc33ec0ef08bb1e600ac3960815bdeeb8a0c91f2e1874e7",
+  "signature_or_digest": "sha256:aeb721d7834bfba951f26d4b4dd8c604c7ec6909925e0aa0b693235ff55e8d5e",
   "conformance_refs": [
     {
-      "suite": "lean-trust",
-      "run_id": "conf-run-lean-trust-20260519T145658Z",
+      "suite": "multidomain",
+      "run_id": "conf-run-multidomain-20260520T103951Z",
       "status": "passed"
     }
   ]

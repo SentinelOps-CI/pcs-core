@@ -179,10 +179,14 @@ def _execute_scientific_memory_benchmark_case(case: dict[str, Any]) -> dict[str,
     else:
         observed_failure_code = "scientific_memory_import_failed"
 
+    try:
+        release_rel = release_dir.relative_to(repo_root()).as_posix()
+    except ValueError:
+        release_rel = release_dir.as_posix()
     issues = validate_release_chain(release_dir)
     commands.append(
         {
-            "command": f"validate_release_chain {release_dir.as_posix()}",
+            "command": f"validate_release_chain {release_rel}",
             "exit_code": 0 if not issues else 1,
         },
     )
@@ -228,10 +232,14 @@ def _execute_release_chain_benchmark_case(case: dict[str, Any]) -> dict[str, Any
     commands: list[dict[str, Any]] = []
     artifacts_produced: list[str] = []
 
+    try:
+        release_rel = release_dir.relative_to(repo_root()).as_posix()
+    except ValueError:
+        release_rel = release_dir.as_posix()
     issues = validate_release_chain(release_dir)
     commands.append(
         {
-            "command": f"validate_release_chain {release_dir.as_posix()}",
+            "command": f"validate_release_chain {release_rel}",
             "exit_code": 0 if not issues else 1,
         },
     )

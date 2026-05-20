@@ -61,6 +61,15 @@ python -m pcs_core.cli benchmark run --suite labtrust-qc-release-v0 --json --out
 
 Conformance validation can feed benchmark reports without duplicating check logic via `BenchmarkReport.v0.conformance_refs` pointing at `ConformanceRun.v0` records (see `schemas/ConformanceRun.v0.schema.json`).
 
+## Metric registry
+
+Canonical metric definitions: `examples/benchmark_metric_registry.valid.json` (`BenchmarkMetricRegistry.v0`). Each entry specifies numerator, denominator, applicability, failure interpretation, and recommended thresholds.
+
+Additional report types for cross-repo alignment:
+
+- `ExplainQualityReport.v0` — PF admission / SM render explain-quality
+- `ProfileCoverageReport.v0` — PF workflow profile coverage
+
 ## Conformance bridge
 
 | Benchmark suite | Conformance suite ref |
@@ -70,6 +79,12 @@ Conformance validation can feed benchmark reports without duplicating check logi
 | `computation-reproducibility-v0` | `computation` |
 | `cross-domain-release-chain-v0` | `multidomain` |
 | `formal-trust-kernel-v0` | `lean-trust` |
+| `benchmark-report` | Cross-repo dialect normalization corpus |
+
+```bash
+pcs conformance run --suite benchmark-report
+pcs benchmark normalize --dialect examples/benchmarks/compatibility/pf_admission_explain_quality.dialect.json --out /tmp/out.json
+```
 
 ## External `pcs-bench` repo
 

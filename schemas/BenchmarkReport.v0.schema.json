@@ -40,6 +40,7 @@
       "type": "array",
       "items": { "$ref": "common.defs.json#/$defs/conformance_run_ref" }
     },
+    "producer_id": { "$ref": "common.defs.json#/$defs/benchmark_producer_id" },
     "source_repo": { "type": "string", "format": "uri" },
     "source_commit": { "$ref": "common.defs.json#/$defs/git_commit" },
     "signature_or_digest": { "$ref": "common.defs.json#/$defs/hex_digest" }
@@ -89,6 +90,41 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1
+        },
+        "repair_hint_quality_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "cross_domain_portability_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "release_reproducibility_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "certificate_completeness_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "registry_coverage_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "formal_check_coverage_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "scientific_memory_interpretability_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
         }
       }
     },
@@ -100,7 +136,9 @@
         "formal_checks": { "$ref": "CoverageReport.v0.schema.json" },
         "scientific_memory": { "$ref": "CoverageReport.v0.schema.json" },
         "release_reproducibility": { "$ref": "CoverageReport.v0.schema.json" },
-        "certificate_completeness": { "$ref": "CoverageReport.v0.schema.json" }
+        "certificate_completeness": { "$ref": "CoverageReport.v0.schema.json" },
+        "explain_quality": { "$ref": "ExplainQualityReport.v0.schema.json" },
+        "profile_coverage": { "$ref": "ProfileCoverageReport.v0.schema.json" }
       }
     },
     "benchmark_failure_entry": {

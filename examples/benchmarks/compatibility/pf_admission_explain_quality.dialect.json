@@ -1,0 +1,50 @@
+{
+  "report_id": "pf-admission-explain-v0",
+  "suite_id": "pf-admission-v0",
+  "case_id": "bundle-admission",
+  "required_sections": [
+    "provenance",
+    "hashes",
+    "handoffs",
+    "verification",
+    "formal_checks",
+    "limitations",
+    "lineage",
+    "repair_hints"
+  ],
+  "section_scores": {
+    "provenance": {
+      "present": true,
+      "score": 1.0
+    },
+    "hashes": {
+      "present": true,
+      "score": 1.0
+    },
+    "handoffs": {
+      "present": true,
+      "score": 1.0
+    },
+    "verification": {
+      "present": true,
+      "score": 1.0
+    },
+    "formal_checks": {
+      "present": true,
+      "score": 1.0
+    },
+    "limitations": {
+      "present": true,
+      "score": 1.0
+    },
+    "lineage": {
+      "present": true,
+      "score": 1.0
+    },
+    "repair_hints": {
+      "present": true,
+      "score": 1.0
+    }
+  },
+  "quality_score": 1.0
+}

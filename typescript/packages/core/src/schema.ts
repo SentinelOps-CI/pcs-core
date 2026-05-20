@@ -60,6 +60,9 @@ const ARTIFACT_SCHEMAS: Record<ArtifactType, string> = {
   "FailureCaseManifest.v0": "FailureCaseManifest.v0.schema.json",
   "FailureLocalizationResult.v0": "FailureLocalizationResult.v0.schema.json",
   "CoverageReport.v0": "CoverageReport.v0.schema.json",
+  "ExplainQualityReport.v0": "ExplainQualityReport.v0.schema.json",
+  "ProfileCoverageReport.v0": "ProfileCoverageReport.v0.schema.json",
+  "BenchmarkMetricRegistry.v0": "BenchmarkMetricRegistry.v0.schema.json",
   "ConformanceReport.v0": "ConformanceReport.v0.schema.json",
 };
 

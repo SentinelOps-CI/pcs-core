@@ -2,6 +2,10 @@
 
 PCS benchmarks measure release-chain trust properties using portable `BenchmarkReport.v0` artifacts. Each metric below is referenced by `BenchmarkTask.v0.metrics` and aggregated in `BenchmarkReport.v0.summary` and `coverage`.
 
+**Canonical machine-readable definitions:** `examples/benchmark_metric_registry.valid.json` (`BenchmarkMetricRegistry.v0`). Metric IDs use the `*_score` suffix; legacy short names in suite `metrics` arrays remain valid for v0 compatibility.
+
+See also [benchmark-schema-contract-v0.md](benchmark-schema-contract-v0.md) and [benchmark-compatibility.md](benchmark-compatibility.md).
+
 ## Release reproducibility
 
 A release is **reproducible** when a clean checkout of the pinned `source_repo` at `source_commit` can regenerate or revalidate the full release chain and obtain the same canonical hashes for every declared artifact, except fields explicitly excluded by the canonical hashing rules (for example placeholder digests during draft materialization).

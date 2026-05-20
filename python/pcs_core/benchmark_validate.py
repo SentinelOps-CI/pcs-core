@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from pcs_core.benchmark_localization import FAILURE_CODE_TO_COMPONENT
+from pcs_core.benchmark_metric_registry_data import benchmark_metric_entries
 from pcs_core.benchmark_registry_data import benchmark_suite_entries
 
 
@@ -62,4 +63,29 @@ def validate_benchmark_registry_semantics(data: dict[str, Any]) -> list[str]:
         errors.append(
             f"suite keys drift from catalog (on_disk={sorted(suites)} catalog={sorted(catalog)})",
         )
+    return errors
+
+
+def validate_benchmark_metric_registry_semantics(data: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    catalog = benchmark_metric_entries()
+    metrics = data.get("metrics")
+    if not isinstance(metrics, dict):
+        return ["BenchmarkMetricRegistry.v0 metrics must be an object"]
+    if set(metrics) != set(catalog):
+        errors.append(
+            f"metric keys drift from catalog (on_disk={sorted(metrics)} catalog={sorted(catalog)})",
+        )
+    required_ids = {
+        "release_reproducibility_score",
+        "failure_localization_accuracy",
+        "certificate_completeness_score",
+        "registry_coverage_score",
+        "formal_check_coverage_score",
+        "scientific_memory_interpretability_score",
+        "repair_hint_quality_score",
+        "cross_domain_portability_score",
+    }
+    if not required_ids <= set(metrics):
+        errors.append(f"missing metric ids: {sorted(required_ids - set(metrics))}")
     return errors

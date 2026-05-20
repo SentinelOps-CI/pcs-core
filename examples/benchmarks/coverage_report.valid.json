@@ -1,0 +1,14 @@
+{
+  "schema_version": "v0",
+  "coverage_id": "labtrust-qc-release-v0-registry",
+  "metric": "registry_coverage",
+  "numerator": 1.0,
+  "denominator": 1.0,
+  "coverage_ratio": 1.0,
+  "details": {
+    "registry_entry_count": 36
+  },
+  "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+  "source_commit": "d444444444444444444444444444444444444444",
+  "signature_or_digest": "sha256:0704ea476196e0c68fd8cbd75d94fdb4b49bb5f7a0f42c64ad8068d3d4bd6478"
+}

@@ -60,6 +60,9 @@ export type ArtifactType =
   | "FailureCaseManifest.v0"
   | "FailureLocalizationResult.v0"
   | "CoverageReport.v0"
+  | "ExplainQualityReport.v0"
+  | "ProfileCoverageReport.v0"
+  | "BenchmarkMetricRegistry.v0"
   | "ConformanceReport.v0";
 
 const PROTOCOL_ARTIFACT_TYPES = new Set<ArtifactType>([
@@ -75,11 +78,37 @@ export function detectArtifactType(data: Record<string, unknown>): ArtifactType 
   if (
     data.schema_version === "v0" &&
     typeof data.registry_id === "string" &&
+    typeof data.metrics === "object" &&
+    data.metrics !== null &&
+    "registry_version" in data &&
+    !("suites" in data)
+  ) {
+    return "BenchmarkMetricRegistry.v0";
+  }
+  if (
+    data.schema_version === "v0" &&
+    typeof data.registry_id === "string" &&
     typeof data.suites === "object" &&
     data.suites !== null &&
     "registry_version" in data
   ) {
     return "BenchmarkRegistry.v0";
+  }
+  if (
+    data.schema_version === "v0" &&
+    typeof data.report_id === "string" &&
+    Array.isArray(data.required_sections) &&
+    "quality_score" in data
+  ) {
+    return "ExplainQualityReport.v0";
+  }
+  if (
+    data.schema_version === "v0" &&
+    typeof data.coverage_id === "string" &&
+    typeof data.workflow_profile_id === "string" &&
+    Array.isArray(data.artifact_types_required)
+  ) {
+    return "ProfileCoverageReport.v0";
   }
   if (
     data.schema_version === "v0" &&
@@ -119,7 +148,8 @@ export function detectArtifactType(data: Record<string, unknown>): ArtifactType 
     data.schema_version === "v0" &&
     typeof data.coverage_id === "string" &&
     "coverage_ratio" in data &&
-    "numerator" in data
+    "numerator" in data &&
+    ("metric" in data || "metric_id" in data)
   ) {
     return "CoverageReport.v0";
   }

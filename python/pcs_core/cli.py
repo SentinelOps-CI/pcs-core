@@ -424,6 +424,22 @@ def main(argv: list[str] | None = None) -> int:
     benchmark_sub = benchmark_parser.add_subparsers(dest="benchmark_cmd", required=True)
     benchmark_sub.add_parser("list", help="List registered benchmark suite ids")
     benchmark_sub.add_parser("validate", help="Validate benchmark fixture tree")
+    p_benchmark_normalize = benchmark_sub.add_parser(
+        "normalize",
+        help="Normalize a repo dialect JSON file to a pcs-core benchmark schema",
+    )
+    p_benchmark_normalize.add_argument(
+        "--dialect",
+        type=Path,
+        required=True,
+        help="Path to dialect JSON (e.g. examples/benchmarks/compatibility/pf_admission_explain_quality.dialect.json)",
+    )
+    p_benchmark_normalize.add_argument(
+        "--out",
+        type=Path,
+        required=True,
+        help="Output normalized JSON path",
+    )
     p_benchmark_run = benchmark_sub.add_parser("run", help="Run a benchmark suite")
     p_benchmark_run.add_argument(
         "--suite",
@@ -495,6 +511,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_benchmark_list()
     if args.command == "benchmark" and args.benchmark_cmd == "validate":
         return cmd_benchmark_validate()
+    if args.command == "benchmark" and args.benchmark_cmd == "normalize":
+        return cmd_benchmark_normalize(args.dialect, args.out)
     if args.command == "benchmark" and args.benchmark_cmd == "run":
         return cmd_benchmark_run(args.suite, json_output=args.json, out_path=args.out)
 
@@ -511,15 +529,43 @@ def cmd_benchmark_list() -> int:
 
 
 def cmd_benchmark_validate() -> int:
+    from pcs_core.benchmark_compat import validate_compatibility_corpus
     from pcs_core.benchmark_runner import validate_benchmark_fixtures
 
     errors = validate_benchmark_fixtures()
+    errors.extend(validate_compatibility_corpus())
     if not errors:
         print("OK benchmark fixtures")
         return 0
     for err in errors:
         print(f"FAIL {err}", file=sys.stderr)
     return 1
+
+
+def cmd_benchmark_normalize(dialect_path: Path, out_path: Path) -> int:
+    import json
+
+    from pcs_core.benchmark_compat import NORMALIZERS
+
+    name = dialect_path.name
+    if name not in NORMALIZERS:
+        print(
+            f"FAIL unknown dialect {name!r}; expected one of: {', '.join(sorted(NORMALIZERS))}",
+            file=sys.stderr,
+        )
+        return 1
+    artifact_type, normalizer = NORMALIZERS[name]
+    try:
+        raw = _load_json(dialect_path)
+        normalized = normalizer(raw)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(json.dumps(normalized, indent=2) + "\n", encoding="utf-8")
+        validate_file(out_path)
+        print(f"OK {artifact_type} {out_path}")
+        return 0
+    except (ValidationError, ValueError, json.JSONDecodeError) as exc:
+        print(f"FAIL benchmark normalize: {exc}", file=sys.stderr)
+        return 1
 
 
 def cmd_benchmark_run(suite: str, *, json_output: bool = False, out_path: Path | None = None) -> int:

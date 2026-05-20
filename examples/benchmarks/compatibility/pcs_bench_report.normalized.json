@@ -1,0 +1,109 @@
+{
+  "schema_version": "v0",
+  "report_id": "pcs-bench-report-labtrust-v0",
+  "benchmark_suite_id": "labtrust-qc-release-v0",
+  "runs": [
+    {
+      "run_id": "bench-run-valid-release-chain",
+      "case_id": "valid-release-chain",
+      "path": "benchmarks/labtrust-qc-release/valid/valid-release-chain/benchmark_run.valid-release-chain.v0.json",
+      "observed_status": "passed"
+    },
+    {
+      "run_id": "bench-run-invalid-certificate-id",
+      "case_id": "invalid-certificate-id",
+      "path": "benchmarks/labtrust-qc-release/invalid/invalid-certificate-id/benchmark_run.invalid-certificate-id.v0.json",
+      "observed_status": "passed"
+    }
+  ],
+  "metrics": [
+    "release_reproducibility",
+    "failure_localization",
+    "certificate_completeness",
+    "registry_coverage",
+    "formal_check_coverage",
+    "scientific_memory_interpretability"
+  ],
+  "summary": {
+    "total_cases": 6,
+    "passed_cases": 6,
+    "failed_cases": 0,
+    "expected_failures_detected": 5,
+    "unexpected_passes": 0,
+    "unexpected_failures": 0,
+    "failure_localization_accuracy": 1.0,
+    "repair_hint_accuracy": 1.0,
+    "formal_check_coverage": 1.0,
+    "registry_coverage": 1.0,
+    "scientific_memory_render_coverage": 0.8333333333333334
+  },
+  "coverage": {
+    "registry": {
+      "schema_version": "v0",
+      "coverage_id": "labtrust-qc-release-v0-registry",
+      "metric": "registry_coverage",
+      "numerator": 1.0,
+      "denominator": 1.0,
+      "coverage_ratio": 1.0,
+      "details": {
+        "registry_entry_count": 36
+      },
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:0704ea476196e0c68fd8cbd75d94fdb4b49bb5f7a0f42c64ad8068d3d4bd6478"
+    },
+    "formal_checks": {
+      "schema_version": "v0",
+      "coverage_id": "labtrust-qc-release-v0-formal",
+      "metric": "formal_check_coverage",
+      "numerator": 2.333333333333333,
+      "denominator": 1.0,
+      "coverage_ratio": 1.0,
+      "details": {},
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:33e3441e66d237194aa6e12cbf7524406eea5426492f77be9d508b414c446760"
+    },
+    "scientific_memory": {
+      "schema_version": "v0",
+      "coverage_id": "labtrust-qc-release-v0-sm",
+      "metric": "scientific_memory_interpretability",
+      "numerator": 5.0,
+      "denominator": 6.0,
+      "coverage_ratio": 0.8333333333333334,
+      "details": {},
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:c0e4f65948f08bd02798249dd707a6d5868aa097680ab83f345398531b127b6e"
+    },
+    "release_reproducibility": {
+      "schema_version": "v0",
+      "coverage_id": "labtrust-qc-release-v0-repro",
+      "metric": "release_reproducibility",
+      "numerator": 6.0,
+      "denominator": 6.0,
+      "coverage_ratio": 1.0,
+      "details": {},
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:d90036f330059e62354d9f359c9df1c2698c9685d725fe1041635f29981244e0"
+    },
+    "certificate_completeness": {
+      "schema_version": "v0",
+      "coverage_id": "labtrust-qc-release-v0-cert",
+      "metric": "certificate_completeness",
+      "numerator": 6.0,
+      "denominator": 6.0,
+      "coverage_ratio": 1.0,
+      "details": {},
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:0fe7502719bd068342ba9e8c10dc6a29d5b1fde3040c4633553c3e0a3c905b6e"
+    }
+  },
+  "failures": [],
+  "producer_id": "pcs-bench",
+  "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+  "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
+  "signature_or_digest": "sha256:23853d51f024af8aa9034f8375b426f1a175a2f3fba1a3023dadbe52f4a59b42"
+}

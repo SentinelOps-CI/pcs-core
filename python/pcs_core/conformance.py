@@ -313,6 +313,40 @@ def _suite_computation() -> tuple[list[str], list[str], int]:
     return errors, [], checks_run
 
 
+@_record("benchmark-report")
+def _suite_benchmark_report() -> tuple[list[str], list[str], int]:
+    from pcs_core.benchmark_compat import validate_compatibility_corpus
+
+    errors = validate_compatibility_corpus()
+    checks = 12
+    examples_root = examples_dir() / "benchmarks"
+    for name in (
+        "benchmark_case.valid.json",
+        "benchmark_run.valid.json",
+        "benchmark_report.valid.json",
+        "failure_localization_result.valid.json",
+        "coverage_report.valid.json",
+        "explain_quality_report.valid.json",
+        "profile_coverage_report.valid.json",
+    ):
+        path = examples_root / name
+        if path.is_file():
+            checks += 1
+            try:
+                validate_file(path)
+            except ValidationError as exc:
+                errors.append(f"{name}: {exc}")
+    compat = examples_root / "compatibility"
+    if compat.is_dir():
+        for path in sorted(compat.glob("*.normalized.json")):
+            checks += 1
+            try:
+                validate_file(path)
+            except ValidationError as exc:
+                errors.append(f"{path.name}: {exc}")
+    return errors, [], checks
+
+
 @_record("benchmark")
 def _suite_benchmark() -> tuple[list[str], list[str], int]:
     errors: list[str] = []

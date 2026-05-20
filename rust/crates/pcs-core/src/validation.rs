@@ -62,6 +62,12 @@ const ARTIFACT_SCHEMAS: &[(&str, &str)] = &[
         "FailureLocalizationResult.v0.schema.json",
     ),
     ("CoverageReport.v0", "CoverageReport.v0.schema.json"),
+    ("ExplainQualityReport.v0", "ExplainQualityReport.v0.schema.json"),
+    ("ProfileCoverageReport.v0", "ProfileCoverageReport.v0.schema.json"),
+    (
+        "BenchmarkMetricRegistry.v0",
+        "BenchmarkMetricRegistry.v0.schema.json",
+    ),
     ("ConformanceReport.v0", "ConformanceReport.v0.schema.json"),
     (
         "SemanticCheckExecution.v0",
@@ -85,10 +91,32 @@ pub fn detect_artifact_type(value: &Value) -> Option<&'static str> {
     let obj = value.as_object()?;
     if obj.get("schema_version") == Some(&Value::String("v0".into()))
         && obj.get("registry_id").and_then(|v| v.as_str()).is_some()
+        && obj.get("metrics").map(|v| v.is_object()).unwrap_or(false)
+        && obj.contains_key("registry_version")
+        && !obj.contains_key("suites")
+    {
+        return Some("BenchmarkMetricRegistry.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("registry_id").and_then(|v| v.as_str()).is_some()
         && obj.get("suites").map(|v| v.is_object()).unwrap_or(false)
         && obj.contains_key("registry_version")
     {
         return Some("BenchmarkRegistry.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("report_id").and_then(|v| v.as_str()).is_some()
+        && obj.get("required_sections").map(|v| v.is_array()).unwrap_or(false)
+        && obj.contains_key("quality_score")
+    {
+        return Some("ExplainQualityReport.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("coverage_id").and_then(|v| v.as_str()).is_some()
+        && obj.get("workflow_profile_id").and_then(|v| v.as_str()).is_some()
+        && obj.get("artifact_types_required").map(|v| v.is_array()).unwrap_or(false)
+    {
+        return Some("ProfileCoverageReport.v0");
     }
     if obj.get("schema_version") == Some(&Value::String("v0".into()))
         && obj.get("report_id").and_then(|v| v.as_str()).is_some()
@@ -123,6 +151,7 @@ pub fn detect_artifact_type(value: &Value) -> Option<&'static str> {
         && obj.get("coverage_id").and_then(|v| v.as_str()).is_some()
         && obj.contains_key("coverage_ratio")
         && obj.contains_key("numerator")
+        && (obj.contains_key("metric") || obj.contains_key("metric_id"))
     {
         return Some("CoverageReport.v0");
     }

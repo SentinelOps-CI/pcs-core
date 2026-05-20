@@ -47,10 +47,21 @@ pcs benchmark run --suite formal-trust-kernel-v0 --json --out /tmp/report.json
 pcs conformance run --suite benchmark
 ```
 
+## Canonical examples
+
+Validated cross-repo examples live under `examples/benchmarks/` (not this tree). Regenerate with:
+
+```bash
+cd python
+python scripts/materialize_benchmark_examples.py
+```
+
 ## Documentation
 
+- [docs/benchmark-schema-contract-v0.md](../docs/benchmark-schema-contract-v0.md) — frozen v0 contract
 - [docs/benchmark-metrics.md](../docs/benchmark-metrics.md) — metric definitions
-- [docs/benchmark-registry.md](../docs/benchmark-registry.md) — registry and conformance bridge
+- [docs/benchmark-registry.md](../docs/benchmark-registry.md) — suite registry
+- [docs/benchmark-compatibility.md](../docs/benchmark-compatibility.md) — dialect normalization
 
 ## External pcs-bench
 

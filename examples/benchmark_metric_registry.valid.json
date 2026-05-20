@@ -1,0 +1,213 @@
+{
+  "schema_version": "v0",
+  "registry_id": "pcs-benchmark-metric-registry-v0",
+  "registry_version": "0.1.0",
+  "metrics": {
+    "release_reproducibility_score": {
+      "metric_id": "release_reproducibility_score",
+      "display_name": "Release reproducibility",
+      "numerator": "Count of valid_release cases whose release chain revalidates with stable canonical hashes.",
+      "denominator": "Count of valid_release cases in the benchmark suite.",
+      "applicability": {
+        "workflow_ids": [
+          "labtrust.qc_release_v0.1",
+          "agent_tool_use.safety_v0",
+          "scientific_computation.reproducibility_v0"
+        ],
+        "case_kinds": [
+          "valid_release"
+        ],
+        "producers": [
+          "pcs-core",
+          "pcs-bench",
+          "labtrust-gym",
+          "certifyedge",
+          "provability-fabric",
+          "scientific-memory"
+        ]
+      },
+      "failure_interpretation": "A score below threshold means a nominally valid release cannot be reproduced or revalidated from pinned provenance.",
+      "minimum_recommended_threshold": 1.0,
+      "summary_field": "release_reproducibility_score",
+      "legacy_metric_name": "release_reproducibility"
+    },
+    "failure_localization_accuracy": {
+      "metric_id": "failure_localization_accuracy",
+      "display_name": "Failure localization accuracy",
+      "numerator": "Invalid cases where observed_responsible_component matches expected_responsible_component.",
+      "denominator": "Count of invalid benchmark cases (non valid_release).",
+      "applicability": {
+        "workflow_ids": [
+          "labtrust.qc_release_v0.1",
+          "agent_tool_use.safety_v0",
+          "scientific_computation.reproducibility_v0"
+        ],
+        "case_kinds": [
+          "invalid_hash_mismatch",
+          "invalid_certificate",
+          "invalid_handoff",
+          "invalid_registry",
+          "invalid_formal_check",
+          "invalid_import",
+          "invalid_render",
+          "stale_release"
+        ],
+        "producers": [
+          "pcs-core",
+          "pcs-bench"
+        ]
+      },
+      "failure_interpretation": "Low accuracy means failures are detected but attributed to the wrong trust-boundary component.",
+      "minimum_recommended_threshold": 1.0,
+      "summary_field": "failure_localization_accuracy",
+      "legacy_metric_name": "failure_localization"
+    },
+    "certificate_completeness_score": {
+      "metric_id": "certificate_completeness_score",
+      "display_name": "Certificate completeness",
+      "numerator": "Release-blocking certificate fields and hash bindings that are present and explicit.",
+      "denominator": "Release-blocking certificate fields and hash bindings required by the workflow profile.",
+      "applicability": {
+        "workflow_ids": [
+          "labtrust.qc_release_v0.1",
+          "agent_tool_use.safety_v0",
+          "scientific_computation.reproducibility_v0"
+        ],
+        "case_kinds": [
+          "valid_release",
+          "invalid_certificate"
+        ],
+        "producers": [
+          "pcs-core",
+          "pcs-bench",
+          "certifyedge",
+          "labtrust-gym"
+        ]
+      },
+      "failure_interpretation": "Incomplete certificates pass structural validation but omit required trust-envelope bindings.",
+      "minimum_recommended_threshold": 1.0,
+      "summary_field": "certificate_completeness_score",
+      "legacy_metric_name": "certificate_completeness"
+    },
+    "registry_coverage_score": {
+      "metric_id": "registry_coverage_score",
+      "display_name": "Registry coverage",
+      "numerator": "Release artifacts with registry entries covering type, producer, fields, statuses, and semantic checks.",
+      "denominator": "Artifacts declared in the release manifest for the workflow.",
+      "applicability": {
+        "workflow_ids": [
+          "labtrust.qc_release_v0.1",
+          "agent_tool_use.safety_v0",
+          "scientific_computation.reproducibility_v0"
+        ],
+        "producers": [
+          "pcs-core",
+          "pcs-bench",
+          "provability-fabric"
+        ]
+      },
+      "failure_interpretation": "Gaps mean release-chain checks cannot be mapped to ArtifactRegistry.v0 semantic obligations.",
+      "minimum_recommended_threshold": 0.95,
+      "summary_field": "registry_coverage_score",
+      "legacy_metric_name": "registry_coverage"
+    },
+    "formal_check_coverage_score": {
+      "metric_id": "formal_check_coverage_score",
+      "display_name": "Formal-check coverage",
+      "numerator": "Proof obligations checked by LeanCheckResult.v0 with explicit pass or fail.",
+      "denominator": "Proof obligations extracted for the release trust envelope.",
+      "applicability": {
+        "workflow_ids": [
+          "labtrust.qc_release_v0.1",
+          "agent_tool_use.safety_v0",
+          "scientific_computation.reproducibility_v0"
+        ],
+        "case_kinds": [
+          "valid_release",
+          "invalid_formal_check"
+        ],
+        "producers": [
+          "pcs-core",
+          "pcs-bench",
+          "provability-fabric"
+        ]
+      },
+      "failure_interpretation": "Low coverage means release-blocking invariants are not represented in ProofObligation.v0.",
+      "minimum_recommended_threshold": 1.0,
+      "summary_field": "formal_check_coverage_score",
+      "legacy_metric_name": "formal_check_coverage"
+    },
+    "scientific_memory_interpretability_score": {
+      "metric_id": "scientific_memory_interpretability_score",
+      "display_name": "Scientific Memory interpretability",
+      "numerator": "Required audit sections present in import/render outputs.",
+      "denominator": "Required audit sections for the workflow admission profile.",
+      "applicability": {
+        "workflow_ids": [
+          "labtrust.qc_release_v0.1",
+          "agent_tool_use.safety_v0",
+          "scientific_computation.reproducibility_v0"
+        ],
+        "case_kinds": [
+          "valid_release",
+          "invalid_import",
+          "invalid_render"
+        ],
+        "producers": [
+          "pcs-core",
+          "pcs-bench",
+          "scientific-memory"
+        ]
+      },
+      "failure_interpretation": "Low scores mean rendered claims omit provenance, verification, formal checks, or repair context.",
+      "minimum_recommended_threshold": 1.0,
+      "summary_field": "scientific_memory_interpretability_score",
+      "legacy_metric_name": "scientific_memory_interpretability"
+    },
+    "repair_hint_quality_score": {
+      "metric_id": "repair_hint_quality_score",
+      "display_name": "Repair hint quality",
+      "numerator": "Invalid cases where observed_repair_hint matches the repair hint implied by expected_responsible_component.",
+      "denominator": "Invalid benchmark cases with an expected repair hint kind.",
+      "applicability": {
+        "workflow_ids": [
+          "labtrust.qc_release_v0.1",
+          "agent_tool_use.safety_v0",
+          "scientific_computation.reproducibility_v0"
+        ],
+        "producers": [
+          "pcs-core",
+          "pcs-bench",
+          "provability-fabric"
+        ]
+      },
+      "failure_interpretation": "Low scores mean operators receive misleading or generic repair guidance after failures.",
+      "minimum_recommended_threshold": 1.0,
+      "summary_field": "repair_hint_quality_score",
+      "legacy_metric_name": "repair_hint_quality"
+    },
+    "cross_domain_portability_score": {
+      "metric_id": "cross_domain_portability_score",
+      "display_name": "Cross-domain portability",
+      "numerator": "Workflow suites that validate under the shared BenchmarkReport.v0 contract without dialect drift.",
+      "denominator": "Workflow suites registered for cross-domain evaluation.",
+      "applicability": {
+        "workflow_ids": [
+          "labtrust.qc_release_v0.1",
+          "agent_tool_use.safety_v0",
+          "scientific_computation.reproducibility_v0"
+        ],
+        "producers": [
+          "pcs-core",
+          "pcs-bench"
+        ],
+        "notes": "Measured across labtrust, tool-use, and computation profiles in cross-domain-release-chain-v0."
+      },
+      "failure_interpretation": "Low portability means a repo emits benchmark JSON that cannot normalize to pcs-core schemas.",
+      "minimum_recommended_threshold": 1.0,
+      "summary_field": "cross_domain_portability_score",
+      "legacy_metric_name": "cross_domain_portability"
+    }
+  },
+  "signature_or_digest": "sha256:2fe19112375c86e55af22d9a61187a9176ec621f31af1d5c2071abca4d7392e3"
+}
