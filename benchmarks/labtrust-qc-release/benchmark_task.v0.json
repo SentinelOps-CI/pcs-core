@@ -18,8 +18,8 @@
     "scientific_memory_interpretability"
   ],
   "schema_version": "v0",
-  "signature_or_digest": "sha256:2d0f5eab703cb29c76722eaab81d1be3c197a631c8fb12df0b2dac73ce1931be",
-  "source_commit": "c07e15a4714a2b45c971d8d4e524e6edbd0c392a",
+  "signature_or_digest": "sha256:6d1b4834e8fcf7f478bcce27cfe2793ab3bda238e52328e76df5217087b775c1",
+  "source_commit": "8f1d66edffbb436e004acd4a9a6aad30f2742f0f",
   "source_repo": "https://github.com/fraware/LabTrust-Gym",
   "success_criteria": {
     "minimum_failure_localization_accuracy": 1.0,

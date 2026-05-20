@@ -5,6 +5,7 @@
   "expected_repair_hint_kind": "fix_import_report",
   "expected_responsible_component": "scientific_memory",
   "expected_status": "failed",
+  "expected_system_outcome": "import_failed",
   "input_artifacts": {
     "artifacts": [
       {
@@ -76,8 +77,8 @@
     "release_directory": "benchmarks/labtrust-qc-release/invalid/labtrust-scientific-memory-import-failure-v0/input_artifacts"
   },
   "schema_version": "v0",
-  "signature_or_digest": "sha256:d0ec45712c5b67db29f49bc2e812cb825467b03d4b613725d7cda1a6a0c908ba",
-  "source_commit": "c07e15a4714a2b45c971d8d4e524e6edbd0c392a",
+  "signature_or_digest": "sha256:cde2e1a801986f5dee3e300c08abc138e26d23a43a25530865257c06fe5df957",
+  "source_commit": "8f1d66edffbb436e004acd4a9a6aad30f2742f0f",
   "source_repo": "https://github.com/fraware/LabTrust-Gym",
   "task_id": "labtrust-qc-release-v0",
   "workflow_id": "hospital_lab.qc_release"

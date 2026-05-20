@@ -5,6 +5,7 @@
   "expected_repair_hint_kind": "align_certificate_id",
   "expected_responsible_component": "runtime_producer",
   "expected_status": "failed",
+  "expected_system_outcome": "stale",
   "input_artifacts": {
     "artifacts": [
       {
@@ -66,8 +67,8 @@
     "release_directory": "benchmarks/labtrust-qc-release/invalid/labtrust-stale-trace-after-certificate-v0/input_artifacts"
   },
   "schema_version": "v0",
-  "signature_or_digest": "sha256:5899b13a71205b8db8b494bdfd78485091f506af0cdb25680e9083afdba92f71",
-  "source_commit": "c07e15a4714a2b45c971d8d4e524e6edbd0c392a",
+  "signature_or_digest": "sha256:be487f2e81b3ec074337764e51c236a7d984939d387212a2429c92be4c27ef08",
+  "source_commit": "8f1d66edffbb436e004acd4a9a6aad30f2742f0f",
   "source_repo": "https://github.com/fraware/LabTrust-Gym",
   "task_id": "labtrust-qc-release-v0",
   "workflow_id": "hospital_lab.qc_release"

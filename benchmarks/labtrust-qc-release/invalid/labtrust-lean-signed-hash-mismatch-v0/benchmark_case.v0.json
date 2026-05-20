@@ -5,6 +5,7 @@
   "expected_repair_hint_kind": "rerun_verification",
   "expected_responsible_component": "verifier",
   "expected_status": "failed",
+  "expected_system_outcome": "formal_failed",
   "input_artifacts": {
     "artifacts": [
       {
@@ -76,8 +77,8 @@
     "release_directory": "benchmarks/labtrust-qc-release/invalid/labtrust-lean-signed-hash-mismatch-v0/input_artifacts"
   },
   "schema_version": "v0",
-  "signature_or_digest": "sha256:3532cc91eb7cbd4efbfbcb772fe04ddc7640b379e42f4c5eeaaaccc5c0be9b7c",
-  "source_commit": "c07e15a4714a2b45c971d8d4e524e6edbd0c392a",
+  "signature_or_digest": "sha256:da22692b437ec8d834071ee5505d8a3e3a82a09bd5da57db6d53151fe26862a7",
+  "source_commit": "8f1d66edffbb436e004acd4a9a6aad30f2742f0f",
   "source_repo": "https://github.com/fraware/LabTrust-Gym",
   "task_id": "labtrust-qc-release-v0",
   "workflow_id": "hospital_lab.qc_release"

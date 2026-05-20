@@ -1,4 +1,20 @@
 {
+  "case_count": 13,
+  "case_ids": [
+    "labtrust-certificate-id-tamper-v0",
+    "labtrust-lean-rejected-certificate-v0",
+    "labtrust-lean-signed-hash-mismatch-v0",
+    "labtrust-lean-stale-certificate-v0",
+    "labtrust-lean-trace-hash-mismatch-v0",
+    "labtrust-legacy-handoff-file-v0",
+    "labtrust-missing-qc-result-v0",
+    "labtrust-placeholder-commit-v0",
+    "labtrust-scientific-memory-import-failure-v0",
+    "labtrust-stale-trace-after-certificate-v0",
+    "labtrust-trace-hash-tamper-v0",
+    "labtrust-unauthorized-release-v0",
+    "labtrust-valid-release-v0"
+  ],
   "cases": [
     {
       "case_id": "labtrust-certificate-id-tamper-v0",
@@ -84,8 +100,8 @@
   "generator_version": "0.2.0",
   "schema_version": "v0",
   "seed": 42,
-  "signature_or_digest": "sha256:6294f5c43f636f3988e1e39334caa47eb5b4810d431d1e5b980f77947d2f5247",
-  "source_commit": "c07e15a4714a2b45c971d8d4e524e6edbd0c392a",
+  "signature_or_digest": "sha256:f50f6c2a56413e78935a232368a9582acd1e4d76349a04d0f56d0b292cf2f13a",
+  "source_commit": "8f1d66edffbb436e004acd4a9a6aad30f2742f0f",
   "source_repo": "https://github.com/fraware/LabTrust-Gym",
   "suite_id": "labtrust-qc-release-v0",
   "task_id": "labtrust-qc-release-v0",
