@@ -88,6 +88,7 @@ ARTIFACT_SCHEMAS: dict[str, str] = {
     "ProfileCoverageReport.v0": "ProfileCoverageReport.v0.schema.json",
     "BenchmarkMetricRegistry.v0": "BenchmarkMetricRegistry.v0.schema.json",
     "MetricSummary.v0": "MetricSummary.v0.schema.json",
+    "PcsBenchIngest.v0": "PcsBenchIngest.v0.schema.json",
 }
 
 CERTIFIED_CLAIM_STATUSES = frozenset(
@@ -147,6 +148,15 @@ def detect_artifact_type(data: dict[str, Any]) -> str | None:
         and isinstance(data.get("artifact_types_required"), list)
     ):
         return "ProfileCoverageReport.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("producer_id"), str)
+        and isinstance(data.get("suite_id"), str)
+        and isinstance(data.get("benchmark_runs"), list)
+        and isinstance(data.get("logs"), list)
+        and "workflow_id" in data
+    ):
+        return "PcsBenchIngest.v0"
     if (
         data.get("schema_version") == "v0"
         and isinstance(data.get("metric_id"), str)
@@ -623,6 +633,9 @@ def validate_semantics(data: dict[str, Any], artifact_type: str) -> list[str]:
         return errors
 
     if artifact_type == "MetricSummary.v0":
+        return errors
+
+    if artifact_type == "PcsBenchIngest.v0":
         return errors
 
     if artifact_type == "ConformanceRun.v0":

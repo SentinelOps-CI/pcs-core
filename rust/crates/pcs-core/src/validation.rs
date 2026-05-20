@@ -56,6 +56,7 @@ const ARTIFACT_SCHEMAS: &[(&str, &str)] = &[
     ("BenchmarkRun.v0", "BenchmarkRun.v0.schema.json"),
     ("BenchmarkReport.v0", "BenchmarkReport.v0.schema.json"),
     ("MetricSummary.v0", "MetricSummary.v0.schema.json"),
+    ("PcsBenchIngest.v0", "PcsBenchIngest.v0.schema.json"),
     ("ConformanceRun.v0", "ConformanceRun.v0.schema.json"),
     ("FailureCaseManifest.v0", "FailureCaseManifest.v0.schema.json"),
     (
@@ -118,6 +119,15 @@ pub fn detect_artifact_type(value: &Value) -> Option<&'static str> {
         && obj.get("artifact_types_required").map(|v| v.is_array()).unwrap_or(false)
     {
         return Some("ProfileCoverageReport.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("producer_id").and_then(|v| v.as_str()).is_some()
+        && obj.get("suite_id").and_then(|v| v.as_str()).is_some()
+        && obj.get("benchmark_runs").map(|v| v.is_array()).unwrap_or(false)
+        && obj.get("logs").map(|v| v.is_array()).unwrap_or(false)
+        && obj.contains_key("workflow_id")
+    {
+        return Some("PcsBenchIngest.v0");
     }
     if obj.get("schema_version") == Some(&Value::String("v0".into()))
         && obj.get("metric_id").and_then(|v| v.as_str()).is_some()

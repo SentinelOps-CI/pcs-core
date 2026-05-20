@@ -70,11 +70,10 @@ def test_benchmark_valid_examples(name: str, artifact_type: str) -> None:
     "name,artifact_type",
     [
         ("pcs_bench_report.valid.json", "BenchmarkReport.v0"),
-        ("labtrust_case.valid.json", "BenchmarkCase.v0"),
-        ("certifyedge_certificate_benchmark.valid.json", "CoverageReport.v0"),
-        ("pf_admission_benchmark.valid.json", "ExplainQualityReport.v0"),
-        ("scientific_memory_rendering_benchmark.valid.json", "ExplainQualityReport.v0"),
-        ("pcs_core_benchmark_report.valid.json", "BenchmarkReport.v0"),
+        ("labtrust_benchmark_case.valid.json", "BenchmarkCase.v0"),
+        ("certifyedge_pcs_bench_ingest.valid.json", "PcsBenchIngest.v0"),
+        ("pf_pcs_bench_ingest.valid.json", "PcsBenchIngest.v0"),
+        ("scientific_memory_pcs_bench_ingest.valid.json", "PcsBenchIngest.v0"),
     ],
 )
 def test_producer_benchmark_examples(name: str, artifact_type: str) -> None:

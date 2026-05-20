@@ -57,6 +57,7 @@ export type ArtifactType =
   | "BenchmarkRun.v0"
   | "BenchmarkReport.v0"
   | "MetricSummary.v0"
+  | "PcsBenchIngest.v0"
   | "ConformanceRun.v0"
   | "FailureCaseManifest.v0"
   | "FailureLocalizationResult.v0"
@@ -110,6 +111,16 @@ export function detectArtifactType(data: Record<string, unknown>): ArtifactType 
     Array.isArray(data.artifact_types_required)
   ) {
     return "ProfileCoverageReport.v0";
+  }
+  if (
+    data.schema_version === "v0" &&
+    typeof data.producer_id === "string" &&
+    typeof data.suite_id === "string" &&
+    Array.isArray(data.benchmark_runs) &&
+    Array.isArray(data.logs) &&
+    "workflow_id" in data
+  ) {
+    return "PcsBenchIngest.v0";
   }
   if (
     data.schema_version === "v0" &&

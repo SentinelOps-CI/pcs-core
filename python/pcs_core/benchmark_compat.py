@@ -208,6 +208,132 @@ def normalize_certifyedge_certificate_benchmark(raw: dict[str, Any]) -> dict[str
     return _with_digest(body)
 
 
+_DETECTION_LAYER_ALIASES: dict[str, str] = {
+    "LabTrust": "labtrust",
+    "CertifyEdge": "certifyedge",
+    "Provability Fabric": "provability_fabric",
+    "Scientific Memory": "scientific_memory",
+    "Lean trust kernel": "formal_kernel",
+}
+
+
+def _coerce_detection_layer(raw: Any) -> str | None:
+    if raw is None:
+        return None
+    text = str(raw).strip()
+    if not text:
+        return None
+    return _DETECTION_LAYER_ALIASES.get(text, text.lower().replace(" ", "_"))
+
+
+def build_pcs_bench_ingest(
+    *,
+    producer_id: str,
+    suite_id: str,
+    workflow_id: str,
+    benchmark_runs: list[dict[str, Any]] | None = None,
+    coverage_reports: list[dict[str, Any]] | None = None,
+    failure_localization_reports: list[dict[str, Any]] | None = None,
+    explain_quality_reports: list[dict[str, Any]] | None = None,
+    profile_coverage_reports: list[dict[str, Any]] | None = None,
+    commands: list[dict[str, Any]] | None = None,
+    logs: list[str] | None = None,
+    source_repo: str,
+    source_commit: str = PCS_COMMIT,
+) -> dict[str, Any]:
+    """Assemble PcsBenchIngest.v0 from normalized sub-artifacts."""
+    body: dict[str, Any] = {
+        "schema_version": "v0",
+        "producer_id": producer_id,
+        "suite_id": suite_id,
+        "workflow_id": workflow_id,
+        "benchmark_runs": list(benchmark_runs or []),
+        "coverage_reports": list(coverage_reports or []),
+        "failure_localization_reports": list(failure_localization_reports or []),
+        "explain_quality_reports": list(explain_quality_reports or []),
+        "profile_coverage_reports": list(profile_coverage_reports or []),
+        "commands": list(commands or []),
+        "logs": list(logs or []),
+        "source_repo": source_repo,
+        "source_commit": source_commit,
+        "signature_or_digest": PLACEHOLDER_DIGEST,
+    }
+    return _with_digest(body)
+
+
+def build_certifyedge_pcs_bench_ingest(raw: dict[str, Any]) -> dict[str, Any]:
+    coverage = normalize_certifyedge_certificate_benchmark(raw)
+    commands = raw.get("commands")
+    if not isinstance(commands, list):
+        commands = [
+            {
+                "command": f"certifyedge_certificate_benchmark {raw.get('certificate_id', 'unknown')}",
+                "exit_code": 0 if float(raw.get("checks_passed", 0)) >= float(raw.get("checks_total", 1)) else 1,
+            },
+        ]
+    return build_pcs_bench_ingest(
+        producer_id="certifyedge",
+        suite_id=str(raw.get("suite_id", "certifyedge-certificate-v0")),
+        workflow_id=str(raw.get("workflow_id", "labtrust.qc_release_v0.1")),
+        coverage_reports=[coverage],
+        commands=commands,
+        logs=[str(line) for line in raw.get("logs", [])] if isinstance(raw.get("logs"), list) else [],
+        source_repo=str(raw.get("source_repo", "https://github.com/fraware/CertifyEdge")),
+        source_commit=str(raw.get("source_commit", PCS_COMMIT)),
+    )
+
+
+def build_pf_pcs_bench_ingest(
+    explain_raw: dict[str, Any],
+    profile_raw: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    explain = normalize_pf_explain_quality(explain_raw)
+    profiles: list[dict[str, Any]] = []
+    if isinstance(profile_raw, dict):
+        profiles.append(normalize_pf_profile_coverage(profile_raw))
+    commands = explain_raw.get("commands")
+    if not isinstance(commands, list):
+        commands = [
+            {
+                "command": "provability_fabric_admission_explain_quality",
+                "exit_code": 0 if float(explain.get("quality_score", 0)) >= 1.0 else 1,
+            },
+        ]
+    return build_pcs_bench_ingest(
+        producer_id="provability-fabric",
+        suite_id=str(explain_raw.get("suite_id", "pf-admission-v0")),
+        workflow_id=str(explain_raw.get("workflow_id", "provability_fabric.admission_v0")),
+        explain_quality_reports=[explain],
+        profile_coverage_reports=profiles,
+        commands=commands,
+        logs=[str(line) for line in explain_raw.get("logs", [])] if isinstance(explain_raw.get("logs"), list) else [],
+        source_repo=str(explain_raw.get("source_repo", "https://github.com/SentinelOps-CI/provability-fabric")),
+        source_commit=str(explain_raw.get("source_commit", PCS_COMMIT)),
+    )
+
+
+def build_scientific_memory_pcs_bench_ingest(raw: dict[str, Any]) -> dict[str, Any]:
+    explain = normalize_scientific_memory_render_benchmark(raw)
+    commands = raw.get("commands")
+    if not isinstance(commands, list):
+        commands = [
+            {
+                "command": "scientific_memory_render_benchmark",
+                "exit_code": 0 if float(explain.get("quality_score", 0)) >= 1.0 else 1,
+            },
+        ]
+    return build_pcs_bench_ingest(
+        producer_id="scientific-memory",
+        suite_id=str(raw.get("suite_id", "scientific-memory-rendering-v0")),
+        workflow_id=str(raw.get("workflow_id", "labtrust.qc_release_v0.1")),
+        explain_quality_reports=[explain],
+        commands=commands,
+        logs=[str(line) for line in raw.get("logs", [])] if isinstance(raw.get("logs"), list) else [],
+        source_repo=str(raw.get("source_repo", "https://github.com/fraware/scientific-memory")),
+        source_commit=str(raw.get("source_commit", PCS_COMMIT)),
+    )
+
+
 def normalize_labtrust_case_manifest(raw: dict[str, Any]) -> dict[str, Any]:
     """Map LabTrust benchmark case manifests to BenchmarkCase.v0."""
     case_kind = str(raw.get("case_kind", "valid_release"))
@@ -232,12 +358,6 @@ def normalize_labtrust_case_manifest(raw: dict[str, Any]) -> dict[str, Any]:
             ),
         },
         "expected_status": str(raw.get("expected_status", "passed")),
-        "expected_system_outcome": str(
-            raw.get(
-                "expected_system_outcome",
-                "admitted" if case_kind == "valid_release" else "rejected",
-            ),
-        ),
         "expected_failure_code": expected_failure_code,
         "expected_responsible_component": expected_responsible_component,
         "expected_repair_hint_kind": expected_repair_hint_kind,
@@ -245,6 +365,18 @@ def normalize_labtrust_case_manifest(raw: dict[str, Any]) -> dict[str, Any]:
         "source_commit": str(raw.get("source_commit", PCS_COMMIT)),
         "signature_or_digest": PLACEHOLDER_DIGEST,
     }
+    layer = _coerce_detection_layer(
+        raw.get("expected_detection_layer", raw.get("detection_layer")),
+    )
+    if layer is not None:
+        body["expected_detection_layer"] = layer
+    outcome = raw.get("expected_system_outcome")
+    if outcome is not None:
+        body["expected_system_outcome"] = outcome
+    elif case_kind == "valid_release":
+        body["expected_system_outcome"] = "admitted"
+    else:
+        body["expected_system_outcome"] = "rejected"
     return _with_digest(body)
 
 
@@ -334,10 +466,10 @@ def validate_compatibility_corpus() -> list[str]:
     producer_root = examples_dir() / "benchmark"
     for name in (
         "pcs_bench_report.valid.json",
-        "labtrust_case.valid.json",
-        "certifyedge_certificate_benchmark.valid.json",
-        "pf_admission_benchmark.valid.json",
-        "scientific_memory_rendering_benchmark.valid.json",
+        "labtrust_benchmark_case.valid.json",
+        "certifyedge_pcs_bench_ingest.valid.json",
+        "pf_pcs_bench_ingest.valid.json",
+        "scientific_memory_pcs_bench_ingest.valid.json",
     ):
         path = producer_root / name
         if not path.is_file():

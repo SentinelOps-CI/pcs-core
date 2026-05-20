@@ -11,6 +11,7 @@ PCS benchmark artifacts are **frozen at v0** for cross-repo alignment. Downstrea
 | `BenchmarkRun.v0` | Observed execution of one case |
 | `BenchmarkReport.v0` | Suite aggregation: declared metric IDs, `metric_summaries`, summary, coverage, failures |
 | `MetricSummary.v0` | One measured metric with applicability |
+| `PcsBenchIngest.v0` | Normalized producer export for pcs-bench ingestion |
 | `FailureCaseManifest.v0` | Expected failure metadata for invalid cases |
 | `FailureLocalizationResult.v0` | Per-run localization verdict |
 | `CoverageReport.v0` | Single-metric coverage snapshot |

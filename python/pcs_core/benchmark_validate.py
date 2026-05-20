@@ -40,8 +40,9 @@ def validate_benchmark_case_semantics(data: dict[str, Any]) -> list[str]:
     if kind == "valid_release":
         if data.get("expected_status") != "passed":
             errors.append("valid_release cases must expect passed status")
-        if data.get("expected_system_outcome") != "admitted":
-            errors.append("valid_release cases must expect admitted system outcome")
+        outcome = data.get("expected_system_outcome")
+        if outcome is not None and outcome != "admitted":
+            errors.append("valid_release cases must expect admitted system outcome when set")
         for field in (
             "expected_failure_code",
             "expected_responsible_component",

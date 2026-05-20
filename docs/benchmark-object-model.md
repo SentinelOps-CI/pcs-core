@@ -14,10 +14,23 @@ PCS benchmarks separate **what is being tested** (cases), **what happened when i
 | `ExplainQualityReport.v0` | PF/SM explain-quality or render-audit sections |
 | `ProfileCoverageReport.v0` | PF workflow profile coverage (artifacts, checks, handoffs) |
 | `FailureLocalizationResult.v0` | Per-run verdict on failure-code / component alignment |
+| `PcsBenchIngest.v0` | Normalized export bundle for pcs-bench (runs, coverage, explain/profile, commands, logs) |
 
 ## Status dimensions (do not conflate)
 
-### Benchmark execution status (`BenchmarkRun.v0.observed_status`)
+### Benchmark execution status (`BenchmarkCase.v0.expected_status`, `BenchmarkRun.v0.observed_status`)
+
+`expected_status` / `observed_status` use **benchmark execution** vocabulary only (`passed`, `failed`, `skipped`, `error`). Do not overload these for admission or certificate semantics.
+
+### System outcome (`BenchmarkCase.v0.expected_system_outcome`, optional)
+
+Uses `benchmark_system_outcome` in `common.defs.json`: `admitted`, `rejected`, `stale`, `import_failed`, `render_failed`, `query_failed`, `comparison_failed`, `formal_failed`, `certificate_rejected`, `unknown`.
+
+### Detection layer (`BenchmarkCase.v0.expected_detection_layer`, optional)
+
+Uses `benchmark_detection_layer` (e.g. `labtrust`, `certifyedge`, `formal_kernel`) so pcs-bench can score localization without overloading `expected_status`.
+
+### Benchmark run execution status (`BenchmarkRun.v0.observed_status`)
 
 Whether the **benchmark harness** considers the case to have met its expectation.
 

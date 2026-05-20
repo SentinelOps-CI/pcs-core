@@ -8,10 +8,12 @@ pcs-core is the **normative** owner of benchmark JSON schemas. Other repos may e
 |-------------|-------------------|------------|
 | `pcs-core` | `BenchmarkReport.v0`, `BenchmarkCase.v0`, fixtures under `benchmarks/` | Native |
 | `pcs-bench` | Suite reports (`suite_id` alias) | `normalize_pcs_bench_report` |
-| `provability-fabric` | Admission explain-quality, profile coverage | `normalize_pf_explain_quality`, `normalize_pf_profile_coverage` |
-| `certifyedge` | Certificate benchmark checks | `normalize_certifyedge_certificate_benchmark` → `CoverageReport.v0` |
+| `certifyedge` | Certificate benchmark checks | `build_certifyedge_pcs_bench_ingest` → `PcsBenchIngest.v0` |
 | `labtrust-gym` | Case manifests | `normalize_labtrust_case_manifest` → `BenchmarkCase.v0` |
-| `scientific-memory` | Render / import audit | `normalize_scientific_memory_render_benchmark` → `ExplainQualityReport.v0` |
+| `scientific-memory` | Render / import audit | `build_scientific_memory_pcs_bench_ingest` → `PcsBenchIngest.v0` |
+| `provability-fabric` | Admission + profile | `build_pf_pcs_bench_ingest` → `PcsBenchIngest.v0` |
+
+Producer repos should emit **`PcsBenchIngest.v0`** (or dialect JSON that normalizes to it) for pcs-bench ingestion. CertifyEdge, Provability Fabric, and Scientific Memory examples live under `examples/benchmark/*_pcs_bench_ingest.valid.json`.
 
 ## Compatibility corpus
 
