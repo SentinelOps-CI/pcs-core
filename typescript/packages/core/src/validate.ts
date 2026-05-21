@@ -1,3 +1,7 @@
+import {
+  validateBenchmarkArtifactRefSemantics,
+  validatePcsBenchIngestSemantics,
+} from "./benchmarkIngest.js";
 import { ARTIFACT_STATUSES, TRACE_CERTIFICATE_STATUSES } from "./status.js";
 import { isZeroSourceCommit } from "./hash.js";
 import { validateSchema } from "./schema.js";
@@ -59,6 +63,7 @@ export type ArtifactType =
   | "BenchmarkReport.v0"
   | "MetricSummary.v0"
   | "PcsBenchIngest.v0"
+  | "BenchmarkArtifactRef.v0"
   | "ConformanceRun.v0"
   | "FailureCaseManifest.v0"
   | "FailureLocalizationResult.v0"
@@ -112,6 +117,17 @@ export function detectArtifactType(data: Record<string, unknown>): ArtifactType 
     Array.isArray(data.artifact_types_required)
   ) {
     return "ProfileCoverageReport.v0";
+  }
+  if (
+    data.schema_version === "v0" &&
+    typeof data.artifact_type === "string" &&
+    typeof data.path === "string" &&
+    typeof data.sha256 === "string" &&
+    typeof data.role === "string" &&
+    !("producer_id" in data) &&
+    !("benchmark_runs" in data)
+  ) {
+    return "BenchmarkArtifactRef.v0";
   }
   if (
     data.schema_version === "v0" &&
@@ -480,6 +496,12 @@ export function validateArtifact(
     if (status && !TRACE_CERTIFICATE_STATUSES.has(status)) {
       errors.push(`TraceCertificate.v0 invalid status ${status}`);
     }
+  }
+  if (type === "BenchmarkArtifactRef.v0") {
+    errors.push(...validateBenchmarkArtifactRefSemantics(data));
+  }
+  if (type === "PcsBenchIngest.v0") {
+    errors.push(...validatePcsBenchIngestSemantics(data));
   }
   if (errors.length > 0) {
     throw new ValidationError(`Validation failed for ${type}`, errors);

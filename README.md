@@ -79,6 +79,18 @@ pcs validate-release-chain examples/labtrust-release/
 just validate-labtrust-release-fixtures
 ```
 
+## Benchmark ingest (cross-repo)
+
+Producer repos export **`PcsBenchIngest.v0`** to pcs-bench: embedded v0 objects plus optional **`BenchmarkArtifactRef.v0`** file provenance.
+
+```bash
+pcs conformance run --suite benchmark-ingest
+pcs benchmark materialize-ingest
+pcs benchmark validate
+```
+
+Goldens: `examples/benchmark_ingest/`. Spec: [docs/benchmark-ingest-contract.md](docs/benchmark-ingest-contract.md), [docs/producer-benchmark-ingest.md](docs/producer-benchmark-ingest.md).
+
 ## CLI
 
 | Command | Description |
@@ -92,7 +104,9 @@ just validate-labtrust-release-fixtures
 | `pcs shared-hash-vectors verify` | Verify cross-language vectors in `test_vectors/hash/` |
 | `pcs registry list` | List registered PCS artifact types |
 | `pcs registry validate <file>` | Validate `ArtifactRegistry.v0` drift |
-| `pcs conformance run --suite <name>` | Protocol conformance (`multidomain`, `tool-use`, …) |
+| `pcs conformance run --suite <name>` | Protocol conformance (`multidomain`, `tool-use`, `benchmark-ingest`, …) |
+| `pcs benchmark materialize-ingest` | Regenerate `examples/benchmark_ingest/` from producer dialects |
+| `pcs benchmark validate` | Benchmark fixtures + ingest contract |
 | `pcs shared-hash-vectors verify` | Cross-language hash parity (`test_vectors/hash/`) |
 | `pcs explain-status <status>` | Explain status transitions |
 | `pcs migrate --from v0 --to v0 <file>` | Identity migration report |

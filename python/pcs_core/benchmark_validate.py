@@ -112,6 +112,42 @@ def validate_benchmark_report_semantics(data: dict[str, Any]) -> list[str]:
     return errors
 
 
+PRODUCER_EMBEDDED_REF_FIELDS: dict[str, tuple[str, ...]] = {
+    "labtrust-gym": ("benchmark_runs",),
+    "certifyedge": ("coverage_reports",),
+    "provability-fabric": ("explain_quality_reports", "profile_coverage_reports"),
+    "scientific-memory": ("explain_quality_reports",),
+}
+
+
+def validate_benchmark_artifact_ref_semantics(data: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    from pcs_core.benchmark_compat import INGEST_EMBEDDED_ARRAYS
+
+    artifact_type = data.get("artifact_type")
+    if artifact_type not in INGEST_EMBEDDED_ARRAYS:
+        errors.append(f"BenchmarkArtifactRef.v0 unsupported artifact_type {artifact_type!r}")
+    path = data.get("path")
+    if not isinstance(path, str) or not path.strip():
+        errors.append("BenchmarkArtifactRef.v0 path must be non-empty")
+    sha256 = data.get("sha256")
+    if isinstance(sha256, str) and not sha256.startswith("sha256:"):
+        errors.append("BenchmarkArtifactRef.v0 sha256 must be a sha256: hex digest")
+    return errors
+
+
+def _embedded_ingest_objects(data: dict[str, Any], artifact_type: str) -> list[dict[str, Any]]:
+    from pcs_core.benchmark_compat import INGEST_EMBEDDED_ARRAYS
+
+    field = INGEST_EMBEDDED_ARRAYS.get(artifact_type)
+    if field is None:
+        return []
+    rows = data.get(field)
+    if not isinstance(rows, list):
+        return []
+    return [row for row in rows if isinstance(row, dict)]
+
+
 def validate_pcs_bench_ingest_semantics(data: dict[str, Any]) -> list[str]:
     errors: list[str] = []
     producer_id = data.get("producer_id")
@@ -136,6 +172,77 @@ def validate_pcs_bench_ingest_semantics(data: dict[str, Any]) -> list[str]:
     ):
         if not isinstance(data.get(field), list):
             errors.append(f"PcsBenchIngest.v0 requires list {field}")
+    from pcs_core.benchmark_compat import INGEST_EMBEDDED_ARRAYS
+
+    producer_fields = PRODUCER_EMBEDDED_REF_FIELDS.get(str(producer_id), ())
+    has_producer_embedded = any(
+        isinstance(data.get(field), list) and len(data.get(field)) > 0
+        for field in producer_fields
+    )
+    refs = data.get("artifact_refs")
+    if has_producer_embedded and refs is None:
+        errors.append(
+            f"PcsBenchIngest.v0 producer {producer_id!r} requires artifact_refs "
+            "when exporting embedded artifacts",
+        )
+        return errors
+    if refs is None:
+        return errors
+    if not isinstance(refs, list):
+        errors.append("PcsBenchIngest.v0 artifact_refs must be an array when present")
+        return errors
+    paths: list[str] = []
+    ref_keys: set[tuple[str, str]] = set()
+    for index, ref in enumerate(refs):
+        if not isinstance(ref, dict):
+            errors.append(f"artifact_refs[{index}] must be an object")
+            continue
+        errors.extend(
+            f"artifact_refs[{index}]: {msg}"
+            for msg in validate_benchmark_artifact_ref_semantics(ref)
+        )
+        artifact_type = str(ref.get("artifact_type", ""))
+        sha256 = ref.get("sha256")
+        path = ref.get("path")
+        if isinstance(path, str):
+            paths.append(path)
+        embedded = _embedded_ingest_objects(data, artifact_type)
+        if not embedded:
+            errors.append(
+                f"artifact_refs[{index}]: no embedded objects for {artifact_type!r}",
+            )
+            continue
+        if isinstance(sha256, str) and not any(
+            row.get("signature_or_digest") == sha256 for row in embedded
+        ):
+            errors.append(
+                f"artifact_refs[{index}]: sha256 does not match any embedded "
+                f"{artifact_type} signature_or_digest",
+            )
+        elif isinstance(sha256, str):
+            ref_keys.add((artifact_type, sha256))
+    if len(paths) != len(set(paths)):
+        errors.append("PcsBenchIngest.v0 artifact_refs contains duplicate path values")
+    if has_producer_embedded:
+        for field in producer_fields:
+            rows = data.get(field)
+            if not isinstance(rows, list):
+                continue
+            artifact_type = next(
+                (atype for atype, fname in INGEST_EMBEDDED_ARRAYS.items() if fname == field),
+                None,
+            )
+            if artifact_type is None:
+                continue
+            for row_index, row in enumerate(rows):
+                if not isinstance(row, dict):
+                    continue
+                digest = row.get("signature_or_digest")
+                if isinstance(digest, str) and (artifact_type, digest) not in ref_keys:
+                    errors.append(
+                        f"{field}[{row_index}]: missing artifact_refs entry for "
+                        f"{artifact_type} digest {digest}",
+                    )
     return errors
 
 

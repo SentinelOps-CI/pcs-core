@@ -11,7 +11,8 @@ PCS benchmark artifacts are **frozen at v0** for cross-repo alignment. Downstrea
 | `BenchmarkRun.v0` | Observed execution of one case |
 | `BenchmarkReport.v0` | Suite aggregation: declared metric IDs, `metric_summaries`, summary, coverage, failures |
 | `MetricSummary.v0` | One measured metric with applicability |
-| `PcsBenchIngest.v0` | Normalized producer export for pcs-bench ingestion |
+| `PcsBenchIngest.v0` | Normalized producer export for pcs-bench ingestion (embedded objects + optional `artifact_refs`) |
+| `BenchmarkArtifactRef.v0` | On-disk path and content digest for one embedded ingest artifact |
 | `FailureCaseManifest.v0` | Expected failure metadata for invalid cases |
 | `FailureLocalizationResult.v0` | Per-run localization verdict |
 | `CoverageReport.v0` | Single-metric coverage snapshot |
@@ -36,7 +37,8 @@ cd python
 python scripts/materialize_benchmark_fixtures.py
 python scripts/materialize_benchmark_producer_examples.py
 pcs benchmark validate
+pcs conformance run --suite benchmark-ingest
 pcs conformance run --suite benchmark-report
 ```
 
-Canonical examples live under `examples/benchmarks/`. Producer-shaped outputs (pcs-bench, LabTrust, CertifyEdge, PF, Scientific Memory) validate under `examples/benchmark/`. Dialect fixtures under `examples/benchmarks/compatibility/` normalize through `pcs_core.benchmark_compat`. See [benchmark-object-model.md](benchmark-object-model.md).
+Canonical examples live under `examples/benchmarks/`. `PcsBenchIngest.v0` producer bundles validate under `examples/benchmark_ingest/`. Other producer artifacts (`BenchmarkReport`, `BenchmarkCase`) live under `examples/benchmark/`. Dialect fixtures under `examples/benchmarks/compatibility/` normalize through `pcs_core.benchmark_compat`. See [benchmark-ingest-contract.md](benchmark-ingest-contract.md) and [benchmark-object-model.md](benchmark-object-model.md).

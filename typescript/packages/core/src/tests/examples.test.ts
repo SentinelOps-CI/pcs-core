@@ -38,6 +38,22 @@ function validExampleFiles(): string[] {
   return walkJsonFiles(examplesDir).filter((path) => path.includes(".valid."));
 }
 
+test("benchmark ingest examples include artifact refs", () => {
+  const ingestDir = join(examplesDir, "benchmark_ingest");
+  for (const name of readdirSync(ingestDir)) {
+    if (!name.endsWith(".pcs_bench_ingest.valid.json")) {
+      continue;
+    }
+    const data = JSON.parse(
+      readFileSync(join(ingestDir, name), "utf8"),
+    ) as Record<string, unknown>;
+    assert.equal(detectArtifactType(data), "PcsBenchIngest.v0", name);
+    validateArtifact(data, "PcsBenchIngest.v0");
+    const refs = data.artifact_refs;
+    assert.ok(Array.isArray(refs) && refs.length > 0, `${name} must include artifact_refs`);
+  }
+});
+
 test("valid examples pass schema and semantic validation", () => {
   for (const path of validExampleFiles()) {
     const data = JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
@@ -58,6 +74,16 @@ test("invalid missing assumption set", () => {
 
 test("invalid mismatched trace hash", () => {
   assert.throws(() => validateArtifact(load("invalid_mismatched_trace_hash.json")));
+});
+
+test("invalid pcs bench ingest missing refs", () => {
+  const data = load("invalid_pcs_bench_ingest_missing_refs.json");
+  assert.throws(() => validateArtifact(data, "PcsBenchIngest.v0"));
+});
+
+test("invalid pcs bench ingest bad ref digest", () => {
+  const data = load("invalid_pcs_bench_ingest_bad_ref_digest.json");
+  assert.throws(() => validateArtifact(data, "PcsBenchIngest.v0"));
 });
 
 test("invalid zero source commit", () => {

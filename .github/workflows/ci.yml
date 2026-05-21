@@ -48,6 +48,7 @@ jobs:
           pcs conformance run --suite computation
           pcs benchmark validate
           pcs conformance run --suite benchmark
+          pcs conformance run --suite benchmark-ingest
           pcs conformance run --suite benchmark-report
           pcs benchmark run --suite labtrust-qc-release-v0
           pcs benchmark run --suite tool-use-safety-v0
@@ -59,7 +60,8 @@ jobs:
           python scripts/materialize_benchmark_producer_examples.py
           pcs validate ../examples/benchmark_registry.valid.json
           pcs validate ../examples/benchmark_metric_registry.valid.json
-          for f in ../examples/benchmark/pcs_bench_report.valid.json ../examples/benchmark/labtrust_benchmark_case.valid.json ../examples/benchmark/certifyedge_pcs_bench_ingest.valid.json ../examples/benchmark/pf_pcs_bench_ingest.valid.json ../examples/benchmark/scientific_memory_pcs_bench_ingest.valid.json; do pcs validate "$f"; done
+          for f in ../examples/benchmark/pcs_bench_report.valid.json ../examples/benchmark/labtrust_benchmark_case.valid.json; do pcs validate "$f"; done
+          for f in ../examples/benchmark_ingest/*.pcs_bench_ingest.valid.json; do pcs validate "$f"; done
           pcs validate ../examples/tool_use_trace.valid.json
           pcs validate ../examples/tool_use_certificate.valid.json
           pytest -q tests/test_multidomain_workflows.py

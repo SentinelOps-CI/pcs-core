@@ -15,7 +15,7 @@ pcs conformance run --suite computation
 pcs conformance run --suite multidomain
 ```
 
-Available suites: `release-manifest`, `handoff-manifest`, `artifact-registry`, `semantic-check-execution`, `release-chain-validation`, `release-chain`, `component-release-fragment`, `hash`, `migration`, `status-transition`, `workflow-profile`, `tool-use`, `computation`, `multidomain`, `all`.
+Available suites: `release-manifest`, `handoff-manifest`, `artifact-registry`, `semantic-check-execution`, `release-chain-validation`, `release-chain`, `component-release-fragment`, `hash`, `migration`, `status-transition`, `workflow-profile`, `tool-use`, `computation`, `benchmark`, `benchmark-report`, `benchmark-ingest`, `multidomain`, `all`.
 
 Machine-readable output validates against `schemas/ConformanceReport.v0.schema.json`:
 
@@ -59,6 +59,7 @@ pcs registry audit
 | Tool-use workflow | `conformance/tool-use/` |
 | Scientific computation reproducibility | `conformance/computation/` |
 | Multi-domain (LabTrust + tool-use + computation) | `conformance/multidomain/` |
+| Benchmark ingest (`PcsBenchIngest.v0`) | `conformance/benchmark-ingest/` |
 
 Integration tests: `pytest tests/test_protocol_conformance.py`.
 

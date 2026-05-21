@@ -20,6 +20,14 @@ from pcs_core.validate import ValidationError, validate_artifact, validate_file
 
 PCS_COMMIT = LABTRUST_RC_PCS_CORE_COMMIT
 
+INGEST_EMBEDDED_ARRAYS: dict[str, str] = {
+    "BenchmarkRun.v0": "benchmark_runs",
+    "CoverageReport.v0": "coverage_reports",
+    "FailureLocalizationResult.v0": "failure_localization_reports",
+    "ExplainQualityReport.v0": "explain_quality_reports",
+    "ProfileCoverageReport.v0": "profile_coverage_reports",
+}
+
 EXPLAIN_QUALITY_SECTIONS: tuple[str, ...] = (
     "provenance",
     "hashes",
@@ -262,6 +270,30 @@ def _coerce_detection_layer(raw: Any) -> str | None:
     return _DETECTION_LAYER_ALIASES.get(text, text.lower().replace(" ", "_"))
 
 
+def build_benchmark_artifact_ref(
+    *,
+    artifact_type: str,
+    path: str,
+    embedded: dict[str, Any],
+    role: str = "producer_export",
+    source_repo: str,
+    source_commit: str = PCS_COMMIT,
+) -> dict[str, Any]:
+    """Build BenchmarkArtifactRef.v0 for on-disk provenance of an embedded object."""
+    content_digest = embedded.get("signature_or_digest", PLACEHOLDER_DIGEST)
+    body: dict[str, Any] = {
+        "schema_version": "v0",
+        "artifact_type": artifact_type,
+        "path": path,
+        "sha256": content_digest,
+        "role": role,
+        "source_repo": source_repo,
+        "source_commit": source_commit,
+        "signature_or_digest": PLACEHOLDER_DIGEST,
+    }
+    return _with_digest(body)
+
+
 def build_pcs_bench_ingest(
     *,
     producer_id: str,
@@ -272,6 +304,7 @@ def build_pcs_bench_ingest(
     failure_localization_reports: list[dict[str, Any]] | None = None,
     explain_quality_reports: list[dict[str, Any]] | None = None,
     profile_coverage_reports: list[dict[str, Any]] | None = None,
+    artifact_refs: list[dict[str, Any]] | None = None,
     commands: list[dict[str, Any]] | None = None,
     logs: list[str] | None = None,
     source_repo: str,
@@ -294,11 +327,21 @@ def build_pcs_bench_ingest(
         "source_commit": source_commit,
         "signature_or_digest": PLACEHOLDER_DIGEST,
     }
+    if artifact_refs:
+        body["artifact_refs"] = list(artifact_refs)
     return _with_digest(body)
 
 
 def build_certifyedge_pcs_bench_ingest(raw: dict[str, Any]) -> dict[str, Any]:
     coverage = normalize_certifyedge_certificate_benchmark(raw)
+    source_repo = str(raw.get("source_repo", "https://github.com/fraware/CertifyEdge"))
+    source_commit = str(raw.get("source_commit", PCS_COMMIT))
+    coverage_path = str(
+        raw.get(
+            "coverage_report_path",
+            "benchmarks/certificate/coverage_report.certifyedge-cert-bench-v0.v0.json",
+        ),
+    )
     commands = raw.get("commands")
     if not isinstance(commands, list):
         commands = [
@@ -312,10 +355,19 @@ def build_certifyedge_pcs_bench_ingest(raw: dict[str, Any]) -> dict[str, Any]:
         suite_id=str(raw.get("suite_id", "certifyedge-certificate-v0")),
         workflow_id=str(raw.get("workflow_id", "labtrust.qc_release_v0.1")),
         coverage_reports=[coverage],
+        artifact_refs=[
+            build_benchmark_artifact_ref(
+                artifact_type="CoverageReport.v0",
+                path=coverage_path,
+                embedded=coverage,
+                source_repo=source_repo,
+                source_commit=source_commit,
+            ),
+        ],
         commands=commands,
         logs=[str(line) for line in raw.get("logs", [])] if isinstance(raw.get("logs"), list) else [],
-        source_repo=str(raw.get("source_repo", "https://github.com/fraware/CertifyEdge")),
-        source_commit=str(raw.get("source_commit", PCS_COMMIT)),
+        source_repo=source_repo,
+        source_commit=source_commit,
     )
 
 
@@ -324,9 +376,42 @@ def build_pf_pcs_bench_ingest(
     profile_raw: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     explain = normalize_pf_explain_quality(explain_raw)
+    source_repo = str(
+        explain_raw.get("source_repo", "https://github.com/SentinelOps-CI/provability-fabric"),
+    )
+    source_commit = str(explain_raw.get("source_commit", PCS_COMMIT))
     profiles: list[dict[str, Any]] = []
+    artifact_refs: list[dict[str, Any]] = [
+        build_benchmark_artifact_ref(
+            artifact_type="ExplainQualityReport.v0",
+            path=str(
+                explain_raw.get(
+                    "explain_quality_report_path",
+                    "benchmarks/admission/explain_quality_report.pf-explain-quality-admission-v0.v0.json",
+                ),
+            ),
+            embedded=explain,
+            source_repo=source_repo,
+            source_commit=source_commit,
+        ),
+    ]
     if isinstance(profile_raw, dict):
-        profiles.append(normalize_pf_profile_coverage(profile_raw))
+        profile = normalize_pf_profile_coverage(profile_raw)
+        profiles.append(profile)
+        artifact_refs.append(
+            build_benchmark_artifact_ref(
+                artifact_type="ProfileCoverageReport.v0",
+                path=str(
+                    profile_raw.get(
+                        "profile_coverage_report_path",
+                        "benchmarks/admission/profile_coverage_report.pf-profile-coverage-v0.v0.json",
+                    ),
+                ),
+                embedded=profile,
+                source_repo=source_repo,
+                source_commit=source_commit,
+            ),
+        )
     commands = explain_raw.get("commands")
     if not isinstance(commands, list):
         commands = [
@@ -341,15 +426,27 @@ def build_pf_pcs_bench_ingest(
         workflow_id=str(explain_raw.get("workflow_id", "provability_fabric.admission_v0")),
         explain_quality_reports=[explain],
         profile_coverage_reports=profiles,
+        artifact_refs=artifact_refs,
         commands=commands,
         logs=[str(line) for line in explain_raw.get("logs", [])] if isinstance(explain_raw.get("logs"), list) else [],
-        source_repo=str(explain_raw.get("source_repo", "https://github.com/SentinelOps-CI/provability-fabric")),
-        source_commit=str(explain_raw.get("source_commit", PCS_COMMIT)),
+        source_repo=source_repo,
+        source_commit=source_commit,
     )
 
 
 def build_scientific_memory_pcs_bench_ingest(raw: dict[str, Any]) -> dict[str, Any]:
     explain = normalize_scientific_memory_render_benchmark(raw)
+    sm_report = raw.get("import_report") or raw
+    source_repo = str(raw.get("source_repo", sm_report.get("source_repo", "https://github.com/fraware/scientific-memory")))
+    source_commit = str(
+        raw.get("source_commit", sm_report.get("scientific_memory_commit", PCS_COMMIT)),
+    )
+    explain_path = str(
+        raw.get(
+            "explain_quality_report_path",
+            "benchmarks/rendering/explain_quality_report.sm-render-benchmark-v0.v0.json",
+        ),
+    )
     commands = raw.get("commands")
     if not isinstance(commands, list):
         commands = [
@@ -363,10 +460,56 @@ def build_scientific_memory_pcs_bench_ingest(raw: dict[str, Any]) -> dict[str, A
         suite_id=str(raw.get("suite_id", "scientific-memory-rendering-v0")),
         workflow_id=str(raw.get("workflow_id", "labtrust.qc_release_v0.1")),
         explain_quality_reports=[explain],
+        artifact_refs=[
+            build_benchmark_artifact_ref(
+                artifact_type="ExplainQualityReport.v0",
+                path=explain_path,
+                embedded=explain,
+                source_repo=source_repo,
+                source_commit=source_commit,
+            ),
+        ],
         commands=commands,
         logs=[str(line) for line in raw.get("logs", [])] if isinstance(raw.get("logs"), list) else [],
-        source_repo=str(raw.get("source_repo", "https://github.com/fraware/scientific-memory")),
-        source_commit=str(raw.get("source_commit", PCS_COMMIT)),
+        source_repo=source_repo,
+        source_commit=source_commit,
+    )
+
+
+def build_labtrust_pcs_bench_ingest(
+    *,
+    case: dict[str, Any],
+    run: dict[str, Any],
+    run_path: str,
+    source_repo: str | None = None,
+    source_commit: str | None = None,
+) -> dict[str, Any]:
+    """Assemble LabTrust-Gym PcsBenchIngest.v0 with embedded run and file provenance ref."""
+    repo = source_repo or str(case.get("source_repo", "https://github.com/fraware/LabTrust-Gym"))
+    commit = source_commit or str(case.get("source_commit", PCS_COMMIT))
+    return build_pcs_bench_ingest(
+        producer_id="labtrust-gym",
+        suite_id=str(case.get("task_id", "labtrust-qc-release-v0")),
+        workflow_id=str(case.get("workflow_id", "labtrust.qc_release_v0.1")),
+        benchmark_runs=[run],
+        artifact_refs=[
+            build_benchmark_artifact_ref(
+                artifact_type="BenchmarkRun.v0",
+                path=run_path,
+                embedded=run,
+                source_repo=repo,
+                source_commit=commit,
+            ),
+        ],
+        commands=[
+            {
+                "command": f"labtrust_benchmark_case {case.get('case_id', 'unknown')}",
+                "exit_code": 0 if run.get("observed_status") == "passed" else 1,
+            },
+        ],
+        logs=[],
+        source_repo=repo,
+        source_commit=commit,
     )
 
 
@@ -525,13 +668,23 @@ def validate_compatibility_corpus() -> list[str]:
     errors: list[str] = []
     examples_root = benchmarks_examples_dir()
     producer_root = examples_dir() / "benchmark"
+    ingest_root = examples_dir() / "benchmark_ingest"
     for name in (
-        "pcs_bench_report.valid.json",
-        "labtrust_benchmark_case.valid.json",
-        "certifyedge_pcs_bench_ingest.valid.json",
-        "pf_pcs_bench_ingest.valid.json",
-        "scientific_memory_pcs_bench_ingest.valid.json",
+        "labtrust.pcs_bench_ingest.valid.json",
+        "certifyedge.pcs_bench_ingest.valid.json",
+        "provability_fabric.pcs_bench_ingest.valid.json",
+        "scientific_memory.pcs_bench_ingest.valid.json",
     ):
+        path = ingest_root / name
+        if not path.is_file():
+            errors.append(f"missing {path.relative_to(repo_root()).as_posix()}")
+            continue
+        try:
+            validate_file(path)
+        except ValidationError as exc:
+            errors.append(f"{name}: {exc}")
+
+    for name in ("pcs_bench_report.valid.json", "labtrust_benchmark_case.valid.json"):
         path = producer_root / name
         if not path.is_file():
             errors.append(f"missing {path.relative_to(repo_root()).as_posix()}")
@@ -545,6 +698,7 @@ def validate_compatibility_corpus() -> list[str]:
         "benchmark_case.valid.json",
         "benchmark_run.valid.json",
         "benchmark_report.valid.json",
+        "benchmark_artifact_ref.valid.json",
         "failure_localization_result.valid.json",
         "coverage_report.valid.json",
         "explain_quality_report.valid.json",
@@ -590,6 +744,11 @@ def validate_compatibility_corpus() -> list[str]:
             if out_path.is_file():
                 on_disk = json.loads(out_path.read_text(encoding="utf-8"))
                 validate_artifact(on_disk, artifact_type)
+                if normalized != on_disk:
+                    errors.append(
+                        f"{dialect_name}: drift vs {out_name} "
+                        "(run materialize_benchmark_examples.py or materialize_benchmark_producer_examples.py)",
+                    )
         except (ValidationError, ValueError, json.JSONDecodeError) as exc:
             errors.append(f"{dialect_name}: {exc}")
     return errors

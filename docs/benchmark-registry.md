@@ -82,8 +82,10 @@ Additional report types for cross-repo alignment:
 | `cross-domain-release-chain-v0` | `multidomain` |
 | `formal-trust-kernel-v0` | `lean-trust` |
 | `benchmark-report` | Cross-repo dialect normalization corpus |
+| `benchmark-ingest` | `PcsBenchIngest.v0` producer bundles and embedded artifact types |
 
 ```bash
+pcs conformance run --suite benchmark-ingest
 pcs conformance run --suite benchmark-report
 pcs benchmark normalize --dialect examples/benchmarks/compatibility/pf_admission_explain_quality.dialect.json --out /tmp/out.json
 ```

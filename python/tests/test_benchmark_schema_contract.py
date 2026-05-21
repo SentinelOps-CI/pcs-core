@@ -17,6 +17,7 @@ from pcs_core.validate import validate_artifact, validate_file
 
 EXAMPLES = examples_dir() / "benchmarks"
 PRODUCER_EXAMPLES = examples_dir() / "benchmark"
+INGEST_EXAMPLES = examples_dir() / "benchmark_ingest"
 
 
 def test_benchmark_metric_registry_has_required_metrics() -> None:
@@ -56,6 +57,7 @@ def test_benchmark_metric_registry_matches_builder() -> None:
         ("explain_quality_report.valid.json", "ExplainQualityReport.v0"),
         ("profile_coverage_report.valid.json", "ProfileCoverageReport.v0"),
         ("metric_summary.valid.json", "MetricSummary.v0"),
+        ("benchmark_artifact_ref.valid.json", "BenchmarkArtifactRef.v0"),
     ],
 )
 def test_benchmark_valid_examples(name: str, artifact_type: str) -> None:
@@ -71,9 +73,6 @@ def test_benchmark_valid_examples(name: str, artifact_type: str) -> None:
     [
         ("pcs_bench_report.valid.json", "BenchmarkReport.v0"),
         ("labtrust_benchmark_case.valid.json", "BenchmarkCase.v0"),
-        ("certifyedge_pcs_bench_ingest.valid.json", "PcsBenchIngest.v0"),
-        ("pf_pcs_bench_ingest.valid.json", "PcsBenchIngest.v0"),
-        ("scientific_memory_pcs_bench_ingest.valid.json", "PcsBenchIngest.v0"),
     ],
 )
 def test_producer_benchmark_examples(name: str, artifact_type: str) -> None:
@@ -82,6 +81,34 @@ def test_producer_benchmark_examples(name: str, artifact_type: str) -> None:
         pytest.skip("run python/scripts/materialize_benchmark_producer_examples.py")
     doc = json.loads(path.read_text(encoding="utf-8"))
     validate_artifact(doc, artifact_type)
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "labtrust.pcs_bench_ingest.valid.json",
+        "certifyedge.pcs_bench_ingest.valid.json",
+        "provability_fabric.pcs_bench_ingest.valid.json",
+        "scientific_memory.pcs_bench_ingest.valid.json",
+    ],
+)
+def test_benchmark_ingest_examples(name: str) -> None:
+    path = INGEST_EXAMPLES / name
+    if not path.is_file():
+        pytest.skip("run python/scripts/materialize_benchmark_producer_examples.py")
+    doc = json.loads(path.read_text(encoding="utf-8"))
+    validate_artifact(doc, "PcsBenchIngest.v0")
+    refs = doc.get("artifact_refs")
+    if isinstance(refs, list) and refs:
+        for ref in refs:
+            validate_artifact(ref, "BenchmarkArtifactRef.v0")
+
+
+def test_conformance_benchmark_ingest_suite() -> None:
+    from pcs_core.conformance import run_conformance
+
+    code, errors = run_conformance("benchmark-ingest")
+    assert code == 0, errors
 
 
 def test_labtrust_benchmark_manifest_validates() -> None:

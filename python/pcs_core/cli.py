@@ -424,6 +424,10 @@ def main(argv: list[str] | None = None) -> int:
     benchmark_sub = benchmark_parser.add_subparsers(dest="benchmark_cmd", required=True)
     benchmark_sub.add_parser("list", help="List registered benchmark suite ids")
     benchmark_sub.add_parser("validate", help="Validate benchmark fixture tree")
+    benchmark_sub.add_parser(
+        "materialize-ingest",
+        help="Regenerate examples/benchmark_ingest from producer dialect fixtures",
+    )
     p_benchmark_normalize = benchmark_sub.add_parser(
         "normalize",
         help="Normalize a repo dialect JSON file to a pcs-core benchmark schema",
@@ -511,6 +515,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_benchmark_list()
     if args.command == "benchmark" and args.benchmark_cmd == "validate":
         return cmd_benchmark_validate()
+    if args.command == "benchmark" and args.benchmark_cmd == "materialize-ingest":
+        return cmd_benchmark_materialize_ingest()
     if args.command == "benchmark" and args.benchmark_cmd == "normalize":
         return cmd_benchmark_normalize(args.dialect, args.out)
     if args.command == "benchmark" and args.benchmark_cmd == "run":
@@ -528,6 +534,17 @@ def cmd_benchmark_list() -> int:
     return 0
 
 
+def cmd_benchmark_materialize_ingest() -> int:
+    import subprocess
+    import sys
+
+    from pcs_core.paths import repo_root
+
+    script = repo_root() / "python" / "scripts" / "materialize_benchmark_producer_examples.py"
+    proc = subprocess.run([sys.executable, str(script)], cwd=repo_root() / "python", check=False)
+    return int(proc.returncode)
+
+
 def cmd_benchmark_validate() -> int:
     from pcs_core.benchmark_compat import validate_compatibility_corpus
     from pcs_core.benchmark_runner import validate_benchmark_fixtures
@@ -535,6 +552,13 @@ def cmd_benchmark_validate() -> int:
 
     errors = validate_benchmark_fixtures()
     errors.extend(validate_compatibility_corpus())
+    ingest_root = examples_dir() / "benchmark_ingest"
+    if ingest_root.is_dir():
+        for path in sorted(ingest_root.glob("*.pcs_bench_ingest.valid.json")):
+            try:
+                validate_file(path)
+            except ValidationError as exc:
+                errors.append(f"{path.relative_to(repo_root())}: {exc}")
     for rel in (
         "benchmark_registry.valid.json",
         "benchmark_metric_registry.valid.json",

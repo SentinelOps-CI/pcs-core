@@ -92,6 +92,7 @@ ARTIFACT_SCHEMAS: dict[str, str] = {
     "BenchmarkMetricRegistry.v0": "BenchmarkMetricRegistry.v0.schema.json",
     "MetricSummary.v0": "MetricSummary.v0.schema.json",
     "PcsBenchIngest.v0": "PcsBenchIngest.v0.schema.json",
+    "BenchmarkArtifactRef.v0": "BenchmarkArtifactRef.v0.schema.json",
 }
 
 CERTIFIED_CLAIM_STATUSES = frozenset(
@@ -160,6 +161,16 @@ def detect_artifact_type(data: dict[str, Any]) -> str | None:
         and isinstance(data.get("artifact_types_required"), list)
     ):
         return "ProfileCoverageReport.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("artifact_type"), str)
+        and isinstance(data.get("path"), str)
+        and isinstance(data.get("sha256"), str)
+        and isinstance(data.get("role"), str)
+        and "producer_id" not in data
+        and "benchmark_runs" not in data
+    ):
+        return "BenchmarkArtifactRef.v0"
     if (
         data.get("schema_version") == "v0"
         and isinstance(data.get("producer_id"), str)
@@ -651,6 +662,12 @@ def validate_semantics(data: dict[str, Any], artifact_type: str) -> list[str]:
     if artifact_type == "MetricSummary.v0":
         return errors
 
+    if artifact_type == "BenchmarkArtifactRef.v0":
+        from pcs_core.benchmark_validate import validate_benchmark_artifact_ref_semantics
+
+        errors.extend(validate_benchmark_artifact_ref_semantics(data))
+        return errors
+
     if artifact_type == "PcsBenchIngest.v0":
         errors.extend(validate_pcs_bench_ingest_semantics(data))
         return errors
@@ -784,12 +801,19 @@ def check_valid_examples(examples_dir: Path | None = None) -> None:
             validate_file(path)
         compat = benchmarks_examples / "compatibility"
         if compat.is_dir():
-            for path in sorted(compat.glob("*.normalized.json")):
+            for path in sorted(compat.glob("*.normalized.json")) + sorted(
+                compat.glob("*.pcs_bench_ingest.normalized.json"),
+            ):
                 validate_file(path)
 
     producer_examples = examples_dir / "benchmark"
     if producer_examples.is_dir():
         for path in sorted(producer_examples.glob("*.valid.json")):
+            validate_file(path)
+
+    ingest_examples = examples_dir / "benchmark_ingest"
+    if ingest_examples.is_dir():
+        for path in sorted(ingest_examples.glob("*.pcs_bench_ingest.valid.json")):
             validate_file(path)
 
 
@@ -807,6 +831,8 @@ def check_invalid_examples(examples_dir: Path | None = None) -> None:
         "invalid_release_manifest_placeholder_commit.json": "ReleaseManifest.v0",
         "invalid_handoff_manifest_missing_input_hash.json": "HandoffManifest.v0",
         "invalid_release_chain_validation_failed_status.json": "ReleaseChainValidationResult.v0",
+        "invalid_pcs_bench_ingest_missing_refs.json": "PcsBenchIngest.v0",
+        "invalid_pcs_bench_ingest_bad_ref_digest.json": "PcsBenchIngest.v0",
     }
     invalid_tool_use = examples_dir / "tool-use-release-invalid"
     if invalid_tool_use.is_dir():

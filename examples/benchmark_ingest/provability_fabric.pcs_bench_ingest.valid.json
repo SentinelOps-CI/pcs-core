@@ -112,5 +112,27 @@
   "logs": [],
   "source_repo": "https://github.com/SentinelOps-CI/provability-fabric",
   "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
-  "signature_or_digest": "sha256:62158a2523f8bc8cf817d16f28e230f9376e0d0edc90723f5e6650eee4c030ba"
+  "signature_or_digest": "sha256:16522791fb8e53ac202d27b73096043adf6ad7a01ab1e61580a0d9e2aa6d7d7a",
+  "artifact_refs": [
+    {
+      "schema_version": "v0",
+      "artifact_type": "ExplainQualityReport.v0",
+      "path": "benchmarks/admission/explain_quality_report.pf-explain-quality-admission-v0.v0.json",
+      "sha256": "sha256:26bc5dd43693839e2f7403de8226c262e94f28d54f6da1cef7dc457d3a2de826",
+      "role": "producer_export",
+      "source_repo": "https://github.com/SentinelOps-CI/provability-fabric",
+      "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
+      "signature_or_digest": "sha256:c51f9f54ed4d844c52b1e5498f832ccc08e1deaba12c3582c03b69b2e5ecc22d"
+    },
+    {
+      "schema_version": "v0",
+      "artifact_type": "ProfileCoverageReport.v0",
+      "path": "benchmarks/admission/profile_coverage_report.pf-profile-coverage-v0.v0.json",
+      "sha256": "sha256:bf28e9943e1cdfd02a8d68d64279feea1f7abeccff41c87f4086a1034ceac8e1",
+      "role": "producer_export",
+      "source_repo": "https://github.com/SentinelOps-CI/provability-fabric",
+      "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
+      "signature_or_digest": "sha256:7485bcfd35a99143469e244b5fc284a64039f6b8bc153d2325df719e244dbed3"
+    }
+  ]
 }

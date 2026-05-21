@@ -266,15 +266,28 @@ def main() -> int:
     _write_json(metric_registry_path, build_benchmark_metric_registry())
     validate_file(metric_registry_path)
 
+    sm_ingest_path = compat / "scientific_memory_render_benchmark.pcs_bench_ingest.normalized.json"
+    if sm_ingest_path.is_file():
+        sm_ingest = json.loads(sm_ingest_path.read_text(encoding="utf-8"))
+        refs = sm_ingest.get("artifact_refs")
+        if isinstance(refs, list) and refs:
+            _write_json(EXAMPLES / "benchmark_artifact_ref.valid.json", refs[0])
+
     for rel in (
         "examples/benchmarks/benchmark_case.valid.json",
         "examples/benchmarks/benchmark_report.valid.json",
         "examples/benchmarks/metric_summary.valid.json",
+        "examples/benchmarks/benchmark_artifact_ref.valid.json",
         "examples/benchmarks/explain_quality_report.valid.json",
         "examples/benchmarks/profile_coverage_report.valid.json",
         "examples/benchmarks/compatibility/pcs_bench_report.normalized.json",
+        "examples/benchmarks/compatibility/certifyedge_certificate_benchmark.pcs_bench_ingest.normalized.json",
+        "examples/benchmarks/compatibility/pf_admission_explain_quality.pcs_bench_ingest.normalized.json",
+        "examples/benchmarks/compatibility/scientific_memory_render_benchmark.pcs_bench_ingest.normalized.json",
     ):
-        validate_file(repo_root() / rel)
+        path = repo_root() / rel
+        if path.is_file():
+            validate_file(path)
 
     print("Wrote examples/benchmarks and benchmark_metric_registry.valid.json")
     return 0

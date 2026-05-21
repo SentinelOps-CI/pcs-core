@@ -41,7 +41,7 @@
       "schema_version": "v0",
       "artifact_type": "CoverageReport.v0",
       "path": "benchmarks/certificate/coverage_report.certifyedge-cert-bench-v0.v0.json",
-      "sha256": "sha256:41a447e3d126819a85e77dc2ddbc3e67a2d9dfe4c1e86cf0481022ef6e7c06e5",
+      "sha256": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
       "role": "producer_export",
       "source_repo": "https://github.com/fraware/CertifyEdge",
       "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",

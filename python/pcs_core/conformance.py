@@ -313,6 +313,58 @@ def _suite_computation() -> tuple[list[str], list[str], int]:
     return errors, [], checks_run
 
 
+@_record("benchmark-ingest")
+def _suite_benchmark_ingest() -> tuple[list[str], list[str], int]:
+    from pcs_core.benchmark_compat import validate_compatibility_corpus
+
+    errors = validate_compatibility_corpus()
+    checks = 8
+    ingest_root = examples_dir() / "benchmark_ingest"
+    for name in (
+        "labtrust.pcs_bench_ingest.valid.json",
+        "certifyedge.pcs_bench_ingest.valid.json",
+        "provability_fabric.pcs_bench_ingest.valid.json",
+        "scientific_memory.pcs_bench_ingest.valid.json",
+    ):
+        path = ingest_root / name
+        checks += 1
+        if not path.is_file():
+            errors.append(f"missing {path.relative_to(repo_root()).as_posix()}")
+            continue
+        try:
+            validate_file(path)
+        except ValidationError as exc:
+            errors.append(f"{name}: {exc}")
+    artifact_ref = examples_dir() / "benchmarks" / "benchmark_artifact_ref.valid.json"
+    checks += 1
+    if artifact_ref.is_file():
+        try:
+            validate_file(artifact_ref)
+        except ValidationError as exc:
+            errors.append(f"benchmarks/benchmark_artifact_ref.valid.json: {exc}")
+    else:
+        errors.append("missing examples/benchmarks/benchmark_artifact_ref.valid.json")
+
+    for artifact_name in (
+        "benchmark_run.valid.json",
+        "coverage_report.valid.json",
+        "failure_localization_result.valid.json",
+        "explain_quality_report.valid.json",
+        "profile_coverage_report.valid.json",
+        "metric_summary.valid.json",
+    ):
+        path = examples_dir() / "benchmarks" / artifact_name
+        checks += 1
+        if path.is_file():
+            try:
+                validate_file(path)
+            except ValidationError as exc:
+                errors.append(f"benchmarks/{artifact_name}: {exc}")
+        else:
+            errors.append(f"missing examples/benchmarks/{artifact_name}")
+    return errors, [], checks
+
+
 @_record("benchmark-report")
 def _suite_benchmark_report() -> tuple[list[str], list[str], int]:
     from pcs_core.benchmark_compat import validate_compatibility_corpus
@@ -345,6 +397,11 @@ def _suite_benchmark_report() -> tuple[list[str], list[str], int]:
             checks += 1
             try:
                 validate_file(path)
+                if path.name.endswith(".pcs_bench_ingest.normalized.json"):
+                    doc = json.loads(path.read_text(encoding="utf-8"))
+                    refs = doc.get("artifact_refs")
+                    if not isinstance(refs, list) or not refs:
+                        errors.append(f"{path.name}: producer ingest must include artifact_refs")
             except ValidationError as exc:
                 errors.append(f"{path.name}: {exc}")
     producer_root = examples_dir() / "benchmark"
@@ -355,6 +412,14 @@ def _suite_benchmark_report() -> tuple[list[str], list[str], int]:
                 validate_file(path)
             except ValidationError as exc:
                 errors.append(f"benchmark/{path.name}: {exc}")
+    ingest_root = examples_dir() / "benchmark_ingest"
+    if ingest_root.is_dir():
+        for path in sorted(ingest_root.glob("*.pcs_bench_ingest.valid.json")):
+            checks += 1
+            try:
+                validate_file(path)
+            except ValidationError as exc:
+                errors.append(f"benchmark_ingest/{path.name}: {exc}")
     metric_registry = examples_dir() / "benchmark_metric_registry.valid.json"
     if metric_registry.is_file():
         checks += 1

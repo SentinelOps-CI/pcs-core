@@ -11,8 +11,5 @@ python scripts/materialize_benchmark_producer_examples.py
 |------|----------|--------|
 | `pcs_bench_report.valid.json` | pcs-bench | `BenchmarkReport.v0` |
 | `labtrust_benchmark_case.valid.json` | LabTrust-Gym | `BenchmarkCase.v0` |
-| `certifyedge_pcs_bench_ingest.valid.json` | CertifyEdge | `PcsBenchIngest.v0` |
-| `pf_pcs_bench_ingest.valid.json` | Provability Fabric | `PcsBenchIngest.v0` |
-| `scientific_memory_pcs_bench_ingest.valid.json` | Scientific Memory | `PcsBenchIngest.v0` |
 
-Dialect sources: `examples/benchmarks/compatibility/*.dialect.json`. See [benchmark-object-model.md](../../docs/benchmark-object-model.md) and [benchmark-compatibility.md](../../docs/benchmark-compatibility.md).
+`PcsBenchIngest.v0` producer bundles live in `examples/benchmark_ingest/`. Dialect sources: `examples/benchmarks/compatibility/*.dialect.json`. See [benchmark-ingest-contract.md](../../docs/benchmark-ingest-contract.md), [benchmark-object-model.md](../../docs/benchmark-object-model.md), and [benchmark-compatibility.md](../../docs/benchmark-compatibility.md).

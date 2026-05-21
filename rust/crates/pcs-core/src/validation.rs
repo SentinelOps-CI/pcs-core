@@ -61,6 +61,10 @@ const ARTIFACT_SCHEMAS: &[(&str, &str)] = &[
     ("BenchmarkReport.v0", "BenchmarkReport.v0.schema.json"),
     ("MetricSummary.v0", "MetricSummary.v0.schema.json"),
     ("PcsBenchIngest.v0", "PcsBenchIngest.v0.schema.json"),
+    (
+        "BenchmarkArtifactRef.v0",
+        "BenchmarkArtifactRef.v0.schema.json",
+    ),
     ("ConformanceRun.v0", "ConformanceRun.v0.schema.json"),
     ("FailureCaseManifest.v0", "FailureCaseManifest.v0.schema.json"),
     (
@@ -123,6 +127,16 @@ pub fn detect_artifact_type(value: &Value) -> Option<&'static str> {
         && obj.get("artifact_types_required").map(|v| v.is_array()).unwrap_or(false)
     {
         return Some("ProfileCoverageReport.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("artifact_type").and_then(|v| v.as_str()).is_some()
+        && obj.get("path").and_then(|v| v.as_str()).is_some()
+        && obj.get("sha256").and_then(|v| v.as_str()).is_some()
+        && obj.get("role").and_then(|v| v.as_str()).is_some()
+        && !obj.contains_key("producer_id")
+        && !obj.contains_key("benchmark_runs")
+    {
+        return Some("BenchmarkArtifactRef.v0");
     }
     if obj.get("schema_version") == Some(&Value::String("v0".into()))
         && obj.get("producer_id").and_then(|v| v.as_str()).is_some()
@@ -636,6 +650,36 @@ mod tests {
         }
         let data: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
         assert_eq!(detect_artifact_type(&data), Some("BenchmarkRegistry.v0"));
+    }
+
+    #[test]
+    fn detect_benchmark_artifact_ref() {
+        let examples = examples_dir();
+        let path = examples.join("benchmarks/benchmark_artifact_ref.valid.json");
+        if !path.is_file() {
+            return;
+        }
+        let data: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
+        assert_eq!(
+            detect_artifact_type(&data),
+            Some("BenchmarkArtifactRef.v0")
+        );
+        validate_artifact(&data, "BenchmarkArtifactRef.v0").unwrap();
+    }
+
+    #[test]
+    fn detect_scientific_memory_pcs_bench_ingest() {
+        let path = examples_dir().join(
+            "benchmark_ingest/scientific_memory.pcs_bench_ingest.valid.json",
+        );
+        if !path.is_file() {
+            return;
+        }
+        let data: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
+        assert_eq!(detect_artifact_type(&data), Some("PcsBenchIngest.v0"));
+        validate_artifact(&data, "PcsBenchIngest.v0").unwrap();
+        let refs = data.get("artifact_refs").and_then(|v| v.as_array());
+        assert!(refs.is_some_and(|rows| !rows.is_empty()));
     }
 
     #[test]

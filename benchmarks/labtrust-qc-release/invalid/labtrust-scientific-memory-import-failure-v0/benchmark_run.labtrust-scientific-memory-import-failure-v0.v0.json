@@ -3,8 +3,8 @@
   "run_id": "bench-run-labtrust-scientific-memory-import-failure-v0",
   "task_id": "labtrust-qc-release-v0",
   "case_id": "labtrust-scientific-memory-import-failure-v0",
-  "started_at": "2026-05-21T11:22:28Z",
-  "completed_at": "2026-05-21T11:22:28Z",
+  "started_at": "2026-05-21T11:59:17Z",
+  "completed_at": "2026-05-21T11:59:17Z",
   "commands": [
     {
       "command": "evaluate_labtrust_gallery benchmarks/labtrust-qc-release/invalid/labtrust-scientific-memory-import-failure-v0/input_artifacts",
@@ -24,8 +24,8 @@
   "certificate_status": "CertificateChecked",
   "scientific_memory_import_status": "not_applicable",
   "scientific_memory_render_status": "not_applicable",
-  "duration_ms": 2,
+  "duration_ms": 4,
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:29f98671c987352f0d83769e416a74c0066f698eae2836922e2d488144476735"
+  "signature_or_digest": "sha256:c66b77dadcbc64f6c62e8fa1b0fd98e03db4608355bdbb2e91c78de5a4d523d4"
 }

@@ -53,6 +53,10 @@
       "type": "array",
       "items": { "type": "string" }
     },
+    "artifact_refs": {
+      "type": "array",
+      "items": { "$ref": "BenchmarkArtifactRef.v0.schema.json" }
+    },
     "source_repo": { "type": "string", "format": "uri" },
     "source_commit": { "$ref": "common.defs.json#/$defs/git_commit" },
     "signature_or_digest": { "$ref": "common.defs.json#/$defs/hex_digest" }

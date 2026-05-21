@@ -46,14 +46,17 @@ pcs benchmark validate
 pcs benchmark run --suite labtrust-qc-release-v0
 pcs benchmark run --suite formal-trust-kernel-v0 --json --out /tmp/report.json
 pcs conformance run --suite benchmark
+pcs conformance run --suite benchmark-ingest
+pcs benchmark materialize-ingest
 ```
 
 ## Canonical examples
 
 | Path | Contents |
 |------|----------|
-| `examples/benchmarks/` | pcs-core reference types (`BenchmarkCase`, `BenchmarkRun`, `BenchmarkReport`, coverage, explain-quality) |
-| `examples/benchmark/` | Producer-shaped outputs (pcs-bench, LabTrust, CertifyEdge, PF, Scientific Memory) |
+| `examples/benchmarks/` | pcs-core reference types (`BenchmarkCase`, `BenchmarkRun`, `BenchmarkReport`, coverage, explain-quality, `BenchmarkArtifactRef`) |
+| `examples/benchmark/` | Producer `BenchmarkReport` / `BenchmarkCase` snapshots |
+| `examples/benchmark_ingest/` | Producer `PcsBenchIngest.v0` bundles (embedded objects + `artifact_refs`) |
 | `examples/benchmark_metric_registry.valid.json` | Canonical `benchmark_metric_id` definitions |
 
 Regenerate everything:
@@ -73,6 +76,7 @@ python scripts/materialize_benchmark_producer_examples.py
 - [docs/benchmark-metrics.md](../docs/benchmark-metrics.md) — metric definitions
 - [docs/benchmark-registry.md](../docs/benchmark-registry.md) — suite registry
 - [docs/benchmark-compatibility.md](../docs/benchmark-compatibility.md) — dialect normalization
+- [docs/benchmark-ingest-contract.md](../docs/benchmark-ingest-contract.md) — `PcsBenchIngest` object vs path refs
 
 ## External pcs-bench
 

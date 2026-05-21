@@ -14,7 +14,8 @@ PCS benchmarks separate **what is being tested** (cases), **what happened when i
 | `ExplainQualityReport.v0` | PF/SM explain-quality or render-audit sections |
 | `ProfileCoverageReport.v0` | PF workflow profile coverage (artifacts, checks, handoffs) |
 | `FailureLocalizationResult.v0` | Per-run verdict on failure-code / component alignment |
-| `PcsBenchIngest.v0` | Normalized export bundle for pcs-bench (runs, coverage, explain/profile, commands, logs) |
+| `PcsBenchIngest.v0` | Normalized export bundle for pcs-bench (embedded runs, coverage, explain/profile, commands, logs) |
+| `BenchmarkArtifactRef.v0` | Optional on-disk path + content digest for an embedded ingest artifact |
 
 ## Status dimensions (do not conflate)
 

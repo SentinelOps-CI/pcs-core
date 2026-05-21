@@ -1,3 +1,4 @@
+export * from "./benchmarkIngest.js";
 export * from "./hash.js";
 export * from "./schema.js";
 export * from "./status.js";
