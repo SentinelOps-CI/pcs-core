@@ -339,7 +339,9 @@ def _suite_benchmark_report() -> tuple[list[str], list[str], int]:
                 errors.append(f"{name}: {exc}")
     compat = examples_root / "compatibility"
     if compat.is_dir():
-        for path in sorted(compat.glob("*.normalized.json")):
+        for path in sorted(compat.glob("*.normalized.json")) + sorted(
+            compat.glob("*.pcs_bench_ingest.normalized.json"),
+        ):
             checks += 1
             try:
                 validate_file(path)
@@ -360,6 +362,15 @@ def _suite_benchmark_report() -> tuple[list[str], list[str], int]:
             validate_file(metric_registry)
         except ValidationError as exc:
             errors.append(f"benchmark_metric_registry.valid.json: {exc}")
+    manifest = (
+        repo_root() / "benchmarks" / "labtrust-qc-release" / "benchmark_manifest.v0.json"
+    )
+    if manifest.is_file():
+        checks += 1
+        try:
+            validate_file(manifest)
+        except ValidationError as exc:
+            errors.append(f"benchmark_manifest.v0.json: {exc}")
     return errors, [], checks
 
 

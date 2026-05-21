@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 import pytest
 
@@ -92,6 +91,58 @@ def test_run_labtrust_suite_report() -> None:
     assert report["summary"]["total_cases"] == golden["summary"]["total_cases"]
 
 
+@pytest.mark.parametrize(
+    ("suite_id", "fixture_root", "golden_name"),
+    [
+        (
+            "labtrust-qc-release-v0",
+            "labtrust-qc-release",
+            "benchmark_report.labtrust-qc-release-v0.v0.json",
+        ),
+        (
+            "tool-use-safety-v0",
+            "tool-use-safety",
+            "benchmark_report.tool-use-safety-v0.v0.json",
+        ),
+        (
+            "computation-reproducibility-v0",
+            "computation-reproducibility",
+            "benchmark_report.computation-reproducibility-v0.v0.json",
+        ),
+        (
+            "cross-domain-release-chain-v0",
+            "cross-domain",
+            "benchmark_report.cross-domain-release-chain-v0.v0.json",
+        ),
+        (
+            "formal-trust-kernel-v0",
+            "cross-domain",
+            "benchmark_report.formal-trust-kernel-v0.v0.json",
+        ),
+        (
+            "scientific-memory-rendering-v0",
+            "labtrust-qc-release",
+            "benchmark_report.scientific-memory-rendering-v0.v0.json",
+        ),
+    ],
+)
+def test_golden_benchmark_report_matches_suite(
+    suite_id: str,
+    fixture_root: str,
+    golden_name: str,
+) -> None:
+    golden_path = BENCHMARKS / fixture_root / "expected_reports" / golden_name
+    if not golden_path.is_file():
+        pytest.skip(f"missing golden report {golden_path}")
+    report = run_benchmark_suite(suite_id)
+    validate_artifact(report, "BenchmarkReport.v0")
+    summary = report["summary"]
+    assert summary["passed_cases"] == summary["total_cases"], report.get("failures", [])
+    golden = json.loads(golden_path.read_text(encoding="utf-8"))
+    assert report["benchmark_suite_id"] == golden["benchmark_suite_id"]
+    assert summary["total_cases"] == golden["summary"]["total_cases"]
+
+
 def test_conformance_run_bridge() -> None:
     run = build_conformance_run("release-chain")
     validate_artifact(run, "ConformanceRun.v0")
@@ -131,8 +182,8 @@ def test_scientific_memory_suite_cases() -> None:
     cases = discover_cases_for_suite("scientific-memory-rendering-v0")
     assert len(cases) == 2
     assert {case["case_id"] for _, case in cases} == {
-        "valid-scientific-memory-import",
-        "invalid-scientific-memory-import",
+        "labtrust-valid-release-v0",
+        "labtrust-scientific-memory-import-failure-v0",
     }
 
 
@@ -144,12 +195,37 @@ def test_validate_benchmark_fixtures_clean() -> None:
     assert validate_benchmark_fixtures() == []
 
 
+def test_labtrust_gallery_evaluator_paths() -> None:
+    from pcs_core.benchmark_labtrust_gallery import detect_gallery_failure, is_labtrust_gallery_case
+    from pcs_core.benchmark_runner import execute_benchmark_case, load_benchmark_case
+
+    valid_path = (
+        BENCHMARKS
+        / "labtrust-qc-release/valid/labtrust-valid-release-v0/benchmark_case.v0.json"
+    )
+    tamper_path = (
+        BENCHMARKS
+        / "labtrust-qc-release/invalid/labtrust-trace-hash-tamper-v0/benchmark_case.v0.json"
+    )
+    if not valid_path.is_file() or not tamper_path.is_file():
+        pytest.skip("missing labtrust gallery fixtures")
+    valid_case = load_benchmark_case(valid_path)
+    tamper_case = load_benchmark_case(tamper_path)
+    assert is_labtrust_gallery_case(valid_case)
+    valid_dir = repo_root() / valid_case["input_artifacts"]["release_directory"]
+    tamper_dir = repo_root() / tamper_case["input_artifacts"]["release_directory"]
+    assert detect_gallery_failure(valid_dir) == (None, None)
+    assert detect_gallery_failure(tamper_dir)[0] == "trace_hash_mismatch"
+    assert execute_benchmark_case(valid_case)["observed_status"] == "passed"
+    assert execute_benchmark_case(tamper_case)["observed_status"] == "passed"
+
+
 def test_valid_benchmark_run_has_null_failure_fields() -> None:
     from pcs_core.benchmark_runner import execute_benchmark_case, load_benchmark_case
 
     case_path = (
         repo_root()
-        / "benchmarks/labtrust-qc-release/valid/valid-release-chain/benchmark_case.v0.json"
+        / "benchmarks/labtrust-qc-release/valid/labtrust-valid-release-v0/benchmark_case.v0.json"
     )
     if not case_path.is_file():
         pytest.skip("run materialize_benchmark_fixtures.py")

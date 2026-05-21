@@ -25,8 +25,10 @@ from pcs_core.benchmark_validate import (
     validate_benchmark_case_semantics,
     validate_benchmark_report_semantics,
     validate_benchmark_run_semantics,
+    validate_pcs_bench_ingest_semantics,
     validate_benchmark_metric_registry_semantics,
     validate_benchmark_registry_semantics,
+    validate_benchmark_suite_manifest_semantics,
     validate_benchmark_task_semantics,
 )
 from pcs_core.lean_validate import (
@@ -80,6 +82,7 @@ ARTIFACT_SCHEMAS: dict[str, str] = {
     "BenchmarkRun.v0": "BenchmarkRun.v0.schema.json",
     "BenchmarkReport.v0": "BenchmarkReport.v0.schema.json",
     "BenchmarkRegistry.v0": "BenchmarkRegistry.v0.schema.json",
+    "BenchmarkSuiteManifest.v0": "BenchmarkSuiteManifest.v0.schema.json",
     "ConformanceRun.v0": "ConformanceRun.v0.schema.json",
     "FailureCaseManifest.v0": "FailureCaseManifest.v0.schema.json",
     "FailureLocalizationResult.v0": "FailureLocalizationResult.v0.schema.json",
@@ -134,6 +137,15 @@ def detect_artifact_type(data: dict[str, Any]) -> str | None:
         and "registry_version" in data
     ):
         return "BenchmarkRegistry.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("suite_id"), str)
+        and isinstance(data.get("case_ids"), list)
+        and isinstance(data.get("cases"), list)
+        and "case_count" in data
+        and "task_id" in data
+    ):
+        return "BenchmarkSuiteManifest.v0"
     if (
         data.get("schema_version") == "v0"
         and isinstance(data.get("report_id"), str)
@@ -616,6 +628,10 @@ def validate_semantics(data: dict[str, Any], artifact_type: str) -> list[str]:
         errors.extend(validate_benchmark_registry_semantics(data))
         return errors
 
+    if artifact_type == "BenchmarkSuiteManifest.v0":
+        errors.extend(validate_benchmark_suite_manifest_semantics(data))
+        return errors
+
     if artifact_type == "BenchmarkTask.v0":
         errors.extend(validate_benchmark_task_semantics(data))
         return errors
@@ -636,6 +652,7 @@ def validate_semantics(data: dict[str, Any], artifact_type: str) -> list[str]:
         return errors
 
     if artifact_type == "PcsBenchIngest.v0":
+        errors.extend(validate_pcs_bench_ingest_semantics(data))
         return errors
 
     if artifact_type == "ConformanceRun.v0":

@@ -48,7 +48,8 @@ def validate_benchmark_case_semantics(data: dict[str, Any]) -> list[str]:
             "expected_responsible_component",
             "expected_repair_hint_kind",
         ):
-            if data.get(field) not in (None, ""):
+            value = data.get(field)
+            if value not in (None, "", "none", "unknown"):
                 errors.append(f"valid_release cases must have null {field}")
     else:
         if not data.get("expected_failure_code"):
@@ -111,7 +112,69 @@ def validate_benchmark_report_semantics(data: dict[str, Any]) -> list[str]:
     return errors
 
 
+def validate_pcs_bench_ingest_semantics(data: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    producer_id = data.get("producer_id")
+    allowed_producers = {
+        "pcs-core",
+        "pcs-bench",
+        "labtrust-gym",
+        "certifyedge",
+        "provability-fabric",
+        "scientific-memory",
+    }
+    if producer_id not in allowed_producers:
+        errors.append(f"PcsBenchIngest.v0 unknown producer_id {producer_id!r}")
+    for field in (
+        "benchmark_runs",
+        "coverage_reports",
+        "failure_localization_reports",
+        "explain_quality_reports",
+        "profile_coverage_reports",
+        "commands",
+        "logs",
+    ):
+        if not isinstance(data.get(field), list):
+            errors.append(f"PcsBenchIngest.v0 requires list {field}")
+    return errors
+
+
+def validate_benchmark_suite_manifest_semantics(data: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    case_ids = data.get("case_ids")
+    cases = data.get("cases")
+    case_count = data.get("case_count")
+    if not isinstance(case_ids, list):
+        return ["BenchmarkSuiteManifest.v0 case_ids must be an array"]
+    if not isinstance(cases, list):
+        return ["BenchmarkSuiteManifest.v0 cases must be an array"]
+    if isinstance(case_count, int) and case_count != len(case_ids):
+        errors.append(
+            f"case_count {case_count} does not match len(case_ids)={len(case_ids)}",
+        )
+    if isinstance(case_count, int) and case_count != len(cases):
+        errors.append(
+            f"case_count {case_count} does not match len(cases)={len(cases)}",
+        )
+    manifest_ids = [str(entry.get("case_id", "")) for entry in cases if isinstance(entry, dict)]
+    if sorted(manifest_ids) != sorted(str(item) for item in case_ids):
+        errors.append("case_ids must match cases[].case_id entries")
+    if len(set(manifest_ids)) != len(manifest_ids):
+        errors.append("duplicate case_id in cases[]")
+    for index, entry in enumerate(cases):
+        if not isinstance(entry, dict):
+            errors.append(f"cases[{index}] must be an object")
+            continue
+        for key in ("case_id", "gallery_case_id", "path", "polarity"):
+            if key not in entry:
+                errors.append(f"cases[{index}] missing {key}")
+    return errors
+
+
 def validate_benchmark_registry_semantics(data: dict[str, Any]) -> list[str]:
+    from pcs_core.benchmark_suite_manifest import load_benchmark_manifest, registry_matches_manifest
+    from pcs_core.paths import repo_root
+
     errors: list[str] = []
     catalog = benchmark_suite_entries()
     suites = data.get("suites")
@@ -121,6 +184,13 @@ def validate_benchmark_registry_semantics(data: dict[str, Any]) -> list[str]:
         errors.append(
             f"suite keys drift from catalog (on_disk={sorted(suites)} catalog={sorted(catalog)})",
         )
+    for suite_id, entry in suites.items():
+        if not isinstance(entry, dict):
+            continue
+        fixture_root = repo_root() / str(entry.get("fixture_root", ""))
+        manifest = load_benchmark_manifest(fixture_root)
+        if manifest is not None:
+            errors.extend(registry_matches_manifest(entry, manifest, suite_id=suite_id))
     return errors
 
 

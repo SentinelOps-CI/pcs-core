@@ -13,6 +13,7 @@ sys.path.insert(0, str(ROOT / "python"))
 
 from pcs_core.benchmark_compat import (  # noqa: E402
     EXPLAIN_QUALITY_SECTIONS,
+    INGEST_NORMALIZERS,
     compatibility_dir,
     normalize_certifyedge_certificate_benchmark,
     normalize_labtrust_case_manifest,
@@ -53,13 +54,32 @@ def _scrub_run_paths(run: dict[str, Any]) -> dict[str, Any]:
 
 
 def main() -> int:
+    compat = compatibility_dir()
     case_src = (
         repo_root()
-        / "benchmarks/labtrust-qc-release/valid/valid-release-chain/benchmark_case.v0.json"
+        / "benchmarks/labtrust-qc-release/valid/labtrust-valid-release-v0/benchmark_case.v0.json"
     )
-    run = execute_benchmark_case(load_benchmark_case(case_src))
-    _write_json(EXAMPLES / "benchmark_case.valid.json", json.loads(case_src.read_text(encoding="utf-8")))
+    canonical_case = load_benchmark_case(case_src)
+    run = execute_benchmark_case(canonical_case)
+    _write_json(EXAMPLES / "benchmark_case.valid.json", canonical_case)
     _write_json(EXAMPLES / "benchmark_run.valid.json", _scrub_run_paths(run))
+
+    _write_json(
+        EXAMPLES / "labtrust_benchmark_case.valid.json",
+        canonical_case,
+    )
+
+    for dialect_name, (_artifact_type, normalizer) in INGEST_NORMALIZERS.items():
+        dialect_path = compat / dialect_name
+        if not dialect_path.is_file():
+            continue
+        raw = json.loads(dialect_path.read_text(encoding="utf-8"))
+        ingest = normalizer(raw)
+        out_name = dialect_name.replace(
+            ".dialect.json",
+            ".pcs_bench_ingest.normalized.json",
+        )
+        _write_json(compat / out_name, ingest)
 
     report_src = (
         repo_root()
@@ -75,7 +95,7 @@ def main() -> int:
 
     invalid_case = load_benchmark_case(
         repo_root()
-        / "benchmarks/labtrust-qc-release/invalid/invalid-certificate-id/benchmark_case.v0.json",
+        / "benchmarks/labtrust-qc-release/invalid/labtrust-certificate-id-tamper-v0/benchmark_case.v0.json",
     )
     invalid_run = execute_benchmark_case(invalid_case)
     _write_json(
@@ -124,7 +144,6 @@ def main() -> int:
     )
     _write_json(EXAMPLES / "profile_coverage_report.valid.json", profile)
 
-    compat = compatibility_dir()
     _write_json(
         compat / "pcs_bench_report.dialect.json",
         {

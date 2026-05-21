@@ -6,7 +6,11 @@ import json
 from pathlib import Path
 from typing import Any
 
-from pcs_core.benchmark_metrics import build_metric_summaries_from_report, coerce_metric_ids
+from pcs_core.benchmark_metrics import (
+    _metric_summary,
+    build_metric_summaries_from_report,
+    coerce_metric_ids,
+)
 from pcs_core.benchmark_runner import build_failure_localization_result
 from pcs_core.hash import PLACEHOLDER_DIGEST, canonical_hash
 from pcs_core.paths import examples_dir, repo_root
@@ -42,6 +46,36 @@ def benchmarks_examples_dir() -> Path:
 
 def compatibility_dir() -> Path:
     return benchmarks_examples_dir() / "compatibility"
+
+
+def _coerce_metric_summaries_list(rows: list[Any]) -> list[dict[str, Any]]:
+    """Normalize legacy metric summary rows (name -> metric_id) to MetricSummary.v0."""
+    out: list[dict[str, Any]] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        raw_id = row.get("metric_id") or row.get("name")
+        if not isinstance(raw_id, str):
+            continue
+        metric_id = coerce_metric_ids([raw_id])[0]
+        if row.get("schema_version") == "v0" and isinstance(row.get("signature_or_digest"), str):
+            body = dict(row)
+            body["metric_id"] = metric_id
+            out.append(body)
+            continue
+        score = row.get("score")
+        out.append(
+            _metric_summary(
+                metric_id=metric_id,
+                score=float(score if score is not None else 0.0),
+                applicability=str(row.get("applicability", "measured")),
+                numerator=float(row.get("numerator", 0)),
+                denominator=float(row.get("denominator", 0)),
+                reason=str(row.get("reason", "")),
+                details=row.get("details") if isinstance(row.get("details"), dict) else {},
+            ),
+        )
+    return out
 
 
 def normalize_pcs_bench_report(raw: dict[str, Any]) -> dict[str, Any]:
@@ -86,7 +120,7 @@ def normalize_pcs_bench_report(raw: dict[str, Any]) -> dict[str, Any]:
     if raw.get("conformance_refs"):
         body["conformance_refs"] = raw["conformance_refs"]
     if isinstance(raw.get("metric_summaries"), list):
-        body["metric_summaries"] = raw["metric_summaries"]
+        body["metric_summaries"] = _coerce_metric_summaries_list(raw["metric_summaries"])
     else:
         body["metric_summaries"] = build_metric_summaries_from_report(body)
     return _with_digest(body)
@@ -214,6 +248,8 @@ _DETECTION_LAYER_ALIASES: dict[str, str] = {
     "Provability Fabric": "provability_fabric",
     "Scientific Memory": "scientific_memory",
     "Lean trust kernel": "formal_kernel",
+    "runtime_producer": "runtime",
+    "certificate_producer": "certificate",
 }
 
 
@@ -458,6 +494,31 @@ NORMALIZERS: dict[str, tuple[str, Any]] = {
     ),
 }
 
+def normalize_pf_pcs_bench_ingest_dialect(raw: dict[str, Any]) -> dict[str, Any]:
+    profile_raw = None
+    profile_path = compatibility_dir() / "pf_profile_coverage.dialect.json"
+    if profile_path.is_file():
+        profile_raw = json.loads(profile_path.read_text(encoding="utf-8"))
+    return build_pf_pcs_bench_ingest(raw, profile_raw)
+
+
+INGEST_NORMALIZERS: dict[str, tuple[str, Any]] = {
+    "certifyedge_certificate_benchmark.dialect.json": (
+        "PcsBenchIngest.v0",
+        build_certifyedge_pcs_bench_ingest,
+    ),
+    "pf_admission_explain_quality.dialect.json": (
+        "PcsBenchIngest.v0",
+        normalize_pf_pcs_bench_ingest_dialect,
+    ),
+    "scientific_memory_render_benchmark.dialect.json": (
+        "PcsBenchIngest.v0",
+        build_scientific_memory_pcs_bench_ingest,
+    ),
+}
+
+ALL_NORMALIZERS: dict[str, tuple[str, Any]] = {**NORMALIZERS, **INGEST_NORMALIZERS}
+
 
 def validate_compatibility_corpus() -> list[str]:
     """Validate canonical examples and normalize dialect fixtures."""
@@ -509,7 +570,7 @@ def validate_compatibility_corpus() -> list[str]:
             errors.append(f"benchmark_metric_registry.valid.json: {exc}")
 
     compat = compatibility_dir()
-    for dialect_name, (artifact_type, normalizer) in NORMALIZERS.items():
+    for dialect_name, (artifact_type, normalizer) in ALL_NORMALIZERS.items():
         dialect_path = compat / dialect_name
         if not dialect_path.is_file():
             errors.append(f"missing compatibility dialect {dialect_name}")
@@ -521,7 +582,10 @@ def validate_compatibility_corpus() -> list[str]:
                 continue
             normalized = normalizer(raw)
             validate_artifact(normalized, artifact_type)
-            out_name = dialect_name.replace(".dialect.json", ".normalized.json")
+            if dialect_name in INGEST_NORMALIZERS:
+                out_name = dialect_name.replace(".dialect.json", ".pcs_bench_ingest.normalized.json")
+            else:
+                out_name = dialect_name.replace(".dialect.json", ".normalized.json")
             out_path = compat / out_name
             if out_path.is_file():
                 on_disk = json.loads(out_path.read_text(encoding="utf-8"))
@@ -536,7 +600,7 @@ def build_failure_localization_example() -> dict[str, Any]:
 
     case_path = (
         repo_root()
-        / "benchmarks/labtrust-qc-release/invalid/invalid-certificate-id/benchmark_case.v0.json"
+        / "benchmarks/labtrust-qc-release/invalid/labtrust-certificate-id-tamper-v0/benchmark_case.v0.json"
     )
     case = load_benchmark_case(case_path)
     run = execute_benchmark_case(case)

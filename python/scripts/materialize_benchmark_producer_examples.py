@@ -61,13 +61,22 @@ def main() -> int:
         normalize_pcs_bench_report(pcs_dialect),
     )
 
-    labtrust_dialect = json.loads(
-        (compat / "labtrust_case_manifest.dialect.json").read_text(encoding="utf-8"),
+    labtrust_case_path = (
+        repo_root()
+        / "benchmarks/labtrust-qc-release/valid/labtrust-valid-release-v0/benchmark_case.v0.json"
     )
-    _write_json(
-        PRODUCER_EXAMPLES / "labtrust_benchmark_case.valid.json",
-        normalize_labtrust_case_manifest(labtrust_dialect),
-    )
+    if labtrust_case_path.is_file():
+        from pcs_core.benchmark_runner import load_benchmark_case  # noqa: E402
+
+        _write_json(PRODUCER_EXAMPLES / "labtrust_benchmark_case.valid.json", load_benchmark_case(labtrust_case_path))
+    else:
+        labtrust_dialect = json.loads(
+            (compat / "labtrust_case_manifest.dialect.json").read_text(encoding="utf-8"),
+        )
+        _write_json(
+            PRODUCER_EXAMPLES / "labtrust_benchmark_case.valid.json",
+            normalize_labtrust_case_manifest(labtrust_dialect),
+        )
 
     certifyedge_dialect = json.loads(
         (compat / "certifyedge_certificate_benchmark.dialect.json").read_text(encoding="utf-8"),

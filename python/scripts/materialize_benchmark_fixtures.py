@@ -122,7 +122,11 @@ def _benchmark_case(
         "signature_or_digest": "sha256:" + "0" * 64,
     }
     if expected_detection_layer is not None:
-        body["expected_detection_layer"] = expected_detection_layer
+        from pcs_core.benchmark_compat import _coerce_detection_layer
+
+        layer = _coerce_detection_layer(expected_detection_layer)
+        if layer is not None:
+            body["expected_detection_layer"] = layer
     return _with_digest(body)
 
 
@@ -214,127 +218,47 @@ def _write_case_bundle(
         _write_json(case_dir / "expected_repair_hint.json", repair_hint)
 
 
+def _refresh_gallery_case_runs(fixture_root: Path, *, allowed_ids: set[str] | None = None) -> int:
+    """Re-execute on-disk benchmark cases and write benchmark_run.<case-id>.v0.json."""
+    from pcs_core.benchmark_runner import execute_benchmark_case, load_benchmark_case
+
+    refreshed = 0
+    for sub in ("valid", "invalid"):
+        base = fixture_root / sub
+        if not base.is_dir():
+            continue
+        for case_dir in sorted(p for p in base.iterdir() if p.is_dir()):
+            if allowed_ids is not None and case_dir.name not in allowed_ids:
+                continue
+            case_path = case_dir / "benchmark_case.v0.json"
+            if not case_path.is_file():
+                continue
+            case = load_benchmark_case(case_path)
+            run = execute_benchmark_case(case)
+            _write_json(case_dir / f"benchmark_run.{case['case_id']}.v0.json", run)
+            refreshed += 1
+    return refreshed
+
+
 def _materialize_labtrust() -> None:
+    """Sync task metadata and refresh gallery runs; do not overwrite LabTrust-Gym cases."""
+    from pcs_core.benchmark_registry_data import benchmark_suite_entries
+
     root = repo_root() / "benchmarks" / "labtrust-qc-release"
-    task_id = "labtrust-qc-release-v0"
-    workflow = "labtrust.qc_release_v0.1"
-    invalid_specs = [
-        (
-            "invalid-certificate-id",
-            "invalid_certificate",
-            "certificate_id_mismatch",
-            "certificate_producer",
-            "align_certificate_id",
-            "Align trace_certificate certificate_id with bundle and verification.",
-        ),
-        (
-            "invalid-trace-hash",
-            "invalid_hash_mismatch",
-            "trace_hash_mismatch",
-            "hashing",
-            "align_hash",
-            "Align trace.json trace_hash with runtime receipt and certificate.",
-        ),
-        (
-            "invalid-certified-bundle-hash",
-            "invalid_hash_mismatch",
-            "verified_input_hash_mismatch",
-            "verifier",
-            "align_hash",
-            "Align verified_input.bundle_hash with certified bundle identity hash.",
-        ),
-        (
-            "invalid-placeholder-commit",
-            "invalid_registry",
-            "placeholder_commit_detected",
-            "runtime_producer",
-            "align_provenance",
-            "Replace placeholder commits with pinned release commits.",
-        ),
-        (
-            "invalid-scientific-memory-import",
-            "invalid_import",
-            "scientific_memory_import_failed",
-            "scientific_memory",
-            "fix_import_report",
-            "Set scientific_memory_import_report.verification_status to passed.",
-        ),
-    ]
+    suite = benchmark_suite_entries()["labtrust-qc-release-v0"]
+    allowed_ids = set(suite["valid_cases"]) | set(suite["invalid_cases"])
+    case_count = len(allowed_ids)
     _write_json(
         root / "benchmark_task.v0.json",
         _benchmark_task(
-            task_id=task_id,
-            workflow_id=workflow,
+            task_id=suite["task_id"],
+            workflow_id="hospital_lab.qc_release",
             domain="process_safety",
-            fixture_root="benchmarks/labtrust-qc-release",
-            case_count=2 + len(invalid_specs),
+            fixture_root=suite["fixture_root"],
+            case_count=case_count,
         ),
     )
-    _write_case_bundle(
-        root / "valid" / "valid-release-chain",
-        _benchmark_case(
-            case_id="valid-release-chain",
-            task_id=task_id,
-            workflow_id=workflow,
-            case_kind="valid_release",
-            release_directory="examples/labtrust-release",
-            expected_status="passed",
-            expected_system_outcome=None,
-            expected_detection_layer="labtrust",
-            expected_failure_code=None,
-            expected_responsible_component=None,
-            expected_repair_hint_kind=None,
-        ),
-    )
-    _write_case_bundle(
-        root / "valid" / "valid-scientific-memory-import",
-        _benchmark_case(
-            case_id="valid-scientific-memory-import",
-            task_id="scientific-memory-rendering-v0",
-            workflow_id=workflow,
-            case_kind="valid_release",
-            release_directory="examples/labtrust-release",
-            expected_status="passed",
-            expected_system_outcome=None,
-            expected_detection_layer="labtrust",
-            expected_failure_code=None,
-            expected_responsible_component=None,
-            expected_repair_hint_kind=None,
-        ),
-    )
-    invalid_map = {
-        "invalid-certificate-id": "examples/labtrust-release-invalid/mismatched_certificate_id",
-        "invalid-trace-hash": "examples/labtrust-release-invalid/mismatched_trace_hash",
-        "invalid-certified-bundle-hash": "examples/labtrust-release-invalid/mismatched_certified_bundle_hash",
-        "invalid-placeholder-commit": "examples/labtrust-release-invalid/placeholder_commit",
-        "invalid-scientific-memory-import": "examples/labtrust-release-invalid/failed_scientific_memory_import",
-    }
-    for case_id, case_kind, code, component, hint_kind, message in invalid_specs:
-        _write_case_bundle(
-            root / "invalid" / case_id,
-            _benchmark_case(
-                case_id=case_id,
-                task_id=task_id,
-                workflow_id=workflow,
-                case_kind=case_kind,
-                release_directory=invalid_map[case_id],
-                expected_status="failed",
-                expected_system_outcome=None,
-                expected_detection_layer=component,
-                expected_failure_code=code,
-                expected_responsible_component=component,
-                expected_repair_hint_kind=hint_kind,
-            ),
-            failure_manifest=_expected_failure(
-                case_id=case_id,
-                task_id=task_id,
-                failure_code=code,
-                responsible_component=component,
-                repair_hint_kind=hint_kind,
-                message=message,
-            ),
-            repair_hint=_expected_repair_hint(hint_kind, message),
-        )
+    _refresh_gallery_case_runs(root, allowed_ids=allowed_ids)
 
 
 def _materialize_tool_use() -> None:
@@ -541,6 +465,7 @@ def _materialize_cross_domain() -> None:
                 release_directory=release_directory,
                 expected_status="passed",
                 expected_system_outcome="admitted",
+                expected_detection_layer=None,
                 expected_failure_code=None,
                 expected_responsible_component=None,
                 expected_repair_hint_kind=None,
@@ -562,6 +487,7 @@ def _materialize_cross_domain() -> None:
                 release_directory=release_directory,
                 expected_status="passed",
                 expected_system_outcome="admitted",
+                expected_detection_layer=None,
                 expected_failure_code=None,
                 expected_responsible_component=None,
                 expected_repair_hint_kind=None,
@@ -623,8 +549,9 @@ def main() -> int:
 
     for rel in (
         "benchmarks/labtrust-qc-release/benchmark_task.v0.json",
-        "benchmarks/labtrust-qc-release/valid/valid-release-chain/benchmark_case.v0.json",
-        "benchmarks/labtrust-qc-release/invalid/invalid-certificate-id/benchmark_case.v0.json",
+        "benchmarks/labtrust-qc-release/benchmark_manifest.v0.json",
+        "benchmarks/labtrust-qc-release/valid/labtrust-valid-release-v0/benchmark_case.v0.json",
+        "benchmarks/labtrust-qc-release/invalid/labtrust-trace-hash-tamper-v0/benchmark_case.v0.json",
     ):
         validate_file(repo_root() / rel)
 

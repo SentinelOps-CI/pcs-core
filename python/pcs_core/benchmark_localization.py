@@ -32,6 +32,16 @@ FAILURE_CODE_TO_COMPONENT: dict[str, str] = {
     "missing_formal_artifacts": "formal_kernel",
     "formal_check_failed": "formal_kernel",
     "scientific_memory_render_incomplete": "scientific_memory",
+    "unauthorized_release": "runtime_producer",
+    "stale_trace_after_certificate": "runtime_producer",
+    "scientific_memory_claim_id_mismatch": "scientific_memory",
+    "placeholder_source_commit": "runtime_producer",
+    "legacy_handoff_file": "handoff",
+    "missing_qc": "runtime_producer",
+    "lean_certificate_trace_hash_mismatch": "formal_kernel",
+    "lean_certificate_stale": "formal_kernel",
+    "lean_verified_input_hash_mismatch": "verifier",
+    "lean_certificate_rejected": "formal_kernel",
 }
 
 

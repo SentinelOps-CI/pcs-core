@@ -84,6 +84,44 @@ def test_producer_benchmark_examples(name: str, artifact_type: str) -> None:
     validate_artifact(doc, artifact_type)
 
 
+def test_labtrust_benchmark_manifest_validates() -> None:
+    path = repo_root() / "benchmarks/labtrust-qc-release/benchmark_manifest.v0.json"
+    if not path.is_file():
+        pytest.skip("missing LabTrust benchmark manifest")
+    doc = json.loads(path.read_text(encoding="utf-8"))
+    validate_artifact(doc, "BenchmarkSuiteManifest.v0")
+    assert doc["case_count"] == len(doc["case_ids"])
+    assert doc["suite_id"] == "labtrust-qc-release-v0"
+
+
+def test_labtrust_registry_matches_manifest() -> None:
+    from pcs_core.benchmark_registry_data import benchmark_suite_entries
+    from pcs_core.benchmark_suite_manifest import load_benchmark_manifest, registry_matches_manifest
+    from pcs_core.paths import repo_root
+
+    entry = benchmark_suite_entries()["labtrust-qc-release-v0"]
+    manifest = load_benchmark_manifest(repo_root() / "benchmarks/labtrust-qc-release")
+    assert manifest is not None
+    assert registry_matches_manifest(entry, manifest) == []
+
+
+def test_labtrust_valid_case_normalizes_to_null_failure_fields() -> None:
+    from pcs_core.benchmark_runner import load_benchmark_case
+    from pcs_core.paths import repo_root
+    from pcs_core.validate import validate_artifact
+
+    case_path = (
+        repo_root()
+        / "benchmarks/labtrust-qc-release/valid/labtrust-valid-release-v0/benchmark_case.v0.json"
+    )
+    if not case_path.is_file():
+        pytest.skip("missing LabTrust benchmark gallery case")
+    case = load_benchmark_case(case_path)
+    assert case["expected_failure_code"] is None
+    assert case["expected_system_outcome"] == "admitted"
+    validate_artifact(case, "BenchmarkCase.v0")
+
+
 def test_compatibility_corpus_clean() -> None:
     if not (EXAMPLES / "compatibility").is_dir():
         pytest.skip("run materialize_benchmark_examples.py")

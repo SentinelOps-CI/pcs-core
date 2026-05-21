@@ -531,9 +531,28 @@ def cmd_benchmark_list() -> int:
 def cmd_benchmark_validate() -> int:
     from pcs_core.benchmark_compat import validate_compatibility_corpus
     from pcs_core.benchmark_runner import validate_benchmark_fixtures
+    from pcs_core.paths import examples_dir, repo_root
 
     errors = validate_benchmark_fixtures()
     errors.extend(validate_compatibility_corpus())
+    for rel in (
+        "benchmark_registry.valid.json",
+        "benchmark_metric_registry.valid.json",
+    ):
+        path = examples_dir() / rel
+        if not path.is_file():
+            errors.append(f"missing examples/{rel}")
+            continue
+        try:
+            validate_file(path)
+        except ValidationError as exc:
+            errors.append(f"examples/{rel}: {exc}")
+    manifest_path = repo_root() / "benchmarks/labtrust-qc-release/benchmark_manifest.v0.json"
+    if manifest_path.is_file():
+        try:
+            validate_file(manifest_path)
+        except ValidationError as exc:
+            errors.append(f"{manifest_path.relative_to(repo_root())}: {exc}")
     if not errors:
         print("OK benchmark fixtures")
         return 0
@@ -545,16 +564,16 @@ def cmd_benchmark_validate() -> int:
 def cmd_benchmark_normalize(dialect_path: Path, out_path: Path) -> int:
     import json
 
-    from pcs_core.benchmark_compat import NORMALIZERS
+    from pcs_core.benchmark_compat import ALL_NORMALIZERS
 
     name = dialect_path.name
-    if name not in NORMALIZERS:
+    if name not in ALL_NORMALIZERS:
         print(
-            f"FAIL unknown dialect {name!r}; expected one of: {', '.join(sorted(NORMALIZERS))}",
+            f"FAIL unknown dialect {name!r}; expected one of: {', '.join(sorted(ALL_NORMALIZERS))}",
             file=sys.stderr,
         )
         return 1
-    artifact_type, normalizer = NORMALIZERS[name]
+    artifact_type, normalizer = ALL_NORMALIZERS[name]
     try:
         raw = _load_json(dialect_path)
         normalized = normalizer(raw)

@@ -337,12 +337,63 @@ def _execute_release_chain_benchmark_case(case: dict[str, Any]) -> dict[str, Any
 
 def execute_benchmark_case(case: dict[str, Any]) -> dict[str, Any]:
     """Run one benchmark case and return BenchmarkRun.v0."""
+    from pcs_core.benchmark_labtrust_gallery import is_labtrust_gallery_case
+
     task_id = str(case.get("task_id", ""))
+    if is_labtrust_gallery_case(case):
+        return _execute_labtrust_gallery_benchmark_case(case)
     if task_id == "formal-trust-kernel-v0":
         return _execute_formal_benchmark_case(case)
     if task_id == "scientific-memory-rendering-v0":
         return _execute_scientific_memory_benchmark_case(case)
     return _execute_release_chain_benchmark_case(case)
+
+
+def _execute_labtrust_gallery_benchmark_case(case: dict[str, Any]) -> dict[str, Any]:
+    from pcs_core.benchmark_labtrust_gallery import evaluate_labtrust_gallery_case
+
+    started = time.perf_counter()
+    started_at = _iso_now()
+    release_dir = resolve_release_directory(case)
+    try:
+        release_rel = release_dir.relative_to(repo_root()).as_posix()
+    except ValueError:
+        release_rel = release_dir.as_posix()
+
+    observed_status, failure_code, component, release_chain_status, certificate_status = (
+        evaluate_labtrust_gallery_case(case, release_dir)
+    )
+    commands = [
+        {
+            "command": f"evaluate_labtrust_gallery {release_rel}",
+            "exit_code": 0 if observed_status == "passed" else 1,
+        },
+    ]
+    sm_import = "not_applicable"
+    sm_render = "not_applicable"
+    sm_path = release_dir / "scientific_memory_import_report.json"
+    if sm_path.is_file():
+        sm_report = json.loads(sm_path.read_text(encoding="utf-8"))
+        if isinstance(sm_report, dict):
+            sm_import = (
+                "passed" if sm_report.get("verification_status") == "passed" else "failed"
+            )
+            sm_render = "rendered" if sm_report.get("verification_status") == "passed" else "incomplete"
+
+    return _build_benchmark_run(
+        case,
+        started_at=started_at,
+        duration_ms=int((time.perf_counter() - started) * 1000),
+        commands=commands,
+        artifacts_produced=["manifest.json", "trace_certificate.json"],
+        observed_status=observed_status,
+        observed_failure_code=failure_code,
+        observed_component=component,
+        release_chain_status=release_chain_status,
+        certificate_status=certificate_status,
+        scientific_memory_import_status=sm_import,
+        scientific_memory_render_status=sm_render,
+    )
 
 
 def build_failure_localization_result(
@@ -634,10 +685,24 @@ def build_benchmark_report(
 
 
 def load_benchmark_case(path: Path) -> dict[str, Any]:
+    from pcs_core.benchmark_case_normalize import normalize_benchmark_case
+
     data = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(data, dict):
         raise ValueError(f"{path}: case must be a JSON object")
-    return data
+    extension_path = path.parent / "labtrust_benchmark_extension.v0.json"
+    failure_path = path.parent / "expected_failure.json"
+    extension = None
+    expected_failure = None
+    if extension_path.is_file():
+        extension = json.loads(extension_path.read_text(encoding="utf-8"))
+    if failure_path.is_file():
+        expected_failure = json.loads(failure_path.read_text(encoding="utf-8"))
+    return normalize_benchmark_case(
+        data,
+        extension=extension if isinstance(extension, dict) else None,
+        expected_failure=expected_failure if isinstance(expected_failure, dict) else None,
+    )
 
 
 def list_benchmark_suite_ids() -> list[str]:
@@ -690,11 +755,24 @@ def validate_benchmark_fixtures() -> list[str]:
             task_path = repo_root() / root_name / "benchmark_task.v0.json"
             if task_path.is_file():
                 validate_file(task_path)
-            for case_path, _case in discover_cases_for_suite(suite_id):
-                validate_file(case_path)
+            for case_path, case in discover_cases_for_suite(suite_id):
+                from pcs_core.validate import ValidationError, validate_artifact
+
+                try:
+                    validate_artifact(case, "BenchmarkCase.v0")
+                except ValidationError as exc:
+                    errors.append(f"{case_path.relative_to(repo_root())}: {exc}")
+                    continue
                 failure_path = case_path.parent / "expected_failure.json"
                 if failure_path.is_file():
-                    validate_file(failure_path)
+                    from pcs_core.validate import detect_artifact_type
+
+                    failure_doc = json.loads(failure_path.read_text(encoding="utf-8"))
+                    if isinstance(failure_doc, dict) and detect_artifact_type(failure_doc):
+                        try:
+                            validate_file(failure_path)
+                        except ValidationError as exc:
+                            errors.append(f"{failure_path.relative_to(repo_root())}: {exc}")
         except (ValueError, FileNotFoundError) as exc:
             errors.append(f"{suite_id}: {exc}")
     return errors
