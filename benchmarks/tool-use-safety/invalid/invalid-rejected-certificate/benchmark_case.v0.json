@@ -8,11 +8,12 @@
     "release_directory": "benchmarks/tool-use-safety/input_releases/invalid-rejected-certificate"
   },
   "expected_status": "failed",
-  "expected_system_outcome": "rejected",
+  "expected_system_outcome": "certificate_rejected",
   "expected_failure_code": "rejected_certificate",
   "expected_responsible_component": "certificate_producer",
   "expected_repair_hint_kind": "align_certificate_id",
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
-  "signature_or_digest": "sha256:33c88ef965fec089fc43244eeb4931d8f2dfb0eef2adb512bc819f18360f2c00"
+  "signature_or_digest": "sha256:033e64f9ff327e87f7c30df96b269cd87bdcf487a395a578417dbfec87884490",
+  "expected_detection_layer": "certificate"
 }

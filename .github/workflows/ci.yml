@@ -47,11 +47,14 @@ jobs:
           pcs validate-release-chain ../examples/computation-release/
           pcs conformance run --suite computation
           pcs benchmark validate
-          pcs benchmark run --suite labtrust-qc-release-v0
-          pcs benchmark run --suite tool-use-safety-v0
-          pcs benchmark run --suite formal-trust-kernel-v0
           pcs conformance run --suite benchmark
           pcs conformance run --suite benchmark-report
+          pcs benchmark run --suite labtrust-qc-release-v0
+          pcs benchmark run --suite tool-use-safety-v0
+          pcs benchmark run --suite computation-reproducibility-v0
+          pcs benchmark run --suite scientific-memory-rendering-v0
+          pcs benchmark run --suite formal-trust-kernel-v0
+          pcs benchmark run --suite cross-domain-release-chain-v0
           python scripts/materialize_benchmark_examples.py
           python scripts/materialize_benchmark_producer_examples.py
           pcs validate ../examples/benchmark_registry.valid.json

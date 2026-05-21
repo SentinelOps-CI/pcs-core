@@ -27,8 +27,8 @@
     "release_directory": "benchmarks/labtrust-qc-release/invalid/labtrust-missing-qc-result-v0/input_artifacts"
   },
   "schema_version": "v0",
-  "signature_or_digest": "sha256:c3a8ae91d7472a9454e38d2cbddc389b77016bb7edd3fb5c2741e5b05080ac07",
-  "source_commit": "8f1d66edffbb436e004acd4a9a6aad30f2742f0f",
+  "signature_or_digest": "sha256:c0b4b61c44dd6c1115c501a91e5566568a68e5cfa72f4f999f7f2b6f230f4465",
+  "source_commit": "5eac714fd7dc813d2523febcb85c56821558a1b7",
   "source_repo": "https://github.com/fraware/LabTrust-Gym",
   "task_id": "labtrust-qc-release-v0",
   "workflow_id": "hospital_lab.qc_release"

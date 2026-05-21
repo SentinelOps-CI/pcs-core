@@ -67,8 +67,8 @@
     "release_directory": "benchmarks/labtrust-qc-release/invalid/labtrust-stale-trace-after-certificate-v0/input_artifacts"
   },
   "schema_version": "v0",
-  "signature_or_digest": "sha256:be487f2e81b3ec074337764e51c236a7d984939d387212a2429c92be4c27ef08",
-  "source_commit": "8f1d66edffbb436e004acd4a9a6aad30f2742f0f",
+  "signature_or_digest": "sha256:537e9f1f8f3423509890eceb0265c02df56c5b9a8d0e0947112b8ac05e03695c",
+  "source_commit": "5eac714fd7dc813d2523febcb85c56821558a1b7",
   "source_repo": "https://github.com/fraware/LabTrust-Gym",
   "task_id": "labtrust-qc-release-v0",
   "workflow_id": "hospital_lab.qc_release"

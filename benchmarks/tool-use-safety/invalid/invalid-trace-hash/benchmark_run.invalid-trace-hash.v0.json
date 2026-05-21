@@ -3,8 +3,8 @@
   "run_id": "bench-run-invalid-trace-hash",
   "task_id": "tool-use-safety-v0",
   "case_id": "invalid-trace-hash",
-  "started_at": "2026-05-20T12:06:38Z",
-  "completed_at": "2026-05-20T12:06:38Z",
+  "started_at": "2026-05-21T11:22:27Z",
+  "completed_at": "2026-05-21T11:22:27Z",
   "commands": [
     {
       "command": "validate_release_chain benchmarks/tool-use-safety/input_releases/invalid-trace-hash",
@@ -21,8 +21,8 @@
   "certificate_status": "not_applicable",
   "scientific_memory_import_status": "not_applicable",
   "scientific_memory_render_status": "not_applicable",
-  "duration_ms": 90,
+  "duration_ms": 37,
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:5d7d679cd6e24cc7cfc8236b91c0820d375d262cf84f603a52774fd8e5ad2a1b"
+  "signature_or_digest": "sha256:77a781ce1c5fe05dd467a1af5ba25b4a94bbae819e491f108163efd0f61c0c19"
 }

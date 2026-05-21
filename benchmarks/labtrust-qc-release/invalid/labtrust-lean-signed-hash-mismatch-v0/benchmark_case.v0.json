@@ -77,8 +77,8 @@
     "release_directory": "benchmarks/labtrust-qc-release/invalid/labtrust-lean-signed-hash-mismatch-v0/input_artifacts"
   },
   "schema_version": "v0",
-  "signature_or_digest": "sha256:da22692b437ec8d834071ee5505d8a3e3a82a09bd5da57db6d53151fe26862a7",
-  "source_commit": "8f1d66edffbb436e004acd4a9a6aad30f2742f0f",
+  "signature_or_digest": "sha256:312579edf782138f13a7b3a6253d7b8f07db364c5efddb21f55d9d7e7423e2d2",
+  "source_commit": "5eac714fd7dc813d2523febcb85c56821558a1b7",
   "source_repo": "https://github.com/fraware/LabTrust-Gym",
   "task_id": "labtrust-qc-release-v0",
   "workflow_id": "hospital_lab.qc_release"

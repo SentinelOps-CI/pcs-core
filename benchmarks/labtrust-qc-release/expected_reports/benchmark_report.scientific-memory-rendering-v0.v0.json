@@ -1,0 +1,134 @@
+{
+  "schema_version": "v0",
+  "report_id": "benchmark-report-scientific-memory-rendering-v0",
+  "benchmark_suite_id": "scientific-memory-rendering-v0",
+  "runs": [
+    {
+      "run_id": "bench-run-labtrust-valid-release-v0",
+      "case_id": "labtrust-valid-release-v0",
+      "path": "benchmarks/labtrust-qc-release/valid/labtrust-valid-release-v0/benchmark_run.labtrust-valid-release-v0.v0.json",
+      "observed_status": "passed"
+    },
+    {
+      "run_id": "bench-run-labtrust-scientific-memory-import-failure-v0",
+      "case_id": "labtrust-scientific-memory-import-failure-v0",
+      "path": "benchmarks/labtrust-qc-release/invalid/labtrust-scientific-memory-import-failure-v0/benchmark_run.labtrust-scientific-memory-import-failure-v0.v0.json",
+      "observed_status": "passed"
+    }
+  ],
+  "metrics": [
+    "scientific_memory_interpretability_score",
+    "failure_localization_accuracy"
+  ],
+  "summary": {
+    "total_cases": 2,
+    "passed_cases": 2,
+    "failed_cases": 0,
+    "expected_failures_detected": 1,
+    "unexpected_passes": 0,
+    "unexpected_failures": 0,
+    "failure_localization_accuracy": 1.0,
+    "repair_hint_accuracy": 1.0,
+    "formal_check_coverage": 0.0,
+    "registry_coverage": 0.0,
+    "scientific_memory_render_coverage": 0.0
+  },
+  "coverage": {
+    "registry": {
+      "schema_version": "v0",
+      "coverage_id": "scientific-memory-rendering-v0-registry",
+      "metric": "registry_coverage",
+      "numerator": 0.0,
+      "denominator": 1.0,
+      "coverage_ratio": 0.0,
+      "details": {
+        "registry_entry_count": 38
+      },
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:16bd5e384b7f7838c2774d30f9503fef25a177900c04f812b0311b5d8aea4df5"
+    },
+    "formal_checks": {
+      "schema_version": "v0",
+      "coverage_id": "scientific-memory-rendering-v0-formal",
+      "metric": "formal_check_coverage",
+      "numerator": 0.0,
+      "denominator": 1.0,
+      "coverage_ratio": 0.0,
+      "details": {},
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:c36c48ac4a2c8b7c15d60f752523092c903118ae54ddb74fd6aea701aa2155bb"
+    },
+    "scientific_memory": {
+      "schema_version": "v0",
+      "coverage_id": "scientific-memory-rendering-v0-sm",
+      "metric": "scientific_memory_interpretability",
+      "numerator": 0.0,
+      "denominator": 1.0,
+      "coverage_ratio": 0.0,
+      "details": {},
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:ed6d9b8ef629b128e184e5e709a6ca891567a5bf46b93b00654d34f7037c206b"
+    },
+    "release_reproducibility": {
+      "schema_version": "v0",
+      "coverage_id": "scientific-memory-rendering-v0-repro",
+      "metric": "release_reproducibility",
+      "numerator": 2.0,
+      "denominator": 2.0,
+      "coverage_ratio": 1.0,
+      "details": {},
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:571b54f180bbf8e19a9cbb61410ed4e5b2a4668dbe186331c807ebe96d9f28e8"
+    },
+    "certificate_completeness": {
+      "schema_version": "v0",
+      "coverage_id": "scientific-memory-rendering-v0-cert",
+      "metric": "certificate_completeness",
+      "numerator": 2.0,
+      "denominator": 2.0,
+      "coverage_ratio": 1.0,
+      "details": {},
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:9f932167d6b1570072cc269d98459f38904d3ca53c60be7b124eb84299ec2b9d"
+    }
+  },
+  "metric_summaries": [
+    {
+      "schema_version": "v0",
+      "metric_id": "scientific_memory_interpretability_score",
+      "score": 0.0,
+      "applicability": "measured",
+      "numerator": 0.0,
+      "denominator": 1.0,
+      "reason": "coverage from scientific-memory-rendering-v0-sm",
+      "details": {
+        "coverage_id": "scientific-memory-rendering-v0-sm"
+      },
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:1fe577d92acca748a0eb42e6ce82477ee951af5882109662596414095322328e"
+    },
+    {
+      "schema_version": "v0",
+      "metric_id": "failure_localization_accuracy",
+      "score": 1.0,
+      "applicability": "measured",
+      "numerator": 1.0,
+      "denominator": 1.0,
+      "reason": "component alignment on invalid cases",
+      "details": {},
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:a3928277b1435079004ae7f9018d672b053006d0e5eabcc83ff426e9f58bdce2"
+    }
+  ],
+  "failures": [],
+  "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+  "source_commit": "d444444444444444444444444444444444444444",
+  "signature_or_digest": "sha256:abdd9b84b4ed55ce67b9d5adf1184111e10f92730c3d5704491889206bcb9eae"
+}

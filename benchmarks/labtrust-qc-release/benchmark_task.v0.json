@@ -1,12 +1,12 @@
 {
   "schema_version": "v0",
   "task_id": "labtrust-qc-release-v0",
-  "workflow_id": "labtrust.qc_release_v0.1",
+  "workflow_id": "hospital_lab.qc_release",
   "domain": "process_safety",
   "description": "PCS benchmark task for labtrust-qc-release-v0",
   "input_case_set": {
     "path": "benchmarks/labtrust-qc-release",
-    "case_count": 7
+    "case_count": 13
   },
   "expected_outputs": {
     "report_artifact_type": "BenchmarkReport.v0",
@@ -28,5 +28,5 @@
   },
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
-  "signature_or_digest": "sha256:ef04f008bacf5f481f13d941acbf56961024158baf2de5aaecccd174dd56bfab"
+  "signature_or_digest": "sha256:5f326121329661b484460929faaa811a334ee6923a6e77a3207707e365297966"
 }

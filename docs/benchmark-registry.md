@@ -20,7 +20,7 @@ python scripts/materialize_benchmark_fixtures.py
 
 | Suite ID | Workflows | Fixture root |
 |----------|-----------|----------------|
-| `labtrust-qc-release-v0` | `labtrust.qc_release_v0.1` | `benchmarks/labtrust-qc-release/` |
+| `labtrust-qc-release-v0` | `hospital_lab.qc_release`, `labtrust.qc_release_v0.1` | `benchmarks/labtrust-qc-release/` |
 | `tool-use-safety-v0` | `agent_tool_use.safety_v0` | `benchmarks/tool-use-safety/` |
 | `computation-reproducibility-v0` | `scientific_computation.reproducibility_v0` | `benchmarks/computation-reproducibility/` |
 | `cross-domain-release-chain-v0` | All three workflow profiles | `benchmarks/cross-domain/` |
@@ -34,6 +34,8 @@ Each suite entry includes:
 - `valid_cases` / `invalid_cases` — case directory names under `valid/` and `invalid/`
 - `metrics` — standard PCS benchmark metrics (see [benchmark-metrics.md](benchmark-metrics.md))
 - `minimum_passing_thresholds` — pass rate, localization accuracy, formal and registry coverage floors
+
+LabTrust-Gym gallery exports also ship `benchmark_manifest.v0.json` (`BenchmarkSuiteManifest.v0`) listing gallery case IDs, paths, and polarity. Registry entries for `labtrust-qc-release-v0` must stay aligned with that manifest (`registry_matches_manifest` in tests).
 
 ## Case layout
 

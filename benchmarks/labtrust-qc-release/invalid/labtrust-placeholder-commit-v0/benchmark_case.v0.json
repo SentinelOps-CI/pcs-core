@@ -67,8 +67,8 @@
     "release_directory": "benchmarks/labtrust-qc-release/invalid/labtrust-placeholder-commit-v0/input_artifacts"
   },
   "schema_version": "v0",
-  "signature_or_digest": "sha256:ccf5939ca2df67980fe95be5200468e242f9e4f90f7263e451290d03648b36e7",
-  "source_commit": "8f1d66edffbb436e004acd4a9a6aad30f2742f0f",
+  "signature_or_digest": "sha256:97dfe7b782876f2aed153f283ddbebbf11d1403f9b4c38edd2178fc85b174bce",
+  "source_commit": "5eac714fd7dc813d2523febcb85c56821558a1b7",
   "source_repo": "https://github.com/fraware/LabTrust-Gym",
   "task_id": "labtrust-qc-release-v0",
   "workflow_id": "hospital_lab.qc_release"

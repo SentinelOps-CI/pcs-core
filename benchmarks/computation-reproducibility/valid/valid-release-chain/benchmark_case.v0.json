@@ -14,5 +14,6 @@
   "expected_repair_hint_kind": null,
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
-  "signature_or_digest": "sha256:b87a33c5c2efbf00c50c1452dd8b34d1f7931f2c9aa920103a1487f42bde8e04"
+  "signature_or_digest": "sha256:b892b890cdf85d045696e4c6556b39fde62406589923f9de4d67f31e7b705f48",
+  "expected_detection_layer": "labtrust"
 }

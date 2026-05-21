@@ -51,6 +51,10 @@ const ARTIFACT_SCHEMAS: &[(&str, &str)] = &[
     ("ProofObligation.v0", "ProofObligation.v0.schema.json"),
     ("LeanCheckResult.v0", "LeanCheckResult.v0.schema.json"),
     ("BenchmarkRegistry.v0", "BenchmarkRegistry.v0.schema.json"),
+    (
+        "BenchmarkSuiteManifest.v0",
+        "BenchmarkSuiteManifest.v0.schema.json",
+    ),
     ("BenchmarkTask.v0", "BenchmarkTask.v0.schema.json"),
     ("BenchmarkCase.v0", "BenchmarkCase.v0.schema.json"),
     ("BenchmarkRun.v0", "BenchmarkRun.v0.schema.json"),
@@ -159,6 +163,15 @@ pub fn detect_artifact_type(value: &Value) -> Option<&'static str> {
         && obj.contains_key("input_artifacts")
     {
         return Some("BenchmarkCase.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("suite_id").and_then(|v| v.as_str()).is_some()
+        && obj.get("case_ids").map(|v| v.is_array()).unwrap_or(false)
+        && obj.get("cases").map(|v| v.is_array()).unwrap_or(false)
+        && obj.contains_key("case_count")
+        && obj.get("task_id").and_then(|v| v.as_str()).is_some()
+    {
+        return Some("BenchmarkSuiteManifest.v0");
     }
     if obj.get("schema_version") == Some(&Value::String("v0".into()))
         && obj.get("task_id").and_then(|v| v.as_str()).is_some()
@@ -623,6 +636,21 @@ mod tests {
         }
         let data: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
         assert_eq!(detect_artifact_type(&data), Some("BenchmarkRegistry.v0"));
+    }
+
+    #[test]
+    fn detect_labtrust_benchmark_suite_manifest() {
+        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../..")
+            .join("benchmarks/labtrust-qc-release/benchmark_manifest.v0.json");
+        if !path.is_file() {
+            return;
+        }
+        let data: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
+        assert_eq!(
+            detect_artifact_type(&data),
+            Some("BenchmarkSuiteManifest.v0")
+        );
     }
 
     fn shared_hash_vectors_match_repo_fixtures_inner() {

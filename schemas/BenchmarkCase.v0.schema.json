@@ -48,21 +48,36 @@
   },
   "$defs": {
     "input_artifacts": {
+      "oneOf": [
+        { "$ref": "#/$defs/input_artifacts_release_directory" },
+        { "$ref": "#/$defs/input_artifacts_case_manifest" }
+      ]
+    },
+    "input_artifacts_release_directory": {
       "type": "object",
       "additionalProperties": false,
+      "required": ["release_directory"],
       "properties": {
         "release_directory": { "type": "string", "minLength": 1 },
+        "artifacts": {
+          "type": "array",
+          "items": { "$ref": "common.defs.json#/$defs/benchmark_input_artifact_ref" }
+        },
+        "conformance_suite": { "type": "string", "minLength": 1 }
+      }
+    },
+    "input_artifacts_case_manifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["case_manifest_path"],
+      "properties": {
         "case_manifest_path": { "type": "string", "minLength": 1 },
         "artifacts": {
           "type": "array",
           "items": { "$ref": "common.defs.json#/$defs/benchmark_input_artifact_ref" }
         },
         "conformance_suite": { "type": "string", "minLength": 1 }
-      },
-      "anyOf": [
-        { "required": ["release_directory"] },
-        { "required": ["case_manifest_path"] }
-      ]
+      }
     }
   }
 }

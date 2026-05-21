@@ -9,6 +9,7 @@ Each suite has a fixture root (for example `labtrust-qc-release/`):
 ```
 <suite>/
   benchmark_task.v0.json       # BenchmarkTask.v0
+  benchmark_manifest.v0.json   # optional LabTrust-Gym gallery index (labtrust-qc-release)
   valid/<case-id>/
     benchmark_case.v0.json
     benchmark_run.<case-id>.v0.json   # produced by `pcs benchmark run`

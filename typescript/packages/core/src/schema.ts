@@ -52,6 +52,7 @@ const ARTIFACT_SCHEMAS: Record<ArtifactType, string> = {
   "ProofObligation.v0": "ProofObligation.v0.schema.json",
   "LeanCheckResult.v0": "LeanCheckResult.v0.schema.json",
   "BenchmarkRegistry.v0": "BenchmarkRegistry.v0.schema.json",
+  "BenchmarkSuiteManifest.v0": "BenchmarkSuiteManifest.v0.schema.json",
   "BenchmarkTask.v0": "BenchmarkTask.v0.schema.json",
   "BenchmarkCase.v0": "BenchmarkCase.v0.schema.json",
   "BenchmarkRun.v0": "BenchmarkRun.v0.schema.json",

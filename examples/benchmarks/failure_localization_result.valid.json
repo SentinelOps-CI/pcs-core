@@ -1,8 +1,8 @@
 {
   "schema_version": "v0",
-  "result_id": "failure-loc-bench-run-invalid-certificate-id",
-  "run_id": "bench-run-invalid-certificate-id",
-  "case_id": "invalid-certificate-id",
+  "result_id": "failure-loc-bench-run-labtrust-certificate-id-tamper-v0",
+  "run_id": "bench-run-labtrust-certificate-id-tamper-v0",
+  "case_id": "labtrust-certificate-id-tamper-v0",
   "expected_failure_code": "certificate_id_mismatch",
   "observed_failure_code": "certificate_id_mismatch",
   "expected_responsible_component": "certificate_producer",
@@ -10,5 +10,5 @@
   "localized_correctly": true,
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:91d3aff9ff926e4bda0e8956c8bbe54ed730bb965979a0719be7602d4562273a"
+  "signature_or_digest": "sha256:1b43434ba9b791223c0329f460167e0f12e6fe74951b2fdaf77c0f3e02eca7f2"
 }

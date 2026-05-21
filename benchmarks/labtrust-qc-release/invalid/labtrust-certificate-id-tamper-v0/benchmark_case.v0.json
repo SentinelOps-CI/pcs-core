@@ -67,8 +67,8 @@
     "release_directory": "benchmarks/labtrust-qc-release/invalid/labtrust-certificate-id-tamper-v0/input_artifacts"
   },
   "schema_version": "v0",
-  "signature_or_digest": "sha256:f6f64cf3e7d90aba160a9f800ea171083fc5a57433d9063e78e15bafb71f6680",
-  "source_commit": "8f1d66edffbb436e004acd4a9a6aad30f2742f0f",
+  "signature_or_digest": "sha256:fe8f4e0a6aa9b9e24cf2f9b6a2f856785891e8613244116ad8261c6c88e6b91d",
+  "source_commit": "5eac714fd7dc813d2523febcb85c56821558a1b7",
   "source_repo": "https://github.com/fraware/LabTrust-Gym",
   "task_id": "labtrust-qc-release-v0",
   "workflow_id": "hospital_lab.qc_release"

@@ -52,6 +52,7 @@ export type ArtifactType =
   | "ProofObligation.v0"
   | "LeanCheckResult.v0"
   | "BenchmarkRegistry.v0"
+  | "BenchmarkSuiteManifest.v0"
   | "BenchmarkTask.v0"
   | "BenchmarkCase.v0"
   | "BenchmarkRun.v0"
@@ -157,6 +158,16 @@ export function detectArtifactType(data: Record<string, unknown>): ArtifactType 
     "input_artifacts" in data
   ) {
     return "BenchmarkCase.v0";
+  }
+  if (
+    data.schema_version === "v0" &&
+    typeof data.suite_id === "string" &&
+    Array.isArray(data.case_ids) &&
+    Array.isArray(data.cases) &&
+    "case_count" in data &&
+    typeof data.task_id === "string"
+  ) {
+    return "BenchmarkSuiteManifest.v0";
   }
   if (
     data.schema_version === "v0" &&

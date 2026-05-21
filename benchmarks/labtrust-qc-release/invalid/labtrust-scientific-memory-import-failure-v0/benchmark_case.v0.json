@@ -77,8 +77,8 @@
     "release_directory": "benchmarks/labtrust-qc-release/invalid/labtrust-scientific-memory-import-failure-v0/input_artifacts"
   },
   "schema_version": "v0",
-  "signature_or_digest": "sha256:cde2e1a801986f5dee3e300c08abc138e26d23a43a25530865257c06fe5df957",
-  "source_commit": "8f1d66edffbb436e004acd4a9a6aad30f2742f0f",
+  "signature_or_digest": "sha256:85e8790281129e8d4474a4d78e3036a0e93d082fcba16c73a94631317d78c272",
+  "source_commit": "5eac714fd7dc813d2523febcb85c56821558a1b7",
   "source_repo": "https://github.com/fraware/LabTrust-Gym",
   "task_id": "labtrust-qc-release-v0",
   "workflow_id": "hospital_lab.qc_release"
