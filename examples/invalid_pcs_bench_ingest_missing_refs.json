@@ -1,76 +1,1432 @@
 {
-  "schema_version": "v0",
-  "producer_id": "certifyedge",
-  "suite_id": "certifyedge-certificate-v0",
-  "workflow_id": "labtrust.qc_release_v0.1",
-  "benchmark_runs": [],
-  "coverage_reports": [
+  "benchmark_runs": [
     {
+      "artifacts_produced": [
+        "certificate.json",
+        "certificate_formal_facts.json"
+      ],
+      "case_id": "formal_facts",
+      "certificate_status": "CertificateChecked",
+      "commands": [
+        {
+          "command": "certifyedge emit-pcs-certificate --profile agent_tool_use.safety_v0 --handoff <case>/handoff.json",
+          "exit_code": 0
+        }
+      ],
+      "completed_at": "2026-05-22T01:39:35Z",
+      "duration_ms": 269,
+      "observed_failure_code": null,
+      "observed_repair_hint": null,
+      "observed_responsible_component": null,
+      "observed_status": "passed",
+      "run_id": "bench-run-formal_facts",
       "schema_version": "v0",
-      "coverage_id": "certifyedge-cert-bench-v0",
-      "metric": "certificate_completeness",
-      "metric_id": "certificate_completeness_score",
-      "numerator": 4.0,
-      "denominator": 4.0,
-      "coverage_ratio": 1.0,
-      "details": {
-        "producer_id": "certifyedge",
-        "certificate_id": "cert-labtrust-qc-v0",
-        "violations": []
-      },
+      "signature_or_digest": "sha256:75baaf8bedb6d9f7efd5679ddf4af68e0414fc22e32d1214d8ecf373772d2c84",
+      "source_commit": "cb6848001e2e60a484e04eba5ad6be3fe2e4eccc",
       "source_repo": "https://github.com/fraware/CertifyEdge",
-      "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
-      "signature_or_digest": "sha256:41a447e3d126819a85e77dc2ddbc3e67a2d9dfe4c1e86cf0481022ef6e7c06e5"
-    }
-  ],
-  "failure_localization_reports": [],
-  "explain_quality_reports": [],
-  "profile_coverage_reports": [
+      "started_at": "2026-05-22T01:39:35Z",
+      "system_admission_outcome": "admitted",
+      "task_id": "agent_tool_use.safety_v0"
+    },
     {
+      "artifacts_produced": [
+        "certificate.json",
+        "certificate_formal_facts.json"
+      ],
+      "case_id": "invalid_hash_mismatch",
+      "commands": [
+        {
+          "command": "certifyedge emit-pcs-certificate --profile agent_tool_use.safety_v0 --handoff <case>/handoff.json",
+          "exit_code": 0
+        }
+      ],
+      "completed_at": "2026-05-22T01:39:35Z",
+      "duration_ms": 12,
+      "observed_failure_code": null,
+      "observed_repair_hint": null,
+      "observed_responsible_component": null,
+      "observed_status": "passed",
+      "run_id": "bench-run-invalid_hash_mismatch",
       "schema_version": "v0",
-      "coverage_id": "certifyedge-profile-certificate-v0",
-      "workflow_profile_id": "labtrust.qc_release_v0.1",
-      "producer_id": "provability-fabric",
-      "suite_id": "certifyedge-certificate-v0",
-      "artifact_types_required": [
-        "TraceCertificate.v0",
-        "RuntimeReceipt.v0",
-        "ScienceClaimBundle.v0"
+      "signature_or_digest": "sha256:2b1542ca493e21d8dee67ff9fd50e03578d7b896e04d3d581746ff92a27cf691",
+      "source_commit": "cb6848001e2e60a484e04eba5ad6be3fe2e4eccc",
+      "source_repo": "https://github.com/fraware/CertifyEdge",
+      "started_at": "2026-05-22T01:39:35Z",
+      "system_admission_outcome": "not_evaluated",
+      "task_id": "agent_tool_use.safety_v0"
+    },
+    {
+      "artifacts_produced": [
+        "certificate.json",
+        "certificate_formal_facts.json"
       ],
-      "artifact_types_covered": [
-        "TraceCertificate.v0",
-        "RuntimeReceipt.v0",
-        "ScienceClaimBundle.v0"
+      "case_id": "invalid_missing_required_field",
+      "commands": [
+        {
+          "command": "certifyedge emit-pcs-certificate --profile agent_tool_use.safety_v0 --handoff <case>/handoff.json",
+          "exit_code": 0
+        }
       ],
-      "semantic_checks_required": [
-        "trace_hash_matches_certificate"
+      "completed_at": "2026-05-22T01:39:35Z",
+      "duration_ms": 6,
+      "observed_failure_code": null,
+      "observed_repair_hint": null,
+      "observed_responsible_component": null,
+      "observed_status": "passed",
+      "run_id": "bench-run-invalid_missing_required_field",
+      "schema_version": "v0",
+      "signature_or_digest": "sha256:6f53efe2e7734af4724a3ba0a851bdcfee744cd11d59f3b13429164b099cd139",
+      "source_commit": "cb6848001e2e60a484e04eba5ad6be3fe2e4eccc",
+      "source_repo": "https://github.com/fraware/CertifyEdge",
+      "started_at": "2026-05-22T01:39:35Z",
+      "system_admission_outcome": "not_evaluated",
+      "task_id": "agent_tool_use.safety_v0"
+    },
+    {
+      "artifacts_produced": [
+        "certificate.json",
+        "certificate_formal_facts.json"
       ],
-      "semantic_checks_covered": [
-        "trace_hash_matches_certificate"
+      "case_id": "invalid_policy_or_property_violation",
+      "certificate_status": "Rejected",
+      "commands": [
+        {
+          "command": "certifyedge emit-pcs-certificate --profile agent_tool_use.safety_v0 --handoff <case>/handoff.json",
+          "exit_code": 0
+        }
       ],
-      "handoff_steps_required": [
-        "runtime_to_certificate"
+      "completed_at": "2026-05-22T01:39:35Z",
+      "duration_ms": 277,
+      "observed_failure_code": null,
+      "observed_repair_hint": null,
+      "observed_responsible_component": null,
+      "observed_status": "passed",
+      "run_id": "bench-run-invalid_policy_or_property_violation",
+      "schema_version": "v0",
+      "signature_or_digest": "sha256:06702fce976a16b2f82b30d87d85bdd467b50e4c5f87b06c3efecdea16e1c6a2",
+      "source_commit": "cb6848001e2e60a484e04eba5ad6be3fe2e4eccc",
+      "source_repo": "https://github.com/fraware/CertifyEdge",
+      "started_at": "2026-05-22T01:39:35Z",
+      "system_admission_outcome": "rejected",
+      "task_id": "agent_tool_use.safety_v0"
+    },
+    {
+      "artifacts_produced": [
+        "certificate.json",
+        "certificate_formal_facts.json"
       ],
-      "handoff_steps_covered": [
-        "runtime_to_certificate"
+      "case_id": "invalid_source_provenance",
+      "commands": [
+        {
+          "command": "certifyedge emit-pcs-certificate --profile agent_tool_use.safety_v0 --handoff <case>/handoff.json",
+          "exit_code": 0
+        }
       ],
-      "numerator": 5.0,
-      "denominator": 5.0,
-      "coverage_ratio": 1.0,
-      "details": {},
-      "source_repo": "https://github.com/SentinelOps-CI/provability-fabric",
-      "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
-      "signature_or_digest": "sha256:015cc19b9ceda72157115a83fa7e23f61edae9080825deb1d5f7424a0b4cec1a"
+      "completed_at": "2026-05-22T01:39:35Z",
+      "duration_ms": 4,
+      "observed_failure_code": null,
+      "observed_repair_hint": null,
+      "observed_responsible_component": null,
+      "observed_status": "passed",
+      "run_id": "bench-run-invalid_source_provenance",
+      "schema_version": "v0",
+      "signature_or_digest": "sha256:37148651cf211b0fe2e7a115a5718a35479c85accd73be8b32524df93fb85ff8",
+      "source_commit": "cb6848001e2e60a484e04eba5ad6be3fe2e4eccc",
+      "source_repo": "https://github.com/fraware/CertifyEdge",
+      "started_at": "2026-05-22T01:39:35Z",
+      "system_admission_outcome": "not_evaluated",
+      "task_id": "agent_tool_use.safety_v0"
+    },
+    {
+      "artifacts_produced": [
+        "certificate.json",
+        "certificate_formal_facts.json"
+      ],
+      "case_id": "missing_policy_hash",
+      "certificate_status": "Rejected",
+      "commands": [
+        {
+          "command": "certifyedge emit-pcs-certificate --profile agent_tool_use.safety_v0 --handoff <case>/handoff.json",
+          "exit_code": 0
+        }
+      ],
+      "completed_at": "2026-05-22T01:39:36Z",
+      "duration_ms": 183,
+      "observed_failure_code": null,
+      "observed_repair_hint": null,
+      "observed_responsible_component": null,
+      "observed_status": "passed",
+      "run_id": "bench-run-missing_policy_hash",
+      "schema_version": "v0",
+      "signature_or_digest": "sha256:5fc184bb7eca73e7fa729a675836a5b2650346d96e1c91cf24230f56dd9d756c",
+      "source_commit": "cb6848001e2e60a484e04eba5ad6be3fe2e4eccc",
+      "source_repo": "https://github.com/fraware/CertifyEdge",
+      "started_at": "2026-05-22T01:39:35Z",
+      "system_admission_outcome": "rejected",
+      "task_id": "agent_tool_use.safety_v0"
+    },
+    {
+      "artifacts_produced": [
+        "certificate.json",
+        "certificate_formal_facts.json"
+      ],
+      "case_id": "ok",
+      "certificate_status": "CertificateChecked",
+      "commands": [
+        {
+          "command": "certifyedge emit-pcs-certificate --profile agent_tool_use.safety_v0 --handoff <case>/handoff.json",
+          "exit_code": 0
+        }
+      ],
+      "completed_at": "2026-05-22T01:39:35Z",
+      "duration_ms": 348,
+      "observed_failure_code": null,
+      "observed_repair_hint": null,
+      "observed_responsible_component": null,
+      "observed_status": "passed",
+      "run_id": "bench-run-ok",
+      "schema_version": "v0",
+      "signature_or_digest": "sha256:44fd92aeb4c2fef4a75b84bcc429a6badae389517b0676f68f9c1ec720b48693",
+      "source_commit": "cb6848001e2e60a484e04eba5ad6be3fe2e4eccc",
+      "source_repo": "https://github.com/fraware/CertifyEdge",
+      "started_at": "2026-05-22T01:39:35Z",
+      "system_admission_outcome": "admitted",
+      "task_id": "agent_tool_use.safety_v0"
+    },
+    {
+      "artifacts_produced": [
+        "certificate.json",
+        "certificate_formal_facts.json"
+      ],
+      "case_id": "policy_hash_mismatch",
+      "commands": [
+        {
+          "command": "certifyedge emit-pcs-certificate --profile agent_tool_use.safety_v0 --handoff <case>/handoff.json",
+          "exit_code": 0
+        }
+      ],
+      "completed_at": "2026-05-22T01:39:36Z",
+      "duration_ms": 10,
+      "observed_failure_code": null,
+      "observed_repair_hint": null,
+      "observed_responsible_component": null,
+      "observed_status": "passed",
+      "run_id": "bench-run-policy_hash_mismatch",
+      "schema_version": "v0",
+      "signature_or_digest": "sha256:7152022d0b199d5a8d7ecedfd953412cf6f1f0655eef8df94029e294e93dc9a2",
+      "source_commit": "cb6848001e2e60a484e04eba5ad6be3fe2e4eccc",
+      "source_repo": "https://github.com/fraware/CertifyEdge",
+      "started_at": "2026-05-22T01:39:36Z",
+      "system_admission_outcome": "not_evaluated",
+      "task_id": "agent_tool_use.safety_v0"
+    },
+    {
+      "artifacts_produced": [
+        "certificate.json",
+        "certificate_formal_facts.json"
+      ],
+      "case_id": "rejected_certificate",
+      "certificate_status": "Rejected",
+      "commands": [
+        {
+          "command": "certifyedge emit-pcs-certificate --profile agent_tool_use.safety_v0 --handoff <case>/handoff.json",
+          "exit_code": 0
+        }
+      ],
+      "completed_at": "2026-05-22T01:39:36Z",
+      "duration_ms": 269,
+      "observed_failure_code": null,
+      "observed_repair_hint": null,
+      "observed_responsible_component": null,
+      "observed_status": "passed",
+      "run_id": "bench-run-rejected_certificate",
+      "schema_version": "v0",
+      "signature_or_digest": "sha256:5fcecf03bb84e3097b09d0e070a3a04de39a4d1bceac292108a25a37319024c8",
+      "source_commit": "cb6848001e2e60a484e04eba5ad6be3fe2e4eccc",
+      "source_repo": "https://github.com/fraware/CertifyEdge",
+      "started_at": "2026-05-22T01:39:36Z",
+      "system_admission_outcome": "rejected",
+      "task_id": "agent_tool_use.safety_v0"
+    },
+    {
+      "artifacts_produced": [
+        "certificate.json",
+        "certificate_formal_facts.json"
+      ],
+      "case_id": "repair_hint_quality",
+      "certificate_status": "Rejected",
+      "commands": [
+        {
+          "command": "certifyedge emit-pcs-certificate --profile agent_tool_use.safety_v0 --handoff <case>/handoff.json",
+          "exit_code": 0
+        }
+      ],
+      "completed_at": "2026-05-22T01:39:36Z",
+      "duration_ms": 176,
+      "observed_failure_code": null,
+      "observed_repair_hint": null,
+      "observed_responsible_component": null,
+      "observed_status": "passed",
+      "run_id": "bench-run-repair_hint_quality",
+      "schema_version": "v0",
+      "signature_or_digest": "sha256:cf1d6bcf2f644628d20e10da31b01b54a7badabed2f71b33a85f0e8dc5c377f4",
+      "source_commit": "cb6848001e2e60a484e04eba5ad6be3fe2e4eccc",
+      "source_repo": "https://github.com/fraware/CertifyEdge",
+      "started_at": "2026-05-22T01:39:36Z",
+      "system_admission_outcome": "rejected",
+      "task_id": "agent_tool_use.safety_v0"
+    },
+    {
+      "artifacts_produced": [
+        "certificate.json",
+        "certificate_formal_facts.json"
+      ],
+      "case_id": "unauthorized_tool_call",
+      "certificate_status": "Rejected",
+      "commands": [
+        {
+          "command": "certifyedge emit-pcs-certificate --profile agent_tool_use.safety_v0 --handoff <case>/handoff.json",
+          "exit_code": 0
+        }
+      ],
+      "completed_at": "2026-05-22T01:39:36Z",
+      "duration_ms": 189,
+      "observed_failure_code": null,
+      "observed_repair_hint": null,
+      "observed_responsible_component": null,
+      "observed_status": "passed",
+      "run_id": "bench-run-unauthorized_tool_call",
+      "schema_version": "v0",
+      "signature_or_digest": "sha256:dad29a9a35f0258cc182cef4ab4fb307a0738e6fafae3ef57bdc0e6bf94a0c5a",
+      "source_commit": "cb6848001e2e60a484e04eba5ad6be3fe2e4eccc",
+      "source_repo": "https://github.com/fraware/CertifyEdge",
+      "started_at": "2026-05-22T01:39:36Z",
+      "system_admission_outcome": "rejected",
+      "task_id": "agent_tool_use.safety_v0"
+    },
+    {
+      "artifacts_produced": [
+        "certificate.json",
+        "certificate_formal_facts.json"
+      ],
+      "case_id": "unknown_authorization_status",
+      "certificate_status": "Rejected",
+      "commands": [
+        {
+          "command": "certifyedge emit-pcs-certificate --profile agent_tool_use.safety_v0 --handoff <case>/handoff.json",
+          "exit_code": 0
+        }
+      ],
+      "completed_at": "2026-05-22T01:39:36Z",
+      "duration_ms": 185,
+      "observed_failure_code": null,
+      "observed_repair_hint": null,
+      "observed_responsible_component": null,
+      "observed_status": "passed",
+      "run_id": "bench-run-unknown_authorization_status",
+      "schema_version": "v0",
+      "signature_or_digest": "sha256:9bc4fb68643e9f7276b629c5b9c80e32ea2b81875d8a18d38d5801b5f0fea6c0",
+      "source_commit": "cb6848001e2e60a484e04eba5ad6be3fe2e4eccc",
+      "source_repo": "https://github.com/fraware/CertifyEdge",
+      "started_at": "2026-05-22T01:39:36Z",
+      "system_admission_outcome": "rejected",
+      "task_id": "agent_tool_use.safety_v0"
     }
   ],
   "commands": [
     {
-      "command": "certifyedge benchmark certificates --certificate-id cert-labtrust-qc-v0",
+      "command": "certifyedge emit-pcs-certificate --profile agent_tool_use.safety_v0 --handoff <case>/handoff.json",
       "exit_code": 0
     }
   ],
+  "coverage_reports": [
+    {
+      "coverage_id": "certifyedge-tool-use-safety-v0-certificate-completeness",
+      "coverage_ratio": 1.0,
+      "denominator": 12.0,
+      "details": {
+        "ambiguous_localizations": [
+          {
+            "case_id": "policy_hash_mismatch",
+            "failure_code": "policy_hash_mismatch",
+            "reason": "policy_hash_mismatch may be attributed to certificate_producer or runtime_producer"
+          }
+        ],
+        "counterexample_completeness": 1.0,
+        "failure_code_accuracy": 1.0,
+        "invalid_certificates_rejected": 6,
+        "native_artifact": "CertificateCoverageReport.v0",
+        "native_report_file": "certificate_coverage_report.v0.json",
+        "profile_id": "agent_tool_use.safety_v0",
+        "sidecar_artifact_paths": {
+          "benchmark_report": "benchmark_report.v0.json",
+          "certificate_coverage_report": "certificate_coverage_report.v0.json",
+          "pcs_bench_ingest": "pcs_bench_ingest.v0.json",
+          "profile_coverage_report": "profile_coverage_report.v0.json",
+          "repair_hint_manifest": "repair_hint_manifest.v0.json",
+          "repair_hint_quality_report": "repair_hint_quality_report.v0.json"
+        },
+        "valid_certificates_accepted": 2
+      },
+      "metric": "certificate_completeness",
+      "numerator": 12.0,
+      "schema_version": "v0",
+      "signature_or_digest": "sha256:d6c77b3aa3a3d55f0e6448f3254c54e35674ffceb26111755a346e2754d499e0",
+      "source_commit": "cb6848001e2e60a484e04eba5ad6be3fe2e4eccc",
+      "source_repo": "https://github.com/fraware/CertifyEdge"
+    },
+    {
+      "coverage_id": "certifyedge-tool-use-safety-v0-repair-hint-quality",
+      "coverage_ratio": 1.0,
+      "denominator": 10.0,
+      "details": {
+        "missing_repair_hints": [],
+        "repair_hint_accuracy": 1.0
+      },
+      "metric": "repair_hint_quality",
+      "numerator": 10.0,
+      "schema_version": "v0",
+      "signature_or_digest": "sha256:6db6cd8532e1b1c32c1e8b8f4c3c39fbad82c5bcd83a85d7353d4402891c6c16",
+      "source_commit": "cb6848001e2e60a484e04eba5ad6be3fe2e4eccc",
+      "source_repo": "https://github.com/fraware/CertifyEdge"
+    }
+  ],
+  "explain_quality_reports": [
+    {
+      "case_id": "formal_facts",
+      "gaps": [],
+      "producer_id": "certifyedge",
+      "quality_score": 1.0,
+      "report_id": "certifyedge-tool-use-safety-v0-explain-formal_facts",
+      "required_sections": [
+        "provenance",
+        "hashes",
+        "handoffs",
+        "verification",
+        "formal_checks",
+        "limitations",
+        "lineage",
+        "repair_hints"
+      ],
+      "schema_version": "v0",
+      "sections": {
+        "formal_checks": {
+          "notes": "certifyedge benchmark case formal_facts",
+          "present": true,
+          "score": 1.0
+        },
+        "handoffs": {
+          "notes": "certifyedge benchmark case formal_facts",
+          "present": true,
+          "score": 1.0
+        },
+        "hashes": {
+          "notes": "certifyedge benchmark case formal_facts",
+          "present": true,
+          "score": 1.0
+        },
+        "limitations": {
+          "notes": "certifyedge benchmark case formal_facts",
+          "present": true,
+          "score": 1.0
+        },
+        "lineage": {
+          "notes": "certifyedge benchmark case formal_facts",
+          "present": true,
+          "score": 1.0
+        },
+        "provenance": {
+          "notes": "certifyedge benchmark case formal_facts",
+          "present": true,
+          "score": 1.0
+        },
+        "repair_hints": {
+          "notes": "certifyedge benchmark case formal_facts",
+          "present": true,
+          "score": 1.0
+        },
+        "verification": {
+          "notes": "certifyedge benchmark case formal_facts",
+          "present": true,
+          "score": 1.0
+        }
+      },
+      "sections_present_count": 8,
+      "sections_required_count": 8,
+      "signature_or_digest": "sha256:57f83a05c7766d9a29d032fb4d1971df6f10a14d5579b831e03f6aff768af538",
+      "source_commit": "cb6848001e2e60a484e04eba5ad6be3fe2e4eccc",
+      "source_repo": "https://github.com/fraware/CertifyEdge",
+      "suite_id": "certifyedge-tool-use-safety-v0",
+      "workflow_id": "agent_tool_use.safety_v0"
+    },
+    {
+      "case_id": "invalid_hash_mismatch",
+      "gaps": [
+        {
+          "message": "missing certificate rejection explanation section: verification",
+          "section_id": "verification"
+        }
+      ],
+      "producer_id": "certifyedge",
+      "quality_score": 0.875,
+      "report_id": "certifyedge-tool-use-safety-v0-explain-invalid_hash_mismatch",
+      "required_sections": [
+        "provenance",
+        "hashes",
+        "handoffs",
+        "verification",
+        "formal_checks",
+        "limitations",
+        "lineage",
+        "repair_hints"
+      ],
+      "schema_version": "v0",
+      "sections": {
+        "formal_checks": {
+          "notes": "certifyedge benchmark case invalid_hash_mismatch",
+          "present": true,
+          "score": 1.0
+        },
+        "handoffs": {
+          "notes": "certifyedge benchmark case invalid_hash_mismatch",
+          "present": true,
+          "score": 1.0
+        },
+        "hashes": {
+          "notes": "certifyedge benchmark case invalid_hash_mismatch",
+          "present": true,
+          "score": 1.0
+        },
+        "limitations": {
+          "notes": "certifyedge benchmark case invalid_hash_mismatch",
+          "present": true,
+          "score": 1.0
+        },
+        "lineage": {
+          "notes": "certifyedge benchmark case invalid_hash_mismatch",
+          "present": true,
+          "score": 1.0
+        },
+        "provenance": {
+          "notes": "certifyedge benchmark case invalid_hash_mismatch",
+          "present": true,
+          "score": 1.0
+        },
+        "repair_hints": {
+          "notes": "certifyedge benchmark case invalid_hash_mismatch",
+          "present": true,
+          "score": 1.0
+        },
+        "verification": {
+          "notes": "",
+          "present": false,
+          "score": 0.0
+        }
+      },
+      "sections_present_count": 7,
+      "sections_required_count": 8,
+      "signature_or_digest": "sha256:e0e0290716432183c6dd47e8efcb512ebb40deb23653aaaa800380a5623c070a",
+      "source_commit": "cb6848001e2e60a484e04eba5ad6be3fe2e4eccc",
+      "source_repo": "https://github.com/fraware/CertifyEdge",
+      "suite_id": "certifyedge-tool-use-safety-v0",
+      "workflow_id": "agent_tool_use.safety_v0"
+    },
+    {
+      "case_id": "invalid_missing_required_field",
+      "gaps": [
+        {
+          "message": "missing certificate rejection explanation section: verification",
+          "section_id": "verification"
+        }
+      ],
+      "producer_id": "certifyedge",
+      "quality_score": 0.875,
+      "report_id": "certifyedge-tool-use-safety-v0-explain-invalid_missing_required_field",
+      "required_sections": [
+        "provenance",
+        "hashes",
+        "handoffs",
+        "verification",
+        "formal_checks",
+        "limitations",
+        "lineage",
+        "repair_hints"
+      ],
+      "schema_version": "v0",
+      "sections": {
+        "formal_checks": {
+          "notes": "certifyedge benchmark case invalid_missing_required_field",
+          "present": true,
+          "score": 1.0
+        },
+        "handoffs": {
+          "notes": "certifyedge benchmark case invalid_missing_required_field",
+          "present": true,
+          "score": 1.0
+        },
+        "hashes": {
+          "notes": "certifyedge benchmark case invalid_missing_required_field",
+          "present": true,
+          "score": 1.0
+        },
+        "limitations": {
+          "notes": "certifyedge benchmark case invalid_missing_required_field",
+          "present": true,
+          "score": 1.0
+        },
+        "lineage": {
+          "notes": "certifyedge benchmark case invalid_missing_required_field",
+          "present": true,
+          "score": 1.0
+        },
+        "provenance": {
+          "notes": "certifyedge benchmark case invalid_missing_required_field",
+          "present": true,
+          "score": 1.0
+        },
+        "repair_hints": {
+          "notes": "certifyedge benchmark case invalid_missing_required_field",
+          "present": true,
+          "score": 1.0
+        },
+        "verification": {
+          "notes": "",
+          "present": false,
+          "score": 0.0
+        }
+      },
+      "sections_present_count": 7,
+      "sections_required_count": 8,
+      "signature_or_digest": "sha256:b370a78464a4540dabd88a5cbb1d31de71f4ce6b676dc02343d25c11fa0c3384",
+      "source_commit": "cb6848001e2e60a484e04eba5ad6be3fe2e4eccc",
+      "source_repo": "https://github.com/fraware/CertifyEdge",
+      "suite_id": "certifyedge-tool-use-safety-v0",
+      "workflow_id": "agent_tool_use.safety_v0"
+    },
+    {
+      "case_id": "invalid_policy_or_property_violation",
+      "gaps": [],
+      "producer_id": "certifyedge",
+      "quality_score": 1.0,
+      "report_id": "certifyedge-tool-use-safety-v0-explain-invalid_policy_or_property_violation",
+      "required_sections": [
+        "provenance",
+        "hashes",
+        "handoffs",
+        "verification",
+        "formal_checks",
+        "limitations",
+        "lineage",
+        "repair_hints"
+      ],
+      "schema_version": "v0",
+      "sections": {
+        "formal_checks": {
+          "notes": "certifyedge benchmark case invalid_policy_or_property_violation",
+          "present": true,
+          "score": 1.0
+        },
+        "handoffs": {
+          "notes": "certifyedge benchmark case invalid_policy_or_property_violation",
+          "present": true,
+          "score": 1.0
+        },
+        "hashes": {
+          "notes": "certifyedge benchmark case invalid_policy_or_property_violation",
+          "present": true,
+          "score": 1.0
+        },
+        "limitations": {
+          "notes": "certifyedge benchmark case invalid_policy_or_property_violation",
+          "present": true,
+          "score": 1.0
+        },
+        "lineage": {
+          "notes": "certifyedge benchmark case invalid_policy_or_property_violation",
+          "present": true,
+          "score": 1.0
+        },
+        "provenance": {
+          "notes": "certifyedge benchmark case invalid_policy_or_property_violation",
+          "present": true,
+          "score": 1.0
+        },
+        "repair_hints": {
+          "notes": "certifyedge benchmark case invalid_policy_or_property_violation",
+          "present": true,
+          "score": 1.0
+        },
+        "verification": {
+          "notes": "certifyedge benchmark case invalid_policy_or_property_violation",
+          "present": true,
+          "score": 1.0
+        }
+      },
+      "sections_present_count": 8,
+      "sections_required_count": 8,
+      "signature_or_digest": "sha256:f4460d1880c1338eead2408c3ec6fbc52101db1688821d71136b408bba41d955",
+      "source_commit": "cb6848001e2e60a484e04eba5ad6be3fe2e4eccc",
+      "source_repo": "https://github.com/fraware/CertifyEdge",
+      "suite_id": "certifyedge-tool-use-safety-v0",
+      "workflow_id": "agent_tool_use.safety_v0"
+    },
+    {
+      "case_id": "invalid_source_provenance",
+      "gaps": [
+        {
+          "message": "missing certificate rejection explanation section: verification",
+          "section_id": "verification"
+        }
+      ],
+      "producer_id": "certifyedge",
+      "quality_score": 0.875,
+      "report_id": "certifyedge-tool-use-safety-v0-explain-invalid_source_provenance",
+      "required_sections": [
+        "provenance",
+        "hashes",
+        "handoffs",
+        "verification",
+        "formal_checks",
+        "limitations",
+        "lineage",
+        "repair_hints"
+      ],
+      "schema_version": "v0",
+      "sections": {
+        "formal_checks": {
+          "notes": "certifyedge benchmark case invalid_source_provenance",
+          "present": true,
+          "score": 1.0
+        },
+        "handoffs": {
+          "notes": "certifyedge benchmark case invalid_source_provenance",
+          "present": true,
+          "score": 1.0
+        },
+        "hashes": {
+          "notes": "certifyedge benchmark case invalid_source_provenance",
+          "present": true,
+          "score": 1.0
+        },
+        "limitations": {
+          "notes": "certifyedge benchmark case invalid_source_provenance",
+          "present": true,
+          "score": 1.0
+        },
+        "lineage": {
+          "notes": "certifyedge benchmark case invalid_source_provenance",
+          "present": true,
+          "score": 1.0
+        },
+        "provenance": {
+          "notes": "certifyedge benchmark case invalid_source_provenance",
+          "present": true,
+          "score": 1.0
+        },
+        "repair_hints": {
+          "notes": "certifyedge benchmark case invalid_source_provenance",
+          "present": true,
+          "score": 1.0
+        },
+        "verification": {
+          "notes": "",
+          "present": false,
+          "score": 0.0
+        }
+      },
+      "sections_present_count": 7,
+      "sections_required_count": 8,
+      "signature_or_digest": "sha256:8e2cd586459efcd4875bfe4a47e05fe23674f7d309e11fc9e328ceb3a4ef1760",
+      "source_commit": "cb6848001e2e60a484e04eba5ad6be3fe2e4eccc",
+      "source_repo": "https://github.com/fraware/CertifyEdge",
+      "suite_id": "certifyedge-tool-use-safety-v0",
+      "workflow_id": "agent_tool_use.safety_v0"
+    },
+    {
+      "case_id": "missing_policy_hash",
+      "gaps": [],
+      "producer_id": "certifyedge",
+      "quality_score": 1.0,
+      "report_id": "certifyedge-tool-use-safety-v0-explain-missing_policy_hash",
+      "required_sections": [
+        "provenance",
+        "hashes",
+        "handoffs",
+        "verification",
+        "formal_checks",
+        "limitations",
+        "lineage",
+        "repair_hints"
+      ],
+      "schema_version": "v0",
+      "sections": {
+        "formal_checks": {
+          "notes": "certifyedge benchmark case missing_policy_hash",
+          "present": true,
+          "score": 1.0
+        },
+        "handoffs": {
+          "notes": "certifyedge benchmark case missing_policy_hash",
+          "present": true,
+          "score": 1.0
+        },
+        "hashes": {
+          "notes": "certifyedge benchmark case missing_policy_hash",
+          "present": true,
+          "score": 1.0
+        },
+        "limitations": {
+          "notes": "certifyedge benchmark case missing_policy_hash",
+          "present": true,
+          "score": 1.0
+        },
+        "lineage": {
+          "notes": "certifyedge benchmark case missing_policy_hash",
+          "present": true,
+          "score": 1.0
+        },
+        "provenance": {
+          "notes": "certifyedge benchmark case missing_policy_hash",
+          "present": true,
+          "score": 1.0
+        },
+        "repair_hints": {
+          "notes": "certifyedge benchmark case missing_policy_hash",
+          "present": true,
+          "score": 1.0
+        },
+        "verification": {
+          "notes": "certifyedge benchmark case missing_policy_hash",
+          "present": true,
+          "score": 1.0
+        }
+      },
+      "sections_present_count": 8,
+      "sections_required_count": 8,
+      "signature_or_digest": "sha256:d86e09a53ad2f8f416c963b7f6e8e6037be6a28e400542d7b348fdaba9fc8967",
+      "source_commit": "cb6848001e2e60a484e04eba5ad6be3fe2e4eccc",
+      "source_repo": "https://github.com/fraware/CertifyEdge",
+      "suite_id": "certifyedge-tool-use-safety-v0",
+      "workflow_id": "agent_tool_use.safety_v0"
+    },
+    {
+      "case_id": "ok",
+      "gaps": [],
+      "producer_id": "certifyedge",
+      "quality_score": 1.0,
+      "report_id": "certifyedge-tool-use-safety-v0-explain-ok",
+      "required_sections": [
+        "provenance",
+        "hashes",
+        "handoffs",
+        "verification",
+        "formal_checks",
+        "limitations",
+        "lineage",
+        "repair_hints"
+      ],
+      "schema_version": "v0",
+      "sections": {
+        "formal_checks": {
+          "notes": "certifyedge benchmark case ok",
+          "present": true,
+          "score": 1.0
+        },
+        "handoffs": {
+          "notes": "certifyedge benchmark case ok",
+          "present": true,
+          "score": 1.0
+        },
+        "hashes": {
+          "notes": "certifyedge benchmark case ok",
+          "present": true,
+          "score": 1.0
+        },
+        "limitations": {
+          "notes": "certifyedge benchmark case ok",
+          "present": true,
+          "score": 1.0
+        },
+        "lineage": {
+          "notes": "certifyedge benchmark case ok",
+          "present": true,
+          "score": 1.0
+        },
+        "provenance": {
+          "notes": "certifyedge benchmark case ok",
+          "present": true,
+          "score": 1.0
+        },
+        "repair_hints": {
+          "notes": "certifyedge benchmark case ok",
+          "present": true,
+          "score": 1.0
+        },
+        "verification": {
+          "notes": "certifyedge benchmark case ok",
+          "present": true,
+          "score": 1.0
+        }
+      },
+      "sections_present_count": 8,
+      "sections_required_count": 8,
+      "signature_or_digest": "sha256:b3abe30d4d5623a45d3c9dd23933cf0808f4fd8147140c904c5cf01f22bbb89f",
+      "source_commit": "cb6848001e2e60a484e04eba5ad6be3fe2e4eccc",
+      "source_repo": "https://github.com/fraware/CertifyEdge",
+      "suite_id": "certifyedge-tool-use-safety-v0",
+      "workflow_id": "agent_tool_use.safety_v0"
+    },
+    {
+      "case_id": "policy_hash_mismatch",
+      "gaps": [
+        {
+          "message": "missing certificate rejection explanation section: verification",
+          "section_id": "verification"
+        }
+      ],
+      "producer_id": "certifyedge",
+      "quality_score": 0.875,
+      "report_id": "certifyedge-tool-use-safety-v0-explain-policy_hash_mismatch",
+      "required_sections": [
+        "provenance",
+        "hashes",
+        "handoffs",
+        "verification",
+        "formal_checks",
+        "limitations",
+        "lineage",
+        "repair_hints"
+      ],
+      "schema_version": "v0",
+      "sections": {
+        "formal_checks": {
+          "notes": "certifyedge benchmark case policy_hash_mismatch",
+          "present": true,
+          "score": 1.0
+        },
+        "handoffs": {
+          "notes": "certifyedge benchmark case policy_hash_mismatch",
+          "present": true,
+          "score": 1.0
+        },
+        "hashes": {
+          "notes": "certifyedge benchmark case policy_hash_mismatch",
+          "present": true,
+          "score": 1.0
+        },
+        "limitations": {
+          "notes": "certifyedge benchmark case policy_hash_mismatch",
+          "present": true,
+          "score": 1.0
+        },
+        "lineage": {
+          "notes": "certifyedge benchmark case policy_hash_mismatch",
+          "present": true,
+          "score": 1.0
+        },
+        "provenance": {
+          "notes": "certifyedge benchmark case policy_hash_mismatch",
+          "present": true,
+          "score": 1.0
+        },
+        "repair_hints": {
+          "notes": "certifyedge benchmark case policy_hash_mismatch",
+          "present": true,
+          "score": 1.0
+        },
+        "verification": {
+          "notes": "",
+          "present": false,
+          "score": 0.0
+        }
+      },
+      "sections_present_count": 7,
+      "sections_required_count": 8,
+      "signature_or_digest": "sha256:341ff56b358701064cd2681a31bc18015a79b58145249a0ecfc772b076ec8721",
+      "source_commit": "cb6848001e2e60a484e04eba5ad6be3fe2e4eccc",
+      "source_repo": "https://github.com/fraware/CertifyEdge",
+      "suite_id": "certifyedge-tool-use-safety-v0",
+      "workflow_id": "agent_tool_use.safety_v0"
+    },
+    {
+      "case_id": "rejected_certificate",
+      "gaps": [],
+      "producer_id": "certifyedge",
+      "quality_score": 1.0,
+      "report_id": "certifyedge-tool-use-safety-v0-explain-rejected_certificate",
+      "required_sections": [
+        "provenance",
+        "hashes",
+        "handoffs",
+        "verification",
+        "formal_checks",
+        "limitations",
+        "lineage",
+        "repair_hints"
+      ],
+      "schema_version": "v0",
+      "sections": {
+        "formal_checks": {
+          "notes": "certifyedge benchmark case rejected_certificate",
+          "present": true,
+          "score": 1.0
+        },
+        "handoffs": {
+          "notes": "certifyedge benchmark case rejected_certificate",
+          "present": true,
+          "score": 1.0
+        },
+        "hashes": {
+          "notes": "certifyedge benchmark case rejected_certificate",
+          "present": true,
+          "score": 1.0
+        },
+        "limitations": {
+          "notes": "certifyedge benchmark case rejected_certificate",
+          "present": true,
+          "score": 1.0
+        },
+        "lineage": {
+          "notes": "certifyedge benchmark case rejected_certificate",
+          "present": true,
+          "score": 1.0
+        },
+        "provenance": {
+          "notes": "certifyedge benchmark case rejected_certificate",
+          "present": true,
+          "score": 1.0
+        },
+        "repair_hints": {
+          "notes": "certifyedge benchmark case rejected_certificate",
+          "present": true,
+          "score": 1.0
+        },
+        "verification": {
+          "notes": "certifyedge benchmark case rejected_certificate",
+          "present": true,
+          "score": 1.0
+        }
+      },
+      "sections_present_count": 8,
+      "sections_required_count": 8,
+      "signature_or_digest": "sha256:dc7195e7d4d17f3185cec3f5e9f4a46e81a84150d91a6ab88586527253c0277d",
+      "source_commit": "cb6848001e2e60a484e04eba5ad6be3fe2e4eccc",
+      "source_repo": "https://github.com/fraware/CertifyEdge",
+      "suite_id": "certifyedge-tool-use-safety-v0",
+      "workflow_id": "agent_tool_use.safety_v0"
+    },
+    {
+      "case_id": "repair_hint_quality",
+      "gaps": [],
+      "producer_id": "certifyedge",
+      "quality_score": 1.0,
+      "report_id": "certifyedge-tool-use-safety-v0-explain-repair_hint_quality",
+      "required_sections": [
+        "provenance",
+        "hashes",
+        "handoffs",
+        "verification",
+        "formal_checks",
+        "limitations",
+        "lineage",
+        "repair_hints"
+      ],
+      "schema_version": "v0",
+      "sections": {
+        "formal_checks": {
+          "notes": "certifyedge benchmark case repair_hint_quality",
+          "present": true,
+          "score": 1.0
+        },
+        "handoffs": {
+          "notes": "certifyedge benchmark case repair_hint_quality",
+          "present": true,
+          "score": 1.0
+        },
+        "hashes": {
+          "notes": "certifyedge benchmark case repair_hint_quality",
+          "present": true,
+          "score": 1.0
+        },
+        "limitations": {
+          "notes": "certifyedge benchmark case repair_hint_quality",
+          "present": true,
+          "score": 1.0
+        },
+        "lineage": {
+          "notes": "certifyedge benchmark case repair_hint_quality",
+          "present": true,
+          "score": 1.0
+        },
+        "provenance": {
+          "notes": "certifyedge benchmark case repair_hint_quality",
+          "present": true,
+          "score": 1.0
+        },
+        "repair_hints": {
+          "notes": "certifyedge benchmark case repair_hint_quality",
+          "present": true,
+          "score": 1.0
+        },
+        "verification": {
+          "notes": "certifyedge benchmark case repair_hint_quality",
+          "present": true,
+          "score": 1.0
+        }
+      },
+      "sections_present_count": 8,
+      "sections_required_count": 8,
+      "signature_or_digest": "sha256:a4757875a1ded4228f427ab53c1785bc1aecc535f4f2a623227998440e0038ab",
+      "source_commit": "cb6848001e2e60a484e04eba5ad6be3fe2e4eccc",
+      "source_repo": "https://github.com/fraware/CertifyEdge",
+      "suite_id": "certifyedge-tool-use-safety-v0",
+      "workflow_id": "agent_tool_use.safety_v0"
+    },
+    {
+      "case_id": "unauthorized_tool_call",
+      "gaps": [],
+      "producer_id": "certifyedge",
+      "quality_score": 1.0,
+      "report_id": "certifyedge-tool-use-safety-v0-explain-unauthorized_tool_call",
+      "required_sections": [
+        "provenance",
+        "hashes",
+        "handoffs",
+        "verification",
+        "formal_checks",
+        "limitations",
+        "lineage",
+        "repair_hints"
+      ],
+      "schema_version": "v0",
+      "sections": {
+        "formal_checks": {
+          "notes": "certifyedge benchmark case unauthorized_tool_call",
+          "present": true,
+          "score": 1.0
+        },
+        "handoffs": {
+          "notes": "certifyedge benchmark case unauthorized_tool_call",
+          "present": true,
+          "score": 1.0
+        },
+        "hashes": {
+          "notes": "certifyedge benchmark case unauthorized_tool_call",
+          "present": true,
+          "score": 1.0
+        },
+        "limitations": {
+          "notes": "certifyedge benchmark case unauthorized_tool_call",
+          "present": true,
+          "score": 1.0
+        },
+        "lineage": {
+          "notes": "certifyedge benchmark case unauthorized_tool_call",
+          "present": true,
+          "score": 1.0
+        },
+        "provenance": {
+          "notes": "certifyedge benchmark case unauthorized_tool_call",
+          "present": true,
+          "score": 1.0
+        },
+        "repair_hints": {
+          "notes": "certifyedge benchmark case unauthorized_tool_call",
+          "present": true,
+          "score": 1.0
+        },
+        "verification": {
+          "notes": "certifyedge benchmark case unauthorized_tool_call",
+          "present": true,
+          "score": 1.0
+        }
+      },
+      "sections_present_count": 8,
+      "sections_required_count": 8,
+      "signature_or_digest": "sha256:6d522ba705016762d9d98b69d5405cc67fdf3a963337967c61e370061c9ca187",
+      "source_commit": "cb6848001e2e60a484e04eba5ad6be3fe2e4eccc",
+      "source_repo": "https://github.com/fraware/CertifyEdge",
+      "suite_id": "certifyedge-tool-use-safety-v0",
+      "workflow_id": "agent_tool_use.safety_v0"
+    },
+    {
+      "case_id": "unknown_authorization_status",
+      "gaps": [],
+      "producer_id": "certifyedge",
+      "quality_score": 1.0,
+      "report_id": "certifyedge-tool-use-safety-v0-explain-unknown_authorization_status",
+      "required_sections": [
+        "provenance",
+        "hashes",
+        "handoffs",
+        "verification",
+        "formal_checks",
+        "limitations",
+        "lineage",
+        "repair_hints"
+      ],
+      "schema_version": "v0",
+      "sections": {
+        "formal_checks": {
+          "notes": "certifyedge benchmark case unknown_authorization_status",
+          "present": true,
+          "score": 1.0
+        },
+        "handoffs": {
+          "notes": "certifyedge benchmark case unknown_authorization_status",
+          "present": true,
+          "score": 1.0
+        },
+        "hashes": {
+          "notes": "certifyedge benchmark case unknown_authorization_status",
+          "present": true,
+          "score": 1.0
+        },
+        "limitations": {
+          "notes": "certifyedge benchmark case unknown_authorization_status",
+          "present": true,
+          "score": 1.0
+        },
+        "lineage": {
+          "notes": "certifyedge benchmark case unknown_authorization_status",
+          "present": true,
+          "score": 1.0
+        },
+        "provenance": {
+          "notes": "certifyedge benchmark case unknown_authorization_status",
+          "present": true,
+          "score": 1.0
+        },
+        "repair_hints": {
+          "notes": "certifyedge benchmark case unknown_authorization_status",
+          "present": true,
+          "score": 1.0
+        },
+        "verification": {
+          "notes": "certifyedge benchmark case unknown_authorization_status",
+          "present": true,
+          "score": 1.0
+        }
+      },
+      "sections_present_count": 8,
+      "sections_required_count": 8,
+      "signature_or_digest": "sha256:20dc81b3c33af6ad74848aeca3d839e025a7413cd00c003960e124ead2046199",
+      "source_commit": "cb6848001e2e60a484e04eba5ad6be3fe2e4eccc",
+      "source_repo": "https://github.com/fraware/CertifyEdge",
+      "suite_id": "certifyedge-tool-use-safety-v0",
+      "workflow_id": "agent_tool_use.safety_v0"
+    }
+  ],
+  "failure_localization_reports": [
+    {
+      "case_id": "invalid_hash_mismatch",
+      "expected_failure_code": "trace_hash_mismatch",
+      "expected_responsible_component": "runtime_producer",
+      "localized_correctly": true,
+      "observed_failure_code": "trace_hash_mismatch",
+      "observed_responsible_component": "unknown",
+      "result_id": "certifyedge-tool-use-safety-v0-localization-invalid_hash_mismatch",
+      "run_id": "bench-run-invalid_hash_mismatch",
+      "schema_version": "v0",
+      "signature_or_digest": "sha256:030621dffc97a56e702d9a0a3bca8d0e5a10aa3b68fbf895b235ab07ebfc8bb3",
+      "source_commit": "cb6848001e2e60a484e04eba5ad6be3fe2e4eccc",
+      "source_repo": "https://github.com/fraware/CertifyEdge"
+    },
+    {
+      "case_id": "invalid_missing_required_field",
+      "expected_failure_code": "invalid_missing_required_field",
+      "expected_responsible_component": "certificate_producer",
+      "localized_correctly": true,
+      "observed_failure_code": "",
+      "observed_responsible_component": "certificate_producer",
+      "result_id": "certifyedge-tool-use-safety-v0-localization-invalid_missing_required_field",
+      "run_id": "bench-run-invalid_missing_required_field",
+      "schema_version": "v0",
+      "signature_or_digest": "sha256:87d55b6a700c9dbc009a468f722785ed96b9ad87dbd879d21a353b1f49dfc964",
+      "source_commit": "cb6848001e2e60a484e04eba5ad6be3fe2e4eccc",
+      "source_repo": "https://github.com/fraware/CertifyEdge"
+    },
+    {
+      "case_id": "invalid_policy_or_property_violation",
+      "expected_failure_code": "unknown_authorization_status",
+      "expected_responsible_component": "runtime_producer",
+      "localized_correctly": true,
+      "observed_failure_code": "unknown_authorization_status",
+      "observed_responsible_component": "runtime_producer",
+      "result_id": "certifyedge-tool-use-safety-v0-localization-invalid_policy_or_property_violation",
+      "run_id": "bench-run-invalid_policy_or_property_violation",
+      "schema_version": "v0",
+      "signature_or_digest": "sha256:e664afde774d04b0ce1383ed0a0eb5931abbe8f1c51fe493add2b3886cbda958",
+      "source_commit": "cb6848001e2e60a484e04eba5ad6be3fe2e4eccc",
+      "source_repo": "https://github.com/fraware/CertifyEdge"
+    },
+    {
+      "case_id": "invalid_source_provenance",
+      "expected_failure_code": "invalid_source_provenance",
+      "expected_responsible_component": "certificate_producer",
+      "localized_correctly": true,
+      "observed_failure_code": "",
+      "observed_responsible_component": "certificate_producer",
+      "result_id": "certifyedge-tool-use-safety-v0-localization-invalid_source_provenance",
+      "run_id": "bench-run-invalid_source_provenance",
+      "schema_version": "v0",
+      "signature_or_digest": "sha256:237e17a3d96b1aeacae0adee60d88284ac34f54c50eff12888f110fdf3ab9915",
+      "source_commit": "cb6848001e2e60a484e04eba5ad6be3fe2e4eccc",
+      "source_repo": "https://github.com/fraware/CertifyEdge"
+    },
+    {
+      "case_id": "missing_policy_hash",
+      "expected_failure_code": "policy_hash_missing",
+      "expected_responsible_component": "runtime_producer",
+      "localized_correctly": true,
+      "observed_failure_code": "policy_hash_missing",
+      "observed_responsible_component": "runtime_producer",
+      "result_id": "certifyedge-tool-use-safety-v0-localization-missing_policy_hash",
+      "run_id": "bench-run-missing_policy_hash",
+      "schema_version": "v0",
+      "signature_or_digest": "sha256:76cd37a8d154b5cb4b6e561f42fc5d5908aa9423b4b3f3b466bd07a30164aae7",
+      "source_commit": "cb6848001e2e60a484e04eba5ad6be3fe2e4eccc",
+      "source_repo": "https://github.com/fraware/CertifyEdge"
+    },
+    {
+      "case_id": "policy_hash_mismatch",
+      "expected_failure_code": "policy_hash_mismatch",
+      "expected_responsible_component": "unknown",
+      "localized_correctly": true,
+      "observed_failure_code": "policy_hash_mismatch",
+      "observed_responsible_component": "unknown",
+      "result_id": "certifyedge-tool-use-safety-v0-localization-policy_hash_mismatch",
+      "run_id": "bench-run-policy_hash_mismatch",
+      "schema_version": "v0",
+      "signature_or_digest": "sha256:42da6c56d0dccbc2e6fd99eb632f599ae102ec02cdc496c3bbdd0c3caf8b69f8",
+      "source_commit": "cb6848001e2e60a484e04eba5ad6be3fe2e4eccc",
+      "source_repo": "https://github.com/fraware/CertifyEdge"
+    },
+    {
+      "case_id": "rejected_certificate",
+      "expected_failure_code": "unauthorized_tool_call",
+      "expected_responsible_component": "runtime_producer",
+      "localized_correctly": true,
+      "observed_failure_code": "unauthorized_tool_call",
+      "observed_responsible_component": "runtime_producer",
+      "result_id": "certifyedge-tool-use-safety-v0-localization-rejected_certificate",
+      "run_id": "bench-run-rejected_certificate",
+      "schema_version": "v0",
+      "signature_or_digest": "sha256:15dd83c751a89ab123d238f93f19fc2f0727890c2bdea20e7139561356fc920b",
+      "source_commit": "cb6848001e2e60a484e04eba5ad6be3fe2e4eccc",
+      "source_repo": "https://github.com/fraware/CertifyEdge"
+    },
+    {
+      "case_id": "repair_hint_quality",
+      "expected_failure_code": "unauthorized_tool_call",
+      "expected_responsible_component": "runtime_producer",
+      "localized_correctly": true,
+      "observed_failure_code": "unauthorized_tool_call",
+      "observed_responsible_component": "runtime_producer",
+      "result_id": "certifyedge-tool-use-safety-v0-localization-repair_hint_quality",
+      "run_id": "bench-run-repair_hint_quality",
+      "schema_version": "v0",
+      "signature_or_digest": "sha256:c1e0dcb1a25a8b02c7ed34c8571e4bfaa154fe9865d980839f01059cece4eff5",
+      "source_commit": "cb6848001e2e60a484e04eba5ad6be3fe2e4eccc",
+      "source_repo": "https://github.com/fraware/CertifyEdge"
+    },
+    {
+      "case_id": "unauthorized_tool_call",
+      "expected_failure_code": "unauthorized_tool_call",
+      "expected_responsible_component": "runtime_producer",
+      "localized_correctly": true,
+      "observed_failure_code": "unauthorized_tool_call",
+      "observed_responsible_component": "runtime_producer",
+      "result_id": "certifyedge-tool-use-safety-v0-localization-unauthorized_tool_call",
+      "run_id": "bench-run-unauthorized_tool_call",
+      "schema_version": "v0",
+      "signature_or_digest": "sha256:76b4c633f640de2e8eb13116400bb9380f76746dcdb494c36b9f35df50eb841d",
+      "source_commit": "cb6848001e2e60a484e04eba5ad6be3fe2e4eccc",
+      "source_repo": "https://github.com/fraware/CertifyEdge"
+    },
+    {
+      "case_id": "unknown_authorization_status",
+      "expected_failure_code": "unknown_authorization_status",
+      "expected_responsible_component": "runtime_producer",
+      "localized_correctly": true,
+      "observed_failure_code": "unknown_authorization_status",
+      "observed_responsible_component": "runtime_producer",
+      "result_id": "certifyedge-tool-use-safety-v0-localization-unknown_authorization_status",
+      "run_id": "bench-run-unknown_authorization_status",
+      "schema_version": "v0",
+      "signature_or_digest": "sha256:b02a3282ea8ff298d877b362c0f6ade82e9885f59c2f44d2f90d13de8e76093d",
+      "source_commit": "cb6848001e2e60a484e04eba5ad6be3fe2e4eccc",
+      "source_repo": "https://github.com/fraware/CertifyEdge"
+    }
+  ],
   "logs": [],
+  "producer_id": "certifyedge",
+  "profile_coverage_reports": [
+    {
+      "artifact_types_covered": [
+        "ToolUseCertificate.v0"
+      ],
+      "artifact_types_required": [
+        "ToolUseCertificate.v0"
+      ],
+      "coverage_id": "certifyedge-tool-use-safety-v0-profile-coverage",
+      "coverage_ratio": 1.0,
+      "denominator": 12.0,
+      "details": {
+        "case_counts": {
+          "invalid": 10,
+          "valid": 2
+        },
+        "counterexample_types_covered": [
+          "trace_hash_mismatch",
+          "unknown_authorization_status",
+          "policy_hash_missing",
+          "policy_hash_mismatch",
+          "unauthorized_tool_call"
+        ],
+        "release_mode_required_fields": [
+          "trace_hash",
+          "policy_hash",
+          "property_id",
+          "source_repo",
+          "source_commit",
+          "signature_or_digest"
+        ],
+        "templates_checked": true,
+        "unsupported_cases": []
+      },
+      "handoff_steps_covered": [
+        "runtime_to_certificate"
+      ],
+      "handoff_steps_required": [
+        "runtime_to_certificate"
+      ],
+      "numerator": 12.0,
+      "producer_id": "certifyedge",
+      "schema_version": "v0",
+      "semantic_checks_covered": [
+        "policy_hash_mismatch",
+        "policy_hash_missing",
+        "unauthorized_tool_call",
+        "unknown_authorization_status"
+      ],
+      "semantic_checks_required": [
+        "policy_hash_mismatch",
+        "policy_hash_missing",
+        "unauthorized_tool_call",
+        "unknown_authorization_status"
+      ],
+      "signature_or_digest": "sha256:7891b25f88c9175fcaf41ec4634d4ba81fe4b6ca687f828734bf1d569734fcb0",
+      "source_commit": "cb6848001e2e60a484e04eba5ad6be3fe2e4eccc",
+      "source_repo": "https://github.com/fraware/CertifyEdge",
+      "suite_id": "certifyedge-tool-use-safety-v0",
+      "workflow_profile_id": "agent_tool_use.safety_v0"
+    }
+  ],
+  "schema_version": "v0",
+  "signature_or_digest": "sha256:8516ff9acf402dfc685580c20b246e5f96b97125016f7bed559e8b83ee36adc5",
+  "source_commit": "cb6848001e2e60a484e04eba5ad6be3fe2e4eccc",
   "source_repo": "https://github.com/fraware/CertifyEdge",
-  "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
-  "signature_or_digest": "sha256:acc026873414423cbae1f0817c120f5398168d1d2976179ce91e33fc13123501"
+  "suite_id": "certifyedge-tool-use-safety-v0",
+  "workflow_id": "agent_tool_use.safety_v0"
 }

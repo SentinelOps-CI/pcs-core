@@ -86,6 +86,21 @@ test("invalid pcs bench ingest bad ref digest", () => {
   assert.throws(() => validateArtifact(data, "PcsBenchIngest.v0"));
 });
 
+test("invalid pcs bench ingest zero commit", () => {
+  const data = load("invalid_pcs_bench_ingest_zero_commit.json");
+  assert.throws(() => validateArtifact(data, "PcsBenchIngest.v0"));
+});
+
+test("invalid pcs bench ingest empty runs", () => {
+  const data = load("invalid_pcs_bench_ingest_empty_runs.json");
+  assert.throws(() => validateArtifact(data, "PcsBenchIngest.v0"));
+});
+
+test("invalid pcs bench ingest path only", () => {
+  const data = load("invalid_pcs_bench_ingest_path_only.json");
+  assert.throws(() => validateArtifact(data, "PcsBenchIngest.v0"));
+});
+
 test("invalid zero source commit", () => {
   assert.throws(() =>
     validateArtifact(load("invalid_zero_source_commit.release.json"), "RuntimeReceipt.v0"),

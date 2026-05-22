@@ -11,9 +11,24 @@ Contract semantics: [benchmark-ingest-contract.md](benchmark-ingest-contract.md)
 | **schema-valid** | Passes JSON Schema and pcs-core semantic checks (arrays present, ref/embed consistency). | CI schema gates, early integration |
 | **developer-grade** | Schema-valid plus representative embedded content from producer-shaped dialect captures. May use fixture `source_commit` placeholders on sub-artifacts. | pcs-core golden examples, local dev |
 | **release-grade** | Ready for pcs-bench aggregation on a pinned producer SHA with non-empty producer-meaningful arrays, live `commands`, and `artifact_refs`. | Release trains, cross-repo pins |
-| **external-review-grade** | Release-grade plus non-placeholder ingest `source_commit`, complete provenance, and producer-specific report coverage (below). | Third-party audit, publication evidence |
+| **external-review-grade** | Release-grade plus audit-ready provenance (below). | Third-party audit, publication evidence |
 
 Tiers are assessed by `pcs_core.benchmark_ingest.assess_ingest_adequacy_tier()` and enforced optionally via `scripts/validate_benchmark_ingest_examples.py --release-grade`.
+
+### Tier minimum definitions
+
+**schema-valid** — JSON validates against pcs-core schemas and ingest semantic rules (array shapes, ref/embed consistency when refs exist). May use fixture commits on sub-artifacts or omit `artifact_refs`.
+
+**developer-grade** — schema-valid with representative embedded content from dialect captures or partial producer runs. Ingest `source_commit` may be a placeholder; `artifact_refs` may be missing.
+
+**release-grade** — Live producer export intended for pcs-bench aggregation: non-placeholder ingest `source_commit`, non-empty `commands`, producer-specific non-empty arrays (table below), and bidirectional `artifact_refs` when embedded artifacts are exported.
+
+**external-review-grade** — Release-grade plus:
+
+- **Packet reproducibility** — embedded artifacts and ingest digest are stable under canonical hashing; refs allow an auditor to locate on-disk exports.
+- **Sidecar refs** — every embedded export has a matching `BenchmarkArtifactRef.v0` (`sha256` = object `signature_or_digest`).
+- **Documented commands** — `commands` records the exact producer invocation (e.g. `make pcs-bench-producer`).
+- **Independent rerun** — `source_repo` + `source_commit` pin the producer revision; sibling-repo path documented in `examples/benchmark_ingest/provenance.manifest.json`.
 
 ## v0 policy (locked)
 
@@ -32,14 +47,14 @@ Tiers are assessed by `pcs_core.benchmark_ingest.assess_ingest_adequacy_tier()` 
 
 ## Producer-specific release-grade expectations
 
-Golden files under `examples/benchmark_ingest/` are regenerated from dialect captures in `examples/benchmarks/compatibility/` and are held to **external-review-grade** in CI (`--release-grade`). Live producer pins can raise them further; the table below is the **release-grade bar** each repo must meet when publishing from source.
+Golden files under `examples/benchmark_ingest/` are copied from live `make pcs-bench-producer` exports when sibling repos are present, else normalized from dialect captures. CI holds them to **external-review-grade** (`--release-grade`). The table below is the **release-grade bar** each repo must meet when publishing from source.
 
 | Producer | Command (representative) | Non-empty arrays required |
 |----------|--------------------------|---------------------------|
-| **LabTrust-Gym** | `python benchmark_reproducibility.py` | `benchmark_runs`, `coverage_reports` (release reproducibility), `commands` |
-| **CertifyEdge** | `certifyedge benchmark certificates` | `coverage_reports` (certificate completeness), `profile_coverage_reports`, `commands` |
-| **Provability Fabric** | `pf benchmark admission` | `failure_localization_reports`, `explain_quality_reports`, `profile_coverage_reports`, `commands` |
-| **Scientific Memory** | `pcs-benchmark-rendering` | `explain_quality_reports`, `coverage_reports` (interpretability), `commands` |
+| **LabTrust-Gym** | `make pcs-bench-producer` | `benchmark_runs`, `coverage_reports` (release reproducibility), `commands` |
+| **CertifyEdge** | `make pcs-bench-producer` | `coverage_reports` (certificate completeness), `profile_coverage_reports`, `commands` |
+| **Provability Fabric** | `make pcs-bench-producer` | `failure_localization_reports`, `explain_quality_reports`, `profile_coverage_reports`, `commands` |
+| **Scientific Memory** | `make pcs-bench-producer` | `explain_quality_reports`, `coverage_reports` (interpretability), `commands` |
 
 Dialect captures live in `examples/benchmarks/compatibility/*.dialect.json`. Regenerate goldens:
 
@@ -59,12 +74,12 @@ pcs conformance run --suite benchmark-ingest
 
 | File | Producer source |
 |------|-----------------|
-| `labtrust.pcs_bench_ingest.valid.json` | LabTrust `benchmark_reproducibility.py` → pcs-core gallery normalization |
-| `certifyedge.pcs_bench_ingest.valid.json` | CertifyEdge certificate benchmark dialect |
-| `provability_fabric.pcs_bench_ingest.valid.json` | PF admission explain-quality + profile dialects |
-| `scientific_memory.pcs_bench_ingest.valid.json` | Scientific Memory `pcs-benchmark-rendering` dialect |
+| `labtrust.pcs_bench_ingest.valid.json` | `../LabTrust-Gym/benchmark_runs/labtrust_reproducibility/pcs_bench_ingest.v0.json` |
+| `certifyedge.pcs_bench_ingest.valid.json` | `../CertifyEdge/benchmark_runs/tool_use_safety/pcs_bench_ingest.v0.json` |
+| `provability_fabric.pcs_bench_ingest.valid.json` | `../provability-fabric/benchmark_runs/labtrust_admission/pcs_bench_ingest.v0.json` |
+| `scientific_memory.pcs_bench_ingest.valid.json` | `../scientific-memory/benchmark_runs/labtrust_rendering/pcs_bench_ingest.v0.json` |
 
-Do not hand-edit these files. Update the dialect capture from the producer repo, then rerun materialization.
+Do not hand-edit these files. Run `make pcs-bench-producer` in the producer repo, then `python scripts/materialize_benchmark_producer_examples.py` in pcs-core.
 
 ## Relationship to BenchmarkReport.v0
 

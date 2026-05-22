@@ -316,24 +316,11 @@ def _suite_computation() -> tuple[list[str], list[str], int]:
 @_record("benchmark-ingest")
 def _suite_benchmark_ingest() -> tuple[list[str], list[str], int]:
     from pcs_core.benchmark_compat import validate_compatibility_corpus
-    from pcs_core.benchmark_ingest import (
-        summarize_ingest_adequacy,
-        validate_all_benchmark_ingest_examples,
-        validate_benchmark_ingest_supporting_artifacts,
-    )
+    from pcs_core.benchmark_ingest import run_benchmark_ingest_contract_checks
 
     errors = validate_compatibility_corpus()
-    errors.extend(validate_benchmark_ingest_supporting_artifacts())
-    errors.extend(validate_all_benchmark_ingest_examples())
+    errors.extend(run_benchmark_ingest_contract_checks(check_release_grade=True))
     warnings: list[str] = []
-    for row in summarize_ingest_adequacy():
-        tier = str(row.get("tier", ""))
-        if tier not in ("release-grade", "external-review-grade"):
-            findings = row.get("findings") or []
-            warnings.append(
-                f"{row['file']}: adequacy {tier}"
-                + (f" ({'; '.join(findings)})" if findings else ""),
-            )
     checks = 24
     ingest_root = examples_dir() / "benchmark_ingest"
     for name in (

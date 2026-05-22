@@ -89,7 +89,7 @@ pcs benchmark materialize-ingest
 pcs benchmark validate
 ```
 
-Goldens: `examples/benchmark_ingest/`. Spec: [docs/benchmark-ingest-contract.md](docs/benchmark-ingest-contract.md), [docs/producer-benchmark-ingest.md](docs/producer-benchmark-ingest.md).
+Goldens: `examples/benchmark_ingest/` (sync from sibling `make pcs-bench-producer`; set `PCS_PRODUCER_REPOS_ROOT` if repos are not parent siblings). Spec: [docs/benchmark-ingest-contract.md](docs/benchmark-ingest-contract.md), [docs/release-grade-benchmark-evidence.md](docs/release-grade-benchmark-evidence.md), [docs/producer-benchmark-ingest.md](docs/producer-benchmark-ingest.md).
 
 ## CLI
 
@@ -105,7 +105,7 @@ Goldens: `examples/benchmark_ingest/`. Spec: [docs/benchmark-ingest-contract.md]
 | `pcs registry list` | List registered PCS artifact types |
 | `pcs registry validate <file>` | Validate `ArtifactRegistry.v0` drift |
 | `pcs conformance run --suite <name>` | Protocol conformance (`multidomain`, `tool-use`, `benchmark-ingest`, …) |
-| `pcs benchmark materialize-ingest` | Regenerate `examples/benchmark_ingest/` from producer dialects |
+| `pcs benchmark materialize-ingest` | Regenerate `examples/benchmark_ingest/` from sibling producer exports (dialect fallback) |
 | `pcs benchmark validate` | Benchmark fixtures + ingest contract |
 | `pcs shared-hash-vectors verify` | Cross-language hash parity (`test_vectors/hash/`) |
 | `pcs explain-status <status>` | Explain status transitions |

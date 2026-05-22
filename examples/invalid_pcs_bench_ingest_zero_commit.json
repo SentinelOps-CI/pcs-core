@@ -290,7 +290,7 @@
   "profile_coverage_reports": [],
   "schema_version": "v0",
   "signature_or_digest": "sha256:15fc3d3aa7420f5e61a5f96172be1b98c5869bd8b525b9bd8d9e92f2582f5ce0",
-  "source_commit": "fcb3bd6661df27cdb5380408c205904d0e63cc34",
+  "source_commit": "0000000000000000000000000000000000000000",
   "source_repo": "https://github.com/fraware/LabTrust-Gym",
   "suite_id": "labtrust-qc-reproducibility-v0",
   "workflow_id": "hospital_lab.qc_release"

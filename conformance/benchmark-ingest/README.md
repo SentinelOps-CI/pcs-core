@@ -32,4 +32,12 @@ See [docs/benchmark-ingest-contract.md](../../docs/benchmark-ingest-contract.md)
 
 ## Invalid fixtures
 
-`examples/invalid_pcs_bench_ingest_*.json` must fail `pcs validate` (semantic ref contract).
+These must fail `pcs validate` (semantic ref contract, zero commit, or empty runs with orphan refs):
+
+- `invalid_pcs_bench_ingest_missing_refs.json`
+- `invalid_pcs_bench_ingest_bad_ref_digest.json`
+- `invalid_pcs_bench_ingest_zero_commit.json`
+- `invalid_pcs_bench_ingest_empty_runs.json`
+- `invalid_pcs_bench_ingest_path_only.json`
+
+Golden bundles must pass with `--release-grade` (non-placeholder commit, producer-specific non-empty arrays, bidirectional `artifact_refs`). All four producer goldens are copied from sibling `make pcs-bench-producer` exports when available.

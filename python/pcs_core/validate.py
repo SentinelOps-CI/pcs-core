@@ -833,6 +833,9 @@ def check_invalid_examples(examples_dir: Path | None = None) -> None:
         "invalid_release_chain_validation_failed_status.json": "ReleaseChainValidationResult.v0",
         "invalid_pcs_bench_ingest_missing_refs.json": "PcsBenchIngest.v0",
         "invalid_pcs_bench_ingest_bad_ref_digest.json": "PcsBenchIngest.v0",
+        "invalid_pcs_bench_ingest_zero_commit.json": "PcsBenchIngest.v0",
+        "invalid_pcs_bench_ingest_empty_runs.json": "PcsBenchIngest.v0",
+        "invalid_pcs_bench_ingest_path_only.json": "PcsBenchIngest.v0",
     }
     invalid_tool_use = examples_dir / "tool-use-release-invalid"
     if invalid_tool_use.is_dir():

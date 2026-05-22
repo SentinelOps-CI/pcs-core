@@ -1,5 +1,7 @@
 # Benchmark ingest contract (PcsBenchIngest.v0)
 
+**Version:** v1.0 frozen (schema `v0` artifacts). Normative schemas live in [schemas/](../schemas/). Adequacy tiers: [release-grade-benchmark-evidence.md](release-grade-benchmark-evidence.md).
+
 ## v0 policy (locked)
 
 1. **Embedded canonical objects are authoritative.** Ingest arrays contain full `BenchmarkRun.v0`, `CoverageReport.v0`, `FailureLocalizationResult.v0`, `ExplainQualityReport.v0`, and `ProfileCoverageReport.v0` objects — never path-only entries.
@@ -24,7 +26,67 @@
 | `scientific-memory` | `pcs-benchmark-rendering` → `explain_quality_reports` + interpretability `coverage_reports` |
 | `pcs-bench` | Aggregator; may assemble ingest from multiple producers |
 
-Golden examples (generated, not hand-authored): `examples/benchmark_ingest/*.pcs_bench_ingest.valid.json`, produced by `python/scripts/materialize_benchmark_producer_examples.py` from `examples/benchmarks/compatibility/*.dialect.json` or live LabTrust gallery runs.
+Golden examples (generated, not hand-authored): `examples/benchmark_ingest/*.pcs_bench_ingest.valid.json`, copied from sibling `make pcs-bench-producer` exports when present (`PCS_PRODUCER_REPOS_ROOT` or parent of pcs-core), else normalized from `examples/benchmarks/compatibility/*.dialect.json`.
+
+## Required producer provenance
+
+Every `PcsBenchIngest.v0` export must include:
+
+- `source_repo` — HTTPS URI of the producer repository that generated the bundle.
+- `source_commit` — 40-character git SHA of that repo at export time (not all zeros or pattern placeholders for release-grade).
+- `signature_or_digest` — canonical hash of the ingest body excluding that field.
+
+Sub-artifacts and `BenchmarkArtifactRef.v0` records repeat `source_repo` / `source_commit` when emitted from the same revision.
+
+## Schema types (v1.0 contract surface)
+
+| Schema | Role in ingest |
+|--------|----------------|
+| **PcsBenchIngest.v0** | Root producer export: embedded arrays, `commands`, `logs`, provenance, optional `artifact_refs`. |
+| **BenchmarkRun.v0** | One executed benchmark case (`benchmark_runs[]`). |
+| **CoverageReport.v0** | Coverage ratio for a metric (`coverage_reports[]`). |
+| **FailureLocalizationResult.v0** | Failure code, responsible component, repair hint (`failure_localization_reports[]`). |
+| **ExplainQualityReport.v0** | Explainability / interpretability quality (`explain_quality_reports[]`). |
+| **ProfileCoverageReport.v0** | Workflow profile field coverage (`profile_coverage_reports[]`). |
+| **BenchmarkArtifactRef.v0** | Sidecar file provenance (`artifact_refs[]` only). |
+| **BenchmarkReport.v0** | Suite aggregation output (pcs-bench / `pcs benchmark run`), not embedded in ingest. |
+| **MetricSummary.v0** | Per-metric rollup inside `BenchmarkReport.v0`. |
+
+### PcsBenchIngest.v0
+
+Producer bundle handed to pcs-bench before suite aggregation. All array fields are required (may be empty). `artifact_refs` is optional for `pcs-core` / `pcs-bench` aggregators; **required** for file-exporting producers at release-grade.
+
+### BenchmarkRun.v0
+
+Records one case execution: timing, commands, observed status/failure fields, produced artifact names, and provenance. Embedded runs are authoritative; path strings in `benchmark_runs` are invalid.
+
+### CoverageReport.v0
+
+Numerator/denominator coverage for a declared metric (`metric_id`), with optional `details` for producer-specific context (e.g. release reproducibility, certificate completeness).
+
+### FailureLocalizationResult.v0
+
+Maps an observed failure to `failure_code`, `responsible_component`, and `repair_hint_kind` per the pcs-core localization catalog.
+
+### ExplainQualityReport.v0
+
+Scores explainability or interpretability quality for a benchmark slice (admission, rendering, etc.).
+
+### ProfileCoverageReport.v0
+
+Reports which workflow-profile fields were exercised vs declared in the profile registry.
+
+### BenchmarkArtifactRef.v0
+
+Sidecar only: `path` (repo-relative), `sha256` (must equal embedded object `signature_or_digest`), `role`, and ref-level digest. Does not replace embedded objects.
+
+### BenchmarkReport.v0
+
+Post-ingest suite report: `runs`, declared `metrics`, `metric_summaries`, `summary`, `coverage`, `failures`. Built from validated ingest or native pcs-core suite execution.
+
+### MetricSummary.v0
+
+One metric’s `score`, `applicability`, and rollup fields inside `BenchmarkReport.v0`.
 
 ## Embedded objects vs path references
 
@@ -109,8 +171,16 @@ pcs benchmark materialize-ingest
 ```bash
 pcs conformance run --suite benchmark-ingest
 pcs benchmark validate
+python scripts/validate_benchmark_ingest_examples.py --release-grade
 ```
 
-Validates `PcsBenchIngest.v0`, `BenchmarkArtifactRef.v0`, embedded artifact types (`BenchmarkRun`, `CoverageReport`, `FailureLocalizationResult`, `ExplainQualityReport`, `ProfileCoverageReport`, `MetricSummary`), producer ingest examples, and the compatibility normalization corpus.
+The `benchmark-ingest` suite validates:
+
+- `PcsBenchIngest.v0`, `BenchmarkArtifactRef.v0`, and embedded types (`BenchmarkRun`, `CoverageReport`, `FailureLocalizationResult`, `ExplainQualityReport`, `ProfileCoverageReport`, `BenchmarkReport`, `MetricSummary`)
+- All four golden producer bundles at **release-grade** or **external-review-grade**
+- Compatibility normalization corpus drift
+- Invalid fixtures under `examples/invalid_pcs_bench_ingest_*.json` (must fail `pcs validate`)
+
+The suite fails when producers emit path-only ingest, all-zero `source_commit`, mismatched or orphan `artifact_refs`, empty `benchmark_runs` or `commands` on release-grade exports, or missing producer-specific reports (LabTrust coverage, CertifyEdge profile coverage, PF failure localization / explain quality, Scientific Memory explain quality).
 
 Producer integration checklist: [producer-benchmark-ingest.md](producer-benchmark-ingest.md).

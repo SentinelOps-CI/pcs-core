@@ -95,7 +95,7 @@ validate-benchmark-ingest:
 
 benchmark-ingest-conformance:
     cd "{{root}}/python" && pcs conformance run --suite benchmark-ingest
-    cd "{{root}}/python" && pcs benchmark validate-ingest
+    cd "{{root}}/python" && pcs benchmark validate-ingest --release-grade
 
 validate-computation-release-fixtures:
     cd "{{root}}/python" && pcs validate-release-chain ../examples/computation-release/

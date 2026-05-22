@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+import os
 import re
 from pathlib import Path
 from typing import Any
 
 from pcs_core.paths import examples_dir, repo_root
 from pcs_core.validate import ValidationError, validate_artifact, validate_file
+
+# Frozen cross-repo contract version (schemas remain v0 artifact types).
+BENCHMARK_INGEST_CONTRACT_VERSION = "1.0"
 
 INGEST_EXAMPLES_DIR = examples_dir() / "benchmark_ingest"
 _COMPAT = "examples/benchmarks/compatibility/"
@@ -19,36 +23,97 @@ GOLDEN_INGEST_FILES: tuple[str, ...] = (
     "scientific_memory.pcs_bench_ingest.valid.json",
 )
 
+PRODUCER_LIVE_INGEST_REL: dict[str, str] = {
+    "labtrust.pcs_bench_ingest.valid.json": (
+        "LabTrust-Gym/benchmark_runs/labtrust_reproducibility/pcs_bench_ingest.v0.json"
+    ),
+    "certifyedge.pcs_bench_ingest.valid.json": (
+        "CertifyEdge/benchmark_runs/tool_use_safety/pcs_bench_ingest.v0.json"
+    ),
+    "provability_fabric.pcs_bench_ingest.valid.json": (
+        "provability-fabric/benchmark_runs/labtrust_admission/pcs_bench_ingest.v0.json"
+    ),
+    "scientific_memory.pcs_bench_ingest.valid.json": (
+        "scientific-memory/benchmark_runs/labtrust_rendering/pcs_bench_ingest.v0.json"
+    ),
+}
+
 PRODUCER_INGEST_SOURCES: dict[str, dict[str, str]] = {
     "labtrust.pcs_bench_ingest.valid.json": {
         "producer_id": "labtrust-gym",
         "producer_repo": "LabTrust-Gym",
-        "producer_command": "python benchmark_reproducibility.py",
+        "producer_command": "make pcs-bench-producer",
+        "producer_ingest_path": PRODUCER_LIVE_INGEST_REL[
+            "labtrust.pcs_bench_ingest.valid.json"
+        ],
         "dialect_fixture": f"{_COMPAT}labtrust_case_manifest.dialect.json",
         "pcs_core_generator": "build_labtrust_pcs_bench_ingest",
     },
     "certifyedge.pcs_bench_ingest.valid.json": {
         "producer_id": "certifyedge",
         "producer_repo": "CertifyEdge",
-        "producer_command": "certifyedge benchmark certificates",
+        "producer_command": "make pcs-bench-producer",
+        "producer_ingest_path": PRODUCER_LIVE_INGEST_REL[
+            "certifyedge.pcs_bench_ingest.valid.json"
+        ],
         "dialect_fixture": f"{_COMPAT}certifyedge_certificate_benchmark.dialect.json",
         "pcs_core_generator": "build_certifyedge_pcs_bench_ingest",
     },
     "provability_fabric.pcs_bench_ingest.valid.json": {
         "producer_id": "provability-fabric",
         "producer_repo": "provability-fabric",
-        "producer_command": "pf benchmark admission",
+        "producer_command": "make pcs-bench-producer",
+        "producer_ingest_path": PRODUCER_LIVE_INGEST_REL[
+            "provability_fabric.pcs_bench_ingest.valid.json"
+        ],
         "dialect_fixture": f"{_COMPAT}pf_admission_explain_quality.dialect.json",
         "pcs_core_generator": "build_pf_pcs_bench_ingest",
     },
     "scientific_memory.pcs_bench_ingest.valid.json": {
         "producer_id": "scientific-memory",
         "producer_repo": "scientific-memory",
-        "producer_command": "pcs-benchmark-rendering",
+        "producer_command": "make pcs-bench-producer",
+        "producer_ingest_path": PRODUCER_LIVE_INGEST_REL[
+            "scientific_memory.pcs_bench_ingest.valid.json"
+        ],
         "dialect_fixture": f"{_COMPAT}scientific_memory_render_benchmark.dialect.json",
         "pcs_core_generator": "build_scientific_memory_pcs_bench_ingest",
     },
 }
+
+
+def producer_repos_root() -> Path:
+    """Directory containing LabTrust-Gym, CertifyEdge, etc. Override via PCS_PRODUCER_REPOS_ROOT."""
+    override = os.environ.get("PCS_PRODUCER_REPOS_ROOT", "").strip()
+    if override:
+        return Path(override).resolve()
+    return repo_root().parent
+
+
+def producer_live_ingest_path(golden_name: str) -> Path | None:
+    """Sibling-repo ingest export when checked out next to pcs-core."""
+    rel = PRODUCER_LIVE_INGEST_REL.get(golden_name)
+    if rel is None:
+        return None
+    path = producer_repos_root() / rel
+    return path if path.is_file() else None
+
+
+def copy_producer_live_ingest(golden_name: str, dest: Path) -> bool:
+    """Copy validated producer pcs_bench_ingest.v0.json into examples/benchmark_ingest/."""
+    source = producer_live_ingest_path(golden_name)
+    if source is None:
+        return False
+    import json
+    import shutil
+
+    errors = validate_benchmark_ingest_file(source, check_release_grade=True)
+    if errors:
+        raise ValueError(f"{source}: " + "; ".join(errors))
+    shutil.copyfile(source, dest)
+    doc = json.loads(dest.read_text(encoding="utf-8"))
+    dest.write_text(json.dumps(doc, indent=2) + "\n", encoding="utf-8")
+    return True
 
 EMBEDDED_ARRAY_ARTIFACT_TYPES: dict[str, str] = {
     "benchmark_runs": "BenchmarkRun.v0",
@@ -195,6 +260,49 @@ def validate_all_benchmark_ingest_examples(
     return errors
 
 
+INVALID_INGEST_FIXTURES: tuple[str, ...] = (
+    "invalid_pcs_bench_ingest_missing_refs.json",
+    "invalid_pcs_bench_ingest_bad_ref_digest.json",
+    "invalid_pcs_bench_ingest_zero_commit.json",
+    "invalid_pcs_bench_ingest_empty_runs.json",
+    "invalid_pcs_bench_ingest_path_only.json",
+)
+
+
+def validate_invalid_benchmark_ingest_fixtures() -> list[str]:
+    """Conformance: contract-breaking ingest fixtures must fail pcs validate."""
+    errors: list[str] = []
+    for name in INVALID_INGEST_FIXTURES:
+        path = examples_dir() / name
+        if not path.is_file():
+            errors.append(f"missing invalid fixture {path.relative_to(repo_root()).as_posix()}")
+            continue
+        try:
+            validate_file(path)
+        except ValidationError:
+            continue
+        errors.append(f"{name}: expected validation failure")
+    return errors
+
+
+def run_benchmark_ingest_contract_checks(
+    *,
+    ingest_dir: Path | None = None,
+    check_release_grade: bool = False,
+) -> list[str]:
+    """Single gate for script, CLI, and conformance (avoids drift)."""
+    errors: list[str] = []
+    errors.extend(validate_benchmark_ingest_supporting_artifacts())
+    errors.extend(validate_invalid_benchmark_ingest_fixtures())
+    errors.extend(
+        validate_all_benchmark_ingest_examples(
+            ingest_dir=ingest_dir,
+            check_release_grade=check_release_grade,
+        ),
+    )
+    return errors
+
+
 def build_provenance_manifest() -> dict[str, Any]:
     import json
 
@@ -203,12 +311,19 @@ def build_provenance_manifest() -> dict[str, Any]:
         path = INGEST_EXAMPLES_DIR / name
         entry: dict[str, Any] = {
             "golden_file": f"examples/benchmark_ingest/{name}",
+            "producer_ingest_path": meta["producer_ingest_path"],
             "dialect_fixture": meta["dialect_fixture"],
             "producer_id": meta["producer_id"],
             "producer_repo": meta["producer_repo"],
             "producer_command": meta["producer_command"],
             "pcs_core_generator": meta["pcs_core_generator"],
         }
+        live = producer_live_ingest_path(name)
+        if live is not None:
+            try:
+                entry["materialized_from"] = live.relative_to(producer_repos_root()).as_posix()
+            except ValueError:
+                entry["materialized_from"] = str(live)
         if path.is_file():
             ingest = json.loads(path.read_text(encoding="utf-8"))
             tier, findings = assess_ingest_adequacy_tier(ingest)
@@ -218,6 +333,7 @@ def build_provenance_manifest() -> dict[str, Any]:
         entries.append(entry)
     return {
         "schema_version": "v0",
+        "contract_version": BENCHMARK_INGEST_CONTRACT_VERSION,
         "contract": "PcsBenchIngest.v0",
         "policy_doc": "docs/benchmark-ingest-contract.md",
         "release_grade_doc": "docs/release-grade-benchmark-evidence.md",

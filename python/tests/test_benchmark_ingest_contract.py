@@ -11,8 +11,8 @@ from pcs_core.benchmark_compat import build_pcs_bench_ingest
 from pcs_core.benchmark_ingest import (
     GOLDEN_INGEST_FILES,
     assess_ingest_adequacy_tier,
+    run_benchmark_ingest_contract_checks,
     validate_all_benchmark_ingest_examples,
-    validate_benchmark_ingest_supporting_artifacts,
 )
 from pcs_core.hash import canonical_hash
 from pcs_core.paths import examples_dir, repo_root
@@ -70,8 +70,8 @@ def test_ingest_rejects_orphan_ref() -> None:
     bad["artifact_refs"].append(
         {
             "schema_version": "v0",
-            "artifact_type": "BenchmarkRun.v0",
-            "path": "runs/nonexistent.benchmark_run.v0.json",
+            "artifact_type": "FailureLocalizationResult.v0",
+            "path": "reports/nonexistent.failure_localization.v0.json",
             "sha256": "sha256:" + "a" * 64,
             "role": "producer_export",
             "source_repo": doc["source_repo"],
@@ -81,7 +81,9 @@ def test_ingest_rejects_orphan_ref() -> None:
     )
     with pytest.raises(ValidationError) as exc:
         validate_artifact(bad, "PcsBenchIngest.v0")
-    assert any("no embedded objects" in err for err in exc.value.errors)
+    assert any(
+        "no embedded objects" in err or "does not match" in err for err in exc.value.errors
+    )
 
 
 def test_ingest_rejects_duplicate_ref_paths() -> None:
@@ -111,9 +113,12 @@ def test_pcs_core_ingest_without_refs_allowed() -> None:
 
 
 def test_validate_benchmark_ingest_examples_script_surface() -> None:
-    assert validate_all_benchmark_ingest_examples() == []
-    assert validate_benchmark_ingest_supporting_artifacts() == []
+    assert run_benchmark_ingest_contract_checks() == []
     assert len(GOLDEN_INGEST_FILES) == 4
+
+
+def test_contract_gate_release_grade() -> None:
+    assert run_benchmark_ingest_contract_checks(check_release_grade=True) == []
 
 
 def test_golden_ingest_meets_developer_grade() -> None:
@@ -126,8 +131,7 @@ def test_golden_ingest_meets_developer_grade() -> None:
 
 
 def test_golden_ingest_meets_release_grade_gate() -> None:
-    errors = validate_all_benchmark_ingest_examples(check_release_grade=True)
-    assert errors == []
+    assert validate_all_benchmark_ingest_examples(check_release_grade=True) == []
 
 
 def test_artifact_ref_record_digest() -> None:
@@ -159,10 +163,44 @@ def test_conformance_benchmark_ingest_suite() -> None:
     assert code == 0, errors
 
 
+@pytest.mark.parametrize(
+    ("producer_id", "strip_field"),
+    [
+        ("provability-fabric", "failure_localization_reports"),
+        ("provability-fabric", "explain_quality_reports"),
+        ("certifyedge", "profile_coverage_reports"),
+        ("scientific-memory", "explain_quality_reports"),
+        ("labtrust-gym", "coverage_reports"),
+    ],
+)
+def test_release_grade_requires_producer_specific_arrays(
+    producer_id: str,
+    strip_field: str,
+) -> None:
+    name_by_producer = {
+        "labtrust-gym": "labtrust.pcs_bench_ingest.valid.json",
+        "certifyedge": "certifyedge.pcs_bench_ingest.valid.json",
+        "provability-fabric": "provability_fabric.pcs_bench_ingest.valid.json",
+        "scientific-memory": "scientific_memory.pcs_bench_ingest.valid.json",
+    }
+    doc = copy.deepcopy(_load_ingest(name_by_producer[producer_id]))
+    assert doc.get("producer_id") == producer_id
+    doc[strip_field] = []
+    tier, findings = assess_ingest_adequacy_tier(doc)
+    assert tier == "schema-valid"
+    assert any(strip_field in item for item in findings)
+
+
 def test_provenance_manifest_lists_all_goldens() -> None:
     path = INGEST_DIR / "provenance.manifest.json"
     if not path.is_file():
         pytest.skip("run materialize_benchmark_producer_examples.py")
     manifest = json.loads(path.read_text(encoding="utf-8"))
+    assert manifest.get("contract_version") == "1.0"
     listed = {entry["golden_file"].split("/")[-1] for entry in manifest.get("entries", [])}
     assert listed == set(GOLDEN_INGEST_FILES)
+    for entry in manifest.get("entries", []):
+        assert entry.get("adequacy_tier") == "external-review-grade", entry["golden_file"]
+        materialized = entry.get("materialized_from", "")
+        assert materialized
+        assert "\\" not in materialized, "use posix-relative materialized_from paths"

@@ -342,6 +342,9 @@ def test_invalid_pcs_bench_ingest_examples_rejected() -> None:
     for name in (
         "invalid_pcs_bench_ingest_missing_refs.json",
         "invalid_pcs_bench_ingest_bad_ref_digest.json",
+        "invalid_pcs_bench_ingest_zero_commit.json",
+        "invalid_pcs_bench_ingest_empty_runs.json",
+        "invalid_pcs_bench_ingest_path_only.json",
     ):
         path = examples_dir() / name
         if not path.is_file():

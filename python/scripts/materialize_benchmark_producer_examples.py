@@ -11,7 +11,11 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "python"))
 
-from pcs_core.benchmark_ingest import build_provenance_manifest  # noqa: E402
+from pcs_core.benchmark_ingest import (  # noqa: E402
+    build_provenance_manifest,
+    copy_producer_live_ingest,
+    producer_live_ingest_path,
+)
 from pcs_core.benchmark_compat import (  # noqa: E402
     INGEST_NORMALIZERS,
     build_certifyedge_pcs_bench_ingest,
@@ -142,6 +146,12 @@ def main() -> int:
         build_scientific_memory_pcs_bench_ingest(sm_dialect),
     )
 
+    for golden_name, _ in INGEST_CANONICAL:
+        dest = INGEST_EXAMPLES / golden_name
+        if copy_producer_live_ingest(golden_name, dest):
+            live = producer_live_ingest_path(golden_name)
+            print(f"copied producer ingest {live} -> {dest.relative_to(repo_root())}")
+
     for rel, _artifact_type in CANONICAL_EXAMPLES:
         validate_file(PRODUCER_EXAMPLES / rel)
     for rel, _artifact_type in INGEST_CANONICAL:
@@ -172,6 +182,37 @@ def main() -> int:
         },
     ]
     _write_json(examples_dir() / "invalid_pcs_bench_ingest_bad_ref_digest.json", bad_digest)
+
+    zero_commit = json.loads(
+        (INGEST_EXAMPLES / "labtrust.pcs_bench_ingest.valid.json").read_text(encoding="utf-8"),
+    )
+    zero_commit["source_commit"] = "0" * 40
+    _write_json(examples_dir() / "invalid_pcs_bench_ingest_zero_commit.json", zero_commit)
+
+    empty_runs = json.loads(
+        (INGEST_EXAMPLES / "labtrust.pcs_bench_ingest.valid.json").read_text(encoding="utf-8"),
+    )
+    empty_runs["benchmark_runs"] = []
+    empty_runs["commands"] = []
+    _write_json(examples_dir() / "invalid_pcs_bench_ingest_empty_runs.json", empty_runs)
+
+    path_only = {
+        "schema_version": "v0",
+        "producer_id": "scientific-memory",
+        "suite_id": "path-only-negative",
+        "workflow_id": "hospital_lab.qc_release",
+        "benchmark_runs": ["benchmarks/rendering/run.v0.json"],
+        "coverage_reports": [],
+        "failure_localization_reports": [],
+        "explain_quality_reports": [],
+        "profile_coverage_reports": [],
+        "commands": ["pcs-benchmark-rendering"],
+        "logs": [],
+        "source_repo": "https://github.com/fraware/scientific-memory",
+        "source_commit": "a" * 40,
+        "signature_or_digest": "sha256:" + "0" * 64,
+    }
+    _write_json(examples_dir() / "invalid_pcs_bench_ingest_path_only.json", path_only)
 
     _write_json(INGEST_EXAMPLES / "provenance.manifest.json", build_provenance_manifest())
     validate_file(INGEST_EXAMPLES / "labtrust.pcs_bench_ingest.valid.json")

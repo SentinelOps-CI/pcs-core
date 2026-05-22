@@ -152,7 +152,14 @@ def _embedded_ingest_objects(data: dict[str, Any], artifact_type: str) -> list[d
 
 
 def validate_pcs_bench_ingest_semantics(data: dict[str, Any]) -> list[str]:
+    from pcs_core.benchmark_ingest import is_placeholder_commit
+
     errors: list[str] = []
+    if is_placeholder_commit(data.get("source_commit")):
+        errors.append(
+            "PcsBenchIngest.v0 source_commit must be a real 40-character git SHA "
+            "(not all zeros or all f)",
+        )
     producer_id = data.get("producer_id")
     allowed_producers = {
         "pcs-core",

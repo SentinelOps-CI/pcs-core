@@ -19,6 +19,15 @@ const PRODUCER_EMBEDDED_REF_FIELDS: Record<string, readonly string[]> = {
   "scientific-memory": ["explain_quality_reports", "coverage_reports"],
 };
 
+const PLACEHOLDER_COMMIT_RE = /^[0f]{40}$/i;
+
+export function isPlaceholderIngestCommit(commit: unknown): boolean {
+  if (typeof commit !== "string" || commit.length !== 40) {
+    return true;
+  }
+  return PLACEHOLDER_COMMIT_RE.test(commit);
+}
+
 const ALLOWED_PRODUCERS = new Set([
   "pcs-core",
   "pcs-bench",
@@ -58,6 +67,11 @@ export function validateBenchmarkArtifactRefSemantics(data: Record<string, unkno
 
 export function validatePcsBenchIngestSemantics(data: Record<string, unknown>): string[] {
   const errors: string[] = [];
+  if (isPlaceholderIngestCommit(data.source_commit)) {
+    errors.push(
+      "PcsBenchIngest.v0 source_commit must be a real 40-character git SHA (not all zeros or all f)",
+    );
+  }
   const producerId = data.producer_id;
   if (typeof producerId !== "string" || !ALLOWED_PRODUCERS.has(producerId)) {
     errors.push(`PcsBenchIngest.v0 unknown producer_id ${String(producerId)}`);

@@ -59,6 +59,7 @@ jobs:
           python scripts/materialize_benchmark_examples.py
           python scripts/materialize_benchmark_producer_examples.py
           python ../scripts/validate_benchmark_ingest_examples.py --release-grade
+          pcs benchmark validate-ingest --release-grade
           pcs validate ../examples/benchmark_registry.valid.json
           pcs validate ../examples/benchmark_metric_registry.valid.json
           for f in ../examples/benchmark/pcs_bench_report.valid.json ../examples/benchmark/labtrust_benchmark_case.valid.json; do pcs validate "$f"; done

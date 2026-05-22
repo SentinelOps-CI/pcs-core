@@ -426,7 +426,7 @@ def main(argv: list[str] | None = None) -> int:
     benchmark_sub.add_parser("validate", help="Validate benchmark fixture tree")
     benchmark_sub.add_parser(
         "materialize-ingest",
-        help="Regenerate examples/benchmark_ingest from producer dialect fixtures",
+        help="Regenerate examples/benchmark_ingest from sibling producer exports (dialect fallback)",
     )
     p_benchmark_validate_ingest = benchmark_sub.add_parser(
         "validate-ingest",
@@ -564,13 +564,11 @@ def cmd_benchmark_validate_ingest(*, release_grade: bool = False, json_output: b
     import json
 
     from pcs_core.benchmark_ingest import (
+        run_benchmark_ingest_contract_checks,
         summarize_ingest_adequacy,
-        validate_all_benchmark_ingest_examples,
-        validate_benchmark_ingest_supporting_artifacts,
     )
 
-    errors = validate_benchmark_ingest_supporting_artifacts()
-    errors.extend(validate_all_benchmark_ingest_examples(check_release_grade=release_grade))
+    errors = run_benchmark_ingest_contract_checks(check_release_grade=release_grade)
     if json_output:
         print(
             json.dumps(
@@ -600,9 +598,9 @@ def cmd_benchmark_validate() -> int:
 
     errors = validate_benchmark_fixtures()
     errors.extend(validate_compatibility_corpus())
-    from pcs_core.benchmark_ingest import validate_all_benchmark_ingest_examples
+    from pcs_core.benchmark_ingest import run_benchmark_ingest_contract_checks
 
-    errors.extend(validate_all_benchmark_ingest_examples())
+    errors.extend(run_benchmark_ingest_contract_checks())
     for rel in (
         "benchmark_registry.valid.json",
         "benchmark_metric_registry.valid.json",
