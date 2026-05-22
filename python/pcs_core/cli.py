@@ -428,6 +428,16 @@ def main(argv: list[str] | None = None) -> int:
         "materialize-ingest",
         help="Regenerate examples/benchmark_ingest from producer dialect fixtures",
     )
+    p_benchmark_validate_ingest = benchmark_sub.add_parser(
+        "validate-ingest",
+        help="Validate examples/benchmark_ingest golden producer bundles",
+    )
+    p_benchmark_validate_ingest.add_argument(
+        "--release-grade",
+        action="store_true",
+        help="Require release-grade adequacy (not only schema-valid / developer-grade)",
+    )
+    p_benchmark_validate_ingest.add_argument("--json", action="store_true", help="JSON report")
     p_benchmark_normalize = benchmark_sub.add_parser(
         "normalize",
         help="Normalize a repo dialect JSON file to a pcs-core benchmark schema",
@@ -517,6 +527,11 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_benchmark_validate()
     if args.command == "benchmark" and args.benchmark_cmd == "materialize-ingest":
         return cmd_benchmark_materialize_ingest()
+    if args.command == "benchmark" and args.benchmark_cmd == "validate-ingest":
+        return cmd_benchmark_validate_ingest(
+            release_grade=args.release_grade,
+            json_output=args.json,
+        )
     if args.command == "benchmark" and args.benchmark_cmd == "normalize":
         return cmd_benchmark_normalize(args.dialect, args.out)
     if args.command == "benchmark" and args.benchmark_cmd == "run":
@@ -545,6 +560,39 @@ def cmd_benchmark_materialize_ingest() -> int:
     return int(proc.returncode)
 
 
+def cmd_benchmark_validate_ingest(*, release_grade: bool = False, json_output: bool = False) -> int:
+    import json
+
+    from pcs_core.benchmark_ingest import (
+        summarize_ingest_adequacy,
+        validate_all_benchmark_ingest_examples,
+        validate_benchmark_ingest_supporting_artifacts,
+    )
+
+    errors = validate_benchmark_ingest_supporting_artifacts()
+    errors.extend(validate_all_benchmark_ingest_examples(check_release_grade=release_grade))
+    if json_output:
+        print(
+            json.dumps(
+                {
+                    "status": "failed" if errors else "passed",
+                    "errors": errors,
+                    "adequacy": summarize_ingest_adequacy(),
+                },
+                indent=2,
+            ),
+        )
+        return 1 if errors else 0
+    if errors:
+        for err in errors:
+            print(f"FAIL {err}", file=sys.stderr)
+        return 1
+    print("OK benchmark ingest examples")
+    for row in summarize_ingest_adequacy():
+        print(f"  {row['file']}: {row['tier']}")
+    return 0
+
+
 def cmd_benchmark_validate() -> int:
     from pcs_core.benchmark_compat import validate_compatibility_corpus
     from pcs_core.benchmark_runner import validate_benchmark_fixtures
@@ -552,13 +600,9 @@ def cmd_benchmark_validate() -> int:
 
     errors = validate_benchmark_fixtures()
     errors.extend(validate_compatibility_corpus())
-    ingest_root = examples_dir() / "benchmark_ingest"
-    if ingest_root.is_dir():
-        for path in sorted(ingest_root.glob("*.pcs_bench_ingest.valid.json")):
-            try:
-                validate_file(path)
-            except ValidationError as exc:
-                errors.append(f"{path.relative_to(repo_root())}: {exc}")
+    from pcs_core.benchmark_ingest import validate_all_benchmark_ingest_examples
+
+    errors.extend(validate_all_benchmark_ingest_examples())
     for rel in (
         "benchmark_registry.valid.json",
         "benchmark_metric_registry.valid.json",

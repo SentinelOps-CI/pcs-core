@@ -3,8 +3,8 @@
   "run_id": "bench-run-labtrust-missing-qc-result-v0",
   "task_id": "labtrust-qc-release-v0",
   "case_id": "labtrust-missing-qc-result-v0",
-  "started_at": "2026-05-21T11:59:17Z",
-  "completed_at": "2026-05-21T11:59:17Z",
+  "started_at": "2026-05-22T00:56:42Z",
+  "completed_at": "2026-05-22T00:56:42Z",
   "commands": [
     {
       "command": "evaluate_labtrust_gallery benchmarks/labtrust-qc-release/invalid/labtrust-missing-qc-result-v0/input_artifacts",
@@ -27,5 +27,5 @@
   "duration_ms": 1,
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:898c200d43641f978e8ad24fa8c496c99888e97e713c8b05e4c4ce4bdb950645"
+  "signature_or_digest": "sha256:bb1bedf9fe70cd859d53943d1781927ab98b1d1a856a61cee96d9b06eaac8b45"
 }

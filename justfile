@@ -87,6 +87,16 @@ multidomain-conformance:
 computation-conformance:
     cd "{{root}}/python" && pcs conformance run --suite computation
 
+materialize-benchmark-ingest:
+    cd "{{root}}/python" && python scripts/materialize_benchmark_producer_examples.py
+
+validate-benchmark-ingest:
+    cd "{{root}}/python" && python ../scripts/validate_benchmark_ingest_examples.py --release-grade
+
+benchmark-ingest-conformance:
+    cd "{{root}}/python" && pcs conformance run --suite benchmark-ingest
+    cd "{{root}}/python" && pcs benchmark validate-ingest
+
 validate-computation-release-fixtures:
     cd "{{root}}/python" && pcs validate-release-chain ../examples/computation-release/
 
@@ -99,7 +109,7 @@ commit MESSAGE:
 commit MESSAGE:
     powershell.exe -NoProfile -ExecutionPolicy Bypass -File "{{root}}/scripts/pcs-commit.ps1" -m "{{MESSAGE}}"
 
-ci: build python-test rust-test ts-test validate-examples labtrust-check validate-labtrust-release-fixtures validate-computation-release-fixtures protocol-conformance computation-conformance multidomain-conformance hash-vectors-verify shared-hash-vectors-verify pcs-schema-diff
+ci: build python-test rust-test ts-test validate-examples labtrust-check validate-labtrust-release-fixtures validate-computation-release-fixtures protocol-conformance computation-conformance multidomain-conformance benchmark-ingest-conformance hash-vectors-verify shared-hash-vectors-verify pcs-schema-diff
     cd "{{root}}/python" && pcs schema check
     cd "{{root}}/python" && pcs registry validate ../examples/artifact_registry.valid.json
     cd "{{root}}/python" && pcs registry audit

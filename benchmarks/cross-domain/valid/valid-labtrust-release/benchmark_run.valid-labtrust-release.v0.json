@@ -3,8 +3,8 @@
   "run_id": "bench-run-valid-labtrust-release",
   "task_id": "cross-domain-release-chain-v0",
   "case_id": "valid-labtrust-release",
-  "started_at": "2026-05-21T11:59:17Z",
-  "completed_at": "2026-05-21T11:59:17Z",
+  "started_at": "2026-05-22T00:56:42Z",
+  "completed_at": "2026-05-22T00:56:42Z",
   "commands": [
     {
       "command": "validate_release_chain examples/labtrust-release",
@@ -21,8 +21,8 @@
   "certificate_status": "CertificateChecked",
   "scientific_memory_import_status": "not_applicable",
   "scientific_memory_render_status": "not_applicable",
-  "duration_ms": 53,
+  "duration_ms": 52,
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:100699335dbccab26156ed6f4c5762d3bc6728625ef992541f4b8564b8485ca2"
+  "signature_or_digest": "sha256:982be609922ff41264f1be72c8faa729bf7829f7c760a14410c8588a56be81d0"
 }

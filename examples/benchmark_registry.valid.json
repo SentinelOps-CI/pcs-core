@@ -1,35 +1,19 @@
 {
+  "schema_version": "v0",
   "registry_id": "pcs-benchmark-registry-v0",
   "registry_version": "0.1.0",
-  "schema_version": "v0",
-  "signature_or_digest": "sha256:e7bcd4b197e3beb85736e60f4057377afd8283a5bc5c99a20379600336f414be",
   "suites": {
-    "computation-reproducibility-v0": {
-      "fixture_root": "benchmarks/computation-reproducibility",
-      "invalid_cases": [
-        "invalid-witness-hash"
+    "labtrust-qc-release-v0": {
+      "suite_id": "labtrust-qc-release-v0",
+      "task_id": "labtrust-qc-release-v0",
+      "fixture_root": "benchmarks/labtrust-qc-release",
+      "workflow_ids": [
+        "hospital_lab.qc_release",
+        "labtrust.qc_release_v0.1"
       ],
-      "metrics": [
-        "release_reproducibility_score",
-        "failure_localization_accuracy",
-        "certificate_completeness_score",
-        "registry_coverage_score",
-        "formal_check_coverage_score",
-        "scientific_memory_interpretability_score"
-      ],
-      "minimum_passing_thresholds": {
-        "minimum_failure_localization_accuracy": 1.0,
-        "minimum_formal_check_coverage": 1.0,
-        "minimum_pass_rate": 1.0,
-        "minimum_registry_coverage": 0.95,
-        "minimum_scientific_memory_render_coverage": 1.0
-      },
       "required_artifacts": [
-        "DatasetReceipt.v0",
-        "EnvironmentReceipt.v0",
-        "ComputationRunReceipt.v0",
-        "ResultArtifact.v0",
-        "ComputationWitness.v0",
+        "RuntimeReceipt.v0",
+        "TraceCertificate.v0",
         "ScienceClaimBundle.v0",
         "VerificationResult.v0",
         "SignedScienceClaimBundle.v0",
@@ -38,90 +22,9 @@
         "ProofObligation.v0",
         "LeanCheckResult.v0"
       ],
-      "suite_id": "computation-reproducibility-v0",
-      "task_id": "computation-reproducibility-v0",
       "valid_cases": [
-        "valid-release-chain"
+        "labtrust-valid-release-v0"
       ],
-      "workflow_ids": [
-        "scientific_computation.reproducibility_v0"
-      ]
-    },
-    "cross-domain-release-chain-v0": {
-      "fixture_root": "benchmarks/cross-domain",
-      "invalid_cases": [],
-      "metrics": [
-        "release_reproducibility_score",
-        "failure_localization_accuracy",
-        "registry_coverage_score",
-        "cross_domain_portability_score"
-      ],
-      "minimum_passing_thresholds": {
-        "minimum_failure_localization_accuracy": 1.0,
-        "minimum_pass_rate": 1.0,
-        "minimum_registry_coverage": 0.95
-      },
-      "required_artifacts": [
-        "ComputationRunReceipt.v0",
-        "ComputationWitness.v0",
-        "DatasetReceipt.v0",
-        "EnvironmentReceipt.v0",
-        "LeanCheckResult.v0",
-        "ProofObligation.v0",
-        "ReleaseChainValidationResult.v0",
-        "ReleaseManifest.v0",
-        "ResultArtifact.v0",
-        "RuntimeReceipt.v0",
-        "ScienceClaimBundle.v0",
-        "SignedScienceClaimBundle.v0",
-        "ToolUseCertificate.v0",
-        "ToolUseTrace.v0",
-        "TraceCertificate.v0",
-        "VerificationResult.v0"
-      ],
-      "suite_id": "cross-domain-release-chain-v0",
-      "task_id": "cross-domain-release-chain-v0",
-      "valid_cases": [
-        "valid-labtrust-release",
-        "valid-tool-use-release",
-        "valid-computation-release"
-      ],
-      "workflow_ids": [
-        "labtrust.qc_release_v0.1",
-        "agent_tool_use.safety_v0",
-        "scientific_computation.reproducibility_v0"
-      ]
-    },
-    "formal-trust-kernel-v0": {
-      "fixture_root": "benchmarks/cross-domain",
-      "invalid_cases": [],
-      "metrics": [
-        "formal_check_coverage_score",
-        "failure_localization_accuracy"
-      ],
-      "minimum_passing_thresholds": {
-        "minimum_formal_check_coverage": 1.0,
-        "minimum_pass_rate": 1.0
-      },
-      "required_artifacts": [
-        "ProofObligation.v0",
-        "LeanCheckResult.v0"
-      ],
-      "suite_id": "formal-trust-kernel-v0",
-      "task_id": "formal-trust-kernel-v0",
-      "valid_cases": [
-        "formal-labtrust-lean-check",
-        "formal-tool-use-lean-check",
-        "formal-computation-lean-check"
-      ],
-      "workflow_ids": [
-        "labtrust.qc_release_v0.1",
-        "agent_tool_use.safety_v0",
-        "scientific_computation.reproducibility_v0"
-      ]
-    },
-    "labtrust-qc-release-v0": {
-      "fixture_root": "benchmarks/labtrust-qc-release",
       "invalid_cases": [
         "labtrust-certificate-id-tamper-v0",
         "labtrust-lean-rejected-certificate-v0",
@@ -145,15 +48,24 @@
         "scientific_memory_interpretability_score"
       ],
       "minimum_passing_thresholds": {
+        "minimum_pass_rate": 1.0,
         "minimum_failure_localization_accuracy": 1.0,
         "minimum_formal_check_coverage": 1.0,
-        "minimum_pass_rate": 1.0,
         "minimum_registry_coverage": 0.95,
         "minimum_scientific_memory_render_coverage": 1.0
-      },
+      }
+    },
+    "tool-use-safety-v0": {
+      "suite_id": "tool-use-safety-v0",
+      "task_id": "tool-use-safety-v0",
+      "fixture_root": "benchmarks/tool-use-safety",
+      "workflow_ids": [
+        "agent_tool_use.safety_v0"
+      ],
       "required_artifacts": [
+        "ToolUseTrace.v0",
+        "ToolUseCertificate.v0",
         "RuntimeReceipt.v0",
-        "TraceCertificate.v0",
         "ScienceClaimBundle.v0",
         "VerificationResult.v0",
         "SignedScienceClaimBundle.v0",
@@ -162,44 +74,9 @@
         "ProofObligation.v0",
         "LeanCheckResult.v0"
       ],
-      "suite_id": "labtrust-qc-release-v0",
-      "task_id": "labtrust-qc-release-v0",
       "valid_cases": [
-        "labtrust-valid-release-v0"
+        "valid-release-chain"
       ],
-      "workflow_ids": [
-        "labtrust.qc_release_v0.1"
-      ]
-    },
-    "scientific-memory-rendering-v0": {
-      "fixture_root": "benchmarks/labtrust-qc-release",
-      "invalid_cases": [
-        "labtrust-scientific-memory-import-failure-v0"
-      ],
-      "metrics": [
-        "scientific_memory_interpretability_score",
-        "failure_localization_accuracy"
-      ],
-      "minimum_passing_thresholds": {
-        "minimum_failure_localization_accuracy": 1.0,
-        "minimum_pass_rate": 1.0,
-        "minimum_scientific_memory_render_coverage": 1.0
-      },
-      "required_artifacts": [
-        "ScientificMemory.ImportReport.v0"
-      ],
-      "suite_id": "scientific-memory-rendering-v0",
-      "task_id": "scientific-memory-rendering-v0",
-      "valid_cases": [
-        "labtrust-valid-release-v0"
-      ],
-      "workflow_ids": [
-        "hospital_lab.qc_release",
-        "labtrust.qc_release_v0.1"
-      ]
-    },
-    "tool-use-safety-v0": {
-      "fixture_root": "benchmarks/tool-use-safety",
       "invalid_cases": [
         "invalid-trace-hash",
         "invalid-unauthorized-tool-call",
@@ -214,16 +91,26 @@
         "scientific_memory_interpretability_score"
       ],
       "minimum_passing_thresholds": {
+        "minimum_pass_rate": 1.0,
         "minimum_failure_localization_accuracy": 1.0,
         "minimum_formal_check_coverage": 1.0,
-        "minimum_pass_rate": 1.0,
         "minimum_registry_coverage": 0.95,
         "minimum_scientific_memory_render_coverage": 1.0
-      },
+      }
+    },
+    "computation-reproducibility-v0": {
+      "suite_id": "computation-reproducibility-v0",
+      "task_id": "computation-reproducibility-v0",
+      "fixture_root": "benchmarks/computation-reproducibility",
+      "workflow_ids": [
+        "scientific_computation.reproducibility_v0"
+      ],
       "required_artifacts": [
-        "ToolUseTrace.v0",
-        "ToolUseCertificate.v0",
-        "RuntimeReceipt.v0",
+        "DatasetReceipt.v0",
+        "EnvironmentReceipt.v0",
+        "ComputationRunReceipt.v0",
+        "ResultArtifact.v0",
+        "ComputationWitness.v0",
         "ScienceClaimBundle.v0",
         "VerificationResult.v0",
         "SignedScienceClaimBundle.v0",
@@ -232,14 +119,128 @@
         "ProofObligation.v0",
         "LeanCheckResult.v0"
       ],
-      "suite_id": "tool-use-safety-v0",
-      "task_id": "tool-use-safety-v0",
       "valid_cases": [
         "valid-release-chain"
       ],
+      "invalid_cases": [
+        "invalid-witness-hash"
+      ],
+      "metrics": [
+        "release_reproducibility_score",
+        "failure_localization_accuracy",
+        "certificate_completeness_score",
+        "registry_coverage_score",
+        "formal_check_coverage_score",
+        "scientific_memory_interpretability_score"
+      ],
+      "minimum_passing_thresholds": {
+        "minimum_pass_rate": 1.0,
+        "minimum_failure_localization_accuracy": 1.0,
+        "minimum_formal_check_coverage": 1.0,
+        "minimum_registry_coverage": 0.95,
+        "minimum_scientific_memory_render_coverage": 1.0
+      }
+    },
+    "cross-domain-release-chain-v0": {
+      "suite_id": "cross-domain-release-chain-v0",
+      "task_id": "cross-domain-release-chain-v0",
+      "fixture_root": "benchmarks/cross-domain",
       "workflow_ids": [
-        "agent_tool_use.safety_v0"
-      ]
+        "labtrust.qc_release_v0.1",
+        "agent_tool_use.safety_v0",
+        "scientific_computation.reproducibility_v0"
+      ],
+      "required_artifacts": [
+        "ComputationRunReceipt.v0",
+        "ComputationWitness.v0",
+        "DatasetReceipt.v0",
+        "EnvironmentReceipt.v0",
+        "LeanCheckResult.v0",
+        "ProofObligation.v0",
+        "ReleaseChainValidationResult.v0",
+        "ReleaseManifest.v0",
+        "ResultArtifact.v0",
+        "RuntimeReceipt.v0",
+        "ScienceClaimBundle.v0",
+        "SignedScienceClaimBundle.v0",
+        "ToolUseCertificate.v0",
+        "ToolUseTrace.v0",
+        "TraceCertificate.v0",
+        "VerificationResult.v0"
+      ],
+      "valid_cases": [
+        "valid-labtrust-release",
+        "valid-tool-use-release",
+        "valid-computation-release"
+      ],
+      "invalid_cases": [],
+      "metrics": [
+        "release_reproducibility_score",
+        "failure_localization_accuracy",
+        "registry_coverage_score",
+        "cross_domain_portability_score"
+      ],
+      "minimum_passing_thresholds": {
+        "minimum_pass_rate": 1.0,
+        "minimum_failure_localization_accuracy": 1.0,
+        "minimum_registry_coverage": 0.95
+      }
+    },
+    "formal-trust-kernel-v0": {
+      "suite_id": "formal-trust-kernel-v0",
+      "task_id": "formal-trust-kernel-v0",
+      "fixture_root": "benchmarks/cross-domain",
+      "workflow_ids": [
+        "labtrust.qc_release_v0.1",
+        "agent_tool_use.safety_v0",
+        "scientific_computation.reproducibility_v0"
+      ],
+      "required_artifacts": [
+        "ProofObligation.v0",
+        "LeanCheckResult.v0"
+      ],
+      "valid_cases": [
+        "formal-labtrust-lean-check",
+        "formal-tool-use-lean-check",
+        "formal-computation-lean-check"
+      ],
+      "invalid_cases": [],
+      "metrics": [
+        "formal_check_coverage_score",
+        "failure_localization_accuracy"
+      ],
+      "minimum_passing_thresholds": {
+        "minimum_pass_rate": 1.0,
+        "minimum_formal_check_coverage": 1.0
+      }
+    },
+    "scientific-memory-rendering-v0": {
+      "suite_id": "scientific-memory-rendering-v0",
+      "task_id": "scientific-memory-rendering-v0",
+      "fixture_root": "benchmarks/labtrust-qc-release",
+      "workflow_ids": [
+        "hospital_lab.qc_release",
+        "labtrust.qc_release_v0.1"
+      ],
+      "required_artifacts": [
+        "ScientificMemory.ImportReport.v0"
+      ],
+      "valid_cases": [
+        "labtrust-valid-release-v0"
+      ],
+      "invalid_cases": [
+        "labtrust-scientific-memory-import-failure-v0"
+      ],
+      "metrics": [
+        "scientific_memory_interpretability_score",
+        "failure_localization_accuracy"
+      ],
+      "minimum_passing_thresholds": {
+        "minimum_pass_rate": 1.0,
+        "minimum_scientific_memory_render_coverage": 1.0,
+        "minimum_failure_localization_accuracy": 1.0
+      }
     }
-  }
+  },
+  "signature_or_digest": "sha256:e7bcd4b197e3beb85736e60f4057377afd8283a5bc5c99a20379600336f414be"
 }

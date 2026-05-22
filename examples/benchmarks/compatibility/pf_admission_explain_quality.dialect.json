@@ -1,4 +1,9 @@
 {
+  "_pcs_producer_capture": {
+    "producer_repo": "provability-fabric",
+    "producer_command": "pf benchmark admission",
+    "captured_into": "examples/benchmark_ingest/provability_fabric.pcs_bench_ingest.valid.json"
+  },
   "report_id": "pf-admission-explain-v0",
   "suite_id": "pf-admission-v0",
   "case_id": "bundle-admission",

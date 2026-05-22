@@ -48,6 +48,13 @@ def _with_digest(doc: dict[str, Any]) -> dict[str, Any]:
     return body
 
 
+def _logs_list(raw: dict[str, Any], key: str = "logs") -> list[str]:
+    value = raw.get(key)
+    if isinstance(value, list):
+        return [str(line) for line in value]
+    return []
+
+
 def benchmarks_examples_dir() -> Path:
     return examples_dir() / "benchmarks"
 
@@ -206,7 +213,9 @@ def normalize_pf_profile_coverage(raw: dict[str, Any]) -> dict[str, Any]:
     body: dict[str, Any] = {
         "schema_version": "v0",
         "coverage_id": str(raw.get("coverage_id", "pf-profile-coverage-v0")),
-        "workflow_profile_id": str(raw.get("workflow_profile_id", "provability_fabric.admission_v0")),
+        "workflow_profile_id": str(
+            raw.get("workflow_profile_id", "provability_fabric.admission_v0"),
+        ),
         "producer_id": "provability-fabric",
         "suite_id": str(raw.get("suite_id", "pf-admission-v0")),
         "artifact_types_required": required_artifacts,
@@ -332,8 +341,90 @@ def build_pcs_bench_ingest(
     return _with_digest(body)
 
 
+def _strip_producer_capture_metadata(raw: dict[str, Any]) -> dict[str, Any]:
+    return {key: value for key, value in raw.items() if not str(key).startswith("_pcs_")}
+
+
+def _load_labtrust_release_reproducibility_coverage() -> dict[str, Any] | None:
+    report_path = (
+        repo_root() / "benchmarks/labtrust-qc-release/expected_reports/benchmark_report.v0.json"
+    )
+    if not report_path.is_file():
+        return None
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    coverage_block = report.get("coverage")
+    if not isinstance(coverage_block, dict):
+        return None
+    release_cov = coverage_block.get("release_reproducibility")
+    if isinstance(release_cov, dict) and release_cov.get("schema_version") == "v0":
+        return dict(release_cov)
+    return None
+
+
+def build_certifyedge_profile_coverage_for_certificate(raw: dict[str, Any]) -> dict[str, Any]:
+    profile_raw = raw.get("profile_coverage")
+    if isinstance(profile_raw, dict):
+        return normalize_pf_profile_coverage(profile_raw)
+    return normalize_pf_profile_coverage(
+        {
+            "workflow_profile_id": str(raw.get("workflow_profile_id", "labtrust.qc_release_v0.1")),
+            "coverage_id": str(
+                raw.get("profile_coverage_id", "certifyedge-profile-certificate-v0"),
+            ),
+            "suite_id": str(raw.get("suite_id", "certifyedge-certificate-v0")),
+            "artifact_types_required": [
+                "TraceCertificate.v0",
+                "RuntimeReceipt.v0",
+                "ScienceClaimBundle.v0",
+            ],
+            "artifact_types_covered": [
+                "TraceCertificate.v0",
+                "RuntimeReceipt.v0",
+                "ScienceClaimBundle.v0",
+            ],
+            "semantic_checks_required": ["trace_hash_matches_certificate"],
+            "semantic_checks_covered": ["trace_hash_matches_certificate"],
+            "handoff_steps_required": ["runtime_to_certificate"],
+            "handoff_steps_covered": ["runtime_to_certificate"],
+        },
+    )
+
+
+def build_scientific_memory_interpretability_coverage(
+    raw: dict[str, Any],
+    explain: dict[str, Any],
+) -> dict[str, Any]:
+    coverage_raw = raw.get("coverage_report")
+    if isinstance(coverage_raw, dict):
+        body = dict(coverage_raw)
+        body.setdefault("schema_version", "v0")
+        body.setdefault("metric_id", "scientific_memory_interpretability_score")
+        if "signature_or_digest" not in body:
+            return _with_digest(body)
+        return body
+    score = float(explain.get("quality_score", 0.0))
+    required = int(explain.get("sections_required_count", 1) or 1)
+    present = int(explain.get("sections_present_count", 0))
+    body: dict[str, Any] = {
+        "schema_version": "v0",
+        "coverage_id": str(raw.get("coverage_id", "sm-render-interpretability-v0")),
+        "metric": "scientific_memory_interpretability",
+        "metric_id": "scientific_memory_interpretability_score",
+        "numerator": float(present),
+        "denominator": float(required),
+        "coverage_ratio": min(1.0, score),
+        "details": {"render_report_id": explain.get("report_id")},
+        "source_repo": str(explain.get("source_repo", "https://github.com/fraware/scientific-memory")),
+        "source_commit": str(explain.get("source_commit", PCS_COMMIT)),
+        "signature_or_digest": PLACEHOLDER_DIGEST,
+    }
+    return _with_digest(body)
+
+
 def build_certifyedge_pcs_bench_ingest(raw: dict[str, Any]) -> dict[str, Any]:
+    raw = _strip_producer_capture_metadata(raw)
     coverage = normalize_certifyedge_certificate_benchmark(raw)
+    profile = build_certifyedge_profile_coverage_for_certificate(raw)
     source_repo = str(raw.get("source_repo", "https://github.com/fraware/CertifyEdge"))
     source_commit = str(raw.get("source_commit", PCS_COMMIT))
     coverage_path = str(
@@ -342,12 +433,23 @@ def build_certifyedge_pcs_bench_ingest(raw: dict[str, Any]) -> dict[str, Any]:
             "benchmarks/certificate/coverage_report.certifyedge-cert-bench-v0.v0.json",
         ),
     )
+    profile_path = str(
+        raw.get(
+            "profile_coverage_report_path",
+            "benchmarks/certificate/profile_coverage_report.certifyedge-cert-bench-v0.v0.json",
+        ),
+    )
     commands = raw.get("commands")
     if not isinstance(commands, list):
+        cert_id = raw.get("certificate_id", "unknown")
+        default_cmd = f"certifyedge benchmark certificates --certificate-id {cert_id}"
+        checks_passed = float(raw.get("checks_passed", 0))
+        checks_total = float(raw.get("checks_total", 1))
+        exit_code = 0 if checks_passed >= checks_total else 1
         commands = [
             {
-                "command": f"certifyedge_certificate_benchmark {raw.get('certificate_id', 'unknown')}",
-                "exit_code": 0 if float(raw.get("checks_passed", 0)) >= float(raw.get("checks_total", 1)) else 1,
+                "command": str(raw.get("producer_command", default_cmd)),
+                "exit_code": exit_code,
             },
         ]
     return build_pcs_bench_ingest(
@@ -355,6 +457,7 @@ def build_certifyedge_pcs_bench_ingest(raw: dict[str, Any]) -> dict[str, Any]:
         suite_id=str(raw.get("suite_id", "certifyedge-certificate-v0")),
         workflow_id=str(raw.get("workflow_id", "labtrust.qc_release_v0.1")),
         coverage_reports=[coverage],
+        profile_coverage_reports=[profile],
         artifact_refs=[
             build_benchmark_artifact_ref(
                 artifact_type="CoverageReport.v0",
@@ -363,9 +466,16 @@ def build_certifyedge_pcs_bench_ingest(raw: dict[str, Any]) -> dict[str, Any]:
                 source_repo=source_repo,
                 source_commit=source_commit,
             ),
+            build_benchmark_artifact_ref(
+                artifact_type="ProfileCoverageReport.v0",
+                path=profile_path,
+                embedded=profile,
+                source_repo=source_repo,
+                source_commit=source_commit,
+            ),
         ],
         commands=commands,
-        logs=[str(line) for line in raw.get("logs", [])] if isinstance(raw.get("logs"), list) else [],
+        logs=_logs_list(raw),
         source_repo=source_repo,
         source_commit=source_commit,
     )
@@ -374,7 +484,9 @@ def build_certifyedge_pcs_bench_ingest(raw: dict[str, Any]) -> dict[str, Any]:
 def build_pf_pcs_bench_ingest(
     explain_raw: dict[str, Any],
     profile_raw: dict[str, Any] | None = None,
+    failure_localization: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    explain_raw = _strip_producer_capture_metadata(explain_raw)
     explain = normalize_pf_explain_quality(explain_raw)
     source_repo = str(
         explain_raw.get("source_repo", "https://github.com/SentinelOps-CI/provability-fabric"),
@@ -396,7 +508,7 @@ def build_pf_pcs_bench_ingest(
         ),
     ]
     if isinstance(profile_raw, dict):
-        profile = normalize_pf_profile_coverage(profile_raw)
+        profile = normalize_pf_profile_coverage(_strip_producer_capture_metadata(profile_raw))
         profiles.append(profile)
         artifact_refs.append(
             build_benchmark_artifact_ref(
@@ -412,11 +524,50 @@ def build_pf_pcs_bench_ingest(
                 source_commit=source_commit,
             ),
         )
+    failure_rows: list[dict[str, Any]] = []
+    if isinstance(failure_localization, dict):
+        failure_rows.append(failure_localization)
+        artifact_refs.append(
+            build_benchmark_artifact_ref(
+                artifact_type="FailureLocalizationResult.v0",
+                path=str(
+                    explain_raw.get(
+                        "failure_localization_path",
+                        "benchmarks/admission/failure_localization.pf-admission-v0.v0.json",
+                    ),
+                ),
+                embedded=failure_localization,
+                source_repo=source_repo,
+                source_commit=source_commit,
+            ),
+        )
+    elif explain_raw.get("include_failure_localization"):
+        failure_rows.append(build_failure_localization_example())
+        fl = failure_rows[-1]
+        artifact_refs.append(
+            build_benchmark_artifact_ref(
+                artifact_type="FailureLocalizationResult.v0",
+                path=str(
+                    explain_raw.get(
+                        "failure_localization_path",
+                        "benchmarks/admission/failure_localization.pf-admission-v0.v0.json",
+                    ),
+                ),
+                embedded=fl,
+                source_repo=source_repo,
+                source_commit=source_commit,
+            ),
+        )
     commands = explain_raw.get("commands")
     if not isinstance(commands, list):
         commands = [
             {
-                "command": "provability_fabric_admission_explain_quality",
+                "command": str(
+                    explain_raw.get(
+                        "producer_command",
+                        "pf benchmark admission",
+                    ),
+                ),
                 "exit_code": 0 if float(explain.get("quality_score", 0)) >= 1.0 else 1,
             },
         ]
@@ -424,18 +575,21 @@ def build_pf_pcs_bench_ingest(
         producer_id="provability-fabric",
         suite_id=str(explain_raw.get("suite_id", "pf-admission-v0")),
         workflow_id=str(explain_raw.get("workflow_id", "provability_fabric.admission_v0")),
+        failure_localization_reports=failure_rows,
         explain_quality_reports=[explain],
         profile_coverage_reports=profiles,
         artifact_refs=artifact_refs,
         commands=commands,
-        logs=[str(line) for line in explain_raw.get("logs", [])] if isinstance(explain_raw.get("logs"), list) else [],
+        logs=_logs_list(explain_raw),
         source_repo=source_repo,
         source_commit=source_commit,
     )
 
 
 def build_scientific_memory_pcs_bench_ingest(raw: dict[str, Any]) -> dict[str, Any]:
+    raw = _strip_producer_capture_metadata(raw)
     explain = normalize_scientific_memory_render_benchmark(raw)
+    coverage = build_scientific_memory_interpretability_coverage(raw, explain)
     sm_report = raw.get("import_report") or raw
     source_repo = str(raw.get("source_repo", sm_report.get("source_repo", "https://github.com/fraware/scientific-memory")))
     source_commit = str(
@@ -447,11 +601,19 @@ def build_scientific_memory_pcs_bench_ingest(raw: dict[str, Any]) -> dict[str, A
             "benchmarks/rendering/explain_quality_report.sm-render-benchmark-v0.v0.json",
         ),
     )
+    coverage_path = str(
+        raw.get(
+            "coverage_report_path",
+            "benchmarks/rendering/coverage_report.sm-render-benchmark-v0.v0.json",
+        ),
+    )
     commands = raw.get("commands")
     if not isinstance(commands, list):
         commands = [
             {
-                "command": "scientific_memory_render_benchmark",
+                "command": str(
+                    raw.get("producer_command", "pcs-benchmark-rendering"),
+                ),
                 "exit_code": 0 if float(explain.get("quality_score", 0)) >= 1.0 else 1,
             },
         ]
@@ -459,6 +621,7 @@ def build_scientific_memory_pcs_bench_ingest(raw: dict[str, Any]) -> dict[str, A
         producer_id="scientific-memory",
         suite_id=str(raw.get("suite_id", "scientific-memory-rendering-v0")),
         workflow_id=str(raw.get("workflow_id", "labtrust.qc_release_v0.1")),
+        coverage_reports=[coverage],
         explain_quality_reports=[explain],
         artifact_refs=[
             build_benchmark_artifact_ref(
@@ -468,9 +631,16 @@ def build_scientific_memory_pcs_bench_ingest(raw: dict[str, Any]) -> dict[str, A
                 source_repo=source_repo,
                 source_commit=source_commit,
             ),
+            build_benchmark_artifact_ref(
+                artifact_type="CoverageReport.v0",
+                path=coverage_path,
+                embedded=coverage,
+                source_repo=source_repo,
+                source_commit=source_commit,
+            ),
         ],
         commands=commands,
-        logs=[str(line) for line in raw.get("logs", [])] if isinstance(raw.get("logs"), list) else [],
+        logs=_logs_list(raw),
         source_repo=source_repo,
         source_commit=source_commit,
     )
@@ -483,27 +653,48 @@ def build_labtrust_pcs_bench_ingest(
     run_path: str,
     source_repo: str | None = None,
     source_commit: str | None = None,
+    coverage_report: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Assemble LabTrust-Gym PcsBenchIngest.v0 with embedded run and file provenance ref."""
     repo = source_repo or str(case.get("source_repo", "https://github.com/fraware/LabTrust-Gym"))
     commit = source_commit or str(case.get("source_commit", PCS_COMMIT))
+    if isinstance(coverage_report, dict):
+        coverage = coverage_report
+    else:
+        coverage = _load_labtrust_release_reproducibility_coverage()
+    coverage_reports: list[dict[str, Any]] = []
+    artifact_refs: list[dict[str, Any]] = [
+        build_benchmark_artifact_ref(
+            artifact_type="BenchmarkRun.v0",
+            path=run_path,
+            embedded=run,
+            source_repo=repo,
+            source_commit=commit,
+        ),
+    ]
+    if isinstance(coverage, dict):
+        coverage_reports.append(coverage)
+        artifact_refs.append(
+            build_benchmark_artifact_ref(
+                artifact_type="CoverageReport.v0",
+                path="benchmarks/reproducibility/coverage_report.labtrust-qc-release-v0-repro.v0.json",
+                embedded=coverage,
+                source_repo=repo,
+                source_commit=commit,
+            ),
+        )
     return build_pcs_bench_ingest(
         producer_id="labtrust-gym",
         suite_id=str(case.get("task_id", "labtrust-qc-release-v0")),
         workflow_id=str(case.get("workflow_id", "labtrust.qc_release_v0.1")),
         benchmark_runs=[run],
-        artifact_refs=[
-            build_benchmark_artifact_ref(
-                artifact_type="BenchmarkRun.v0",
-                path=run_path,
-                embedded=run,
-                source_repo=repo,
-                source_commit=commit,
-            ),
-        ],
+        coverage_reports=coverage_reports,
+        artifact_refs=artifact_refs,
         commands=[
             {
-                "command": f"labtrust_benchmark_case {case.get('case_id', 'unknown')}",
+                "command": str(
+                    case.get("producer_command", "python benchmark_reproducibility.py"),
+                ),
                 "exit_code": 0 if run.get("observed_status") == "passed" else 1,
             },
         ],
@@ -578,11 +769,16 @@ def normalize_scientific_memory_render_benchmark(raw: dict[str, Any]) -> dict[st
         "source_bundle_path": "handoffs",
     }
     for section_id in required:
-        present = any(key_to_section.get(k) == section_id and k in sm_report for k in key_to_section)
+        present = any(
+            key_to_section.get(k) == section_id and k in sm_report
+            for k in key_to_section
+        )
         if section_id == "formal_checks":
             present = "release_chain_validation_status" in sm_report
         if section_id == "repair_hints":
-            present = bool(raw.get("repair_hints")) or sm_report.get("verification_status") == "passed"
+            repair_hints_ok = bool(raw.get("repair_hints"))
+            passed = sm_report.get("verification_status") == "passed"
+            present = repair_hints_ok or passed
         sections[section_id] = {"present": present, "score": 1.0 if present else 0.0}
         if not present:
             gaps.append(
@@ -624,7 +820,10 @@ DIALECT_FILE_NAMES: tuple[str, ...] = (
 
 NORMALIZERS: dict[str, tuple[str, Any]] = {
     "pcs_bench_report.dialect.json": ("BenchmarkReport.v0", normalize_pcs_bench_report),
-    "pf_admission_explain_quality.dialect.json": ("ExplainQualityReport.v0", normalize_pf_explain_quality),
+    "pf_admission_explain_quality.dialect.json": (
+        "ExplainQualityReport.v0",
+        normalize_pf_explain_quality,
+    ),
     "pf_profile_coverage.dialect.json": ("ProfileCoverageReport.v0", normalize_pf_profile_coverage),
     "certifyedge_certificate_benchmark.dialect.json": (
         "CoverageReport.v0",
@@ -642,6 +841,8 @@ def normalize_pf_pcs_bench_ingest_dialect(raw: dict[str, Any]) -> dict[str, Any]
     profile_path = compatibility_dir() / "pf_profile_coverage.dialect.json"
     if profile_path.is_file():
         profile_raw = json.loads(profile_path.read_text(encoding="utf-8"))
+    raw = dict(raw)
+    raw.setdefault("include_failure_localization", True)
     return build_pf_pcs_bench_ingest(raw, profile_raw)
 
 
@@ -737,9 +938,10 @@ def validate_compatibility_corpus() -> list[str]:
             normalized = normalizer(raw)
             validate_artifact(normalized, artifact_type)
             if dialect_name in INGEST_NORMALIZERS:
-                out_name = dialect_name.replace(".dialect.json", ".pcs_bench_ingest.normalized.json")
+                suffix = ".pcs_bench_ingest.normalized.json"
             else:
-                out_name = dialect_name.replace(".dialect.json", ".normalized.json")
+                suffix = ".normalized.json"
+            out_name = dialect_name.replace(".dialect.json", suffix)
             out_path = compat / out_name
             if out_path.is_file():
                 on_disk = json.loads(out_path.read_text(encoding="utf-8"))
@@ -747,7 +949,8 @@ def validate_compatibility_corpus() -> list[str]:
                 if normalized != on_disk:
                     errors.append(
                         f"{dialect_name}: drift vs {out_name} "
-                        "(run materialize_benchmark_examples.py or materialize_benchmark_producer_examples.py)",
+                        "(run materialize_benchmark_examples.py "
+                        "or materialize_benchmark_producer_examples.py)",
                     )
         except (ValidationError, ValueError, json.JSONDecodeError) as exc:
             errors.append(f"{dialect_name}: {exc}")
@@ -757,9 +960,9 @@ def validate_compatibility_corpus() -> list[str]:
 def build_failure_localization_example() -> dict[str, Any]:
     from pcs_core.benchmark_runner import execute_benchmark_case, load_benchmark_case
 
-    case_path = (
-        repo_root()
-        / "benchmarks/labtrust-qc-release/invalid/labtrust-certificate-id-tamper-v0/benchmark_case.v0.json"
+    case_path = repo_root() / (
+        "benchmarks/labtrust-qc-release/invalid/"
+        "labtrust-certificate-id-tamper-v0/benchmark_case.v0.json"
     )
     case = load_benchmark_case(case_path)
     run = execute_benchmark_case(case)

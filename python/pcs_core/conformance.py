@@ -316,9 +316,25 @@ def _suite_computation() -> tuple[list[str], list[str], int]:
 @_record("benchmark-ingest")
 def _suite_benchmark_ingest() -> tuple[list[str], list[str], int]:
     from pcs_core.benchmark_compat import validate_compatibility_corpus
+    from pcs_core.benchmark_ingest import (
+        summarize_ingest_adequacy,
+        validate_all_benchmark_ingest_examples,
+        validate_benchmark_ingest_supporting_artifacts,
+    )
 
     errors = validate_compatibility_corpus()
-    checks = 8
+    errors.extend(validate_benchmark_ingest_supporting_artifacts())
+    errors.extend(validate_all_benchmark_ingest_examples())
+    warnings: list[str] = []
+    for row in summarize_ingest_adequacy():
+        tier = str(row.get("tier", ""))
+        if tier not in ("release-grade", "external-review-grade"):
+            findings = row.get("findings") or []
+            warnings.append(
+                f"{row['file']}: adequacy {tier}"
+                + (f" ({'; '.join(findings)})" if findings else ""),
+            )
+    checks = 24
     ingest_root = examples_dir() / "benchmark_ingest"
     for name in (
         "labtrust.pcs_bench_ingest.valid.json",
@@ -330,39 +346,7 @@ def _suite_benchmark_ingest() -> tuple[list[str], list[str], int]:
         checks += 1
         if not path.is_file():
             errors.append(f"missing {path.relative_to(repo_root()).as_posix()}")
-            continue
-        try:
-            validate_file(path)
-        except ValidationError as exc:
-            errors.append(f"{name}: {exc}")
-    artifact_ref = examples_dir() / "benchmarks" / "benchmark_artifact_ref.valid.json"
-    checks += 1
-    if artifact_ref.is_file():
-        try:
-            validate_file(artifact_ref)
-        except ValidationError as exc:
-            errors.append(f"benchmarks/benchmark_artifact_ref.valid.json: {exc}")
-    else:
-        errors.append("missing examples/benchmarks/benchmark_artifact_ref.valid.json")
-
-    for artifact_name in (
-        "benchmark_run.valid.json",
-        "coverage_report.valid.json",
-        "failure_localization_result.valid.json",
-        "explain_quality_report.valid.json",
-        "profile_coverage_report.valid.json",
-        "metric_summary.valid.json",
-    ):
-        path = examples_dir() / "benchmarks" / artifact_name
-        checks += 1
-        if path.is_file():
-            try:
-                validate_file(path)
-            except ValidationError as exc:
-                errors.append(f"benchmarks/{artifact_name}: {exc}")
-        else:
-            errors.append(f"missing examples/benchmarks/{artifact_name}")
-    return errors, [], checks
+    return errors, warnings, checks
 
 
 @_record("benchmark-report")

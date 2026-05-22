@@ -11,6 +11,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "python"))
 
+from pcs_core.benchmark_ingest import build_provenance_manifest  # noqa: E402
 from pcs_core.benchmark_compat import (  # noqa: E402
     INGEST_NORMALIZERS,
     build_certifyedge_pcs_bench_ingest,
@@ -19,6 +20,7 @@ from pcs_core.benchmark_compat import (  # noqa: E402
     build_scientific_memory_pcs_bench_ingest,
     compatibility_dir,
     normalize_labtrust_case_manifest,
+    normalize_pf_pcs_bench_ingest_dialect,
     normalize_pcs_bench_report,
 )
 from pcs_core.paths import examples_dir, repo_root  # noqa: E402
@@ -127,13 +129,9 @@ def main() -> int:
     pf_explain = json.loads(
         (compat / "pf_admission_explain_quality.dialect.json").read_text(encoding="utf-8"),
     )
-    pf_profile_path = compat / "pf_profile_coverage.dialect.json"
-    pf_profile = (
-        json.loads(pf_profile_path.read_text(encoding="utf-8")) if pf_profile_path.is_file() else None
-    )
     _write_json(
         INGEST_EXAMPLES / "provability_fabric.pcs_bench_ingest.valid.json",
-        build_pf_pcs_bench_ingest(pf_explain, pf_profile),
+        normalize_pf_pcs_bench_ingest_dialect(pf_explain),
     )
 
     sm_dialect = json.loads(
@@ -174,6 +172,9 @@ def main() -> int:
         },
     ]
     _write_json(examples_dir() / "invalid_pcs_bench_ingest_bad_ref_digest.json", bad_digest)
+
+    _write_json(INGEST_EXAMPLES / "provenance.manifest.json", build_provenance_manifest())
+    validate_file(INGEST_EXAMPLES / "labtrust.pcs_bench_ingest.valid.json")
 
     print("Wrote examples/benchmark and examples/benchmark_ingest producer-validated examples")
     return 0

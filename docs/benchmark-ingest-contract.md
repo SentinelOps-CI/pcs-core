@@ -1,5 +1,13 @@
 # Benchmark ingest contract (PcsBenchIngest.v0)
 
+## v0 policy (locked)
+
+1. **Embedded canonical objects are authoritative.** Ingest arrays contain full `BenchmarkRun.v0`, `CoverageReport.v0`, `FailureLocalizationResult.v0`, `ExplainQualityReport.v0`, and `ProfileCoverageReport.v0` objects — never path-only entries.
+2. **`artifact_refs` are sidecar provenance only.** Each `BenchmarkArtifactRef.v0` records `path`, content `sha256`, and export metadata; refs must not replace embedded objects.
+3. **Native producer reports belong in `details` or separate files.** Dialect JSON from producer repos is normalized into v0 artifacts before ingest validation.
+4. **pcs-bench consumes embedded objects first.** Aggregation, metrics, and suite summaries read embedded arrays; refs are audit-only.
+5. **Path references alone are not release-grade.** See [release-grade-benchmark-evidence.md](release-grade-benchmark-evidence.md) for adequacy tiers.
+
 ## What it is
 
 `PcsBenchIngest.v0` is the **release-grade export bundle** that benchmark producers hand to pcs-bench (or pcs-core CI) before suite aggregation into `BenchmarkReport.v0`. It carries normalized sub-artifacts (runs, coverage, explain/profile quality, localization) plus execution metadata (`commands`, `logs`) and producer provenance (`source_repo`, `source_commit`, `signature_or_digest`).
@@ -10,10 +18,10 @@
 
 | Producer ID | Typical ingest contents |
 |-------------|-------------------------|
-| `labtrust-gym` | `benchmark_runs` from gallery execution |
-| `certifyedge` | `coverage_reports` (certificate completeness) |
-| `provability-fabric` | `explain_quality_reports`, `profile_coverage_reports` |
-| `scientific-memory` | `explain_quality_reports` (render/import audit) |
+| `labtrust-gym` | `benchmark_reproducibility.py` → runs + release reproducibility `coverage_reports` |
+| `certifyedge` | certificate benchmark → `coverage_reports` + `profile_coverage_reports` |
+| `provability-fabric` | admission benchmark → `failure_localization_reports`, `explain_quality_reports`, `profile_coverage_reports` |
+| `scientific-memory` | `pcs-benchmark-rendering` → `explain_quality_reports` + interpretability `coverage_reports` |
 | `pcs-bench` | Aggregator; may assemble ingest from multiple producers |
 
 Golden examples (generated, not hand-authored): `examples/benchmark_ingest/*.pcs_bench_ingest.valid.json`, produced by `python/scripts/materialize_benchmark_producer_examples.py` from `examples/benchmarks/compatibility/*.dialect.json` or live LabTrust gallery runs.

@@ -25,15 +25,52 @@
   ],
   "failure_localization_reports": [],
   "explain_quality_reports": [],
-  "profile_coverage_reports": [],
+  "profile_coverage_reports": [
+    {
+      "schema_version": "v0",
+      "coverage_id": "certifyedge-profile-certificate-v0",
+      "workflow_profile_id": "labtrust.qc_release_v0.1",
+      "producer_id": "provability-fabric",
+      "suite_id": "certifyedge-certificate-v0",
+      "artifact_types_required": [
+        "TraceCertificate.v0",
+        "RuntimeReceipt.v0",
+        "ScienceClaimBundle.v0"
+      ],
+      "artifact_types_covered": [
+        "TraceCertificate.v0",
+        "RuntimeReceipt.v0",
+        "ScienceClaimBundle.v0"
+      ],
+      "semantic_checks_required": [
+        "trace_hash_matches_certificate"
+      ],
+      "semantic_checks_covered": [
+        "trace_hash_matches_certificate"
+      ],
+      "handoff_steps_required": [
+        "runtime_to_certificate"
+      ],
+      "handoff_steps_covered": [
+        "runtime_to_certificate"
+      ],
+      "numerator": 5.0,
+      "denominator": 5.0,
+      "coverage_ratio": 1.0,
+      "details": {},
+      "source_repo": "https://github.com/SentinelOps-CI/provability-fabric",
+      "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
+      "signature_or_digest": "sha256:015cc19b9ceda72157115a83fa7e23f61edae9080825deb1d5f7424a0b4cec1a"
+    }
+  ],
   "commands": [
     {
-      "command": "certifyedge_certificate_benchmark cert-labtrust-qc-v0",
+      "command": "certifyedge benchmark certificates --certificate-id cert-labtrust-qc-v0",
       "exit_code": 0
     }
   ],
   "logs": [],
   "source_repo": "https://github.com/fraware/CertifyEdge",
   "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
-  "signature_or_digest": "sha256:0734fd155747066c00aa1ddd5d84f11efc907e7a38e94eb08fd5bc195f79a56c"
+  "signature_or_digest": "sha256:acc026873414423cbae1f0817c120f5398168d1d2976179ce91e33fc13123501"
 }

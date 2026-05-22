@@ -1,4 +1,9 @@
 {
+  "_pcs_producer_capture": {
+    "producer_repo": "scientific-memory",
+    "producer_command": "pcs-benchmark-rendering",
+    "captured_into": "examples/benchmark_ingest/scientific_memory.pcs_bench_ingest.valid.json"
+  },
   "import_report": {
     "allow_legacy": false,
     "bundle_shape": "pcs_core",

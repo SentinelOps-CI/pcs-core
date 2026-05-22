@@ -4,7 +4,23 @@
   "suite_id": "scientific-memory-rendering-v0",
   "workflow_id": "labtrust.qc_release_v0.1",
   "benchmark_runs": [],
-  "coverage_reports": [],
+  "coverage_reports": [
+    {
+      "schema_version": "v0",
+      "coverage_id": "sm-render-interpretability-v0",
+      "metric": "scientific_memory_interpretability",
+      "metric_id": "scientific_memory_interpretability_score",
+      "numerator": 8.0,
+      "denominator": 8.0,
+      "coverage_ratio": 1.0,
+      "details": {
+        "render_report_id": "sm-render-benchmark-v0"
+      },
+      "source_repo": "https://github.com/fraware/scientific-memory",
+      "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
+      "signature_or_digest": "sha256:b4e01fd68d3a5faecc98f872114f124719989c69ad6e5fd4bd50876af6f3afe8"
+    }
+  ],
   "failure_localization_reports": [],
   "explain_quality_reports": [
     {
@@ -70,14 +86,14 @@
   "profile_coverage_reports": [],
   "commands": [
     {
-      "command": "scientific_memory_render_benchmark",
+      "command": "pcs-benchmark-rendering",
       "exit_code": 0
     }
   ],
   "logs": [],
   "source_repo": "https://github.com/fraware/scientific-memory",
   "source_commit": "0e059e934bc95bcc4dc0cb6593b18b07a28529a2",
-  "signature_or_digest": "sha256:7eb0f1a152b5fb1ac6350dc0c799565ab5d35601dac90ce7799751d100c57e88",
+  "signature_or_digest": "sha256:f6be98a8c2b944ab4ae25b219fc64b0e8b2e368d0487cff915077c80a34a9a2b",
   "artifact_refs": [
     {
       "schema_version": "v0",
@@ -88,6 +104,16 @@
       "source_repo": "https://github.com/fraware/scientific-memory",
       "source_commit": "0e059e934bc95bcc4dc0cb6593b18b07a28529a2",
       "signature_or_digest": "sha256:a0b626cb8358013737947fe3252c66d00559da67ce7ceb68113e62b30309f941"
+    },
+    {
+      "schema_version": "v0",
+      "artifact_type": "CoverageReport.v0",
+      "path": "benchmarks/rendering/coverage_report.sm-render-benchmark-v0.v0.json",
+      "sha256": "sha256:b4e01fd68d3a5faecc98f872114f124719989c69ad6e5fd4bd50876af6f3afe8",
+      "role": "producer_export",
+      "source_repo": "https://github.com/fraware/scientific-memory",
+      "source_commit": "0e059e934bc95bcc4dc0cb6593b18b07a28529a2",
+      "signature_or_digest": "sha256:ec390eb8cd1e331d259d82d8f33d93310cef517e244b9cc529b200f56a071718"
     }
   ]
 }

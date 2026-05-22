@@ -10,7 +10,7 @@ Guide for **CertifyEdge**, **LabTrust-Gym**, **Provability Fabric**, and **Scien
 | `artifact_refs` | **Optional provenance only** — paths + content digests; never a substitute for embedded objects |
 | `signature_or_digest` | Canonical hash per pcs-core rules on each artifact and on the ingest root |
 
-Normative spec: [benchmark-ingest-contract.md](benchmark-ingest-contract.md).
+Normative spec: [benchmark-ingest-contract.md](benchmark-ingest-contract.md). Adequacy tiers: [release-grade-benchmark-evidence.md](release-grade-benchmark-evidence.md).
 
 ## Recommended export flow
 
@@ -48,6 +48,14 @@ Outputs:
 - Updated `examples/benchmarks/compatibility/*.pcs_bench_ingest.normalized.json`
 
 Downstream repos should run an equivalent normalizer in their CI and diff against pcs-core goldens when upgrading pins.
+
+Validate goldens:
+
+```bash
+python scripts/validate_benchmark_ingest_examples.py
+pcs benchmark validate-ingest
+pcs conformance run --suite benchmark-ingest
+```
 
 ## Normalizers (pcs-core)
 

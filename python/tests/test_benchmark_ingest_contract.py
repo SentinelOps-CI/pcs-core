@@ -4,13 +4,18 @@ from __future__ import annotations
 
 import copy
 import json
-from pathlib import Path
 
 import pytest
 
 from pcs_core.benchmark_compat import build_pcs_bench_ingest
+from pcs_core.benchmark_ingest import (
+    GOLDEN_INGEST_FILES,
+    assess_ingest_adequacy_tier,
+    validate_all_benchmark_ingest_examples,
+    validate_benchmark_ingest_supporting_artifacts,
+)
 from pcs_core.hash import canonical_hash
-from pcs_core.paths import examples_dir
+from pcs_core.paths import examples_dir, repo_root
 from pcs_core.validate import ValidationError, validate_artifact, validate_file
 
 INGEST_DIR = examples_dir() / "benchmark_ingest"
@@ -105,8 +110,59 @@ def test_pcs_core_ingest_without_refs_allowed() -> None:
     validate_artifact(body, "PcsBenchIngest.v0")
 
 
+def test_validate_benchmark_ingest_examples_script_surface() -> None:
+    assert validate_all_benchmark_ingest_examples() == []
+    assert validate_benchmark_ingest_supporting_artifacts() == []
+    assert len(GOLDEN_INGEST_FILES) == 4
+
+
+def test_golden_ingest_meets_developer_grade() -> None:
+    for name in GOLDEN_INGEST_FILES:
+        doc = _load_ingest(name)
+        tier, _findings = assess_ingest_adequacy_tier(doc)
+        assert tier in ("developer-grade", "release-grade", "external-review-grade"), (
+            f"{name}: expected developer-grade+, got {tier}"
+        )
+
+
+def test_golden_ingest_meets_release_grade_gate() -> None:
+    errors = validate_all_benchmark_ingest_examples(check_release_grade=True)
+    assert errors == []
+
+
 def test_artifact_ref_record_digest() -> None:
     doc = _load_ingest("scientific_memory.pcs_bench_ingest.valid.json")
     ref = doc["artifact_refs"][0]
     expected = canonical_hash({k: v for k, v in ref.items() if k != "signature_or_digest"})
     assert ref["signature_or_digest"] == expected
+
+
+def test_benchmark_validate_ingest_cli() -> None:
+    import subprocess
+    import sys
+
+    proc = subprocess.run(
+        [sys.executable, "-m", "pcs_core.cli", "benchmark", "validate-ingest"],
+        cwd=repo_root() / "python",
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "OK benchmark ingest" in proc.stdout
+
+
+def test_conformance_benchmark_ingest_suite() -> None:
+    from pcs_core.conformance import run_conformance
+
+    code, errors = run_conformance("benchmark-ingest")
+    assert code == 0, errors
+
+
+def test_provenance_manifest_lists_all_goldens() -> None:
+    path = INGEST_DIR / "provenance.manifest.json"
+    if not path.is_file():
+        pytest.skip("run materialize_benchmark_producer_examples.py")
+    manifest = json.loads(path.read_text(encoding="utf-8"))
+    listed = {entry["golden_file"].split("/")[-1] for entry in manifest.get("entries", [])}
+    assert listed == set(GOLDEN_INGEST_FILES)

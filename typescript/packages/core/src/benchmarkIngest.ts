@@ -9,10 +9,14 @@ const INGEST_EMBEDDED_ARRAYS: Record<string, string> = {
 };
 
 const PRODUCER_EMBEDDED_REF_FIELDS: Record<string, readonly string[]> = {
-  "labtrust-gym": ["benchmark_runs"],
-  certifyedge: ["coverage_reports"],
-  "provability-fabric": ["explain_quality_reports", "profile_coverage_reports"],
-  "scientific-memory": ["explain_quality_reports"],
+  "labtrust-gym": ["benchmark_runs", "coverage_reports"],
+  certifyedge: ["coverage_reports", "profile_coverage_reports"],
+  "provability-fabric": [
+    "failure_localization_reports",
+    "explain_quality_reports",
+    "profile_coverage_reports",
+  ],
+  "scientific-memory": ["explain_quality_reports", "coverage_reports"],
 };
 
 const ALLOWED_PRODUCERS = new Set([

@@ -5,7 +5,22 @@
   "workflow_id": "provability_fabric.admission_v0",
   "benchmark_runs": [],
   "coverage_reports": [],
-  "failure_localization_reports": [],
+  "failure_localization_reports": [
+    {
+      "schema_version": "v0",
+      "result_id": "failure-loc-bench-run-labtrust-certificate-id-tamper-v0",
+      "run_id": "bench-run-labtrust-certificate-id-tamper-v0",
+      "case_id": "labtrust-certificate-id-tamper-v0",
+      "expected_failure_code": "certificate_id_mismatch",
+      "observed_failure_code": "certificate_id_mismatch",
+      "expected_responsible_component": "certificate_producer",
+      "observed_responsible_component": "certificate_producer",
+      "localized_correctly": true,
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:1b43434ba9b791223c0329f460167e0f12e6fe74951b2fdaf77c0f3e02eca7f2"
+    }
+  ],
   "explain_quality_reports": [
     {
       "schema_version": "v0",
@@ -105,14 +120,14 @@
   ],
   "commands": [
     {
-      "command": "provability_fabric_admission_explain_quality",
+      "command": "pf benchmark admission",
       "exit_code": 0
     }
   ],
   "logs": [],
   "source_repo": "https://github.com/SentinelOps-CI/provability-fabric",
   "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
-  "signature_or_digest": "sha256:16522791fb8e53ac202d27b73096043adf6ad7a01ab1e61580a0d9e2aa6d7d7a",
+  "signature_or_digest": "sha256:c91d83119e7a55d131a9dd4b6d52ab712ab5ab4268852411ab10480cf40442e1",
   "artifact_refs": [
     {
       "schema_version": "v0",
@@ -133,6 +148,16 @@
       "source_repo": "https://github.com/SentinelOps-CI/provability-fabric",
       "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
       "signature_or_digest": "sha256:7485bcfd35a99143469e244b5fc284a64039f6b8bc153d2325df719e244dbed3"
+    },
+    {
+      "schema_version": "v0",
+      "artifact_type": "FailureLocalizationResult.v0",
+      "path": "benchmarks/admission/failure_localization.pf-admission-v0.v0.json",
+      "sha256": "sha256:1b43434ba9b791223c0329f460167e0f12e6fe74951b2fdaf77c0f3e02eca7f2",
+      "role": "producer_export",
+      "source_repo": "https://github.com/SentinelOps-CI/provability-fabric",
+      "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
+      "signature_or_digest": "sha256:1ac35313dbd5a81ae8457baf5e5873de18951a3ccd8395b85ec7694287b8544e"
     }
   ]
 }

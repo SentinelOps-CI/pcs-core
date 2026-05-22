@@ -8,7 +8,6 @@ from pcs_core.benchmark_localization import FAILURE_CODE_TO_COMPONENT
 from pcs_core.benchmark_metric_registry_data import benchmark_metric_entries
 from pcs_core.benchmark_registry_data import benchmark_suite_entries
 
-
 KNOWN_CASE_KINDS = frozenset(
     {
         "valid_release",
@@ -113,10 +112,14 @@ def validate_benchmark_report_semantics(data: dict[str, Any]) -> list[str]:
 
 
 PRODUCER_EMBEDDED_REF_FIELDS: dict[str, tuple[str, ...]] = {
-    "labtrust-gym": ("benchmark_runs",),
-    "certifyedge": ("coverage_reports",),
-    "provability-fabric": ("explain_quality_reports", "profile_coverage_reports"),
-    "scientific-memory": ("explain_quality_reports",),
+    "labtrust-gym": ("benchmark_runs", "coverage_reports"),
+    "certifyedge": ("coverage_reports", "profile_coverage_reports"),
+    "provability-fabric": (
+        "failure_localization_reports",
+        "explain_quality_reports",
+        "profile_coverage_reports",
+    ),
+    "scientific-memory": ("explain_quality_reports", "coverage_reports"),
 }
 
 
