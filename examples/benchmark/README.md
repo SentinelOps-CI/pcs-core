@@ -1,6 +1,6 @@
 # Producer benchmark examples
 
-Golden JSON from each benchmark producer, normalized to pcs-core v0 schemas. Do not hand-edit; regenerate:
+Golden JSON from each benchmark producer is normalized to pcs-core v0 schemas through materialize scripts instead of manual edits.
 
 ```bash
 # In each producer repo (sibling of pcs-core)
@@ -11,14 +11,14 @@ cd python
 python scripts/materialize_benchmark_producer_examples.py
 ```
 
-Set `PCS_PRODUCER_REPOS_ROOT` if producer repos are not in the parent directory of pcs-core.
+Set `PCS_PRODUCER_REPOS_ROOT` when producer repositories live outside the default parent directory of pcs-core.
 
 | File | Producer | Schema |
 |------|----------|--------|
 | `pcs_bench_report.valid.json` | pcs-bench | `BenchmarkReport.v0` |
 | `labtrust_benchmark_case.valid.json` | LabTrust-Gym | `BenchmarkCase.v0` |
 
-`PcsBenchIngest.v0` producer bundles live in `examples/benchmark_ingest/` (copied from live producer exports). Validate:
+`PcsBenchIngest.v0` producer bundles live in `examples/benchmark_ingest/` and copy from live producer exports when available.
 
 ```bash
 python ../scripts/validate_benchmark_ingest_examples.py --release-grade

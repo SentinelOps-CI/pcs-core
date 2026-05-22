@@ -78,7 +78,7 @@ Committed under `examples/labtrust-release/`:
 just materialize-labtrust-protocol
 ```
 
-Details: [labtrust-release-fixtures.md](labtrust-release-fixtures.md).
+Further detail appears in [labtrust-release-fixtures.md](labtrust-release-fixtures.md).
 
 ## Multi-domain workflows
 
@@ -95,7 +95,7 @@ pcs conformance run --suite computation
 pcs conformance run --suite multidomain
 ```
 
-See [workflow-profiles.md](workflow-profiles.md). Formal checks: [lean-trust-kernel.md](lean-trust-kernel.md).
+Workflow profiles are documented in [workflow-profiles.md](workflow-profiles.md), and formal checks appear in [lean-trust-kernel.md](lean-trust-kernel.md).
 
 ## Conformance
 
@@ -106,12 +106,8 @@ pcs conformance run --suite handoff-manifest
 pcs conformance run --suite all --json   # validates as ConformanceReport.v0
 ```
 
-Suite index: [../conformance/README.md](../conformance/README.md).
+The suite index is listed in [../conformance/README.md](../conformance/README.md).
 
 ## Release-mode rules
 
-- Real 40-character git commits on all pins
-- No `local_dev` or all-zero commits
-- No placeholder commit patterns (`aaaa`, `bbbb`, …)
-- `Validated` release manifests require `sha256` on every artifact entry
-- `Validated` handoffs require `sha256` on every `input_artifacts` entry
+Release-mode validation requires real 40-character git commits on all pins, rejects `local_dev` and all-zero commits, rejects placeholder commit patterns such as `aaaa` and `bbbb`, requires `sha256` on every artifact entry in `Validated` release manifests, and requires `sha256` on every `input_artifacts` entry in `Validated` handoffs.

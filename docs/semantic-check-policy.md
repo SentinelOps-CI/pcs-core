@@ -2,15 +2,15 @@
 
 ArtifactRegistry.v0 entries declare **semantic checks** as structured objects. Each check binds a `check_id` to a **severity**, **responsible_component**, and **execution policy** so downstream repos know who must run the rule, whether skipping is fatal, and how to report execution.
 
-Machine-readable policy artifact: `examples/semantic_check_execution.valid.json` (`SemanticCheckExecution.v0`).
+The machine-readable policy artifact is `examples/semantic_check_execution.valid.json` as `SemanticCheckExecution.v0`.
 
 ## Severities
 
 | Severity | Meaning | Fatal if skipped (release mode) |
 |----------|---------|----------------------------------|
 | `required` | Must be implemented by the responsible component. | Yes |
-| `optional` | Recommended; may be skipped. | No |
-| `warning_only` | Advisory only. | No |
+| `optional` | Recommended and skippable in release mode. | Skippable |
+| `warning_only` | Advisory only. | Skippable |
 | `release_blocking` | Blocks `Validated` / `ProofChecked` release status. | Yes |
 | `producer_responsible` | Runtime producer must execute before handoff. | Yes |
 | `consumer_responsible` | Consumer executes at import/admission. | Yes |
@@ -70,11 +70,11 @@ Downstream validators should emit the same `registry_check_refs` when they execu
 | `consumer` | Downstream import/admission. |
 | `registry_metadata` | Validating `ArtifactRegistry.v0` itself. |
 
-Catalog: `python/pcs_core/registry_semantics.py` (`CHECK_ENFORCEMENT`).
+The enforcement catalog lives in `python/pcs_core/registry_semantics.py` as `CHECK_ENFORCEMENT`.
 
 ## Skipped checks
 
-When `allowed_to_skip` is `true` and a check is not executed, record it in
+When `allowed_to_skip` is `true` and a check remains unexecuted, record it in
 `deferred_registry_checks` with `status: "skipped"`:
 
 ```json
@@ -83,11 +83,11 @@ When `allowed_to_skip` is `true` and a check is not executed, record it in
   "status": "skipped",
   "enforcement_location": "registry_metadata",
   "responsible_component": "pcs-core",
-  "reason": "Optional catalog audit not run in this release train."
+  "reason": "Optional catalog audit deferred for this release train."
 }
 ```
 
-Skipped checks must not be `release_blocking` with `allowed_to_skip: false`.
+Skipped checks stay outside `release_blocking` entries that set `allowed_to_skip` to `false`.
 
 ## Deferred checks
 
@@ -124,7 +124,7 @@ When a component runs a registry semantic check, it should record:
 1. `registry_ref` — `ArtifactType.check_id`
 2. `status` — `passed` | `failed` | `skipped` | `deferred`
 3. `responsible_component` — must match registry entry
-4. `fatal` — `true` when `allowed_to_skip` is `false` and status is not `passed`
+4. `fatal` — `true` when `allowed_to_skip` is `false` and status differs from `passed`
 
 Attach these records to component validation reports or import into
 `ReleaseChainValidationResult.v0` via `registry_check_refs` and

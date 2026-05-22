@@ -1,14 +1,9 @@
-# Invalid fixture: failed_scientific_memory_import
+# Invalid fixture failed_scientific_memory_import
 
-Copy of the canonical [labtrust-release](../labtrust-release/) chain with one intentional violation for negative testing.
+This directory copies the canonical [labtrust-release](../labtrust-release/) chain with one intentional violation for negative testing, and validation must fail with `scientific_memory_import_failed`.
 
-| Expected failure code | scientific_memory_import_failed |
-|-----------------------|----------|
-
-`ash
+```bash
 pcs validate-release-chain examples/labtrust-release-invalid/failed_scientific_memory_import/
-`
+```
 
-Must fail with scientific_memory_import_failed.
-
-Index: [../README.md](../README.md). Validator reference: [docs/labtrust-release-fixtures.md](../../docs/labtrust-release-fixtures.md).
+The index is [../README.md](../README.md), and validator reference is [docs/labtrust-release-fixtures.md](../../docs/labtrust-release-fixtures.md).

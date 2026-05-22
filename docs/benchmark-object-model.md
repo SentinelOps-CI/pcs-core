@@ -1,133 +1,122 @@
 # Benchmark object model (v0)
 
-PCS benchmarks separate **what is being tested** (cases), **what happened when it ran** (runs), and **how the suite scored** (reports). Downstream repos (pcs-bench, Provability Fabric, CertifyEdge, LabTrust-Gym, Scientific Memory) normalize into these artifacts; they must not overload a single `status` field.
+PCS benchmarks keep cases as the definition of what is being tested, runs as the record of what happened during execution, and reports as the suite-level score aggregation, and downstream repositories including the benchmark runner, Provability Fabric, CertifyEdge, LabTrust-Gym, and Scientific Memory normalize into these artifacts while keeping separate status dimensions for execution, admission, certificates, and rendering.
 
 ## Core artifacts
 
 | Artifact | Role |
 |----------|------|
 | `BenchmarkCase.v0` | Declares inputs and expected benchmark outcome for one case |
-| `BenchmarkRun.v0` | Records one execution of a case, with layered status fields |
-| `BenchmarkReport.v0` | Aggregates runs: declared metric IDs + `metric_summaries` + rollups |
-| `MetricSummary.v0` | One measured (or N/A) score for a `metric_id` |
+| `BenchmarkRun.v0` | Records one execution of a case with layered status fields |
+| `BenchmarkReport.v0` | Aggregates runs with declared metric IDs, `metric_summaries`, and rollups |
+| `MetricSummary.v0` | One measured or N/A score for a `metric_id` |
 | `CoverageReport.v0` | Detailed coverage snapshot for a single legacy metric channel |
-| `ExplainQualityReport.v0` | PF/SM explain-quality or render-audit sections |
-| `ProfileCoverageReport.v0` | PF workflow profile coverage (artifacts, checks, handoffs) |
-| `FailureLocalizationResult.v0` | Per-run verdict on failure-code / component alignment |
-| `PcsBenchIngest.v0` | Normalized export bundle for pcs-bench (embedded runs, coverage, explain/profile, commands, logs) |
-| `BenchmarkArtifactRef.v0` | Optional on-disk path + content digest for an embedded ingest artifact |
+| `ExplainQualityReport.v0` | PF and SM explain-quality or render-audit sections |
+| `ProfileCoverageReport.v0` | PF workflow profile coverage across artifacts, checks, and handoffs |
+| `FailureLocalizationResult.v0` | Per-run verdict on failure-code and component alignment |
+| `PcsBenchIngest.v0` | Normalized export bundle for the benchmark runner with embedded runs, coverage, explain and profile reports, commands, and logs |
+| `BenchmarkArtifactRef.v0` | Optional on-disk path and content digest for an embedded ingest artifact |
 
-## Status dimensions (do not conflate)
+## Status dimensions
 
 ### Benchmark execution status (`BenchmarkCase.v0.expected_status`, `BenchmarkRun.v0.observed_status`)
 
-`expected_status` / `observed_status` use **benchmark execution** vocabulary only (`passed`, `failed`, `skipped`, `error`). Do not overload these for admission or certificate semantics.
+`expected_status` and `observed_status` use benchmark execution vocabulary exclusively, including `passed`, `failed`, `skipped`, and `error`, and admission or certificate semantics belong in the dedicated fields below.
 
 ### System outcome (`BenchmarkCase.v0.expected_system_outcome`, optional)
 
-Uses `benchmark_system_outcome` in `common.defs.json`: `admitted`, `rejected`, `stale`, `import_failed`, `render_failed`, `query_failed`, `comparison_failed`, `formal_failed`, `certificate_rejected`, `unknown`.
+System outcome uses `benchmark_system_outcome` in `common.defs.json`, including `admitted`, `rejected`, `stale`, `import_failed`, `render_failed`, `query_failed`, `comparison_failed`, `formal_failed`, `certificate_rejected`, and `unknown`.
 
 ### Detection layer (`BenchmarkCase.v0.expected_detection_layer`, optional)
 
-Uses `benchmark_detection_layer` (e.g. `labtrust`, `certifyedge`, `formal_kernel`) so pcs-bench can score localization without overloading `expected_status`.
+Detection layer uses `benchmark_detection_layer` values such as `labtrust`, `certifyedge`, and `formal_kernel` so the benchmark runner can score localization without overloading execution status.
 
 ### Benchmark run execution status (`BenchmarkRun.v0.observed_status`)
 
-Whether the **benchmark harness** considers the case to have met its expectation.
+Execution status records whether the benchmark harness considers the case to have met its expectation, and suite pass or fail counts in `BenchmarkReport.v0.summary` rely on this field alone.
 
 | Value | Meaning |
 |-------|---------|
 | `passed` | Observed outcome matches `BenchmarkCase.v0` expectation |
-| `failed` | Mismatch (wrong failure, silent pass, etc.) |
-| `skipped` | Case not executed |
+| `failed` | Mismatch such as wrong failure or silent pass |
+| `skipped` | Case was skipped by the harness |
 | `error` | Harness or infrastructure error |
-
-This is the only status used for suite pass/fail counts in `BenchmarkReport.v0.summary`.
 
 ### System admission outcome (`BenchmarkRun.v0.system_admission_outcome`)
 
-Whether an **admission gate** (e.g. PF bundle admission, SM import policy) accepted the artifact bundle.
+Admission outcome records whether an admission gate such as Provability Fabric bundle admission or Scientific Memory import policy accepted the artifact bundle.
 
 | Value | Meaning |
 |-------|---------|
 | `admitted` | Admission checks passed |
 | `rejected` | Admission explicitly rejected |
 | `deferred` | Admission pending or partial |
-| `not_evaluated` | No admission step in this workflow |
+| `not_evaluated` | Admission step absent from this workflow |
 
 ### Release-chain status (`BenchmarkRun.v0.release_chain_status`)
 
-Result of **pcs-core release-chain validation** on the fixture directory.
+Release-chain status records the result of pcs-core release-chain validation on the fixture directory.
 
 | Value | Meaning |
 |-------|---------|
-| `valid` | No blocking release-chain issues |
+| `valid` | Release-chain validation completed without blocking issues |
 | `invalid` | One or more blocking issues |
-| `not_applicable` | Case does not include a full release tree |
+| `not_applicable` | Case omits a full release tree |
 
 ### Certificate status (`BenchmarkRun.v0.certificate_status`)
 
-Status of the **trust certificate** artifact under test (trace, tool-use, computation witness).
+Certificate status records the trust certificate artifact under test, including trace, tool-use, and computation witnesses, and it follows CertifyEdge and certificate producer semantics separate from benchmark pass or fail.
 
 | Value | Meaning |
 |-------|---------|
 | `CertificateChecked` | Certificate in release-ready state |
 | `Rejected` | Certificate rejected |
 | `Stale` | Certificate stale |
-| `not_applicable` | No certificate in scope |
-
-Maps to CertifyEdge / certificate producer semantics, not benchmark pass/fail.
+| `not_applicable` | Certificate outside case scope |
 
 ### Scientific Memory import status (`BenchmarkRun.v0.scientific_memory_import_status`)
 
-`scientific_memory_import_report.verification_status` and related import gates.
+Import status mirrors `scientific_memory_import_report.verification_status` and related import gates.
 
 | Value | Meaning |
 |-------|---------|
 | `passed` | Import verification passed |
 | `failed` | Import failed |
-| `not_applicable` | No SM import report in fixture |
+| `not_applicable` | Scientific Memory import report absent from fixture |
 
 ### Scientific Memory render status (`BenchmarkRun.v0.scientific_memory_render_status`)
 
-Whether **render / explain-quality** requirements are satisfied (see `ExplainQualityReport.v0`).
+Render status records whether render and explain-quality requirements are satisfied as defined in `ExplainQualityReport.v0`.
 
 | Value | Meaning |
 |-------|---------|
 | `rendered` | All required explain sections present |
 | `incomplete` | Render or section gaps |
-| `not_applicable` | SM render not in scope |
+| `not_applicable` | SM render outside case scope |
 
-## Valid vs invalid cases
+## Valid and invalid cases
 
-For `case_kind == valid_release`:
+For `case_kind == valid_release`, `expected_system_outcome` is `admitted`, `expected_failure_code`, `expected_responsible_component`, and `expected_repair_hint_kind` are null, and `BenchmarkRun.v0` failure localization fields are null when the case expects success.
 
-- `expected_system_outcome` is **`admitted`**
-- `expected_failure_code`, `expected_responsible_component`, and `expected_repair_hint_kind` are **`null`**
-- `BenchmarkRun.v0` failure localization fields are **`null`** when no failure is expected
-
-For invalid cases, expected failure metadata is **required** (non-null).
+Invalid cases require non-null expected failure metadata.
 
 ## Metrics in `BenchmarkReport.v0`
 
-**Option A (v0):**
+Option A in v0 keeps `metrics` as the array of declared `benchmark_metric_id` values for the suite and `metric_summaries` as the array of `MetricSummary.v0` records with measured results and applicability.
 
-- `metrics`: array of `benchmark_metric_id` values — **declared** metrics for the suite
-- `metric_summaries`: array of `MetricSummary.v0` — **measured** results with applicability
+Legacy short names such as `release_reproducibility` are deprecated in reports in favor of `release_reproducibility_score` and related identifiers, and `BenchmarkMetricRegistry.v0` maps IDs to definitions together with optional legacy aliases.
 
-Legacy short names (`release_reproducibility`) are deprecated in reports; use `release_reproducibility_score` and friends. `BenchmarkMetricRegistry.v0` maps IDs to definitions and optional legacy aliases.
-
-`summary` retains case counts and optional rollup floats for backward compatibility; canonical scores live in `metric_summaries`.
+The `summary` object retains case counts and optional rollup floats for backward compatibility while canonical scores live in `metric_summaries`.
 
 ## Producer mapping
 
 | Producer | Primary artifacts |
 |----------|-------------------|
 | pcs-bench | `BenchmarkReport.v0`, `MetricSummary.v0` |
-| pcs-core | All types (reference runner) |
-| Provability Fabric | `ExplainQualityReport.v0`, `ProfileCoverageReport.v0`, admission dialect → normalized |
-| CertifyEdge | `CoverageReport.v0` / certificate benchmark → `MetricSummary.v0` |
+| pcs-core | All types through the reference runner |
+| Provability Fabric | `ExplainQualityReport.v0`, `ProfileCoverageReport.v0`, admission dialect normalized to v0 |
+| CertifyEdge | `CoverageReport.v0` and certificate benchmark mapped to `MetricSummary.v0` |
 | LabTrust-Gym | `BenchmarkCase.v0` manifests |
-| Scientific Memory | `ExplainQualityReport.v0` (render benchmark) |
+| Scientific Memory | `ExplainQualityReport.v0` for render benchmark |
 
-See [producer-benchmark-ingest.md](producer-benchmark-ingest.md) for normalization paths.
+Normalization paths appear in [producer-benchmark-ingest.md](producer-benchmark-ingest.md).

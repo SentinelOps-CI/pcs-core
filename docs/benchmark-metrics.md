@@ -41,7 +41,7 @@ A failure is **correctly localized** when `BenchmarkRun.v0.observed_responsible_
 
 ## Certificate completeness
 
-A certificate is **complete** when all release-required fields are present, every expected hash is bound to the correct upstream artifact, and each required semantic check has either passed or failed with an explicit status (no silent gaps).
+A certificate is **complete** when all release-required fields are present, every expected hash is bound to the correct upstream artifact, and each required semantic check has either passed or failed with an explicit status without silent gaps.
 
 **Measured as:** suite coverage snapshot `certificate_completeness` (passed valid releases over total cases that exercise certificate binding).
 
@@ -59,7 +59,7 @@ A certificate is **complete** when all release-required fields are present, ever
 
 ## Scientific Memory interpretability
 
-**Scientific Memory interpretability** measures whether the rendered claim exposes all required audit sections: provenance, hashes, handoffs, verification, formal checks, limitations, lineage, and repair hints.
+**Scientific Memory interpretability** measures whether the rendered claim exposes all required audit sections, including provenance, hashes, handoffs, verification, formal checks, limitations, lineage, and repair hints.
 
 **Measured as:** `scientific_memory_render_coverage` in `BenchmarkReport.v0.summary`, derived from `scientific_memory_import_report.json` required keys on releases that exercise memory import.
 

@@ -1,6 +1,6 @@
 # PCS Lean trust kernel
 
-pcs-core owns a **dependency-light** Lean package under `lean/` that models the PCS trust envelope (structural coherence only — no scientific-domain truth claims).
+pcs-core owns a dependency-light Lean package under `lean/` that models the PCS trust envelope as structural coherence checks separate from scientific-domain truth claims.
 
 ## Layout
 
@@ -8,7 +8,7 @@ pcs-core owns a **dependency-light** Lean package under `lean/` that models the 
 |------|------|
 | `lean/lakefile.lean` | Lake build (`lake build` in CI) |
 | `lean/PCS/Basic.lean` | Core types (`Hash`, `ArtifactStatus`, …) |
-| `lean/PCS/ReleaseChain.lean` | Predicates: `CertificateMatchesRuntime`, `VerificationAdmitsBundle`, `ReleaseChainAdmissible`, … |
+| `lean/PCS/ReleaseChain.lean` | Predicates including `CertificateMatchesRuntime`, `VerificationAdmitsBundle`, and `ReleaseChainAdmissible` |
 | `lean/PCS/Theorems.lean` | First theorem family (admissible release implications and impossibility lemmas) |
 
 ## JSON bridge

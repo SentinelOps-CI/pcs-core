@@ -2,7 +2,7 @@
 
 Run protocol checks against a pinned **pcs-core** install. Each suite maps to documentation under this directory and to tests in `python/tests/test_protocol_conformance.py`.
 
-Documentation index: [docs/README.md](../docs/README.md).
+The documentation index is [docs/README.md](../docs/README.md).
 
 ## CLI
 
@@ -14,7 +14,7 @@ pcs conformance run --suite multidomain
 pcs conformance run --suite all --json   # ConformanceReport.v0
 ```
 
-Available suites: `release-manifest`, `handoff-manifest`, `artifact-registry`, `semantic-check-execution`, `release-chain-validation`, `release-chain`, `component-release-fragment`, `hash`, `migration`, `status-transition`, `workflow-profile`, `tool-use`, `computation`, `benchmark`, `benchmark-report`, `benchmark-ingest`, `multidomain`, `all`.
+Available suites include `release-manifest`, `handoff-manifest`, `artifact-registry`, `semantic-check-execution`, `release-chain-validation`, `release-chain`, `component-release-fragment`, `hash`, `migration`, `status-transition`, `workflow-profile`, `tool-use`, `computation`, `benchmark`, `benchmark-report`, `benchmark-ingest`, `multidomain`, `all`.
 
 ## Downstream CI
 
@@ -25,9 +25,9 @@ code, errors = run_conformance("all")
 assert code == 0, errors
 ```
 
-Or: `pcs conformance run --suite all` in a subprocess.
+Continuous integration may also invoke `pcs conformance run --suite all` in a subprocess.
 
-Registry catalog: `pcs registry audit` — see [docs/semantic-check-policy.md](../docs/semantic-check-policy.md).
+The registry catalog is listed through `pcs registry audit` as described in [docs/semantic-check-policy.md](../docs/semantic-check-policy.md).
 
 ## Suite index
 

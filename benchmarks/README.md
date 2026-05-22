@@ -1,8 +1,8 @@
 # PCS benchmark fixtures
 
-Benchmark evaluation protocol for pcs-core: tasks, cases, runs, and reports as versioned JSON artifacts under `schemas/`.
+The benchmark evaluation protocol for pcs-core defines tasks, cases, runs, and reports as versioned JSON artifacts under `schemas/`.
 
-Guide: [docs/benchmarks.md](../docs/benchmarks.md).
+The overview guide is [docs/benchmarks.md](../docs/benchmarks.md).
 
 ## Layout
 
@@ -27,7 +27,7 @@ Cases reference release trees via `input_artifacts.release_directory`, usually u
 
 ## Suites
 
-Definitions: `examples/benchmark_registry.valid.json` (from `python/pcs_core/benchmark_registry_data.py`).
+Suite definitions live in `examples/benchmark_registry.valid.json`, built from `python/pcs_core/benchmark_registry_data.py`.
 
 | Suite ID | Purpose |
 |----------|---------|
@@ -60,7 +60,7 @@ pcs benchmark validate-ingest --release-grade
 | `examples/benchmark_ingest/` | `PcsBenchIngest.v0` goldens |
 | `examples/benchmark_metric_registry.valid.json` | Metric definitions |
 
-Regenerate:
+Regenerate fixtures with the commands below.
 
 ```bash
 cd python

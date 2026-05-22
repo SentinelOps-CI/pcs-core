@@ -1,8 +1,8 @@
 # PCS documentation (v0.1)
 
-Proof-Carrying Science (**PCS**) is a cross-repository artifact protocol for binding scientific and operational claims to verifiable evidence. **pcs-core** is the reference implementation: JSON schemas, validation, canonical hashing, release-chain checks, and conformance suites.
+Proof-Carrying Science (**PCS**) is a cross-repository artifact protocol that binds scientific and operational claims to verifiable evidence, and **pcs-core** supplies the reference implementation through JSON schemas, validation, canonical hashing, release-chain checks, and conformance suites.
 
-Downstream repositories (LabTrust-Gym, CertifyEdge, Provability Fabric, Scientific Memory) import artifacts from here and must not fork schema shapes.
+LabTrust-Gym, CertifyEdge, Provability Fabric, and Scientific Memory import artifacts from this repository and rely on these schema definitions as the single shared source.
 
 ## Who should read what
 
@@ -31,7 +31,7 @@ Downstream repositories (LabTrust-Gym, CertifyEdge, Provability Fabric, Scientif
 
 ## v0.1 release verification
 
-Pin git tag **`v0.1.0`** (root `VERSION` and [releases/v0.1.0.md](releases/v0.1.0.md)).
+Release work should pin git tag **`v0.1.0`**, which matches root `VERSION` and the checklist in [releases/v0.1.0.md](releases/v0.1.0.md).
 
 ```bash
 cd python && pip install -e ".[dev]"
@@ -44,13 +44,13 @@ pcs conformance run --suite all
 pcs benchmark validate-ingest --release-grade
 ```
 
-One-command gate:
+Maintainers can run the full gate through one command on each platform.
 
 | Platform | Command |
 |----------|---------|
 | Linux / macOS / Git Bash | `bash scripts/run-release-verify.sh` or `just release-verify` |
 | Windows | `powershell -File scripts/run-release-verify.ps1` |
-| Full CI (build + lint) | `just ci` |
+| Full build and lint | `just ci` |
 
 ## Policy reference
 
@@ -70,7 +70,7 @@ One-command gate:
 |------|----------|
 | `schemas/` | Normative JSON Schema (Draft 2020-12) |
 | `examples/` | Valid and invalid fixtures |
-| `examples/labtrust/` | Schema conformance only (not release evidence) |
+| `examples/labtrust/` | Schema conformance fixtures separate from release evidence |
 | `examples/labtrust-release/` | Canonical LabTrust release chain |
 | `examples/tool-use-release/` | Tool-use safety release fixtures |
 | `examples/computation-release/` | Computation reproducibility fixtures |

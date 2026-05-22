@@ -1,8 +1,8 @@
 # Computation reproducibility release fixtures
 
-Release fixtures for workflow `scientific_computation.reproducibility_v0`.
+Release fixtures for workflow `scientific_computation.reproducibility_v0` document computation witnesses and release-chain validation for the reproducibility profile.
 
-Profile: `examples/workflow_profiles/scientific_computation_reproducibility.valid.json`. Docs: [docs/workflow-profiles.md](../../docs/workflow-profiles.md).
+The workflow profile appears in `examples/workflow_profiles/scientific_computation_reproducibility.valid.json`, and the guide is [docs/workflow-profiles.md](../../docs/workflow-profiles.md).
 
 ## Artifacts
 
@@ -26,11 +26,11 @@ pcs validate-release-chain examples/computation-release/
 pcs conformance run --suite computation
 ```
 
-Regenerate:
+Regenerate through the Python materialize script.
 
 ```bash
 cd python
 python scripts/materialize_computation_fixtures.py
 ```
 
-Invalid cases: `examples/computation-release-invalid/` (one failure class per directory).
+Invalid cases live under `examples/computation-release-invalid/` with one failure class per directory.

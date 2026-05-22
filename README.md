@@ -1,6 +1,6 @@
 # pcs-core
 
-**Proof-Carrying Science (PCS)** — schemas, validation, and tooling so research and agent workflows can ship **evidence you can verify**, not just logs.
+**Proof-Carrying Science (PCS)** brings together schemas, validation, and tooling so research and agent workflows can publish **evidence that independent reviewers can verify**, including structured artifacts that go far beyond unstructured logs alone.
 
 | | |
 |---|---|
@@ -13,22 +13,17 @@
 
 ## Why this exists
 
-Scientific and agent pipelines produce many JSON artifacts: run receipts, certificates, claim bundles, verification results, and release manifests. Without a shared contract, every team reinvents shapes, hashes, and validation — and integrations break silently.
+Scientific and agent pipelines produce many JSON artifacts, including run receipts, certificates, claim bundles, verification results, and release manifests, and a shared contract keeps shapes, hashes, and validation aligned so integrations stay predictable across repositories.
 
-**pcs-core** is the reference implementation of PCS v0.1:
+**pcs-core** is the reference implementation of PCS v0.1 and offers a single schema set that every participating repository can import, a single validator where `pcs validate` applies JSON Schema together with semantic rules, a single hash rule that yields canonical `sha256:` digests across Python, Rust, and TypeScript, and golden examples that include both valid fixtures and intentionally invalid cases for continuous integration.
 
-- **One schema set** — JSON Schema definitions every participating repo can import.
-- **One validator** — `pcs validate` checks structure and semantic rules (not only JSON Schema).
-- **One hash rule** — canonical `sha256:` digests that match across Python, Rust, and TypeScript.
-- **Golden examples** — valid and intentionally invalid fixtures you can test against in CI.
-
-Participating projects include [LabTrust-Gym](https://github.com/fraware/LabTrust-Gym), [CertifyEdge](https://github.com/fraware/CertifyEdge), [Provability Fabric](https://github.com/SentinelOps-CI/provability-fabric), and [Scientific Memory](https://github.com/fraware/scientific-memory). They consume artifacts from here; they do not fork schema definitions.
+Participating projects include [LabTrust-Gym](https://github.com/fraware/LabTrust-Gym), [CertifyEdge](https://github.com/fraware/CertifyEdge), [Provability Fabric](https://github.com/SentinelOps-CI/provability-fabric), and [Scientific Memory](https://github.com/fraware/scientific-memory), and each of them imports artifact definitions from this repository so the ecosystem shares one authoritative schema source.
 
 ---
 
 ## How a release chain fits together
 
-PCS ties each stage to hashes and provenance so you can answer: *what was run, what attested it, and what was verified before publish?*
+PCS ties each stage to hashes and provenance so reviewers can trace what was run, what attested the run, and what was verified before publication.
 
 ```mermaid
 flowchart LR
@@ -40,13 +35,13 @@ flowchart LR
   signed --> memory[Import / render]
 ```
 
-Canonical end-to-end fixtures for the LabTrust QC workflow live in [`examples/labtrust-release/`](examples/labtrust-release/). Other workflows (tool-use safety, computation reproducibility) have their own fixture trees under `examples/`.
+Canonical end-to-end fixtures for the LabTrust QC workflow live in [`examples/labtrust-release/`](examples/labtrust-release/), while tool-use safety and computation reproducibility maintain separate fixture trees under `examples/`.
 
 ---
 
 ## Try it in five minutes
 
-**Requirements:** Python 3.11+, Git.
+The quick start assumes Python 3.11+ and Git.
 
 ```bash
 git clone https://github.com/SentinelOps-CI/pcs-core.git
@@ -67,20 +62,20 @@ pcs schema check
 pcs examples check
 ```
 
-Validate a full release directory (30 cross-artifact checks):
+A full release directory exercises thirty cross-artifact checks when you run the following command.
 
 ```bash
 pcs validate-release-chain ../examples/labtrust-release/
 ```
 
-Run the full local release gate (recommended before opening a PR):
+The local release gate runs every check that maintainers expect before a pull request merges.
 
 | Platform | Command |
 |----------|---------|
 | Linux / macOS / Git Bash | `bash scripts/run-release-verify.sh` |
 | Windows | `powershell -File scripts/run-release-verify.ps1` |
 
-Details: [docs/README.md](docs/README.md).
+Further orientation lives in [docs/README.md](docs/README.md).
 
 ---
 
@@ -101,16 +96,16 @@ Details: [docs/README.md](docs/README.md).
 
 | Command | What it does |
 |---------|----------------|
-| `pcs validate <file>` | Schema + semantic validation |
+| `pcs validate <file>` | Schema and semantic validation |
 | `pcs hash <file>` | Canonical `sha256:` digest |
 | `pcs validate-release-chain <dir>` | Consistency checks across a release tree |
-| `pcs schema check` | Validate all JSON schemas in `schemas/` |
-| `pcs examples check` | All `*.valid.json` / negative fixtures |
+| `pcs schema check` | Validates all JSON schemas in `schemas/` |
+| `pcs examples check` | Exercises all valid fixtures and negative cases |
 | `pcs conformance run --suite <name>` | Protocol test suite (`all`, `multidomain`, `benchmark-ingest`, …) |
-| `pcs registry audit` | List semantic checks in the artifact registry |
-| `pcs shared-hash-vectors verify` | Python / Rust / TypeScript hash parity |
+| `pcs registry audit` | Lists semantic checks in the artifact registry |
+| `pcs shared-hash-vectors verify` | Confirms Python, Rust, and TypeScript hash parity |
 
-List suites: `pcs conformance run --suite all`. Suite notes: [conformance/README.md](conformance/README.md).
+Run `pcs conformance run --suite all` to execute every suite, and read [conformance/README.md](conformance/README.md) for suite-by-suite notes.
 
 ---
 
@@ -119,8 +114,8 @@ List suites: `pcs conformance run --suite all`. Suite notes: [conformance/README
 ```
 pcs-core/
 ├── schemas/           # Normative JSON Schema (Draft 2020-12)
-├── examples/          # Valid + invalid fixtures; release chains
-├── benchmarks/        # Benchmark case trees (valid / invalid cases)
+├── examples/          # Valid and invalid fixtures; release chains
+├── benchmarks/        # Benchmark case trees (valid and invalid cases)
 ├── docs/              # Protocol, integration, and release guides
 ├── python/            # `pcs` CLI and pcs_core library
 ├── rust/              # Rust crate
@@ -129,7 +124,7 @@ pcs-core/
 └── test_vectors/hash/   # Cross-language hash test vectors
 ```
 
-Core artifact types (runs, certificates, claim bundles, release manifests, workflow profiles, benchmarks) are listed in [docs/protocol.md](docs/protocol.md) and [docs/release-protocol.md](docs/release-protocol.md).
+Core artifact types, including runs, certificates, claim bundles, release manifests, workflow profiles, and benchmarks, appear in [docs/protocol.md](docs/protocol.md) and [docs/release-protocol.md](docs/release-protocol.md).
 
 ---
 
@@ -141,48 +136,42 @@ Core artifact types (runs, certificates, claim bundles, release manifests, workf
 | Agent tool-use safety | [`examples/tool-use-release/`](examples/tool-use-release/) |
 | Scientific computation reproducibility | [`examples/computation-release/`](examples/computation-release/) |
 
-Benchmark producers publish standardized ingest bundles under [`examples/benchmark_ingest/`](examples/benchmark_ingest/). See [docs/benchmark-ingest-contract.md](docs/benchmark-ingest-contract.md).
+Benchmark producers publish standardized ingest bundles under [`examples/benchmark_ingest/`](examples/benchmark_ingest/), and the contract appears in [docs/benchmark-ingest-contract.md](docs/benchmark-ingest-contract.md).
 
 ---
 
 ## Contributing
 
-We welcome issues, docs improvements, fixtures, and code. You do not need to touch every language binding — focused PRs are easier to review.
+We welcome issues, documentation improvements, fixtures, and code, and focused pull requests that touch one language binding or one topic area receive the fastest reviews.
 
 **Good first steps**
 
-1. Read [docs/protocol.md](docs/protocol.md) and [docs/trust-model.md](docs/trust-model.md) for vocabulary.
-2. Clone the repo, install Python deps (`pip install -e python/.[dev]`), run `pcs examples check`.
-3. Pick an area: docs clarity, a new negative fixture, conformance coverage, or validator messages.
-4. Run `bash scripts/run-release-verify.sh` (or the PowerShell script on Windows) before you open a PR.
+1. Read [docs/protocol.md](docs/protocol.md) and [docs/trust-model.md](docs/trust-model.md) to learn shared vocabulary.
+2. Clone the repository, install Python dependencies with `pip install -e python/.[dev]`, and run `pcs examples check` to confirm your environment.
+3. Choose a contribution area such as documentation clarity, a new negative fixture, conformance coverage, or clearer validator messages.
+4. Run `bash scripts/run-release-verify.sh` on Linux or macOS, or the PowerShell script on Windows, before you open a pull request.
 
 **Ways to help**
 
 | Area | Ideas |
 |------|--------|
-| Documentation | Fix confusing sections, add diagrams, improve examples |
-| Examples | Add minimal valid/invalid JSON that tests one rule |
-| Python | Validation rules, CLI UX, tests in `python/tests/` |
-| Rust / TypeScript | Parity with Python hashing and detection logic |
-| Benchmarks | New cases under `benchmarks/` with clear expected outcomes |
+| Documentation | Clarify confusing sections, add diagrams, and strengthen examples |
+| Examples | Add minimal valid or invalid JSON that exercises one rule |
+| Python | Extend validation rules, improve CLI feedback, and expand `python/tests/` |
+| Rust / TypeScript | Maintain parity with Python hashing and artifact detection |
+| Benchmarks | Add cases under `benchmarks/` with explicit expected outcomes |
 
 **Pull requests**
 
-- Keep changes scoped; link related docs when you change behavior.
-- Do not hand-edit generated goldens under `examples/benchmark_ingest/` — use `pcs benchmark materialize-ingest` (see [examples/benchmark_ingest/README.md](examples/benchmark_ingest/README.md)).
-- Ensure `pcs schema check` and `pcs examples check` pass; run the release verify script when you touch schemas, fixtures, or validators.
+Keep each change scoped and link related documentation whenever behavior shifts. Regenerate goldens under `examples/benchmark_ingest/` with `pcs benchmark materialize-ingest` because hand edits break continuous integration checks described in [examples/benchmark_ingest/README.md](examples/benchmark_ingest/README.md). Ensure `pcs schema check` and `pcs examples check` pass, and run the release verify script when you modify schemas, fixtures, or validators.
 
-Questions or design discussion: open a [GitHub issue](https://github.com/SentinelOps-CI/pcs-core/issues). For release tagging and checklist steps, see [docs/releases/v0.1.0.md](docs/releases/v0.1.0.md).
+Open a [GitHub issue](https://github.com/SentinelOps-CI/pcs-core/issues) for questions or design discussion. Release tagging steps appear in [docs/releases/v0.1.0.md](docs/releases/v0.1.0.md).
 
 ---
 
 ## Using pcs-core in your project
 
-1. Pin this repository at tag **`v0.1.0`** (submodule, vendor copy, or package install from `python/`).
-2. Validate every artifact with `pcs validate` before publish or downstream import.
-3. Use `pcs hash` for digests — do not reimplement canonicalization ([docs/hash-canonicalization.md](docs/hash-canonicalization.md)).
-4. Mirror `schemas/` and fail CI when they drift ([docs/downstream-schema-sync.md](docs/downstream-schema-sync.md)).
-5. Run relevant conformance suites in your pipeline: `pcs conformance run --suite <name>`.
+Pin this repository at tag **`v0.1.0`** through a submodule, a vendor copy, or a package install from `python/`. Validate every artifact with `pcs validate` before publication or import. Compute digests with `pcs hash` using the canonical algorithm documented in [docs/hash-canonicalization.md](docs/hash-canonicalization.md). Mirror `schemas/` and fail continuous integration when the mirror drifts from the pinned revision, following [docs/downstream-schema-sync.md](docs/downstream-schema-sync.md). Run the conformance suites that match your workflow, for example `pcs conformance run --suite <name>`.
 
 ---
 

@@ -1,6 +1,6 @@
 # PCS artifact registry (v0.1)
 
-The artifact registry is the canonical map from **artifact type** to schema file, **schema ownership**, **runtime producers**, allowed statuses, required release fields, and structured semantic checks. Downstream repos must not invent local PCS schema variants; they consume this registry from pcs-core.
+The artifact registry is the canonical map from artifact type to schema file, schema ownership, runtime producers, allowed statuses, required release fields, and structured semantic checks, and downstream repositories consume this registry from pcs-core as the single authoritative definition set.
 
 ## Schema owner vs runtime producer
 
@@ -13,7 +13,7 @@ The artifact registry is the canonical map from **artifact type** to schema file
 
 `HandoffManifest.v0` is **schema-owned by pcs-core** but may be **produced at runtime** by LabTrust-Gym, CertifyEdge, Provability Fabric, or Scientific Memory.
 
-Semantic check severities and responsibilities: [semantic-check-policy.md](semantic-check-policy.md).
+Semantic check severities and responsibilities appear in [semantic-check-policy.md](semantic-check-policy.md).
 
 ## Source of truth
 
@@ -34,11 +34,11 @@ pcs registry check-artifact examples/labtrust-release/trace_certificate.json
 
 ## Registered artifact types
 
-Core chain: `RuntimeReceipt.v0`, `TraceCertificate.v0`, `ScienceClaimBundle.v0`, `VerificationResult.v0`, `SignedScienceClaimBundle.v0`, supporting `AssumptionSet.v0`, `ClaimArtifact.v0`, `EvidenceBundle.v0`, `SourceSpan.v0`.
+The core chain registers `RuntimeReceipt.v0`, `TraceCertificate.v0`, `ScienceClaimBundle.v0`, `VerificationResult.v0`, `SignedScienceClaimBundle.v0`, together with supporting `AssumptionSet.v0`, `ClaimArtifact.v0`, `EvidenceBundle.v0`, and `SourceSpan.v0`.
 
-Protocol layer: `ReleaseManifest.v0`, `HandoffManifest.v0`, `ReleaseChainValidationResult.v0`, `ArtifactRegistry.v0`, `WorkflowProfile.v0`.
+The protocol layer registers `ReleaseManifest.v0`, `HandoffManifest.v0`, `ReleaseChainValidationResult.v0`, `ArtifactRegistry.v0`, and `WorkflowProfile.v0`.
 
-Multi-domain (v0.1 extension): `ToolUseTrace.v0`, `ToolUseCertificate.v0` (agent tool-use safety); computation receipts and `ComputationWitness.v0` (scientific computation reproducibility). See [workflow-profiles.md](workflow-profiles.md).
+The v0.1 multi-domain extension adds `ToolUseTrace.v0` and `ToolUseCertificate.v0` for agent tool-use safety, plus computation receipts and `ComputationWitness.v0` for scientific computation reproducibility as described in [workflow-profiles.md](workflow-profiles.md).
 
 | Artifact | Schema owner | Runtime producer | Release-blocking semantic checks (responsible) |
 |----------|--------------|------------------|--------------------------------------------------|

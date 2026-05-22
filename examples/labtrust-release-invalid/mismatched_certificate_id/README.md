@@ -1,14 +1,9 @@
-# Invalid fixture: mismatched_certificate_id
+# Invalid fixture mismatched_certificate_id
 
-Copy of the canonical [labtrust-release](../labtrust-release/) chain with one intentional violation for negative testing.
+This directory copies the canonical [labtrust-release](../labtrust-release/) chain with one intentional violation for negative testing, and validation must fail with `certificate_id_mismatch`.
 
-| Expected failure code | certificate_id_mismatch |
-|-----------------------|----------|
-
-`ash
+```bash
 pcs validate-release-chain examples/labtrust-release-invalid/mismatched_certificate_id/
-`
+```
 
-Must fail with certificate_id_mismatch.
-
-Index: [../README.md](../README.md). Validator reference: [docs/labtrust-release-fixtures.md](../../docs/labtrust-release-fixtures.md).
+The index is [../README.md](../README.md), and validator reference is [docs/labtrust-release-fixtures.md](../../docs/labtrust-release-fixtures.md).

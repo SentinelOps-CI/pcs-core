@@ -1,17 +1,12 @@
 # Hash canonicalization
 
-PCS artifacts bind integrity through `signature_or_digest` and cross-artifact hash links (`trace_hash`, `events_hash`, and related fields). All repositories must use the same canonical JSON algorithm.
+PCS artifacts bind integrity through `signature_or_digest` and cross-artifact hash links such as `trace_hash` and `events_hash`, and every repository must use the same canonical JSON algorithm so digests match across bindings.
 
 ## Algorithm
 
-1. Parse the artifact as a JSON object.
-2. Remove top-level `signature_or_digest` (the digest covers unsigned content).
-3. Recursively sort object keys lexicographically (UTF-8). Array order is preserved.
-4. Serialize as compact JSON: no insignificant whitespace, UTF-8, non-ASCII unescaped.
-5. SHA-256 the UTF-8 bytes.
-6. Encode as `sha256:<lowercase hex>` (64 hex digits).
+The canonical algorithm parses the artifact as a JSON object, removes the top-level `signature_or_digest` field because the digest covers unsigned content, recursively sorts object keys lexicographically in UTF-8 while preserving array order, serializes compact JSON with insignificant whitespace removed, using UTF-8 with unescaped non-ASCII characters, applies SHA-256 to the UTF-8 bytes, and encodes the result as `sha256:` followed by 64 lowercase hexadecimal digits.
 
-The same input must yield the same digest in every language binding and on every run.
+The same input yields the same digest in every language binding on every run.
 
 ## Verify
 
@@ -26,11 +21,11 @@ pcs shared-hash-vectors verify                    # test_vectors/hash/
 | Location | Scope |
 |----------|--------|
 | `python/tests/hash_vectors/` | Per-artifact canonical JSON and digests |
-| `test_vectors/hash/` | Cross-language parity (Python, Rust, TypeScript) |
+| `test_vectors/hash/` | Cross-language parity across Python, Rust, and TypeScript |
 
 Each per-artifact directory contains `input.json`, `canonical.txt`, and `digest.txt`.
 
-Regenerate after an intentional algorithm change:
+Regenerate vectors after an intentional algorithm change.
 
 ```bash
 cd python && python -m pcs_core.hash_vectors --write
@@ -39,8 +34,6 @@ pcs shared-hash-vectors write
 
 ## Downstream usage
 
-- Compute digests with `pcs hash` or official bindings.
-- Compare release manifests using the same rules.
-- Do not fork canonicalization in application code.
+Compute digests with `pcs hash` or the official language bindings, compare release manifests using the same rules, and keep canonicalization logic in the shared bindings instead of forking it inside application code.
 
 See [downstream-schema-sync.md](downstream-schema-sync.md).

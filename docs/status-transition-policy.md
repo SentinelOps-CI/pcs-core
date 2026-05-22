@@ -14,7 +14,7 @@ Status transitions are enforced by `pcs check-status-transition` and implemented
 
 ## Terminal statuses
 
-`Rejected`, `Stale`, and `Deprecated` do not transition forward without **regeneration**, **refresh**, or **migration** respectively.
+`Rejected`, `Stale`, and `Deprecated` remain terminal until maintainers apply regeneration, refresh, or migration respectively.
 
 ## Forbidden transitions
 

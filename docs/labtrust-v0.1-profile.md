@@ -4,31 +4,31 @@
 
 | Step | Repo | Output |
 |------|------|--------|
-| 1 | **LabTrust-Gym** | Pending `ScienceClaimBundle.v0` (`certificates: []`) |
+| 1 | **LabTrust-Gym** | Pending `ScienceClaimBundle.v0` with `certificates: []` |
 | 2 | **CertifyEdge** | `TraceCertificate.v0` |
-| 3 | **LabTrust-Gym** | Certified `ScienceClaimBundle.v0` (certificate attached) |
-| 4 | **Provability Fabric** | Verifies certified bundle; emits `VerificationResult.v0` |
+| 3 | **LabTrust-Gym** | Certified `ScienceClaimBundle.v0` with certificate attached |
+| 4 | **Provability Fabric** | Verifies certified bundle and emits `VerificationResult.v0` |
 | 5 | **Provability Fabric** | Signs and emits `SignedScienceClaimBundle.v0` |
 | 6 | **Scientific Memory** | Imports `SignedScienceClaimBundle.v0` for durable display |
 
-Downstream repos must depend on **pcs-core** for schemas, validation, and hash. Vendored schema mirrors are allowed only as read-only copies; see [downstream-schema-sync.md](downstream-schema-sync.md). All artifacts use `schema_version: "v0"` including `SignedScienceClaimBundle.v0`.
+Downstream repositories depend on **pcs-core** for schemas, validation, and hash, vendored schema mirrors remain read-only copies as described in [downstream-schema-sync.md](downstream-schema-sync.md), and all artifacts use `schema_version` value `"v0"` including `SignedScienceClaimBundle.v0`.
 
 ## Fixture types
 
 | Directory | Purpose |
 |-----------|---------|
-| `examples/labtrust/` | **Schema conformance** fixtures — stable example values for `pcs validate`, CI, and bindings tests |
-| `examples/labtrust-release/` | **Generated release** fixtures — end-to-end cross-repo pipeline outputs and `RELEASE_FIXTURE_MANIFEST.json` |
+| `examples/labtrust/` | Schema conformance fixtures with stable example values for `pcs validate`, continuous integration, and binding tests |
+| `examples/labtrust-release/` | Generated release fixtures with end-to-end cross-repo pipeline outputs and `RELEASE_FIXTURE_MANIFEST.json` |
 
-Only `examples/labtrust-release/` may be used as **PCS v0.1 release evidence**. Regenerate after one cross-repo clean-checkout chain (`just generate-labtrust-release-fixtures` with `PCS_CHAIN_WORK` set); imports build `release-run/` and promote atomically. Verify with `pcs validate-release-chain examples/labtrust-release/` or `just validate-labtrust-release-fixtures` (manifest digests, provenance commits, single-run certificate ID alignment, bundle/verification equality, trace-hash alignment, status fields).
+Only `examples/labtrust-release/` serves as PCS v0.1 release evidence, and maintainers regenerate the tree after one cross-repo clean-checkout chain through `just generate-labtrust-release-fixtures` with `PCS_CHAIN_WORK` set, then verify with `pcs validate-release-chain examples/labtrust-release/` or `just validate-labtrust-release-fixtures`.
 
 ## Release fixture authority
 
-`examples/labtrust/` is the canonical **conformance** fixture set. Downstream repos may copy these fixtures for schema tests, but any local copy must be **byte-for-byte identical** to pcs-core at the pinned commit. Schema mirrors follow the same rule; see [downstream-schema-sync.md](downstream-schema-sync.md).
+`examples/labtrust/` is the canonical conformance fixture set, and downstream repositories may copy these fixtures for schema tests when each file stays byte-for-byte identical to pcs-core at the pinned commit with the same rule for schema mirrors in [downstream-schema-sync.md](downstream-schema-sync.md).
 
-`examples/labtrust-release/` is the canonical **release** fixture set. The manifest records exact commits for pcs-core, LabTrust-Gym, CertifyEdge, Provability Fabric, and Scientific Memory plus the SHA-256 digest of every release artifact file.
+`examples/labtrust-release/` is the canonical release fixture set, and the manifest records exact commits for pcs-core, LabTrust-Gym, CertifyEdge, Provability Fabric, and Scientific Memory together with the SHA-256 digest of every release artifact file.
 
-**Downstream policy:** every repo in the release train copies this directory for local release fixture tests. Do not regenerate partial fixtures independently. Canonical pin values and failure codes: [labtrust-release-fixtures.md](labtrust-release-fixtures.md).
+Every repository in the release train copies this directory for local release fixture tests and refreshes it through the full materialize workflow instead of regenerating partial fixtures independently, and canonical pin values with failure codes appear in [labtrust-release-fixtures.md](labtrust-release-fixtures.md).
 
 | Valid fixture | Producer stage |
 |---------------|----------------|
@@ -36,11 +36,11 @@ Only `examples/labtrust-release/` may be used as **PCS v0.1 release evidence**. 
 | `trace_certificate.valid.json` | CertifyEdge |
 | `science_claim_bundle.certified.valid.json` | LabTrust-Gym |
 | `verification_result.valid.json` | Provability Fabric |
-| `signed_science_claim_bundle.valid.json` | Provability Fabric → Scientific Memory |
+| `signed_science_claim_bundle.valid.json` | Provability Fabric through Scientific Memory |
 
 | Invalid fixture | Expected failure |
 |-----------------|-------------------|
-| `invalid_singular_runtime_receipt_bundle.json` | `runtime_receipt` instead of `runtime_receipts` |
+| `invalid_singular_runtime_receipt_bundle.json` | `runtime_receipt` field instead of `runtime_receipts` array |
 | `invalid_signed_schema_version_artifact_name.json` | `schema_version` encodes artifact class |
 | `invalid_failed_verification_result.json` | failed checks with import-ready status |
 | `invalid_missing_trace_certificate.json` | certified bundle without certificates |
@@ -57,7 +57,7 @@ Only `examples/labtrust-release/` may be used as **PCS v0.1 release evidence**. 
 
 ## PCS v0.1 clean-checkout chain (release gate)
 
-PCS v0.1 is **release-ready** only when the full cross-repo chain succeeds. Run from a **LabTrust-Gym** checkout with sibling repos (`pcs-core`, `CertifyEdge`, `provability-fabric`, `scientific-memory`):
+PCS v0.1 is release-ready when the full cross-repo chain succeeds from a LabTrust-Gym checkout with sibling repositories for pcs-core, CertifyEdge, provability-fabric, and scientific-memory.
 
 ```powershell
 $env:PCS_DETERMINISTIC = "1"
@@ -69,7 +69,7 @@ export PCS_DETERMINISTIC=1
 bash examples/pcs_qc_release/scripts/run_pcs_v01_clean_chain.sh
 ```
 
-Canonical manual steps and environment variables: [LabTrust-Gym `docs/pcs_v01_clean_chain.md`](https://github.com/fraware/LabTrust-Gym/blob/main/docs/pcs_v01_clean_chain.md).
+Canonical manual steps and environment variables appear in [LabTrust-Gym `docs/pcs_v01_clean_chain.md`](https://github.com/fraware/LabTrust-Gym/blob/main/docs/pcs_v01_clean_chain.md).
 
 ### Manual chain (same commands as the release gate)
 
@@ -117,13 +117,8 @@ just pcs-render-claim claim-pcs-qc-release-v0.1
 
 ## pcs-core validation highlights
 
-- Unknown `status` values are rejected.
-- `ScienceClaimBundle` requires `assumption_set` and non-empty `runtime_receipts`.
-- Certified bundles (`CertificateChecked`, etc.) require at least one `TraceCertificate`.
-- `TraceCertificate.status` must be in the certificate enum.
-- Receipt and certificate `trace_hash` values must align.
-- Zero `source_commit` is rejected unless `local_dev: true` on that artifact.
+Unknown `status` values fail validation, `ScienceClaimBundle` requires `assumption_set` and a non-empty `runtime_receipts` array, certified bundles with `CertificateChecked` require at least one `TraceCertificate`, `TraceCertificate.status` must stay within the certificate enum, receipt and certificate `trace_hash` values must align, and zero `source_commit` values fail unless `local_dev` is true on that artifact.
 
 ## Simulation disclaimer
 
-All claims in this profile are about **simulation artifacts**, not clinical production systems.
+All claims in this profile describe simulation artifacts aimed at integration testing and protocol education instead of clinical production systems or production medical certification.

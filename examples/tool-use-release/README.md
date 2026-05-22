@@ -1,8 +1,8 @@
 # Tool-use safety release fixtures
 
-Conformance and release fixtures for workflow `agent_tool_use.safety_v0`. Exercises the shared PCS trust loop with `ToolUseTrace.v0` and `ToolUseCertificate.v0`.
+Conformance and release fixtures for workflow `agent_tool_use.safety_v0` exercise the shared PCS trust loop with `ToolUseTrace.v0` and `ToolUseCertificate.v0`.
 
-Profile: `examples/workflow_profiles/agent_tool_use_safety.valid.json`. Docs: [docs/workflow-profiles.md](../../docs/workflow-profiles.md).
+The workflow profile appears in `examples/workflow_profiles/agent_tool_use_safety.valid.json`, and the guide is [docs/workflow-profiles.md](../../docs/workflow-profiles.md).
 
 ## Validate
 
@@ -29,6 +29,6 @@ pcs conformance run --suite multidomain
 | `release_chain_validation_result.v0.json` | `ReleaseChainValidationResult.v0` |
 | `RELEASE_FIXTURE_MANIFEST.json` | Digest manifest for `pcs validate-release-chain` |
 
-Invalid cases: `examples/tool-use-release-invalid/`.
+Invalid cases live under `examples/tool-use-release-invalid/`.
 
-Regenerate: `python scripts/materialize_tool_use_fixtures.py` or `just materialize-protocol`.
+Regenerate through `python scripts/materialize_tool_use_fixtures.py` or `just materialize-protocol`.

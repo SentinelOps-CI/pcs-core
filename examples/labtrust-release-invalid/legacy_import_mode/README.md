@@ -1,14 +1,9 @@
-# Invalid fixture: legacy_import_mode
+# Invalid fixture legacy_import_mode
 
-Copy of the canonical [labtrust-release](../labtrust-release/) chain with one intentional violation for negative testing.
+This directory copies the canonical [labtrust-release](../labtrust-release/) chain with one intentional violation for negative testing, and validation must fail with `legacy_import_detected`.
 
-| Expected failure code | legacy_import_detected |
-|-----------------------|----------|
-
-`ash
+```bash
 pcs validate-release-chain examples/labtrust-release-invalid/legacy_import_mode/
-`
+```
 
-Must fail with legacy_import_detected.
-
-Index: [../README.md](../README.md). Validator reference: [docs/labtrust-release-fixtures.md](../../docs/labtrust-release-fixtures.md).
+The index is [../README.md](../README.md), and validator reference is [docs/labtrust-release-fixtures.md](../../docs/labtrust-release-fixtures.md).

@@ -1,6 +1,6 @@
 # Benchmark ingest conformance suite
 
-Validates the cross-repo **`PcsBenchIngest.v0`** contract: embedded canonical objects, optional **`BenchmarkArtifactRef.v0`** provenance, producer golden bundles, and dialect normalization drift.
+The benchmark-ingest suite validates the cross-repo `PcsBenchIngest.v0` contract across embedded canonical objects, optional `BenchmarkArtifactRef.v0` provenance, producer golden bundles, and dialect normalization drift.
 
 ## Run
 
@@ -22,17 +22,13 @@ pcs benchmark materialize-ingest
 
 ## Producer requirements
 
-Repos that export file-oriented benchmark output (Scientific Memory, CertifyEdge, Provability Fabric, LabTrust-Gym) must:
+Repositories that export file-oriented benchmark output, including Scientific Memory, CertifyEdge, Provability Fabric, and LabTrust-Gym, embed full v0 objects in ingest arrays, add `artifact_refs` with `path`, `sha256` matching embedded `signature_or_digest`, and provenance fields, and regenerate golden JSON through pcs-core normalizers from captured dialect fixtures.
 
-1. Embed full v0 objects in ingest arrays (not path-only payloads).
-2. Add `artifact_refs` with `path`, `sha256` (matching embedded `signature_or_digest`), and provenance.
-3. Regenerate golden JSON via pcs-core normalizers from captured dialect fixtures.
-
-See [docs/benchmarks.md](../../docs/benchmarks.md), [docs/benchmark-ingest-contract.md](../../docs/benchmark-ingest-contract.md), and [docs/producer-benchmark-ingest.md](../../docs/producer-benchmark-ingest.md).
+Further detail appears in [docs/benchmarks.md](../../docs/benchmarks.md), [docs/benchmark-ingest-contract.md](../../docs/benchmark-ingest-contract.md), and [docs/producer-benchmark-ingest.md](../../docs/producer-benchmark-ingest.md).
 
 ## Invalid fixtures
 
-These must fail `pcs validate` (semantic ref contract, zero commit, or empty runs with orphan refs):
+The following fixtures must fail `pcs validate` because they exercise semantic ref contract violations, zero commit values, or empty runs with orphan refs.
 
 - `invalid_pcs_bench_ingest_missing_refs.json`
 - `invalid_pcs_bench_ingest_bad_ref_digest.json`
@@ -40,4 +36,4 @@ These must fail `pcs validate` (semantic ref contract, zero commit, or empty run
 - `invalid_pcs_bench_ingest_empty_runs.json`
 - `invalid_pcs_bench_ingest_path_only.json`
 
-Golden bundles must pass with `--release-grade` (non-placeholder commit, producer-specific non-empty arrays, bidirectional `artifact_refs`). All four producer goldens are copied from sibling `make pcs-bench-producer` exports when available.
+Golden bundles must pass with `--release-grade`, including non-placeholder commit values, producer-specific non-empty arrays, and bidirectional `artifact_refs`, and all four producer goldens copy from sibling `make pcs-bench-producer` exports when those exports are available.

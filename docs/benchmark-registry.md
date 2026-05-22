@@ -1,6 +1,6 @@
 # Benchmark registry (v0)
 
-The PCS benchmark layer is a **protocol extension**, not a script collection. `BenchmarkRegistry.v0` lists suites; `BenchmarkTask.v0` defines evaluation goals; `BenchmarkCase.v0` defines inputs and expected outcomes; `BenchmarkRun.v0` records execution; `BenchmarkReport.v0` aggregates portable results.
+The PCS benchmark layer is a protocol extension with versioned artifacts. `BenchmarkRegistry.v0` lists suites; `BenchmarkTask.v0` defines evaluation goals; `BenchmarkCase.v0` defines inputs and expected outcomes; `BenchmarkRun.v0` records execution; `BenchmarkReport.v0` aggregates portable results.
 
 ## Canonical registry
 
@@ -65,7 +65,7 @@ Conformance validation can feed benchmark reports without duplicating check logi
 
 ## Metric registry
 
-Canonical metric definitions: `examples/benchmark_metric_registry.valid.json` (`BenchmarkMetricRegistry.v0`). Each entry specifies numerator, denominator, applicability, failure interpretation, and recommended thresholds.
+Canonical metric definitions live in `examples/benchmark_metric_registry.valid.json` as `BenchmarkMetricRegistry.v0`, and each entry specifies numerator, denominator, applicability, failure interpretation, and recommended thresholds.
 
 Additional report types for cross-repo alignment:
 
