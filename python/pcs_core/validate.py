@@ -11,6 +11,27 @@ from jsonschema import Draft202012Validator
 from referencing import Registry, Resource
 from referencing.jsonschema import DRAFT202012
 
+from pcs_core.benchmark_validate import (
+    validate_benchmark_case_semantics,
+    validate_benchmark_metric_registry_semantics,
+    validate_benchmark_registry_semantics,
+    validate_benchmark_report_semantics,
+    validate_benchmark_run_semantics,
+    validate_benchmark_suite_manifest_semantics,
+    validate_benchmark_task_semantics,
+    validate_pcs_bench_ingest_semantics,
+)
+from pcs_core.computation_validate import (
+    validate_computation_run_receipt_semantics,
+    validate_computation_witness_semantics,
+    validate_dataset_receipt_semantics,
+    validate_environment_receipt_semantics,
+    validate_result_artifact_semantics,
+)
+from pcs_core.lean_validate import (
+    validate_lean_check_result_semantics,
+    validate_proof_obligation_semantics,
+)
 from pcs_core.paths import examples_dir as default_examples_dir
 from pcs_core.paths import schemas_dir
 from pcs_core.protocol_validate import (
@@ -21,33 +42,12 @@ from pcs_core.protocol_validate import (
     validate_release_manifest_fixture_refs,
     validate_release_manifest_semantics,
 )
-from pcs_core.benchmark_validate import (
-    validate_benchmark_case_semantics,
-    validate_benchmark_report_semantics,
-    validate_benchmark_run_semantics,
-    validate_pcs_bench_ingest_semantics,
-    validate_benchmark_metric_registry_semantics,
-    validate_benchmark_registry_semantics,
-    validate_benchmark_suite_manifest_semantics,
-    validate_benchmark_task_semantics,
-)
-from pcs_core.lean_validate import (
-    validate_lean_check_result_semantics,
-    validate_proof_obligation_semantics,
-)
-from pcs_core.computation_validate import (
-    validate_computation_run_receipt_semantics,
-    validate_computation_witness_semantics,
-    validate_dataset_receipt_semantics,
-    validate_environment_receipt_semantics,
-    validate_result_artifact_semantics,
-)
+from pcs_core.status import ARTIFACT_STATUSES, TRACE_CERTIFICATE_STATUSES
 from pcs_core.tool_use_validate import (
     validate_tool_use_certificate_semantics,
     validate_tool_use_trace_semantics,
     validate_workflow_profile_semantics,
 )
-from pcs_core.status import ARTIFACT_STATUSES, TRACE_CERTIFICATE_STATUSES
 
 ARTIFACT_SCHEMAS: dict[str, str] = {
     "AssumptionSet.v0": "AssumptionSet.v0.schema.json",
@@ -255,9 +255,18 @@ def detect_artifact_type(data: dict[str, Any]) -> str | None:
         and isinstance(data.get("failures"), list)
     ):
         return "ConformanceReport.v0"
-    if "policy_id" in data and "severity_definitions" in data and isinstance(data.get("checks"), list):
+    if (
+        "policy_id" in data
+        and "severity_definitions" in data
+        and isinstance(data.get("checks"), list)
+    ):
         return "SemanticCheckExecution.v0"
-    if "from_version" in data and "to_version" in data and "changes" in data and "artifact_type" in data:
+    if (
+        "from_version" in data
+        and "to_version" in data
+        and "changes" in data
+        and "artifact_type" in data
+    ):
         return "MigrationReport.v0"
     if (
         data.get("schema_version") == "v0"

@@ -5,10 +5,10 @@ from __future__ import annotations
 from typing import Any
 
 from pcs_core.hash import PLACEHOLDER_DIGEST, canonical_hash
-from pcs_core.registry_data import registry_entries, registry_semantic_check_ref
+from pcs_core.registry_data import registry_semantic_check_ref
 from pcs_core.registry_semantics import (
-    enrich_semantic_check,
     enforcement_layer,
+    enrich_semantic_check,
     iter_registry_checks,
 )
 
@@ -86,4 +86,3 @@ def build_semantic_check_execution() -> dict[str, Any]:
     }
     body["signature_or_digest"] = canonical_hash(body)
     return body
-

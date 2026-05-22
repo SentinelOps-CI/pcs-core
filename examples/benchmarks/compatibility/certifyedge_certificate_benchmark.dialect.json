@@ -1,9 +1,4 @@
 {
-  "_pcs_producer_capture": {
-    "producer_repo": "CertifyEdge",
-    "producer_command": "certifyedge benchmark certificates",
-    "captured_into": "examples/benchmark_ingest/certifyedge.pcs_bench_ingest.valid.json"
-  },
   "coverage_id": "certifyedge-cert-bench-v0",
   "certificate_id": "cert-labtrust-qc-v0",
   "checks_passed": 4,

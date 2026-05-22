@@ -180,13 +180,18 @@ def build_metric_summaries(
                         applicability="not_applicable",
                         numerator=0.0,
                         denominator=0.0,
-                        reason=f"metric only measured for cross-domain-release-chain-v0 (suite={suite_id})",
+                        reason=(
+                            "metric only measured for cross-domain-release-chain-v0 "
+                            f"(suite={suite_id})"
+                        ),
                         source_repo=source_repo,
                         source_commit=source_commit,
                     ),
                 )
                 continue
-            score = float(summary.get("cross_domain_portability_score", summary.get("registry_coverage", 0.0)))
+            score = float(
+                summary.get("cross_domain_portability_score", summary.get("registry_coverage", 0.0))
+            )
             summaries.append(
                 _metric_summary(
                     metric_id=metric_id,
@@ -255,10 +260,14 @@ def build_metric_summaries(
 def build_metric_summaries_from_report(report: dict[str, Any]) -> list[dict[str, Any]]:
     """Derive metric summaries from an existing BenchmarkReport-shaped document."""
     suite_id = str(report.get("benchmark_suite_id", ""))
-    metric_ids = coerce_metric_ids(report.get("metrics", []) if isinstance(report.get("metrics"), list) else [])
+    metric_ids = coerce_metric_ids(
+        report.get("metrics", []) if isinstance(report.get("metrics"), list) else []
+    )
     summary = report.get("summary") if isinstance(report.get("summary"), dict) else {}
     coverage = report.get("coverage") if isinstance(report.get("coverage"), dict) else {}
-    invalid = int(summary.get("expected_failures_detected", 0)) + int(summary.get("unexpected_failures", 0))
+    invalid = int(summary.get("expected_failures_detected", 0)) + int(
+        summary.get("unexpected_failures", 0)
+    )
     if invalid == 0:
         total = int(summary.get("total_cases", 0))
         passed = int(summary.get("passed_cases", 0))
@@ -267,7 +276,8 @@ def build_metric_summaries_from_report(report: dict[str, Any]) -> list[dict[str,
         metric_ids=metric_ids or list(_STANDARD_METRIC_IDS),
         summary=summary,
         coverage=coverage,
-        invalid_case_count=invalid or max(0, int(summary.get("total_cases", 0)) - int(summary.get("passed_cases", 0))),
+        invalid_case_count=invalid
+        or max(0, int(summary.get("total_cases", 0)) - int(summary.get("passed_cases", 0))),
         suite_id=suite_id,
         source_repo=str(report.get("source_repo", PCS_CORE_REPO)),
         source_commit=str(report.get("source_commit", PCS_CORE_COMMIT_PLACEHOLDER)),

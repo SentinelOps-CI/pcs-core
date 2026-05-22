@@ -81,9 +81,7 @@ def test_ingest_rejects_orphan_ref() -> None:
     )
     with pytest.raises(ValidationError) as exc:
         validate_artifact(bad, "PcsBenchIngest.v0")
-    assert any(
-        "no embedded objects" in err or "does not match" in err for err in exc.value.errors
-    )
+    assert any("no embedded objects" in err or "does not match" in err for err in exc.value.errors)
 
 
 def test_ingest_rejects_duplicate_ref_paths() -> None:

@@ -3,8 +3,8 @@
   "run_id": "bench-run-formal-computation-lean-check",
   "task_id": "formal-trust-kernel-v0",
   "case_id": "formal-computation-lean-check",
-  "started_at": "2026-05-22T00:56:42Z",
-  "completed_at": "2026-05-22T00:56:42Z",
+  "started_at": "2026-05-22T11:54:25Z",
+  "completed_at": "2026-05-22T11:54:25Z",
   "commands": [
     {
       "command": "lean_check C:/Users/mateo/pcs-core/examples/computation-release",
@@ -27,5 +27,5 @@
   "duration_ms": 1,
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:3d574f9617dc62e8c51484ba36aed9f00a928d6a3d37ad539913a1adb7bf3249"
+  "signature_or_digest": "sha256:ed350ba76cbccdecb079b02250c98ac5ec5cdcae2fe5b7f96702cd56c08a054b"
 }

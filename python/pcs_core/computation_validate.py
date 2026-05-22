@@ -17,6 +17,7 @@ COMPUTATION_RUN_RECEIPT_FILE = "computation_run_receipt.json"
 RESULT_ARTIFACT_FILE = "result_artifact.json"
 COMPUTATION_WITNESS_FILE = "computation_witness.json"
 
+
 def _is_zero_commit(commit: str) -> bool:
     return commit == "0" * 40
 
@@ -172,8 +173,8 @@ def validate_computation_witness_alignment(
         exit_code = run_receipt.get("exit_code")
         if exit_code not in (0, None):
             errors.append(
-                f"ComputationRunReceipt.v0 exit_code {exit_code!r} forbids CertificateChecked witness "
-                "(nonzero_exit_code)",
+                f"ComputationRunReceipt.v0 exit_code {exit_code!r} forbids "
+                "CertificateChecked witness (nonzero_exit_code)",
             )
     return errors
 

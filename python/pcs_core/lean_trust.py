@@ -9,10 +9,10 @@ from pathlib import Path
 from typing import Any
 
 from pcs_core.hash import PLACEHOLDER_DIGEST, canonical_hash
+from pcs_core.lean_catalog import OBLIGATION_KIND_THEOREM
 from pcs_core.paths import repo_root
 from pcs_core.protocol_fixtures import PCS_CORE_REPO
 from pcs_core.release_chain_profiles import detect_workflow_profile_id
-from pcs_core.lean_catalog import OBLIGATION_KIND_THEOREM
 
 LEAN_MODULE = "PCS.Theorems"
 LEAN_VERSION = "leanprover/lean4:stable"
@@ -184,7 +184,9 @@ def _extract_labtrust_obligations(release_dir: Path) -> tuple[list[dict[str, Any
 def _extract_tool_use_obligations(release_dir: Path) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     from pcs_core.release_chain_profiles import resolve_tool_use_artifact
 
-    trace_path = resolve_tool_use_artifact(release_dir, ("tool_use_trace.valid.json", "tool_use_trace.json"))
+    trace_path = resolve_tool_use_artifact(
+        release_dir, ("tool_use_trace.valid.json", "tool_use_trace.json")
+    )
     cert_path = resolve_tool_use_artifact(
         release_dir,
         ("tool_use_certificate.valid.json", "tool_use_certificate.json"),
@@ -247,7 +249,10 @@ def _extract_tool_use_obligations(release_dir: Path) -> tuple[list[dict[str, Any
     source_artifacts = {
         trace_path.name: {"path": trace_path.name, "artifact_type": "ToolUseTrace.v0"},
         cert_path.name: {"path": cert_path.name, "artifact_type": "ToolUseCertificate.v0"},
-        "runtime_receipt.json": {"path": "runtime_receipt.json", "artifact_type": "RuntimeReceipt.v0"},
+        "runtime_receipt.json": {
+            "path": "runtime_receipt.json",
+            "artifact_type": "RuntimeReceipt.v0",
+        },
         "verification_result.json": {
             "path": "verification_result.json",
             "artifact_type": "VerificationResult.v0",
@@ -260,13 +265,17 @@ def _extract_tool_use_obligations(release_dir: Path) -> tuple[list[dict[str, Any
     return obligations, source_artifacts
 
 
-def _extract_computation_obligations(release_dir: Path) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+def _extract_computation_obligations(
+    release_dir: Path,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     witness = _load_json(release_dir / "computation_witness.json")
     result = _load_json(release_dir / "result_artifact.json")
     run_receipt = _load_json(release_dir / "computation_run_receipt.json")
     verification = _load_json(release_dir / "verification_result.json")
     signed = _load_json(release_dir / "signed_science_claim_bundle.json")
-    if not all(isinstance(doc, dict) for doc in (witness, result, run_receipt, verification, signed)):
+    if not all(
+        isinstance(doc, dict) for doc in (witness, result, run_receipt, verification, signed)
+    ):
         raise ValueError(f"{release_dir}: missing computation trust-envelope artifacts")
 
     certified_bundle_hash = _resolve_certified_bundle_hash(release_dir)
@@ -309,7 +318,10 @@ def _extract_computation_obligations(release_dir: Path) -> tuple[list[dict[str, 
             "path": "computation_witness.json",
             "artifact_type": "ComputationWitness.v0",
         },
-        "result_artifact.json": {"path": "result_artifact.json", "artifact_type": "ResultArtifact.v0"},
+        "result_artifact.json": {
+            "path": "result_artifact.json",
+            "artifact_type": "ResultArtifact.v0",
+        },
         "computation_run_receipt.json": {
             "path": "computation_run_receipt.json",
             "artifact_type": "ComputationRunReceipt.v0",
@@ -435,7 +447,8 @@ def run_lean_check(
         "checked_at": checked_at,
         "lean_version": LEAN_VERSION,
         "source_repo": PCS_CORE_REPO,
-        "source_commit": source_commit or str(obligations_doc.get("source_commit", PCS_CORE_COMMIT_PLACEHOLDER)),
+        "source_commit": source_commit
+        or str(obligations_doc.get("source_commit", PCS_CORE_COMMIT_PLACEHOLDER)),
         "failure_reason": "; ".join(failures),
         "obligation_results": obligation_results,
         "signature_or_digest": PLACEHOLDER_DIGEST,

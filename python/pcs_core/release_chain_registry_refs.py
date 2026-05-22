@@ -10,9 +10,7 @@ RELEASE_CHAIN_REGISTRY_CHECK_REFS: dict[str, tuple[str, ...]] = {
     "runtime_receipt_labtrust_commit": (
         "RuntimeReceipt.v0.source_commit_matches_release_manifest",
     ),
-    "pending_bundle_labtrust_commits": (
-        "ScienceClaimBundle.v0.non_empty_runtime_receipts",
-    ),
+    "pending_bundle_labtrust_commits": ("ScienceClaimBundle.v0.non_empty_runtime_receipts",),
     "certified_bundle_labtrust_commits": (
         "ScienceClaimBundle.v0.certified_bundle_has_certificate_when_checked",
     ),

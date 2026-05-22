@@ -59,7 +59,8 @@ DEFERRAL_REASONS: dict[str, str] = {
         "Executed via pcs conformance run --suite handoff-manifest during release qualification."
     ),
     "component_artifacts_match_release_pins": (
-        "Executed via pcs conformance run --suite component-release-fragment during release qualification."
+        "Executed via pcs conformance run --suite component-release-fragment "
+        "during release qualification."
     ),
     "trace_hash_matches_runtime_receipt": (
         "Verified during per-artifact validation of TraceCertificate against RuntimeReceipt."
@@ -83,7 +84,8 @@ DEFERRAL_REASONS: dict[str, str] = {
         "Verified during ComputationWitness alignment against DatasetReceipt.v0 in release mode."
     ),
     "environment_hash_matches_receipt": (
-        "Verified during ComputationWitness alignment against EnvironmentReceipt.v0 in release mode."
+        "Verified during ComputationWitness alignment against EnvironmentReceipt.v0 "
+        "in release mode."
     ),
     "run_receipt_hash_matches_declared_run": (
         "Verified during ComputationWitness alignment against ComputationRunReceipt.v0."
@@ -299,12 +301,12 @@ def audit_release_chain_registry_coverage(
     """Ensure every release-blocking registry check is cited or properly deferred."""
     errors: list[str] = []
     required = (
-        required_refs
-        if required_refs is not None
-        else collect_required_release_blocking_refs()
+        required_refs if required_refs is not None else collect_required_release_blocking_refs()
     )
     cited = collect_chain_registry_refs(checks)
-    known = {registry_semantic_check_ref(at, str(ch["check_id"])) for at, ch in iter_registry_checks()}
+    known = {
+        registry_semantic_check_ref(at, str(ch["check_id"])) for at, ch in iter_registry_checks()
+    }
     for ref in cited:
         if ref not in known:
             errors.append(f"unknown registry_check_ref in release chain result: {ref}")
@@ -358,7 +360,9 @@ def audit_release_chain_ref_catalog() -> list[str]:
     from pcs_core.release_chain_registry_refs import RELEASE_CHAIN_REGISTRY_CHECK_REFS
 
     errors: list[str] = []
-    known = {registry_semantic_check_ref(at, str(ch["check_id"])) for at, ch in iter_registry_checks()}
+    known = {
+        registry_semantic_check_ref(at, str(ch["check_id"])) for at, ch in iter_registry_checks()
+    }
     for check_id, refs in RELEASE_CHAIN_REGISTRY_CHECK_REFS.items():
         for ref in refs:
             if ref not in known:
@@ -367,7 +371,7 @@ def audit_release_chain_ref_catalog() -> list[str]:
 
 
 def audit_release_blocking_chain_catalog_coverage() -> list[str]:
-    """Release-blocking checks enforced at release_chain must be cited in the LabTrust chain catalog."""
+    """Release-blocking release_chain checks must appear in the LabTrust chain catalog."""
     from pcs_core.release_chain_registry_refs import RELEASE_CHAIN_REGISTRY_CHECK_REFS
     from pcs_core.workflow_profiles import load_workflow_profile
 

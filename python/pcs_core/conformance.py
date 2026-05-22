@@ -398,9 +398,7 @@ def _suite_benchmark_report() -> tuple[list[str], list[str], int]:
             validate_file(metric_registry)
         except ValidationError as exc:
             errors.append(f"benchmark_metric_registry.valid.json: {exc}")
-    manifest = (
-        repo_root() / "benchmarks" / "labtrust-qc-release" / "benchmark_manifest.v0.json"
-    )
+    manifest = repo_root() / "benchmarks" / "labtrust-qc-release" / "benchmark_manifest.v0.json"
     if manifest.is_file():
         checks += 1
         try:
@@ -441,7 +439,8 @@ def _suite_benchmark() -> tuple[list[str], list[str], int]:
             summary = report.get("summary", {})
             if summary.get("passed_cases") != summary.get("total_cases"):
                 errors.append(
-                    f"{suite_id}: {summary.get('passed_cases')}/{summary.get('total_cases')} cases passed",
+                    f"{suite_id}: {summary.get('passed_cases')}/"
+                    f"{summary.get('total_cases')} cases passed",
                 )
                 for failure in report.get("failures", []):
                     if isinstance(failure, dict):
@@ -508,8 +507,7 @@ def _suite_multidomain() -> tuple[list[str], list[str], int]:
         chain_checks += len(tool_chain_issues) or 1
         if tool_chain_issues:
             chain_errors.extend(
-                f"[tool-use-release] {issue.code}: {issue.message}"
-                for issue in tool_chain_issues
+                f"[tool-use-release] {issue.code}: {issue.message}" for issue in tool_chain_issues
             )
     computation_release = examples_dir() / "computation-release"
     if computation_release.is_dir():

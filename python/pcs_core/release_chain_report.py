@@ -7,13 +7,14 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from pcs_core.computation_release_chain import COMPUTATION_MANIFEST_ARTIFACTS
 from pcs_core.hash import PLACEHOLDER_DIGEST, canonical_hash
 from pcs_core.protocol_fixtures import PCS_CORE_COMMIT, PCS_CORE_REPO, RELEASE_ID
-from pcs_core.release_chain import ReleaseChainIssue, validate_release_chain
 from pcs_core.registry_semantics import (
     audit_release_chain_registry_coverage,
     build_deferred_registry_checks,
 )
+from pcs_core.release_chain import validate_release_chain
 from pcs_core.release_chain_checks import (
     RELEASE_CHAIN_CHECK_COUNT,
     build_checks_from_issues,
@@ -27,13 +28,14 @@ from pcs_core.release_chain_profiles import (
     is_tool_use_release_directory,
 )
 from pcs_core.release_fixtures import MANIFEST_ARTIFACTS, MANIFEST_NAME
-from pcs_core.computation_release_chain import COMPUTATION_MANIFEST_ARTIFACTS
 from pcs_core.tool_use_release_chain import TOOL_USE_MANIFEST_ARTIFACTS
 
 RELEASE_CANDIDATE_ID = "pcs-v0.1.0-rc1"
 VALIDATOR = "pcs-core"
 VALIDATOR_VERSION = "0.1.0"
 VALIDATION_ID = "validation-pcs-v0.1-labtrust-qc-rc"
+
+
 def _release_candidate(directory: Path) -> str:
     manifest_path = directory / MANIFEST_NAME
     if not manifest_path.is_file():
@@ -95,21 +97,16 @@ def build_release_chain_validation_result(
     if not issues:
         result_path = base / "release_chain_validation_result.v0.json"
         profile_matches_on_disk = (
-            is_tool_use_release_directory(base)
-            and profile_id == TOOL_USE_WORKFLOW_PROFILE_ID
+            is_tool_use_release_directory(base) and profile_id == TOOL_USE_WORKFLOW_PROFILE_ID
         ) or (
-            is_computation_release_directory(base)
-            and profile_id == COMPUTATION_WORKFLOW_PROFILE_ID
+            is_computation_release_directory(base) and profile_id == COMPUTATION_WORKFLOW_PROFILE_ID
         )
         if profile_matches_on_disk and result_path.is_file():
             try:
                 on_disk = json.loads(result_path.read_text(encoding="utf-8"))
             except json.JSONDecodeError:
                 on_disk = None
-            if (
-                isinstance(on_disk, dict)
-                and on_disk.get("workflow_profile_id") == profile_id
-            ):
+            if isinstance(on_disk, dict) and on_disk.get("workflow_profile_id") == profile_id:
                 on_disk_checks = on_disk.get("checks")
                 if isinstance(on_disk_checks, list) and on_disk_checks:
                     checks = on_disk_checks

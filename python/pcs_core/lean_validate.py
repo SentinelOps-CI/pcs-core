@@ -48,7 +48,8 @@ def validate_lean_check_result_semantics(data: dict[str, Any]) -> list[str]:
             expected = OBLIGATION_KIND_THEOREM.get(kind)
             if expected and theorem != expected:
                 errors.append(
-                    f"obligation_results[{index}]: lean_theorem {theorem!r} != catalog {expected!r}",
+                    f"obligation_results[{index}]: lean_theorem {theorem!r} "
+                    f"!= catalog {expected!r}",
                 )
         if isinstance(theorem, str) and theorem not in LEAN_THEOREM_CATALOG:
             errors.append(
@@ -59,6 +60,7 @@ def validate_lean_check_result_semantics(data: dict[str, Any]) -> list[str]:
         for index, item in enumerate(results):
             if isinstance(item, dict) and item.get("status") != "passed":
                 errors.append(
-                    f"obligation_results[{index}]: status must be passed when LeanCheckResult is ProofChecked",
+                    f"obligation_results[{index}]: status must be passed when "
+                    "LeanCheckResult is ProofChecked",
                 )
     return errors

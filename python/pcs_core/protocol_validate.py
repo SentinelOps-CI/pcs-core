@@ -71,8 +71,12 @@ def validate_release_manifest_semantics(data: dict[str, Any]) -> list[str]:
         ref = data.get("release_chain_validation_result")
         if isinstance(ref, dict):
             digest = ref.get("sha256")
-            if isinstance(digest, str) and digest.startswith("sha256:") and digest.endswith(
-                "0" * 64,
+            if (
+                isinstance(digest, str)
+                and digest.startswith("sha256:")
+                and digest.endswith(
+                    "0" * 64,
+                )
             ):
                 errors.append(
                     "release_chain_validation_result.sha256 is a placeholder; "
@@ -130,7 +134,7 @@ def validate_artifact_registry_semantics(data: dict[str, Any]) -> list[str]:
     from pcs_core.registry_data import all_registry_semantic_check_refs
 
     errors: list[str] = []
-    known_refs = all_registry_semantic_check_refs()
+    all_registry_semantic_check_refs()
     entries = data.get("entries")
     if not isinstance(entries, dict):
         return errors
@@ -255,11 +259,13 @@ def validate_conformance_report_semantics(data: dict[str, Any]) -> list[str]:
         if failure_items:
             errors.append("ConformanceReport.v0 with status passed requires empty failures")
     results = data.get("results")
-    if isinstance(results, list) and isinstance(checks_passed, int) and isinstance(checks_failed, int):
+    if (
+        isinstance(results, list)
+        and isinstance(checks_passed, int)
+        and isinstance(checks_failed, int)
+    ):
         run_total = sum(
-            int(item.get("checks_run", 0))
-            for item in results
-            if isinstance(item, dict)
+            int(item.get("checks_run", 0)) for item in results if isinstance(item, dict)
         )
         if run_total != checks_passed + checks_failed:
             errors.append(

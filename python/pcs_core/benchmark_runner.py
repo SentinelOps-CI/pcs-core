@@ -47,7 +47,9 @@ def _iso_now() -> str:
 
 def _with_digest(doc: dict[str, Any]) -> dict[str, Any]:
     body = dict(doc)
-    body["signature_or_digest"] = canonical_hash({k: v for k, v in body.items() if k != "signature_or_digest"})
+    body["signature_or_digest"] = canonical_hash(
+        {k: v for k, v in body.items() if k != "signature_or_digest"}
+    )
     return body
 
 
@@ -83,11 +85,7 @@ def _evaluate_formal_kernel(release_dir: Path) -> tuple[bool, str, str]:
     if status != "ProofChecked":
         return False, "formal_check_failed", "formal_kernel"
     obligations = json.loads(obligation_path.read_text(encoding="utf-8"))
-    ob_count = (
-        len(obligations.get("obligations", []))
-        if isinstance(obligations, dict)
-        else 0
-    )
+    ob_count = len(obligations.get("obligations", [])) if isinstance(obligations, dict) else 0
     if ob_count == 0:
         return False, "missing_formal_artifacts", "formal_kernel"
     return True, "", "formal_kernel"
@@ -218,7 +216,9 @@ def _execute_scientific_memory_benchmark_case(case: dict[str, Any]) -> dict[str,
     )
     if issues and not observed_failure_code:
         expected_code = str(case.get("expected_failure_code", ""))
-        matching = [issue for issue in issues if issue.code == expected_code] if expected_code else issues
+        matching = (
+            [issue for issue in issues if issue.code == expected_code] if expected_code else issues
+        )
         primary = matching[0] if matching else issues[0]
         observed_failure_code = primary.code
         observed_component = localize_failure_code(primary.code)
@@ -375,10 +375,10 @@ def _execute_labtrust_gallery_benchmark_case(case: dict[str, Any]) -> dict[str, 
     if sm_path.is_file():
         sm_report = json.loads(sm_path.read_text(encoding="utf-8"))
         if isinstance(sm_report, dict):
-            sm_import = (
-                "passed" if sm_report.get("verification_status") == "passed" else "failed"
+            sm_import = "passed" if sm_report.get("verification_status") == "passed" else "failed"
+            sm_render = (
+                "rendered" if sm_report.get("verification_status") == "passed" else "incomplete"
             )
-            sm_render = "rendered" if sm_report.get("verification_status") == "passed" else "incomplete"
 
     return _build_benchmark_run(
         case,
@@ -454,12 +454,12 @@ def compute_suite_coverage(
     from pcs_core.registry_semantics import audit_release_chain_registry_coverage
 
     registry_entries_count = len(registry_entries())
-    localization_hits = sum(
+    sum(
         1
         for case, run in zip(cases, runs, strict=False)
         if case.get("expected_responsible_component") == run.get("observed_responsible_component")
     )
-    repair_hits = sum(
+    sum(
         1
         for case, run in zip(cases, runs, strict=False)
         if repair_hint_for_component(str(case.get("expected_responsible_component", "unknown")))
@@ -573,7 +573,7 @@ def build_benchmark_report(
     passed_cases = sum(1 for run in runs if run.get("observed_status") == "passed")
     failed_cases = total - passed_cases
     expected_invalid = [c for c in cases if c.get("case_kind") != "valid_release"]
-    valid_cases = [c for c in cases if c.get("case_kind") == "valid_release"]
+    [c for c in cases if c.get("case_kind") == "valid_release"]
     expected_failures_detected = 0
     unexpected_passes = 0
     unexpected_failures = 0

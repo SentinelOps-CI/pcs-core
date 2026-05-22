@@ -75,12 +75,7 @@ def test_execute_labtrust_valid_case() -> None:
 
 
 def test_run_labtrust_suite_report() -> None:
-    expected = (
-        BENCHMARKS
-        / "labtrust-qc-release"
-        / "expected_reports"
-        / "benchmark_report.v0.json"
-    )
+    expected = BENCHMARKS / "labtrust-qc-release" / "expected_reports" / "benchmark_report.v0.json"
     if not expected.is_file():
         pytest.skip("missing expected benchmark report; materialize fixtures")
     report = run_benchmark_suite("labtrust-qc-release-v0")
@@ -200,8 +195,7 @@ def test_labtrust_gallery_evaluator_paths() -> None:
     from pcs_core.benchmark_runner import execute_benchmark_case, load_benchmark_case
 
     valid_path = (
-        BENCHMARKS
-        / "labtrust-qc-release/valid/labtrust-valid-release-v0/benchmark_case.v0.json"
+        BENCHMARKS / "labtrust-qc-release/valid/labtrust-valid-release-v0/benchmark_case.v0.json"
     )
     tamper_path = (
         BENCHMARKS

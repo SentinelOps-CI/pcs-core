@@ -1,14 +1,14 @@
 # Benchmark ingest contract (PcsBenchIngest.v0)
 
-**Version:** v1.0 frozen (schema `v0` artifacts). Normative schemas live in [schemas/](../schemas/). Adequacy tiers: [release-grade-benchmark-evidence.md](release-grade-benchmark-evidence.md).
+Normative schemas: [schemas/](../schemas/). Overview: [benchmarks.md](benchmarks.md). Producer setup: [producer-benchmark-ingest.md](producer-benchmark-ingest.md).
 
-## v0 policy (locked)
+## Rules (v0)
 
 1. **Embedded canonical objects are authoritative.** Ingest arrays contain full `BenchmarkRun.v0`, `CoverageReport.v0`, `FailureLocalizationResult.v0`, `ExplainQualityReport.v0`, and `ProfileCoverageReport.v0` objects — never path-only entries.
 2. **`artifact_refs` are sidecar provenance only.** Each `BenchmarkArtifactRef.v0` records `path`, content `sha256`, and export metadata; refs must not replace embedded objects.
 3. **Native producer reports belong in `details` or separate files.** Dialect JSON from producer repos is normalized into v0 artifacts before ingest validation.
 4. **pcs-bench consumes embedded objects first.** Aggregation, metrics, and suite summaries read embedded arrays; refs are audit-only.
-5. **Path references alone are not release-grade.** See [release-grade-benchmark-evidence.md](release-grade-benchmark-evidence.md) for adequacy tiers.
+5. **Path references alone are invalid.** Arrays must contain embedded v0 objects, not file paths.
 
 ## What it is
 
@@ -145,15 +145,33 @@ Scientific Memory and similar repos that today emit only file paths should add `
 3. Map metrics via `BenchmarkMetricRegistry.v0`; aggregate into `BenchmarkReport.v0` with `metric_summaries`.
 4. Dialect JSON from producers should be normalized with `pcs benchmark normalize` before ingest validation when not already v0-shaped.
 
-## Release-grade benchmark evidence
+## Evidence tiers
 
-Evidence is **release-grade** when:
+| Tier | Meaning |
+|------|---------|
+| **schema-valid** | Passes JSON Schema and semantic checks (array shapes, ref consistency when refs exist). |
+| **developer-grade** | Representative embedded content; ingest `source_commit` may be a fixture placeholder; `artifact_refs` optional. |
+| **release-grade** | Live producer export: real 40-char ingest `source_commit`, non-empty `commands`, producer-specific non-empty arrays (below), matching `artifact_refs` when files are exported. |
+| **audit-ready** | Release-grade plus stable digests, documented `commands`, and provenance in `examples/benchmark_ingest/provenance.manifest.json`. |
 
-- `PcsBenchIngest.v0` validates against schema + semantic checks (producer ID, required arrays, ref/embed consistency).
-- Every non-empty embedded array contains digested v0 artifacts.
-- `source_commit` is a full 40-character git SHA (not a placeholder) for production publishes.
-- Optional `artifact_refs` align with embedded content digests.
-- Downstream `BenchmarkReport.v0` is produced from validated ingest (or native pcs-core suite runs) and passes `pcs conformance run --suite benchmark`.
+Enforced by `pcs_core.benchmark_ingest.assess_ingest_adequacy_tier()` and `validate_benchmark_ingest_examples.py --release-grade`.
+
+### Release-grade minimum (all producers)
+
+- Non-placeholder ingest `source_commit` (40 hex characters).
+- Non-empty `commands` recording how the bundle was produced.
+- When `artifact_refs` exist: every ref `sha256` equals the embedded object `signature_or_digest`, and every embedded export has a ref.
+
+### Per-producer non-empty arrays
+
+| Producer | Required arrays |
+|----------|-----------------|
+| LabTrust-Gym | `benchmark_runs`, `coverage_reports` |
+| CertifyEdge | `coverage_reports`, `profile_coverage_reports` |
+| Provability Fabric | `failure_localization_reports`, `explain_quality_reports`, `profile_coverage_reports` |
+| Scientific Memory | `explain_quality_reports`, `coverage_reports` |
+
+`BenchmarkReport.v0` is suite output (from pcs-bench or `pcs benchmark run`), not part of ingest. Publish reports only after validated ingest passes `pcs conformance run --suite benchmark-report`.
 
 ## Regeneration
 
@@ -177,7 +195,7 @@ python scripts/validate_benchmark_ingest_examples.py --release-grade
 The `benchmark-ingest` suite validates:
 
 - `PcsBenchIngest.v0`, `BenchmarkArtifactRef.v0`, and embedded types (`BenchmarkRun`, `CoverageReport`, `FailureLocalizationResult`, `ExplainQualityReport`, `ProfileCoverageReport`, `BenchmarkReport`, `MetricSummary`)
-- All four golden producer bundles at **release-grade** or **external-review-grade**
+- All four golden producer bundles at **release-grade** / **audit-ready**
 - Compatibility normalization corpus drift
 - Invalid fixtures under `examples/invalid_pcs_bench_ingest_*.json` (must fail `pcs validate`)
 

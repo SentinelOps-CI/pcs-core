@@ -130,4 +130,4 @@ Legacy short names (`release_reproducibility`) are deprecated in reports; use `r
 | LabTrust-Gym | `BenchmarkCase.v0` manifests |
 | Scientific Memory | `ExplainQualityReport.v0` (render benchmark) |
 
-See [benchmark-compatibility.md](benchmark-compatibility.md) for normalization paths.
+See [producer-benchmark-ingest.md](producer-benchmark-ingest.md) for normalization paths.

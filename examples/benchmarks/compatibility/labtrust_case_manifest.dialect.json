@@ -1,9 +1,4 @@
 {
-  "_pcs_producer_capture": {
-    "producer_repo": "LabTrust-Gym",
-    "producer_command": "python benchmark_reproducibility.py",
-    "captured_into": "examples/benchmark_ingest/labtrust.pcs_bench_ingest.valid.json"
-  },
   "case_id": "labtrust-qc-valid-release",
   "workflow_id": "labtrust.qc_release_v0.1",
   "release_directory": "examples/labtrust-release",

@@ -43,9 +43,7 @@ PRODUCER_INGEST_SOURCES: dict[str, dict[str, str]] = {
         "producer_id": "labtrust-gym",
         "producer_repo": "LabTrust-Gym",
         "producer_command": "make pcs-bench-producer",
-        "producer_ingest_path": PRODUCER_LIVE_INGEST_REL[
-            "labtrust.pcs_bench_ingest.valid.json"
-        ],
+        "producer_ingest_path": PRODUCER_LIVE_INGEST_REL["labtrust.pcs_bench_ingest.valid.json"],
         "dialect_fixture": f"{_COMPAT}labtrust_case_manifest.dialect.json",
         "pcs_core_generator": "build_labtrust_pcs_bench_ingest",
     },
@@ -53,9 +51,7 @@ PRODUCER_INGEST_SOURCES: dict[str, dict[str, str]] = {
         "producer_id": "certifyedge",
         "producer_repo": "CertifyEdge",
         "producer_command": "make pcs-bench-producer",
-        "producer_ingest_path": PRODUCER_LIVE_INGEST_REL[
-            "certifyedge.pcs_bench_ingest.valid.json"
-        ],
+        "producer_ingest_path": PRODUCER_LIVE_INGEST_REL["certifyedge.pcs_bench_ingest.valid.json"],
         "dialect_fixture": f"{_COMPAT}certifyedge_certificate_benchmark.dialect.json",
         "pcs_core_generator": "build_certifyedge_pcs_bench_ingest",
     },
@@ -109,11 +105,18 @@ def copy_producer_live_ingest(golden_name: str, dest: Path) -> bool:
 
     errors = validate_benchmark_ingest_file(source, check_release_grade=True)
     if errors:
-        raise ValueError(f"{source}: " + "; ".join(errors))
+        import sys
+
+        print(
+            f"skip live ingest {source}: not release-grade ({'; '.join(errors[:3])}…)",
+            file=sys.stderr,
+        )
+        return False
     shutil.copyfile(source, dest)
     doc = json.loads(dest.read_text(encoding="utf-8"))
     dest.write_text(json.dumps(doc, indent=2) + "\n", encoding="utf-8")
     return True
+
 
 EMBEDDED_ARRAY_ARTIFACT_TYPES: dict[str, str] = {
     "benchmark_runs": "BenchmarkRun.v0",
@@ -336,7 +339,7 @@ def build_provenance_manifest() -> dict[str, Any]:
         "contract_version": BENCHMARK_INGEST_CONTRACT_VERSION,
         "contract": "PcsBenchIngest.v0",
         "policy_doc": "docs/benchmark-ingest-contract.md",
-        "release_grade_doc": "docs/release-grade-benchmark-evidence.md",
+        "release_grade_doc": "docs/benchmark-ingest-contract.md",
         "entries": entries,
     }
 

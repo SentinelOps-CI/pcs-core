@@ -3,7 +3,7 @@
   "contract_version": "1.0",
   "contract": "PcsBenchIngest.v0",
   "policy_doc": "docs/benchmark-ingest-contract.md",
-  "release_grade_doc": "docs/release-grade-benchmark-evidence.md",
+  "release_grade_doc": "docs/benchmark-ingest-contract.md",
   "entries": [
     {
       "golden_file": "examples/benchmark_ingest/labtrust.pcs_bench_ingest.valid.json",

@@ -71,6 +71,7 @@ TOOL_USE_HANDOFF_FILES = (
     "handoff_manifest.signed_bundle_to_memory.v0.json",
 )
 
+
 def _validate_tool_use_trace_json(doc: dict[str, Any]) -> list[str]:
     errors: list[str] = []
     trace_hash = doc.get("trace_hash")
@@ -97,7 +98,9 @@ def _validate_tool_use_scientific_memory_report(doc: dict[str, Any]) -> list[str
 
 
 def _validate_tool_use_trace_hash_alignment(base: Path, errors: list[str]) -> None:
-    trace_path = resolve_tool_use_artifact(base, ("tool_use_trace.valid.json", "tool_use_trace.json"))
+    trace_path = resolve_tool_use_artifact(
+        base, ("tool_use_trace.valid.json", "tool_use_trace.json")
+    )
     cert_path = resolve_tool_use_artifact(
         base,
         ("tool_use_certificate.valid.json", "tool_use_certificate.json"),
@@ -112,7 +115,8 @@ def _validate_tool_use_trace_hash_alignment(base: Path, errors: list[str]) -> No
     trace_hash = trace.get("trace_hash")
     if trace_hash != receipt.get("trace_hash"):
         errors.append(
-            f"trace_hash mismatch: trace {trace_hash} != runtime_receipt {receipt.get('trace_hash')}",
+            "trace_hash mismatch: trace "
+            f"{trace_hash} != runtime_receipt {receipt.get('trace_hash')}",
         )
     if trace_hash != cert.get("trace_hash"):
         errors.append(
@@ -210,7 +214,6 @@ def validate_tool_use_release_chain(directory: Path) -> list[ReleaseChainIssue]:
             )
 
     scan_errors: list[str] = []
-    trace_name = "tool_use_trace.valid.json"
     for name in TOOL_USE_MANIFEST_ARTIFACTS:
         path = base / name
         if not path.is_file():
@@ -222,7 +225,6 @@ def validate_tool_use_release_chain(directory: Path) -> list[ReleaseChainIssue]:
             )
             continue
         if name in ("tool_use_trace.valid.json", "tool_use_trace.json"):
-            trace_name = name
             for msg in _validate_tool_use_trace_json(doc):
                 issues.append(_issue("schema_validation_failed", msg, artifact=name))
         elif name == "scientific_memory_import_report.json":
@@ -280,7 +282,9 @@ def validate_tool_use_release_chain(directory: Path) -> list[ReleaseChainIssue]:
     pf_commit = commits.get("provability_fabric_commit")
     sm_commit = commits.get("scientific_memory_commit")
 
-    trace_path = resolve_tool_use_artifact(base, ("tool_use_trace.valid.json", "tool_use_trace.json"))
+    trace_path = resolve_tool_use_artifact(
+        base, ("tool_use_trace.valid.json", "tool_use_trace.json")
+    )
     cert_path = resolve_tool_use_artifact(
         base,
         ("tool_use_certificate.valid.json", "tool_use_certificate.json"),
@@ -357,7 +361,7 @@ def validate_tool_use_release_chain(directory: Path) -> list[ReleaseChainIssue]:
 
     tool_cert_id = tool_cert.get("certificate_id") if tool_cert else None
     certified_cert_id = _first_certificate_id(certified) if certified else None
-    signed_scb = signed.get("science_claim_bundle") if signed else None
+    signed.get("science_claim_bundle") if signed else None
 
     if tool_cert_id and certified and isinstance(certified, dict):
         _expect_certificate_id(
@@ -406,7 +410,8 @@ def validate_tool_use_release_chain(directory: Path) -> list[ReleaseChainIssue]:
         issues.append(
             _issue(
                 "rejected_certificate",
-                f"tool_use_certificate.status must be CertificateChecked (got {tool_cert.get('status')!r})",
+                "tool_use_certificate.status must be CertificateChecked "
+                f"(got {tool_cert.get('status')!r})",
             ),
         )
 

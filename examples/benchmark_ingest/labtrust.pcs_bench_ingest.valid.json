@@ -1,297 +1,88 @@
 {
-  "artifact_refs": [
-    {
-      "artifact_type": "BenchmarkRun.v0",
-      "path": "artifact_refs/benchmark_runs/labtrust-repro-full_regeneration-run-0.v0.json",
-      "role": "producer_export",
-      "schema_version": "v0",
-      "sha256": "sha256:b2bbeef2dee57b7cd371f68171222e2f95024a0894caafcdf820a890c6a2b436",
-      "signature_or_digest": "sha256:084bc0c1178c36b7008bb497f8c89ad34fdbc48f54af81e9e94d5edeac2234c2",
-      "source_commit": "fcb3bd6661df27cdb5380408c205904d0e63cc34",
-      "source_repo": "https://github.com/fraware/LabTrust-Gym"
-    },
-    {
-      "artifact_type": "BenchmarkRun.v0",
-      "path": "artifact_refs/benchmark_runs/labtrust-repro-full_regeneration-run-1.v0.json",
-      "role": "producer_export",
-      "schema_version": "v0",
-      "sha256": "sha256:47b2444ce5936932eb100ac29b3d088d891e14c28de23b6f5b337976a507248f",
-      "signature_or_digest": "sha256:49034b29daa21deddcb3d612152272417bb14145c94ed31936196f3677f69966",
-      "source_commit": "fcb3bd6661df27cdb5380408c205904d0e63cc34",
-      "source_repo": "https://github.com/fraware/LabTrust-Gym"
-    },
-    {
-      "artifact_type": "BenchmarkRun.v0",
-      "path": "artifact_refs/benchmark_runs/labtrust-repro-full_regeneration-run-2.v0.json",
-      "role": "producer_export",
-      "schema_version": "v0",
-      "sha256": "sha256:71f7becda2bdf988ea1c9dce268164f186ab520fd7036dacc5e9ca2cd7f8b3b4",
-      "signature_or_digest": "sha256:77d2260f8ddb603952754200ffca2cd3bef34cb8fdb9e625ab91d2851f6be169",
-      "source_commit": "fcb3bd6661df27cdb5380408c205904d0e63cc34",
-      "source_repo": "https://github.com/fraware/LabTrust-Gym"
-    },
-    {
-      "artifact_type": "BenchmarkRun.v0",
-      "path": "artifact_refs/benchmark_runs/labtrust-repro-full_regeneration-run-3.v0.json",
-      "role": "producer_export",
-      "schema_version": "v0",
-      "sha256": "sha256:c411a94c13c06bbae10fcf2737115e65a1e55df17e7fe8f92423c38d6e89c0d3",
-      "signature_or_digest": "sha256:4dd61973d2dff36bd25be2ec78586ac0339a6e1ba662519037fad03eefbd91b1",
-      "source_commit": "fcb3bd6661df27cdb5380408c205904d0e63cc34",
-      "source_repo": "https://github.com/fraware/LabTrust-Gym"
-    },
-    {
-      "artifact_type": "BenchmarkRun.v0",
-      "path": "artifact_refs/benchmark_runs/labtrust-repro-full_regeneration-run-4.v0.json",
-      "role": "producer_export",
-      "schema_version": "v0",
-      "sha256": "sha256:587d5ae82a2da71c556ea2cd3d3edf324f22a3c447dcd683aee48276f9b74be4",
-      "signature_or_digest": "sha256:83291a94511f85f53a2092c5d6a6f6c18a56803f07766c36a846a0de4aeee919",
-      "source_commit": "fcb3bd6661df27cdb5380408c205904d0e63cc34",
-      "source_repo": "https://github.com/fraware/LabTrust-Gym"
-    },
-    {
-      "artifact_type": "CoverageReport.v0",
-      "path": "artifact_refs/coverage_reports/labtrust-release-reproducibility-v0.v0.json",
-      "role": "producer_export",
-      "schema_version": "v0",
-      "sha256": "sha256:f95d4bfa10da0070ba8d75044983b71934de9a35dcadd51491e43cee864278e3",
-      "signature_or_digest": "sha256:2619d5ddeb7442b9a332ea88a1ef008dd2664dc1faa0873dd445f5a1a761b9e4",
-      "source_commit": "fcb3bd6661df27cdb5380408c205904d0e63cc34",
-      "source_repo": "https://github.com/fraware/LabTrust-Gym"
-    }
-  ],
+  "schema_version": "v0",
+  "producer_id": "labtrust-gym",
+  "suite_id": "labtrust-qc-release-v0",
+  "workflow_id": "hospital_lab.qc_release",
   "benchmark_runs": [
     {
-      "artifacts_produced": [
-        "handoff_to_certifyedge.json",
-        "handoff_to_pf.json",
-        "labtrust_release_fragment.json",
-        "manifest.json",
-        "regeneration_report.json",
-        "runtime_receipt.json",
-        "science_claim_bundle.certified.json",
-        "science_claim_bundle.pending.json",
-        "trace.json",
-        "trace_certificate.json",
-        "workflow_profile.v0.json"
-      ],
+      "schema_version": "v0",
+      "run_id": "bench-run-labtrust-valid-release-v0",
+      "task_id": "labtrust-qc-release-v0",
       "case_id": "labtrust-valid-release-v0",
-      "certificate_status": "CertificateChecked",
+      "started_at": "2026-05-22T11:54:35Z",
+      "completed_at": "2026-05-22T11:54:35Z",
       "commands": [
         {
-          "command": "labtrust benchmark-reproducibility --mode full_regeneration --runs 1 --seed 0",
+          "command": "evaluate_labtrust_gallery benchmarks/labtrust-qc-release/valid/labtrust-valid-release-v0/input_artifacts",
           "exit_code": 0
         }
       ],
-      "completed_at": "2026-05-16T12:00:04.175000Z",
-      "duration_ms": 4175,
-      "observed_failure_code": null,
-      "observed_repair_hint": null,
-      "observed_responsible_component": null,
-      "observed_status": "passed",
-      "release_chain_status": "valid",
-      "run_id": "labtrust-repro-full_regeneration-run-0",
-      "schema_version": "v0",
-      "signature_or_digest": "sha256:b2bbeef2dee57b7cd371f68171222e2f95024a0894caafcdf820a890c6a2b436",
-      "source_commit": "fcb3bd6661df27cdb5380408c205904d0e63cc34",
-      "source_repo": "https://github.com/fraware/LabTrust-Gym",
-      "started_at": "2026-05-16T12:00:00Z",
-      "task_id": "labtrust-qc-release-reproducibility-v0"
-    },
-    {
       "artifacts_produced": [
-        "handoff_to_certifyedge.json",
-        "handoff_to_pf.json",
-        "labtrust_release_fragment.json",
         "manifest.json",
-        "regeneration_report.json",
-        "runtime_receipt.json",
-        "science_claim_bundle.certified.json",
-        "science_claim_bundle.pending.json",
-        "trace.json",
-        "trace_certificate.json",
-        "workflow_profile.v0.json"
+        "trace_certificate.json"
       ],
-      "case_id": "labtrust-valid-release-v0",
-      "certificate_status": "CertificateChecked",
-      "commands": [
-        {
-          "command": "labtrust benchmark-reproducibility --mode full_regeneration --runs 1 --seed 1",
-          "exit_code": 0
-        }
-      ],
-      "completed_at": "2026-05-16T12:00:04.687000Z",
-      "duration_ms": 3687,
-      "observed_failure_code": null,
-      "observed_repair_hint": null,
-      "observed_responsible_component": null,
       "observed_status": "passed",
-      "release_chain_status": "valid",
-      "run_id": "labtrust-repro-full_regeneration-run-1",
-      "schema_version": "v0",
-      "signature_or_digest": "sha256:47b2444ce5936932eb100ac29b3d088d891e14c28de23b6f5b337976a507248f",
-      "source_commit": "fcb3bd6661df27cdb5380408c205904d0e63cc34",
-      "source_repo": "https://github.com/fraware/LabTrust-Gym",
-      "started_at": "2026-05-16T12:00:01Z",
-      "task_id": "labtrust-qc-release-reproducibility-v0"
-    },
-    {
-      "artifacts_produced": [
-        "handoff_to_certifyedge.json",
-        "handoff_to_pf.json",
-        "labtrust_release_fragment.json",
-        "manifest.json",
-        "regeneration_report.json",
-        "runtime_receipt.json",
-        "science_claim_bundle.certified.json",
-        "science_claim_bundle.pending.json",
-        "trace.json",
-        "trace_certificate.json",
-        "workflow_profile.v0.json"
-      ],
-      "case_id": "labtrust-valid-release-v0",
-      "certificate_status": "CertificateChecked",
-      "commands": [
-        {
-          "command": "labtrust benchmark-reproducibility --mode full_regeneration --runs 1 --seed 2",
-          "exit_code": 0
-        }
-      ],
-      "completed_at": "2026-05-16T12:00:05.722000Z",
-      "duration_ms": 3722,
       "observed_failure_code": null,
-      "observed_repair_hint": null,
       "observed_responsible_component": null,
-      "observed_status": "passed",
+      "observed_repair_hint": null,
+      "system_admission_outcome": "not_evaluated",
       "release_chain_status": "valid",
-      "run_id": "labtrust-repro-full_regeneration-run-2",
-      "schema_version": "v0",
-      "signature_or_digest": "sha256:71f7becda2bdf988ea1c9dce268164f186ab520fd7036dacc5e9ca2cd7f8b3b4",
-      "source_commit": "fcb3bd6661df27cdb5380408c205904d0e63cc34",
-      "source_repo": "https://github.com/fraware/LabTrust-Gym",
-      "started_at": "2026-05-16T12:00:02Z",
-      "task_id": "labtrust-qc-release-reproducibility-v0"
-    },
-    {
-      "artifacts_produced": [
-        "handoff_to_certifyedge.json",
-        "handoff_to_pf.json",
-        "labtrust_release_fragment.json",
-        "manifest.json",
-        "regeneration_report.json",
-        "runtime_receipt.json",
-        "science_claim_bundle.certified.json",
-        "science_claim_bundle.pending.json",
-        "trace.json",
-        "trace_certificate.json",
-        "workflow_profile.v0.json"
-      ],
-      "case_id": "labtrust-valid-release-v0",
       "certificate_status": "CertificateChecked",
-      "commands": [
-        {
-          "command": "labtrust benchmark-reproducibility --mode full_regeneration --runs 1 --seed 3",
-          "exit_code": 0
-        }
-      ],
-      "completed_at": "2026-05-16T12:00:06.090000Z",
-      "duration_ms": 3090,
-      "observed_failure_code": null,
-      "observed_repair_hint": null,
-      "observed_responsible_component": null,
-      "observed_status": "passed",
-      "release_chain_status": "valid",
-      "run_id": "labtrust-repro-full_regeneration-run-3",
-      "schema_version": "v0",
-      "signature_or_digest": "sha256:c411a94c13c06bbae10fcf2737115e65a1e55df17e7fe8f92423c38d6e89c0d3",
-      "source_commit": "fcb3bd6661df27cdb5380408c205904d0e63cc34",
-      "source_repo": "https://github.com/fraware/LabTrust-Gym",
-      "started_at": "2026-05-16T12:00:03Z",
-      "task_id": "labtrust-qc-release-reproducibility-v0"
-    },
-    {
-      "artifacts_produced": [
-        "handoff_to_certifyedge.json",
-        "handoff_to_pf.json",
-        "labtrust_release_fragment.json",
-        "manifest.json",
-        "regeneration_report.json",
-        "runtime_receipt.json",
-        "science_claim_bundle.certified.json",
-        "science_claim_bundle.pending.json",
-        "trace.json",
-        "trace_certificate.json",
-        "workflow_profile.v0.json"
-      ],
-      "case_id": "labtrust-valid-release-v0",
-      "certificate_status": "CertificateChecked",
-      "commands": [
-        {
-          "command": "labtrust benchmark-reproducibility --mode full_regeneration --runs 1 --seed 4",
-          "exit_code": 0
-        }
-      ],
-      "completed_at": "2026-05-16T12:00:07.525000Z",
-      "duration_ms": 3525,
-      "observed_failure_code": null,
-      "observed_repair_hint": null,
-      "observed_responsible_component": null,
-      "observed_status": "passed",
-      "release_chain_status": "valid",
-      "run_id": "labtrust-repro-full_regeneration-run-4",
-      "schema_version": "v0",
-      "signature_or_digest": "sha256:587d5ae82a2da71c556ea2cd3d3edf324f22a3c447dcd683aee48276f9b74be4",
-      "source_commit": "fcb3bd6661df27cdb5380408c205904d0e63cc34",
-      "source_repo": "https://github.com/fraware/LabTrust-Gym",
-      "started_at": "2026-05-16T12:00:04Z",
-      "task_id": "labtrust-qc-release-reproducibility-v0"
-    }
-  ],
-  "commands": [
-    {
-      "command": "labtrust benchmark-reproducibility --workflow hospital_lab.qc_release --mode full_regeneration --runs 5 --out C:\\Users\\mateo\\LabTrust-Gym\\benchmark_runs\\labtrust_reproducibility",
-      "exit_code": 1
+      "scientific_memory_import_status": "not_applicable",
+      "scientific_memory_render_status": "not_applicable",
+      "duration_ms": 14,
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:ee83b3920ea273bcc6e1d5860401e15497728638392c0af5ac242fac40919350"
     }
   ],
   "coverage_reports": [
     {
-      "coverage_id": "labtrust-release-reproducibility-v0",
-      "coverage_ratio": 0.0,
-      "denominator": 5.0,
-      "details": {
-        "benchmark_id": "labtrust-reproducibility-v0",
-        "mode": "full_regeneration",
-        "reproducibility_coverage": {
-          "hash_stability_passed": true,
-          "mode": "full_regeneration",
-          "reproducibility_passed": false,
-          "runs": 5,
-          "schema_version": "v0",
-          "task_id": "labtrust-qc-release-reproducibility-v0",
-          "workflow_id": "hospital_lab.qc_release"
-        }
-      },
-      "metric": "release_reproducibility_score",
-      "metric_id": "release_reproducibility_score",
-      "numerator": 0.0,
       "schema_version": "v0",
-      "signature_or_digest": "sha256:f95d4bfa10da0070ba8d75044983b71934de9a35dcadd51491e43cee864278e3",
-      "source_commit": "fcb3bd6661df27cdb5380408c205904d0e63cc34",
-      "source_repo": "https://github.com/fraware/LabTrust-Gym"
+      "coverage_id": "labtrust-qc-release-v0-repro",
+      "metric": "release_reproducibility",
+      "numerator": 13.0,
+      "denominator": 13.0,
+      "coverage_ratio": 1.0,
+      "details": {},
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:f1c452c46cf4e302d2afd8daa4928500c279e0ff0de23c6d0c1c16d7eca8e30c"
     }
   ],
-  "explain_quality_reports": [],
   "failure_localization_reports": [],
-  "logs": [
-    "mode=full_regeneration deterministic=False"
-  ],
-  "producer_id": "labtrust-gym",
+  "explain_quality_reports": [],
   "profile_coverage_reports": [],
-  "schema_version": "v0",
-  "signature_or_digest": "sha256:15fc3d3aa7420f5e61a5f96172be1b98c5869bd8b525b9bd8d9e92f2582f5ce0",
-  "source_commit": "fcb3bd6661df27cdb5380408c205904d0e63cc34",
+  "commands": [
+    {
+      "command": "python benchmark_reproducibility.py",
+      "exit_code": 0
+    }
+  ],
+  "logs": [],
   "source_repo": "https://github.com/fraware/LabTrust-Gym",
-  "suite_id": "labtrust-qc-reproducibility-v0",
-  "workflow_id": "hospital_lab.qc_release"
+  "source_commit": "5eac714fd7dc813d2523febcb85c56821558a1b7",
+  "signature_or_digest": "sha256:f4ee4fe774cf48660e0fa7b34c7a629edbe8490985dfc62d82b00cce5e5317a0",
+  "artifact_refs": [
+    {
+      "schema_version": "v0",
+      "artifact_type": "BenchmarkRun.v0",
+      "path": "valid/labtrust-valid-release-v0/benchmark_run.labtrust-valid-release-v0.v0.json",
+      "sha256": "sha256:ee83b3920ea273bcc6e1d5860401e15497728638392c0af5ac242fac40919350",
+      "role": "producer_export",
+      "source_repo": "https://github.com/fraware/LabTrust-Gym",
+      "source_commit": "5eac714fd7dc813d2523febcb85c56821558a1b7",
+      "signature_or_digest": "sha256:beda167d29a7114587aeebdc960d30715bf1520e8d9903bc997ac06209d07b17"
+    },
+    {
+      "schema_version": "v0",
+      "artifact_type": "CoverageReport.v0",
+      "path": "benchmarks/reproducibility/coverage_report.labtrust-qc-release-v0-repro.v0.json",
+      "sha256": "sha256:f1c452c46cf4e302d2afd8daa4928500c279e0ff0de23c6d0c1c16d7eca8e30c",
+      "role": "producer_export",
+      "source_repo": "https://github.com/fraware/LabTrust-Gym",
+      "source_commit": "5eac714fd7dc813d2523febcb85c56821558a1b7",
+      "signature_or_digest": "sha256:e089c64c944a38a6a18830c9ff7586fbf1d0fcfc26e9a76c34b01f4430d96817"
+    }
+  ]
 }

@@ -26,4 +26,4 @@ pcs benchmark validate-ingest --release-grade
 pcs conformance run --suite benchmark-ingest
 ```
 
-See [benchmark-ingest-contract.md](../../docs/benchmark-ingest-contract.md), [release-grade-benchmark-evidence.md](../../docs/release-grade-benchmark-evidence.md), [producer-benchmark-ingest.md](../../docs/producer-benchmark-ingest.md), and [benchmark-compatibility.md](../../docs/benchmark-compatibility.md).
+See [docs/benchmarks.md](../../docs/benchmarks.md), [benchmark-ingest-contract.md](../../docs/benchmark-ingest-contract.md), and [producer-benchmark-ingest.md](../../docs/producer-benchmark-ingest.md).

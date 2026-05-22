@@ -8,14 +8,13 @@ from pathlib import Path
 
 import pytest
 
+from pcs_core.conformance import build_conformance_report_data, list_suites, run_conformance
 from pcs_core.legacy_manifest import legacy_manifest_equivalent_to_release_manifest
 from pcs_core.migrate import migrate_file
 from pcs_core.paths import examples_dir
 from pcs_core.protocol_fixtures import release_manifest_valid
-from pcs_core.conformance import build_conformance_report_data, list_suites, run_conformance
-from pcs_core.registry import audit_registry_producer_fields, validate_registry_file
-from pcs_core.semantic_check_execution import build_semantic_check_execution
 from pcs_core.registry import (
+    audit_registry_producer_fields,
     build_artifact_registry,
     check_artifact_against_registry,
     registry_entries,
@@ -29,6 +28,7 @@ from pcs_core.release_chain_checks import RELEASE_CHAIN_CHECK_SPECS
 from pcs_core.release_chain_registry_refs import RELEASE_CHAIN_REGISTRY_CHECK_REFS
 from pcs_core.release_chain_report import build_release_chain_validation_result
 from pcs_core.release_fixtures import release_dir
+from pcs_core.semantic_check_execution import build_semantic_check_execution
 from pcs_core.shared_hash_vectors import VECTOR_FILENAMES, VECTOR_SPECS, verify_shared_vectors
 from pcs_core.status_policy import check_status_transition
 from pcs_core.validate import ValidationError, validate_artifact, validate_file
@@ -95,7 +95,9 @@ def test_registry_distinguishes_schema_owner_from_runtime_producer() -> None:
 def test_all_registry_semantic_checks_have_responsible_component() -> None:
     for artifact_type, entry in registry_entries().items():
         for check in entry["semantic_checks"]:
-            assert check.get("responsible_component"), f"{artifact_type} missing responsible_component"
+            assert check.get("responsible_component"), (
+                f"{artifact_type} missing responsible_component"
+            )
             assert check.get("severity"), f"{artifact_type} missing severity"
             assert check.get("check_id"), f"{artifact_type} missing check_id"
 
@@ -241,11 +243,7 @@ def test_release_chain_result_covers_release_blocking_registry_checks() -> None:
     checks = result["checks"]
     deferred = result["deferred_registry_checks"]
     assert audit_release_chain_registry_coverage(checks, deferred) == []
-    cited = {
-        ref
-        for check in checks
-        for ref in check.get("registry_check_refs", [])
-    }
+    cited = {ref for check in checks for ref in check.get("registry_check_refs", [])}
     deferred_refs = {item["registry_ref"] for item in deferred}
     required = collect_required_release_blocking_refs()
     assert required <= cited | deferred_refs

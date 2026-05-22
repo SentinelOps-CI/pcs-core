@@ -30,14 +30,10 @@ def build_conformance_report(
     suite_results: list[dict[str, Any]],
 ) -> dict[str, Any]:
     checks_passed = sum(
-        int(item.get("checks_run", 1))
-        for item in suite_results
-        if item.get("status") == "passed"
+        int(item.get("checks_run", 1)) for item in suite_results if item.get("status") == "passed"
     )
     checks_failed = sum(
-        int(item.get("checks_run", 1))
-        for item in suite_results
-        if item.get("status") == "failed"
+        int(item.get("checks_run", 1)) for item in suite_results if item.get("status") == "failed"
     )
     failures: list[dict[str, str]] = []
     for item in suite_results:

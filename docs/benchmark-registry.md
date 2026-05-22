@@ -90,6 +90,6 @@ pcs conformance run --suite benchmark-report
 pcs benchmark normalize --dialect examples/benchmarks/compatibility/pf_admission_explain_quality.dialect.json --out /tmp/out.json
 ```
 
-## External `pcs-bench` repo
+## pcs-bench
 
-pcs-core owns schemas, registry, metrics, fixtures, and the reference runner (`benchmark_runner.py`, CLI). A dedicated **pcs-bench** repository can pin pcs-core commits, import the registry, and extend suites without forking protocol definitions.
+pcs-core owns schemas, registry, metrics, fixtures, and the reference runner. The pcs-bench repository pins pcs-core commits, imports the registry, and runs suites without forking protocol definitions. See [benchmarks.md](benchmarks.md).

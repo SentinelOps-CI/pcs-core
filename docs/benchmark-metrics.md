@@ -10,7 +10,7 @@ PCS benchmarks measure release-chain trust properties using portable `BenchmarkR
 
 **Canonical machine-readable definitions:** `examples/benchmark_metric_registry.valid.json` (`BenchmarkMetricRegistry.v0`). Metric IDs use the `*_score` suffix. Coverage blocks may still use legacy short `metric` names; scores in `metric_summaries` always use metric IDs.
 
-See also [benchmark-schema-contract-v0.md](benchmark-schema-contract-v0.md) and [benchmark-compatibility.md](benchmark-compatibility.md).
+See also [benchmarks.md](benchmarks.md) and [producer-benchmark-ingest.md](producer-benchmark-ingest.md).
 
 ## Release reproducibility
 

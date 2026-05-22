@@ -28,7 +28,7 @@ Only `examples/labtrust-release/` may be used as **PCS v0.1 release evidence**. 
 
 `examples/labtrust-release/` is the canonical **release** fixture set. The manifest records exact commits for pcs-core, LabTrust-Gym, CertifyEdge, Provability Fabric, and Scientific Memory plus the SHA-256 digest of every release artifact file.
 
-**Downstream policy:** every repo in the release train copies this directory for local release fixture tests. Do not regenerate partial fixtures independently. Canonical pin values and failure codes: [labtrust-rc-canonical.md](labtrust-rc-canonical.md).
+**Downstream policy:** every repo in the release train copies this directory for local release fixture tests. Do not regenerate partial fixtures independently. Canonical pin values and failure codes: [labtrust-release-fixtures.md](labtrust-release-fixtures.md).
 
 | Valid fixture | Producer stage |
 |---------------|----------------|

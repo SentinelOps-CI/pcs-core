@@ -131,7 +131,7 @@ def labtrust_release_manifest_body(
             "sha256": str(digest),
         }
     pcs_commit = str(legacy.get("pcs_core_commit", PCS_CORE_COMMIT))
-    certified_file_hash = str(legacy_artifacts["science_claim_bundle.certified.json"])
+    str(legacy_artifacts["science_claim_bundle.certified.json"])
     signed_hash = str(legacy_artifacts["signed_science_claim_bundle.json"])
     validation_path = "release_chain_validation_result.v0.json"
     from pcs_core.paths import examples_dir

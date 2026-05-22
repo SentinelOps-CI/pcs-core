@@ -186,8 +186,7 @@ def validate_pcs_bench_ingest_semantics(data: dict[str, Any]) -> list[str]:
 
     producer_fields = PRODUCER_EMBEDDED_REF_FIELDS.get(str(producer_id), ())
     has_producer_embedded = any(
-        isinstance(data.get(field), list) and len(data.get(field)) > 0
-        for field in producer_fields
+        isinstance(data.get(field), list) and len(data.get(field)) > 0 for field in producer_fields
     )
     refs = data.get("artifact_refs")
     if has_producer_embedded and refs is None:

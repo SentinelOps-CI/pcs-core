@@ -1,6 +1,6 @@
 # LabTrust v0.1 release fixtures
 
-This directory contains **generated PCS v0.1 release-candidate artifacts** (release evidence only). Files must come from one atomic cross-repo chain run (LabTrust → CertifyEdge → Provability Fabric → Scientific Memory) and must not be updated file-by-file. **Placeholder commits are prohibited** for final release tags.
+This directory contains **generated PCS v0.1 release artifacts** (release evidence only). Files must come from one atomic cross-repo chain run (LabTrust → CertifyEdge → Provability Fabric → Scientific Memory) and must not be updated file-by-file. **Placeholder commits are prohibited** for final release tags.
 
 Schema conformance fixtures live in [`../labtrust/`](../labtrust/) and must not be used as release evidence.
 
@@ -38,10 +38,10 @@ cd python && pytest -q tests/test_release_chain.py tests/test_release_fixtures.p
 # or: just test-release-chain
 ```
 
-`validate-release-chain` enforces the 26 RC checks in [docs/labtrust-rc-canonical.md](../../docs/labtrust-rc-canonical.md).
+`validate-release-chain` enforces the 30 checks in [docs/labtrust-release-fixtures.md](../../docs/labtrust-release-fixtures.md).
 
 Invalid mixed-run example: [`../labtrust-release-invalid/mixed_certificate_id/`](../labtrust-release-invalid/mixed_certificate_id/).
 
 ## Authority
 
-Only this directory may be used as **PCS v0.1 release evidence**. Canonical pin values and downstream copy policy: [docs/labtrust-rc-canonical.md](../../docs/labtrust-rc-canonical.md). Profile: [docs/labtrust-v0.1-profile.md](../../docs/labtrust-v0.1-profile.md).
+Only this directory may be used as **PCS v0.1 release evidence**. Canonical pin values and downstream copy policy: [docs/labtrust-release-fixtures.md](../../docs/labtrust-release-fixtures.md). Profile: [docs/labtrust-v0.1-profile.md](../../docs/labtrust-v0.1-profile.md).

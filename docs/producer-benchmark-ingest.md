@@ -1,6 +1,6 @@
-# Producer integration: PcsBenchIngest.v0
+# Producer benchmark ingest
 
-Guide for **CertifyEdge**, **LabTrust-Gym**, **Provability Fabric**, and **Scientific Memory** to emit pcs-bench-compatible benchmark exports without forking schemas.
+How **CertifyEdge**, **LabTrust-Gym**, **Provability Fabric**, and **Scientific Memory** export `PcsBenchIngest.v0` for pcs-bench and pcs-core CI. Contract: [benchmark-ingest-contract.md](benchmark-ingest-contract.md).
 
 ## Contract summary
 
@@ -11,7 +11,6 @@ Guide for **CertifyEdge**, **LabTrust-Gym**, **Provability Fabric**, and **Scien
 | `signature_or_digest` | Canonical hash per pcs-core rules on each artifact and on the ingest root |
 | `source_repo` / `source_commit` | Required on ingest and sub-artifacts; release-grade commits are real 40-char SHAs |
 
-Normative spec: [benchmark-ingest-contract.md](benchmark-ingest-contract.md). Adequacy tiers: [release-grade-benchmark-evidence.md](release-grade-benchmark-evidence.md).
 
 ## Required producer target
 
@@ -63,7 +62,7 @@ python ../scripts/validate_benchmark_ingest_examples.py --release-grade
 pcs conformance run --suite benchmark-ingest
 ```
 
-Materialize copies sibling exports into `examples/benchmark_ingest/*.pcs_bench_ingest.valid.json` when present; otherwise it normalizes from `examples/benchmarks/compatibility/*.dialect.json`.
+Materialize copies sibling exports into `examples/benchmark_ingest/*.pcs_bench_ingest.valid.json` when present and **release-grade**. If a sibling export fails validation, pcs-core keeps the existing golden and prints `skip live ingest` (dialect fallback remains authoritative until the producer is fixed).
 
 ## Dialect fallback (CI without siblings)
 
@@ -105,3 +104,27 @@ pcs benchmark normalize \
 ## pcs-bench consumption
 
 pcs-bench validates each producer ingest, reads **embedded arrays first**, aggregates metrics into `BenchmarkReport.v0` with `metric_summaries`, and runs suite cases under `benchmarks/` in pcs-core.
+
+## Dialect compatibility
+
+pcs-core owns benchmark JSON schemas. Producer repos may keep internal dialect JSON; CI verifies each dialect **normalizes** to v0.
+
+| Producer ID | Typical input | Normalizer |
+|-------------|---------------|------------|
+| `pcs-core` | Native fixtures under `benchmarks/` | Native |
+| `pcs-bench` | Suite reports | `normalize_pcs_bench_report` |
+| `certifyedge` | Certificate benchmark | `build_certifyedge_pcs_bench_ingest` |
+| `labtrust-gym` | Case manifests | `normalize_labtrust_case_manifest` |
+| `scientific-memory` | Render / import audit | `build_scientific_memory_pcs_bench_ingest` |
+| `provability-fabric` | Admission + profile | `build_pf_pcs_bench_ingest` |
+
+**Compatibility corpus:** `examples/benchmarks/compatibility/*.dialect.json` and `*.normalized.json`. Checked by `validate_compatibility_corpus()` and the `benchmark-ingest` / `benchmark-report` conformance suites.
+
+**Metric definitions:** `examples/benchmark_metric_registry.valid.json` — see [benchmark-metrics.md](benchmark-metrics.md).
+
+```bash
+pcs benchmark normalize \
+  --dialect examples/benchmarks/compatibility/scientific_memory_render_benchmark.dialect.json \
+  --out /tmp/scientific_memory.pcs_bench_ingest.json
+```
+

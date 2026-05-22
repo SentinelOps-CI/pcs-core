@@ -60,7 +60,7 @@ Fixture authority is defined in [labtrust-v0.1-profile.md](labtrust-v0.1-profile
 |------|--------|
 | Source of truth | Sync against this directory at the pinned pcs-core commit, or prove canonical-hash equivalence to `RELEASE_FIXTURE_MANIFEST.json` |
 | Atomic refresh | Regenerate only via the full clean-checkout chain and atomic promote (`just generate-labtrust-release-fixtures` in pcs-core) |
-| Pin values | See [labtrust-rc-canonical.md](labtrust-rc-canonical.md) |
+| Pin values | See [labtrust-release-fixtures.md](labtrust-release-fixtures.md) |
 | Verification | `pcs validate-release-chain examples/labtrust-release/` (30 checks; CI gate on `main`) |
 
 Downstream release fixture tests must assert the same pin values as pcs-core. Schema conformance fixtures remain under `examples/labtrust/` (separate from release evidence).
@@ -85,6 +85,6 @@ report = build_conformance_report_data("hash")
 
 Shared hash vectors: `pcs shared-hash-vectors verify` (Python, Rust, TypeScript must agree).
 
-Protocol authority: [artifact-registry.md](artifact-registry.md), [semantic-check-policy.md](semantic-check-policy.md), [protocol-phase2.md](protocol-phase2.md).
+Protocol authority: [artifact-registry.md](artifact-registry.md), [semantic-check-policy.md](semantic-check-policy.md), [release-protocol.md](release-protocol.md).
 
 See also [protocol.md](protocol.md) and [labtrust-v0.1-profile.md](labtrust-v0.1-profile.md).

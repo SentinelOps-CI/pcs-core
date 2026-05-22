@@ -7,8 +7,8 @@ import json
 import pytest
 
 from pcs_core.computation_validate import (
-    validate_computation_witness_alignment,
     validate_computation_release_readiness,
+    validate_computation_witness_alignment,
 )
 from pcs_core.paths import examples_dir
 from pcs_core.workflow_profiles import load_workflow_profile

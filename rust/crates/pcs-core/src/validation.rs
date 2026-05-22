@@ -45,7 +45,10 @@ const ARTIFACT_SCHEMAS: &[(&str, &str)] = &[
     ("ToolUseCertificate.v0", "ToolUseCertificate.v0.schema.json"),
     ("DatasetReceipt.v0", "DatasetReceipt.v0.schema.json"),
     ("EnvironmentReceipt.v0", "EnvironmentReceipt.v0.schema.json"),
-    ("ComputationRunReceipt.v0", "ComputationRunReceipt.v0.schema.json"),
+    (
+        "ComputationRunReceipt.v0",
+        "ComputationRunReceipt.v0.schema.json",
+    ),
     ("ResultArtifact.v0", "ResultArtifact.v0.schema.json"),
     ("ComputationWitness.v0", "ComputationWitness.v0.schema.json"),
     ("ProofObligation.v0", "ProofObligation.v0.schema.json"),
@@ -66,14 +69,23 @@ const ARTIFACT_SCHEMAS: &[(&str, &str)] = &[
         "BenchmarkArtifactRef.v0.schema.json",
     ),
     ("ConformanceRun.v0", "ConformanceRun.v0.schema.json"),
-    ("FailureCaseManifest.v0", "FailureCaseManifest.v0.schema.json"),
+    (
+        "FailureCaseManifest.v0",
+        "FailureCaseManifest.v0.schema.json",
+    ),
     (
         "FailureLocalizationResult.v0",
         "FailureLocalizationResult.v0.schema.json",
     ),
     ("CoverageReport.v0", "CoverageReport.v0.schema.json"),
-    ("ExplainQualityReport.v0", "ExplainQualityReport.v0.schema.json"),
-    ("ProfileCoverageReport.v0", "ProfileCoverageReport.v0.schema.json"),
+    (
+        "ExplainQualityReport.v0",
+        "ExplainQualityReport.v0.schema.json",
+    ),
+    (
+        "ProfileCoverageReport.v0",
+        "ProfileCoverageReport.v0.schema.json",
+    ),
     (
         "BenchmarkMetricRegistry.v0",
         "BenchmarkMetricRegistry.v0.schema.json",
@@ -116,15 +128,24 @@ pub fn detect_artifact_type(value: &Value) -> Option<&'static str> {
     }
     if obj.get("schema_version") == Some(&Value::String("v0".into()))
         && obj.get("report_id").and_then(|v| v.as_str()).is_some()
-        && obj.get("required_sections").map(|v| v.is_array()).unwrap_or(false)
+        && obj
+            .get("required_sections")
+            .map(|v| v.is_array())
+            .unwrap_or(false)
         && obj.contains_key("quality_score")
     {
         return Some("ExplainQualityReport.v0");
     }
     if obj.get("schema_version") == Some(&Value::String("v0".into()))
         && obj.get("coverage_id").and_then(|v| v.as_str()).is_some()
-        && obj.get("workflow_profile_id").and_then(|v| v.as_str()).is_some()
-        && obj.get("artifact_types_required").map(|v| v.is_array()).unwrap_or(false)
+        && obj
+            .get("workflow_profile_id")
+            .and_then(|v| v.as_str())
+            .is_some()
+        && obj
+            .get("artifact_types_required")
+            .map(|v| v.is_array())
+            .unwrap_or(false)
     {
         return Some("ProfileCoverageReport.v0");
     }
@@ -141,7 +162,10 @@ pub fn detect_artifact_type(value: &Value) -> Option<&'static str> {
     if obj.get("schema_version") == Some(&Value::String("v0".into()))
         && obj.get("producer_id").and_then(|v| v.as_str()).is_some()
         && obj.get("suite_id").and_then(|v| v.as_str()).is_some()
-        && obj.get("benchmark_runs").map(|v| v.is_array()).unwrap_or(false)
+        && obj
+            .get("benchmark_runs")
+            .map(|v| v.is_array())
+            .unwrap_or(false)
         && obj.get("logs").map(|v| v.is_array()).unwrap_or(false)
         && obj.contains_key("workflow_id")
     {
@@ -158,7 +182,10 @@ pub fn detect_artifact_type(value: &Value) -> Option<&'static str> {
     }
     if obj.get("schema_version") == Some(&Value::String("v0".into()))
         && obj.get("report_id").and_then(|v| v.as_str()).is_some()
-        && obj.get("benchmark_suite_id").and_then(|v| v.as_str()).is_some()
+        && obj
+            .get("benchmark_suite_id")
+            .and_then(|v| v.as_str())
+            .is_some()
         && obj.get("summary").map(|v| v.is_object()).unwrap_or(false)
     {
         return Some("BenchmarkReport.v0");
@@ -245,7 +272,10 @@ pub fn detect_artifact_type(value: &Value) -> Option<&'static str> {
     }
     if obj.get("schema_version") == Some(&Value::String("v0".into()))
         && obj.get("check_id").and_then(|v| v.as_str()).is_some()
-        && obj.get("proof_obligation_id").and_then(|v| v.as_str()).is_some()
+        && obj
+            .get("proof_obligation_id")
+            .and_then(|v| v.as_str())
+            .is_some()
         && obj.contains_key("lean_theorem")
         && obj.contains_key("lean_version")
     {
@@ -253,7 +283,10 @@ pub fn detect_artifact_type(value: &Value) -> Option<&'static str> {
     }
     if obj.get("schema_version") == Some(&Value::String("v0".into()))
         && obj.get("obligation_id").and_then(|v| v.as_str()).is_some()
-        && obj.get("obligations").map(|v| v.is_array()).unwrap_or(false)
+        && obj
+            .get("obligations")
+            .map(|v| v.is_array())
+            .unwrap_or(false)
         && obj.contains_key("lean_module")
     {
         return Some("ProofObligation.v0");
@@ -272,8 +305,14 @@ pub fn detect_artifact_type(value: &Value) -> Option<&'static str> {
     if obj.get("schema_version") == Some(&Value::String("v0".into()))
         && obj.get("workflow_id").is_some()
         && obj.get("domain").is_some()
-        && obj.get("handoff_sequence").map(|v| v.is_array()).unwrap_or(false)
-        && obj.get("runtime_artifacts").map(|v| v.is_array()).unwrap_or(false)
+        && obj
+            .get("handoff_sequence")
+            .map(|v| v.is_array())
+            .unwrap_or(false)
+        && obj
+            .get("runtime_artifacts")
+            .map(|v| v.is_array())
+            .unwrap_or(false)
     {
         return Some("WorkflowProfile.v0");
     }
@@ -660,18 +699,14 @@ mod tests {
             return;
         }
         let data: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
-        assert_eq!(
-            detect_artifact_type(&data),
-            Some("BenchmarkArtifactRef.v0")
-        );
+        assert_eq!(detect_artifact_type(&data), Some("BenchmarkArtifactRef.v0"));
         validate_artifact(&data, "BenchmarkArtifactRef.v0").unwrap();
     }
 
     #[test]
     fn detect_scientific_memory_pcs_bench_ingest() {
-        let path = examples_dir().join(
-            "benchmark_ingest/scientific_memory.pcs_bench_ingest.valid.json",
-        );
+        let path =
+            examples_dir().join("benchmark_ingest/scientific_memory.pcs_bench_ingest.valid.json");
         if !path.is_file() {
             return;
         }
@@ -721,7 +756,11 @@ mod tests {
                 serde_json::from_str(&fs::read_to_string(&example_path).unwrap()).unwrap();
             let expected_digest = vector["expected_digest"].as_str().unwrap();
             let expected_canonical = vector["canonical_json"].as_str().unwrap();
-            assert_eq!(canonical_json_string(&data), expected_canonical, "{artifact_type}");
+            assert_eq!(
+                canonical_json_string(&data),
+                expected_canonical,
+                "{artifact_type}"
+            );
             assert_eq!(canonical_hash(&data), expected_digest, "{artifact_type}");
         }
     }

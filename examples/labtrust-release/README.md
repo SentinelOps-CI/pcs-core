@@ -1,6 +1,6 @@
 # LabTrust v0.1 release fixtures
 
-This directory contains **generated PCS v0.1 release-candidate artifacts** (release evidence only). Files must come from one atomic cross-repo chain run (LabTrust → CertifyEdge → Provability Fabric → Scientific Memory) and must not be updated file-by-file. **Placeholder commits are prohibited** for final release tags.
+This directory contains **generated PCS v0.1 release artifacts** (release evidence only). Files must come from one atomic cross-repo chain run (LabTrust → CertifyEdge → Provability Fabric → Scientific Memory) and must not be updated file-by-file. **Placeholder commits are prohibited** for final release tags.
 
 Schema conformance fixtures live in [`../labtrust/`](../labtrust/) and must not be used as release evidence.
 
@@ -24,7 +24,7 @@ Schema conformance fixtures live in [`../labtrust/`](../labtrust/) and must not 
 
 `RELEASE_FIXTURE_MANIFEST.json` records five repository commits (derived from artifact provenance) and SHA-256 digests of every file.
 
-Phase 2 protocol artifacts (same RC pins, digest-signed):
+Protocol artifacts (same pins as the legacy manifest, digest-signed):
 
 - `release_manifest.v0.json` — `ReleaseManifest.v0` (superset of the legacy manifest)
 - `handoff_manifest.*.v0.json` — stage handoffs (`runtime_to_certificate`, `certificate_to_bundle`, `bundle_to_verifier`, `signed_bundle_to_memory`)
@@ -72,10 +72,10 @@ cd python && pytest -q tests/test_release_chain.py tests/test_release_fixtures.p
 # or: just test-release-chain
 ```
 
-`validate-release-chain` enforces the 26 RC checks in [docs/labtrust-rc-canonical.md](../../docs/labtrust-rc-canonical.md).
+`validate-release-chain` enforces the 30 checks in [docs/labtrust-release-fixtures.md](../../docs/labtrust-release-fixtures.md).
 
 Invalid mixed-run example: [`../labtrust-release-invalid/mixed_certificate_id/`](../labtrust-release-invalid/mixed_certificate_id/).
 
 ## Authority
 
-Only this directory may be used as **PCS v0.1 release evidence**. Canonical pin values and downstream copy policy: [docs/labtrust-rc-canonical.md](../../docs/labtrust-rc-canonical.md). Profile: [docs/labtrust-v0.1-profile.md](../../docs/labtrust-v0.1-profile.md).
+Only this directory may be used as **PCS v0.1 release evidence**. Canonical pin values and downstream copy policy: [docs/labtrust-release-fixtures.md](../../docs/labtrust-release-fixtures.md). Profile: [docs/labtrust-v0.1-profile.md](../../docs/labtrust-v0.1-profile.md).

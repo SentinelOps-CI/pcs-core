@@ -179,7 +179,9 @@ def normalize_pf_explain_quality(raw: dict[str, Any]) -> dict[str, Any]:
         "sections_required_count": required_count,
         "quality_score": float(raw.get("quality_score", quality)),
         "gaps": gaps,
-        "source_repo": str(raw.get("source_repo", "https://github.com/SentinelOps-CI/provability-fabric")),
+        "source_repo": str(
+            raw.get("source_repo", "https://github.com/SentinelOps-CI/provability-fabric")
+        ),
         "source_commit": str(raw.get("source_commit", PCS_COMMIT)),
         "signature_or_digest": PLACEHOLDER_DIGEST,
     }
@@ -228,7 +230,9 @@ def normalize_pf_profile_coverage(raw: dict[str, Any]) -> dict[str, Any]:
         "denominator": denominator,
         "coverage_ratio": float(raw.get("coverage_ratio", ratio)),
         "details": raw.get("details", {}),
-        "source_repo": str(raw.get("source_repo", "https://github.com/SentinelOps-CI/provability-fabric")),
+        "source_repo": str(
+            raw.get("source_repo", "https://github.com/SentinelOps-CI/provability-fabric")
+        ),
         "source_commit": str(raw.get("source_commit", PCS_COMMIT)),
         "signature_or_digest": PLACEHOLDER_DIGEST,
     }
@@ -414,7 +418,9 @@ def build_scientific_memory_interpretability_coverage(
         "denominator": float(required),
         "coverage_ratio": min(1.0, score),
         "details": {"render_report_id": explain.get("report_id")},
-        "source_repo": str(explain.get("source_repo", "https://github.com/fraware/scientific-memory")),
+        "source_repo": str(
+            explain.get("source_repo", "https://github.com/fraware/scientific-memory")
+        ),
         "source_commit": str(explain.get("source_commit", PCS_COMMIT)),
         "signature_or_digest": PLACEHOLDER_DIGEST,
     }
@@ -591,7 +597,12 @@ def build_scientific_memory_pcs_bench_ingest(raw: dict[str, Any]) -> dict[str, A
     explain = normalize_scientific_memory_render_benchmark(raw)
     coverage = build_scientific_memory_interpretability_coverage(raw, explain)
     sm_report = raw.get("import_report") or raw
-    source_repo = str(raw.get("source_repo", sm_report.get("source_repo", "https://github.com/fraware/scientific-memory")))
+    source_repo = str(
+        raw.get(
+            "source_repo",
+            sm_report.get("source_repo", "https://github.com/fraware/scientific-memory"),
+        )
+    )
     source_commit = str(
         raw.get("source_commit", sm_report.get("scientific_memory_commit", PCS_COMMIT)),
     )
@@ -770,8 +781,7 @@ def normalize_scientific_memory_render_benchmark(raw: dict[str, Any]) -> dict[st
     }
     for section_id in required:
         present = any(
-            key_to_section.get(k) == section_id and k in sm_report
-            for k in key_to_section
+            key_to_section.get(k) == section_id and k in sm_report for k in key_to_section
         )
         if section_id == "formal_checks":
             present = "release_chain_validation_status" in sm_report
@@ -835,6 +845,7 @@ NORMALIZERS: dict[str, tuple[str, Any]] = {
         normalize_scientific_memory_render_benchmark,
     ),
 }
+
 
 def normalize_pf_pcs_bench_ingest_dialect(raw: dict[str, Any]) -> dict[str, Any]:
     profile_raw = None

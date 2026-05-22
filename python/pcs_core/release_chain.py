@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from pcs_core.bundle_identity import resolve_certified_bundle_identity_hash
 from pcs_core.release_fixtures import (
     CERTIFYEDGE_SOURCE_REPO,
     COMMIT_KEYS,
@@ -24,7 +25,6 @@ from pcs_core.release_fixtures import (
     is_release_pattern_placeholder,
     is_zero_commit,
 )
-from pcs_core.bundle_identity import resolve_certified_bundle_identity_hash
 from pcs_core.validate import ValidationError, validate_file
 
 _DIGEST_RE = re.compile(r"^sha256:[0-9a-f]{64}$")

@@ -5,8 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from pcs_core.release_chain import ReleaseChainIssue
 from pcs_core.registry_semantics import responsible_component_for_registry_refs
+from pcs_core.release_chain import ReleaseChainIssue
 from pcs_core.release_chain_registry_refs import RELEASE_CHAIN_REGISTRY_CHECK_REFS
 
 

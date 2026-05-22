@@ -2,9 +2,47 @@
 
 **Proof-Carrying Science (PCS)** — canonical protocol repository for v0.1 artifact schemas, validation, and hash canonicalization.
 
-This repo is the single source of truth for LabTrust-Gym, CertifyEdge, Provability Fabric, and Scientific Memory. Downstream repos must not fork artifact shapes.
+Single source of truth for LabTrust-Gym, CertifyEdge, Provability Fabric, and Scientific Memory. Downstream repos must not fork artifact shapes.
 
-## v0.1 artifacts
+**Documentation index:** [docs/README.md](docs/README.md)  
+**v0.1 release checklist:** [docs/releases/v0.1.0.md](docs/releases/v0.1.0.md)
+
+## Release pin
+
+Pin git tag **`v0.1.0`**:
+
+```bash
+git clone https://github.com/SentinelOps-CI/pcs-core.git
+cd pcs-core && git checkout v0.1.0
+```
+
+Root `VERSION` matches the Python package (`0.1.0`).
+
+## Quick start
+
+```bash
+cd python && pip install -e ".[dev]"
+
+pcs validate ../examples/science_claim_bundle.certified.valid.json
+pcs validate ../examples/signed_science_claim_bundle.valid.json
+pcs hash ../examples/science_claim_bundle.certified.valid.json
+pcs examples check
+pcs schema check
+python -m pcs_core.hash_vectors --verify
+pcs shared-hash-vectors verify
+```
+
+Release verification (CI parity):
+
+```bash
+bash scripts/run-release-verify.sh    # Linux/macOS/Git Bash
+just release-verify
+powershell -File scripts/run-release-verify.ps1   # Windows
+```
+
+Full build + lint gate: `just ci` (see [docs/README.md](docs/README.md)).
+
+## v0.1 core artifacts
 
 | Artifact | Schema |
 |----------|--------|
@@ -24,72 +62,34 @@ This repo is the single source of truth for LabTrust-Gym, CertifyEdge, Provabili
 | ToolUseTrace.v0 | `schemas/ToolUseTrace.v0.schema.json` |
 | ToolUseCertificate.v0 | `schemas/ToolUseCertificate.v0.schema.json` |
 
-## Multi-domain workflows (v0.1 extension)
+Protocol overview: [docs/protocol.md](docs/protocol.md). Release artifacts: [docs/release-protocol.md](docs/release-protocol.md).
 
-Workflows are declared in `WorkflowProfile.v0` (see [docs/workflow-profiles.md](docs/workflow-profiles.md)):
+## Workflows
 
-| Workflow | Profile | Conformance train |
-|----------|---------|-------------------|
+| Workflow | Profile fixture | Release fixtures |
+|----------|-----------------|------------------|
 | LabTrust QC release | `examples/workflow_profiles/labtrust_qc_release.valid.json` | `examples/labtrust-release/` |
 | Agent tool-use safety | `examples/workflow_profiles/agent_tool_use_safety.valid.json` | `examples/tool-use-release/` |
+| Scientific computation | `examples/workflow_profiles/scientific_computation_reproducibility.valid.json` | `examples/computation-release/` |
 
 ```bash
-pcs conformance run --suite workflow-profile
-pcs conformance run --suite tool-use
+pcs validate-release-chain ../examples/labtrust-release/
 pcs conformance run --suite multidomain
 just materialize-protocol
 ```
 
-## Release pin
+LabTrust chain details: [docs/labtrust-release-fixtures.md](docs/labtrust-release-fixtures.md).
 
-Downstream repos should pin git tag **`v0.1.0`**:
+## Benchmark ingest
 
-```bash
-git clone https://github.com/SentinelOps-CI/pcs-core.git
-cd pcs-core && git checkout v0.1.0
-```
-
-The repo root `VERSION` file matches the Python package version (`0.1.0`).
-
-## Quick start
-
-```bash
-cd python && pip install -e ".[dev]"
-
-pcs validate ../examples/science_claim_bundle.certified.valid.json
-pcs validate ../examples/signed_science_claim_bundle.valid.json
-pcs validate ../examples/labtrust/signed_science_claim_bundle.valid.json
-pcs hash ../examples/science_claim_bundle.certified.valid.json
-pcs examples check
-pcs schema check
-python -m pcs_core.hash_vectors --verify
-just pcs-schema-diff schemas
-
-just ci
-```
-
-## PCS v0.1 release-candidate fixtures
-
-**Canonical set:** [`examples/labtrust-release/`](examples/labtrust-release/) with [`RELEASE_FIXTURE_MANIFEST.json`](examples/labtrust-release/RELEASE_FIXTURE_MANIFEST.json) and Phase 2 protocol artifacts (`release_manifest.v0.json`, handoff manifests, `release_chain_validation_result.v0.json`). See [docs/protocol-phase2.md](docs/protocol-phase2.md).
-
-Downstream repos must sync against this directory or prove canonical-hash equivalence to the manifest (do not partially regenerate). Pin values and the 30-check validator: [docs/labtrust-rc-canonical.md](docs/labtrust-rc-canonical.md). RC tag checklist: [docs/releases/pcs-v0.1.0-rc1.md](docs/releases/pcs-v0.1.0-rc1.md).
-
-```bash
-pcs validate-release-chain examples/labtrust-release/
-just validate-labtrust-release-fixtures
-```
-
-## Benchmark ingest (cross-repo)
-
-Producer repos export **`PcsBenchIngest.v0`** to pcs-bench: embedded v0 objects plus optional **`BenchmarkArtifactRef.v0`** file provenance.
+Producers export **`PcsBenchIngest.v0`** (embedded v0 objects; optional **`BenchmarkArtifactRef.v0`** file provenance).
 
 ```bash
 pcs conformance run --suite benchmark-ingest
-pcs benchmark materialize-ingest
-pcs benchmark validate
+pcs benchmark validate-ingest --release-grade
 ```
 
-Goldens: `examples/benchmark_ingest/` (sync from sibling `make pcs-bench-producer`; set `PCS_PRODUCER_REPOS_ROOT` if repos are not parent siblings). Spec: [docs/benchmark-ingest-contract.md](docs/benchmark-ingest-contract.md), [docs/release-grade-benchmark-evidence.md](docs/release-grade-benchmark-evidence.md), [docs/producer-benchmark-ingest.md](docs/producer-benchmark-ingest.md).
+Goldens: `examples/benchmark_ingest/`. Guide: [docs/benchmarks.md](docs/benchmarks.md).
 
 ## CLI
 
@@ -97,47 +97,43 @@ Goldens: `examples/benchmark_ingest/` (sync from sibling `make pcs-bench-produce
 |---------|-------------|
 | `pcs validate <file>` | JSON Schema + semantic validation |
 | `pcs hash <file>` | Canonical `sha256:` digest |
-| `pcs validate-release-chain [dir]` | Atomic LabTrust RC chain consistency (default: `examples/labtrust-release/`) |
+| `pcs validate-release-chain [dir]` | Release directory consistency |
 | `pcs schema check` | Validate all JSON schemas |
-| `pcs examples check` | Validate valid/invalid fixtures |
-| `pcs hash-vectors verify` | Verify frozen canonical hash vectors |
-| `pcs shared-hash-vectors verify` | Verify cross-language vectors in `test_vectors/hash/` |
-| `pcs registry list` | List registered PCS artifact types |
-| `pcs registry validate <file>` | Validate `ArtifactRegistry.v0` drift |
-| `pcs conformance run --suite <name>` | Protocol conformance (`multidomain`, `tool-use`, `benchmark-ingest`, …) |
-| `pcs benchmark materialize-ingest` | Regenerate `examples/benchmark_ingest/` from sibling producer exports (dialect fallback) |
-| `pcs benchmark validate` | Benchmark fixtures + ingest contract |
-| `pcs shared-hash-vectors verify` | Cross-language hash parity (`test_vectors/hash/`) |
-| `pcs explain-status <status>` | Explain status transitions |
-| `pcs migrate --from v0 --to v0 <file>` | Identity migration report |
-| `just pcs-schema-diff <dir>` | Compare vendored schemas to pcs-core |
+| `pcs examples check` | Valid/invalid fixtures |
+| `pcs shared-hash-vectors verify` | Cross-language hash vectors |
+| `pcs registry validate <file>` | Artifact registry drift check |
+| `pcs registry audit` | Semantic check catalog |
+| `pcs conformance run --suite <name>` | Protocol conformance suites |
+| `pcs benchmark validate` | Benchmark fixtures |
+| `pcs benchmark validate-ingest --release-grade` | Producer ingest goldens |
+| `pcs benchmark materialize-ingest` | Regenerate ingest examples |
+| `pcs explain-status <status>` | Status transition help |
+| `pcs migrate --from v0 --to v0 <file>` | Migration report |
+| `just pcs-schema-diff <dir>` | Compare vendored schemas |
 
 ## Layout
 
 ```
-schemas/          JSON Schema (Draft 2020-12)
-examples/         Valid and invalid fixtures
-examples/labtrust/          Schema conformance fixtures (stable `pcs validate` examples)
-examples/labtrust-release/  Generated release evidence (`RELEASE_FIXTURE_MANIFEST.json`)
-docs/             Protocol, trust model, LabTrust profile
-python/           `pcs` CLI and validation library
-rust/             Rust bindings (semantic checks + hash)
-typescript/       `@pcs/core` package
-python/tests/hash_vectors/   Frozen canonical hash test vectors
-test_vectors/hash/           Shared cross-language hash vectors
+schemas/              JSON Schema (Draft 2020-12)
+examples/             Valid and invalid fixtures
+examples/labtrust-release/   Canonical LabTrust release chain
+docs/                 Protocol and integration docs
+python/               pcs CLI and validation library
+rust/                 Rust bindings
+typescript/           @pcs/core package
+benchmarks/           Benchmark case trees
+conformance/          Conformance suite notes
+test_vectors/hash/    Shared cross-language hash vectors
 ```
 
 ## Downstream integration
 
-1. Add **pcs-core** as a git submodule or package dependency.
-2. Validate artifacts with `pcs validate` before publish/import.
-3. Hash with `pcs hash` — see [docs/hash-canonicalization.md](docs/hash-canonicalization.md).
-4. Import schemas from `schemas/`; pin by release tag.
-5. Follow [docs/downstream-schema-sync.md](docs/downstream-schema-sync.md) for vendoring and `just pcs-schema-diff`.
-6. Validate cross-repo fixtures under `examples/labtrust/`.
-7. Follow [docs/labtrust-v0.1-profile.md](docs/labtrust-v0.1-profile.md) for the QC-release workflow.
-8. Run the **PCS v0.1 clean-checkout chain** from LabTrust-Gym (`scripts/run-pcs-v01-clean-chain.ps1` here delegates to the sibling repo).
-9. Copy [`examples/labtrust-release/`](examples/labtrust-release/) for cross-repo release fixture tests; verify with `pcs validate-release-chain`.
+1. Add pcs-core as a submodule or package dependency; pin tag `v0.1.0`.
+2. Validate artifacts with `pcs validate` before publish or import.
+3. Hash with `pcs hash` — [docs/hash-canonicalization.md](docs/hash-canonicalization.md).
+4. Import schemas from `schemas/`; verify drift with `just pcs-schema-diff` — [docs/downstream-schema-sync.md](docs/downstream-schema-sync.md).
+5. Copy `examples/labtrust-release/` for cross-repo release tests; verify with `pcs validate-release-chain`.
+6. Run `pcs conformance run --suite <name>` in CI for the workflows you use.
 
 ## License
 

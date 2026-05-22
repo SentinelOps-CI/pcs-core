@@ -13,12 +13,12 @@ from pcs_core.computation_validate import (
     DATASET_RECEIPT_FILE,
     ENVIRONMENT_RECEIPT_FILE,
     RESULT_ARTIFACT_FILE,
+    validate_computation_run_receipt_semantics,
     validate_computation_witness_alignment,
+    validate_computation_witness_semantics,
     validate_dataset_receipt_semantics,
     validate_environment_receipt_semantics,
-    validate_computation_run_receipt_semantics,
     validate_result_artifact_semantics,
-    validate_computation_witness_semantics,
 )
 from pcs_core.release_chain import (
     ReleaseChainIssue,
@@ -102,7 +102,9 @@ def _validate_computation_alignment(base: Path, errors: list[str]) -> None:
     run_receipt = _load_json(base / COMPUTATION_RUN_RECEIPT_FILE)
     result = _load_json(base / RESULT_ARTIFACT_FILE)
     witness = _load_json(base / COMPUTATION_WITNESS_FILE)
-    if not all(isinstance(doc, dict) for doc in (dataset, environment, run_receipt, result, witness)):
+    if not all(
+        isinstance(doc, dict) for doc in (dataset, environment, run_receipt, result, witness)
+    ):
         return
     errors.extend(
         validate_computation_witness_alignment(

@@ -3,16 +3,15 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 import pytest
 
+from pcs_core.computation_release_chain import COMPUTATION_MANIFEST_ARTIFACTS
+from pcs_core.computation_validate import validate_computation_invalid_case
 from pcs_core.paths import examples_dir
 from pcs_core.release_chain import validate_release_chain
 from pcs_core.release_chain_profiles import COMPUTATION_WORKFLOW_PROFILE_ID
 from pcs_core.release_chain_report import build_release_chain_validation_result
-from pcs_core.computation_release_chain import COMPUTATION_MANIFEST_ARTIFACTS
-from pcs_core.computation_validate import validate_computation_invalid_case
 from pcs_core.validate import validate_artifact
 
 COMPUTATION_RELEASE = examples_dir() / "computation-release"

@@ -88,8 +88,7 @@ def test_canonical_rc_pin_values_in_manifest_and_artifacts() -> None:
         (release_dir() / "release_manifest.v0.json").read_text(encoding="utf-8"),
     )
     assert (
-        release_manifest["chain_root"]["certified_bundle_hash"]
-        == LABTRUST_RC_CERTIFIED_BUNDLE_HASH
+        release_manifest["chain_root"]["certified_bundle_hash"] == LABTRUST_RC_CERTIFIED_BUNDLE_HASH
     )
 
     trace_cert = json.loads((release_dir() / "trace_certificate.json").read_text())

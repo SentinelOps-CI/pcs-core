@@ -50,6 +50,6 @@ just benchmark-ingest-conformance
 
 Embedded arrays hold canonical v0 objects. `artifact_refs` record on-disk paths and content digests for producer file provenance only.
 
+- [benchmarks.md](../../docs/benchmarks.md)
 - [benchmark-ingest-contract.md](../../docs/benchmark-ingest-contract.md)
-- [release-grade-benchmark-evidence.md](../../docs/release-grade-benchmark-evidence.md)
 - [producer-benchmark-ingest.md](../../docs/producer-benchmark-ingest.md)

@@ -109,6 +109,10 @@ commit MESSAGE:
 commit MESSAGE:
     powershell.exe -NoProfile -ExecutionPolicy Bypass -File "{{root}}/scripts/pcs-commit.ps1" -m "{{MESSAGE}}"
 
+# Full release gate (same checks as scripts/run-release-verify.sh).
+release-verify:
+    bash "{{root}}/scripts/run-release-verify.sh"
+
 ci: build python-test rust-test ts-test validate-examples labtrust-check validate-labtrust-release-fixtures validate-computation-release-fixtures protocol-conformance computation-conformance multidomain-conformance benchmark-ingest-conformance hash-vectors-verify shared-hash-vectors-verify pcs-schema-diff
     cd "{{root}}/python" && pcs schema check
     cd "{{root}}/python" && pcs registry validate ../examples/artifact_registry.valid.json

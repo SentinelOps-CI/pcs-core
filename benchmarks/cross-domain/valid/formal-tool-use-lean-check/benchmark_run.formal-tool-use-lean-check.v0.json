@@ -3,8 +3,8 @@
   "run_id": "bench-run-formal-tool-use-lean-check",
   "task_id": "formal-trust-kernel-v0",
   "case_id": "formal-tool-use-lean-check",
-  "started_at": "2026-05-22T00:56:42Z",
-  "completed_at": "2026-05-22T00:56:42Z",
+  "started_at": "2026-05-22T11:54:25Z",
+  "completed_at": "2026-05-22T11:54:25Z",
   "commands": [
     {
       "command": "lean_check C:/Users/mateo/pcs-core/examples/tool-use-release",
@@ -27,5 +27,5 @@
   "duration_ms": 1,
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:6fe4fd4b9c4dcc7bdca5ec2d6d94501b5a75ca6208e9e7293c3cc258a89f8786"
+  "signature_or_digest": "sha256:8fbb7a502c65e2f71aaab364702137f9677f5fc217606cf9958b05a8f4017958"
 }

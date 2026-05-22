@@ -72,10 +72,10 @@ python scripts/materialize_benchmark_producer_examples.py
 ## Documentation
 
 - [docs/benchmark-object-model.md](../docs/benchmark-object-model.md) — artifacts and status dimensions
-- [docs/benchmark-schema-contract-v0.md](../docs/benchmark-schema-contract-v0.md) — frozen v0 contract
+- [docs/benchmarks.md](../docs/benchmarks.md) — benchmark overview and schema list
 - [docs/benchmark-metrics.md](../docs/benchmark-metrics.md) — metric definitions
 - [docs/benchmark-registry.md](../docs/benchmark-registry.md) — suite registry
-- [docs/benchmark-compatibility.md](../docs/benchmark-compatibility.md) — dialect normalization
+- [docs/producer-benchmark-ingest.md](../docs/producer-benchmark-ingest.md) — dialect normalization
 - [docs/benchmark-ingest-contract.md](../docs/benchmark-ingest-contract.md) — `PcsBenchIngest` object vs path refs
 
 ## External pcs-bench

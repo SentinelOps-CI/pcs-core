@@ -97,7 +97,11 @@ def _placeholder_commit_detected(release_dir: Path) -> bool:
         if doc is not None:
             _walk_source_commits(doc, found=commits)
     for commit in commits:
-        if is_zero_commit(commit) or is_placeholder_commit(commit) or is_release_pattern_placeholder(commit):
+        if (
+            is_zero_commit(commit)
+            or is_placeholder_commit(commit)
+            or is_release_pattern_placeholder(commit)
+        ):
             return True
     return False
 
@@ -169,7 +173,9 @@ def detect_gallery_failure(release_dir: Path) -> tuple[str | None, str | None]:
     if manifest is None:
         return "manifest_missing", "release_manifest"
 
-    if (release_dir / "pf_handoff.json").is_file() or (release_dir / "handoff_to_pf.legacy.json").is_file():
+    if (release_dir / "pf_handoff.json").is_file() or (
+        release_dir / "handoff_to_pf.legacy.json"
+    ).is_file():
         return "legacy_handoff_file", "handoff"
 
     cert = _load_json(release_dir / "trace_certificate.json")
@@ -261,7 +267,13 @@ def evaluate_labtrust_gallery_case(
     if kind == "valid_release":
         if failure_code is None:
             return "passed", None, None, "valid", certificate_status
-        return "failed", failure_code, component or localize_failure_code(failure_code), "invalid", certificate_status
+        return (
+            "failed",
+            failure_code,
+            component or localize_failure_code(failure_code),
+            "invalid",
+            certificate_status,
+        )
 
     if failure_code is None:
         return "failed", "expected_failure_not_detected", "unknown", "valid", certificate_status

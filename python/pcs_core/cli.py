@@ -7,6 +7,7 @@ import json
 import sys
 from pathlib import Path
 
+from pcs_core.conformance import build_conformance_report_data, list_suites, run_conformance
 from pcs_core.hash import canonical_hash
 from pcs_core.hash_vectors import verify_vectors, write_vectors
 from pcs_core.migrate import migrate_file
@@ -27,7 +28,6 @@ from pcs_core.release_chain_report import (
     write_release_chain_validation_result,
 )
 from pcs_core.release_fixtures import release_dir, validate_release_manifest
-from pcs_core.conformance import build_conformance_report_data, list_suites, run_conformance
 from pcs_core.shared_hash_vectors import verify_shared_vectors, write_shared_vectors
 from pcs_core.status_policy import check_status_transition, explain_status
 from pcs_core.validate import (
@@ -182,7 +182,9 @@ def cmd_shared_hash_vectors_verify() -> int:
     return 0
 
 
-def cmd_conformance_run(suite: str, *, json_output: bool = False, out_path: Path | None = None) -> int:
+def cmd_conformance_run(
+    suite: str, *, json_output: bool = False, out_path: Path | None = None
+) -> int:
     report = build_conformance_report_data(suite)
     if out_path is not None:
         out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -378,8 +380,12 @@ def main(argv: list[str] | None = None) -> int:
         default="all",
         help=f"Suite name or all (available: {', '.join(list_suites())}, all)",
     )
-    p_conformance_run.add_argument("--json", action="store_true", help="Emit machine-readable report")
-    p_conformance_run.add_argument("--out", type=Path, default=None, help="Write report JSON to path")
+    p_conformance_run.add_argument(
+        "--json", action="store_true", help="Emit machine-readable report"
+    )
+    p_conformance_run.add_argument(
+        "--out", type=Path, default=None, help="Write report JSON to path"
+    )
 
     p_extract_obligations = sub.add_parser(
         "extract-proof-obligations",
@@ -426,7 +432,7 @@ def main(argv: list[str] | None = None) -> int:
     benchmark_sub.add_parser("validate", help="Validate benchmark fixture tree")
     benchmark_sub.add_parser(
         "materialize-ingest",
-        help="Regenerate examples/benchmark_ingest from sibling producer exports (dialect fallback)",
+        help="Regenerate examples/benchmark_ingest (producer export or dialect fallback)",
     )
     p_benchmark_validate_ingest = benchmark_sub.add_parser(
         "validate-ingest",
@@ -446,7 +452,7 @@ def main(argv: list[str] | None = None) -> int:
         "--dialect",
         type=Path,
         required=True,
-        help="Path to dialect JSON (e.g. examples/benchmarks/compatibility/pf_admission_explain_quality.dialect.json)",
+        help="Path to dialect JSON under examples/benchmarks/compatibility/",
     )
     p_benchmark_normalize.add_argument(
         "--out",
@@ -653,7 +659,9 @@ def cmd_benchmark_normalize(dialect_path: Path, out_path: Path) -> int:
         return 1
 
 
-def cmd_benchmark_run(suite: str, *, json_output: bool = False, out_path: Path | None = None) -> int:
+def cmd_benchmark_run(
+    suite: str, *, json_output: bool = False, out_path: Path | None = None
+) -> int:
     from pcs_core.benchmark_runner import run_benchmark_suite
 
     try:

@@ -28,7 +28,7 @@ Repos that export file-oriented benchmark output (Scientific Memory, CertifyEdge
 2. Add `artifact_refs` with `path`, `sha256` (matching embedded `signature_or_digest`), and provenance.
 3. Regenerate golden JSON via pcs-core normalizers from captured dialect fixtures.
 
-See [docs/benchmark-ingest-contract.md](../../docs/benchmark-ingest-contract.md), [docs/release-grade-benchmark-evidence.md](../../docs/release-grade-benchmark-evidence.md), and [docs/producer-benchmark-ingest.md](../../docs/producer-benchmark-ingest.md).
+See [docs/benchmarks.md](../../docs/benchmarks.md), [docs/benchmark-ingest-contract.md](../../docs/benchmark-ingest-contract.md), and [docs/producer-benchmark-ingest.md](../../docs/producer-benchmark-ingest.md).
 
 ## Invalid fixtures
 

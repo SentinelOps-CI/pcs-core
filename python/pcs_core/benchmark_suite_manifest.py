@@ -50,7 +50,7 @@ def registry_matches_manifest(
     *,
     suite_id: str | None = None,
 ) -> list[str]:
-    """Return errors when BenchmarkRegistry.v0 suite entry drifts from benchmark_manifest.v0.json."""
+    """Registry vs benchmark_manifest.v0.json drift errors."""
     errors: list[str] = []
     manifest_suite = manifest.get("suite_id")
     if manifest_suite and suite_id and str(manifest_suite) != suite_id:
@@ -69,6 +69,7 @@ def registry_matches_manifest(
         )
     if set(manifest_invalid) != reg_invalid:
         errors.append(
-            f"invalid_cases drift (manifest={sorted(manifest_invalid)} registry={sorted(reg_invalid)})",
+            "invalid_cases drift "
+            f"(manifest={sorted(manifest_invalid)} registry={sorted(reg_invalid)})",
         )
     return errors

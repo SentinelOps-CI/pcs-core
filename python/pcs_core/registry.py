@@ -9,8 +9,7 @@ from typing import Any
 from pcs_core.hash import PLACEHOLDER_DIGEST, canonical_hash
 from pcs_core.paths import examples_dir, schemas_dir
 from pcs_core.registry_data import registry_entries
-from pcs_core.registry_semantics import enrich_semantic_check
-from pcs_core.registry_semantics import audit_registry_catalog
+from pcs_core.registry_semantics import audit_registry_catalog, enrich_semantic_check
 from pcs_core.validate import ValidationError, detect_artifact_type, validate_artifact
 
 REGISTRY_ID = "pcs-artifact-registry-v0.1"

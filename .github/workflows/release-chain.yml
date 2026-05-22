@@ -12,7 +12,7 @@ on:
       - "conformance/**"
       - "test_vectors/hash/**"
       - "docs/labtrust-v0.1-profile.md"
-      - "docs/labtrust-rc-canonical.md"
+      - "docs/labtrust-release-fixtures.md"
       - "docs/releases/**"
       - ".github/workflows/release-chain.yml"
   push:
@@ -27,7 +27,7 @@ on:
       - "conformance/**"
       - "test_vectors/hash/**"
       - "docs/labtrust-v0.1-profile.md"
-      - "docs/labtrust-rc-canonical.md"
+      - "docs/labtrust-release-fixtures.md"
       - "docs/releases/**"
       - ".github/workflows/release-chain.yml"
 
