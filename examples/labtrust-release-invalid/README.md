@@ -1,6 +1,6 @@
 # Invalid LabTrust release-chain fixtures
 
-Each subdirectory is a copy of the canonical `examples/labtrust-release/` chain with **one intentional violation** for `pcs validate-release-chain` negative tests.
+Each subdirectory is a copy of the canonical [`../labtrust-release/`](../labtrust-release/) chain with **one intentional violation**. `pcs validate-release-chain` must fail with the listed code.
 
 | Directory | Expected failure code |
 |-----------|------------------------|
@@ -16,3 +16,5 @@ Regenerate from canonical:
 ```bash
 python python/scripts/materialize_invalid_release_fixtures.py
 ```
+
+Validator reference: [docs/labtrust-release-fixtures.md](../../docs/labtrust-release-fixtures.md).

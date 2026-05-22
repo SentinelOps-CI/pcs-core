@@ -154,7 +154,7 @@ Scientific Memory and similar repos that today emit only file paths should add `
 | **release-grade** | Live producer export: real 40-char ingest `source_commit`, non-empty `commands`, producer-specific non-empty arrays (below), matching `artifact_refs` when files are exported. |
 | **audit-ready** | Release-grade plus stable digests, documented `commands`, and provenance in `examples/benchmark_ingest/provenance.manifest.json`. |
 
-Enforced by `pcs_core.benchmark_ingest.assess_ingest_adequacy_tier()` and `validate_benchmark_ingest_examples.py --release-grade`.
+Enforced by `pcs_core.benchmark_ingest.assess_ingest_adequacy_tier()` and `validate_benchmark_ingest_examples.py --release-grade`. The CLI and provenance manifest may label this tier `external-review-grade`; the meaning is the same as **audit-ready** here.
 
 ### Release-grade minimum (all producers)
 

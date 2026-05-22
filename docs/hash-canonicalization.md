@@ -1,49 +1,46 @@
-# Hash Canonicalization
+# Hash canonicalization
 
-PCS artifacts bind integrity through `signature_or_digest` fields and cross-artifact hash links (`trace_hash`, `events_hash`, etc.). All repos must use the same canonical JSON hashing algorithm.
+PCS artifacts bind integrity through `signature_or_digest` and cross-artifact hash links (`trace_hash`, `events_hash`, and related fields). All repositories must use the same canonical JSON algorithm.
 
 ## Algorithm
 
 1. Parse the artifact as a JSON object.
-2. Remove `signature_or_digest` from the top-level object (the digest is over unsigned content).
-3. Recursively sort object keys lexicographically (UTF-8 byte order). Array order is preserved.
-4. Serialize with compact JSON: no insignificant whitespace, UTF-8, non-ASCII unescaped (`ensure_ascii=False` in Python).
-5. Compute SHA-256 of the UTF-8 bytes.
+2. Remove top-level `signature_or_digest` (the digest covers unsigned content).
+3. Recursively sort object keys lexicographically (UTF-8). Array order is preserved.
+4. Serialize as compact JSON: no insignificant whitespace, UTF-8, non-ASCII unescaped.
+5. SHA-256 the UTF-8 bytes.
 6. Encode as `sha256:<lowercase hex>` (64 hex digits).
 
-The same input must produce the same digest on every run and in every language binding.
+The same input must yield the same digest in every language binding and on every run.
+
+## Verify
+
+```bash
+pcs hash path/to/artifact.json
+python -m pcs_core.hash_vectors --verify          # per-language vectors
+pcs shared-hash-vectors verify                    # test_vectors/hash/
+```
 
 ## Test vectors
 
-Frozen vectors live under `python/tests/hash_vectors/`:
+| Location | Scope |
+|----------|--------|
+| `python/tests/hash_vectors/` | Per-artifact canonical JSON and digests |
+| `test_vectors/hash/` | Cross-language parity (Python, Rust, TypeScript) |
 
-| Artifact | Directory |
-|----------|-----------|
-| RuntimeReceipt.v0 | `python/tests/hash_vectors/RuntimeReceipt.v0/` |
-| TraceCertificate.v0 | `python/tests/hash_vectors/TraceCertificate.v0/` |
-| ScienceClaimBundle.v0 | `python/tests/hash_vectors/ScienceClaimBundle.v0/` |
-| SignedScienceClaimBundle.v0 | `python/tests/hash_vectors/SignedScienceClaimBundle.v0/` |
+Each per-artifact directory contains `input.json`, `canonical.txt`, and `digest.txt`.
 
-Each directory contains:
-
-- `input.json` — artifact JSON (may include `signature_or_digest`; it is stripped before hashing)
-- `canonical.txt` — expected compact canonical JSON string
-- `digest.txt` — expected `sha256:…` digest
-
-Regenerate vectors after intentional algorithm changes:
+Regenerate after an intentional algorithm change:
 
 ```bash
 cd python && python -m pcs_core.hash_vectors --write
+pcs shared-hash-vectors write
 ```
 
 ## Downstream usage
 
-```bash
-pcs hash path/to/artifact.json
-```
+- Compute digests with `pcs hash` or official bindings.
+- Compare release manifests using the same rules.
+- Do not fork canonicalization in application code.
 
-Python: `from pcs_core.hash import canonical_hash, canonical_json_bytes`
-
-Rust: `pcs_core::canonical_hash`
-
-TypeScript: `canonicalHash` from `@pcs/core`
+See [downstream-schema-sync.md](downstream-schema-sync.md).

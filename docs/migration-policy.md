@@ -1,4 +1,4 @@
-# PCS migration policy (v0.1)
+# Migration policy (v0.1)
 
 ## Principles
 
@@ -6,43 +6,43 @@
 2. **Migration is explicit** — every transform emits a machine-readable report.
 3. **Release mode is strict** — migrations that weaken provenance or hashes are rejected for release tags.
 
-## Patch-compatible changes
+## Change classes
 
-- Add JSON Schema `description` text
-- Add optional object properties not required in release mode
-- Add new enum values only when registry and status policy are updated in the same release
+| Class | Examples | Consumer impact |
+|-------|----------|-----------------|
+| Patch | Schema descriptions, optional non-release fields | Re-validate; usually no migration |
+| Minor | New optional fields, new checks satisfied by existing artifacts | Re-validate |
+| Breaking | Removed fields, narrowed enums, new hash rules | Migration required |
 
-## Minor-compatible changes
-
-- Add optional top-level fields consumed only by new tooling
-- Add new semantic checks that existing valid artifacts already satisfy
-
-## Breaking changes
-
-- Remove or rename required fields
-- Narrow `status` enums without migration path
-- Change canonical hash rules (requires new digest namespace and coordinated SDK release)
-
-## Deprecation windows
+## Deprecation
 
 Breaking changes require:
 
-1. A pcs-core release note in `docs/releases/`
-2. Updated `ArtifactRegistry.v0` entries marking old types `Deprecated`
-3. A documented migration command path (`pcs migrate`)
+1. A release note under `docs/releases/`
+2. `ArtifactRegistry.v0` entries marked `Deprecated`
+3. A documented `pcs migrate` path
 
-## `pcs migrate` (v0.1 baseline)
+## `pcs migrate`
 
 ```bash
 pcs migrate --from v0 --to v0 examples/runtime_receipt.valid.json
 ```
 
-v0.1 ships **identity migration** for `v0 -> v0` (validation + report only). Non-identity version pairs return an error until a future schema version is defined.
+v0.1 provides **identity migration** for `v0 → v0` (validation report only). Other version pairs error until a future protocol version ships.
 
-## Legacy aliases
+## LabTrust release manifests
 
-Both `examples/labtrust-release/RELEASE_FIXTURE_MANIFEST.json` and `release_manifest.v0.json` are maintained in sync; `pcs validate-release-chain` continues to use the legacy manifest while protocol tooling consumes `ReleaseManifest.v0`.
+`examples/labtrust-release/` maintains two synchronized views:
+
+| File | Used by |
+|------|---------|
+| `RELEASE_FIXTURE_MANIFEST.json` | `pcs validate-release-chain` digest checks |
+| `release_manifest.v0.json` | `ReleaseManifest.v0` protocol tooling |
+
+Regenerate both together via `just materialize-labtrust-protocol`.
 
 ## Migration reports
 
 Reports include `from_version`, `to_version`, `artifact_type`, `changes`, and `status` (`noop` or `migrated`).
+
+See also [versioning.md](versioning.md) and [status-transition-policy.md](status-transition-policy.md).

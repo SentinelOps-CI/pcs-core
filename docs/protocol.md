@@ -1,8 +1,8 @@
-# PCS Protocol (v0.1)
+# PCS protocol (v0.1)
 
-Proof-Carrying Science (PCS) is a cross-repo artifact protocol. **pcs-core** is the single source of truth for artifact shapes, status values, validation, and canonical hashing.
+Proof-Carrying Science (PCS) is a cross-repository artifact protocol. **pcs-core** defines artifact shapes, status values, validation rules, and canonical hashing. Consumer repositories validate against these definitions; they do not publish competing schema versions.
 
-## Required v0.1 artifacts
+## Core artifacts
 
 | Artifact | Schema |
 |----------|--------|
@@ -16,30 +16,32 @@ Proof-Carrying Science (PCS) is a cross-repo artifact protocol. **pcs-core** is 
 | VerificationResult.v0 | `schemas/VerificationResult.v0.schema.json` |
 | SignedScienceClaimBundle.v0 | `schemas/SignedScienceClaimBundle.v0.schema.json` |
 
-Downstream repos must not define competing versions of these artifacts.
+Release, workflow, and benchmark extensions are documented in [release-protocol.md](release-protocol.md) and [benchmarks.md](benchmarks.md).
 
 ## `schema_version` vs artifact class
 
-`schema_version` identifies the **PCS protocol version**, not the artifact class. For PCS v0.1, **every** artifact uses `schema_version = "v0"` (including `SignedScienceClaimBundle.v0`).
+`schema_version` is the **PCS protocol version**, not the artifact class. For v0.1, every artifact uses `schema_version: "v0"` (including `SignedScienceClaimBundle.v0`).
 
-The artifact class is determined by the schema file, JSON Schema `title`, and required identifier fields (`bundle_id`, `receipt_id`, `signed_bundle_id`, and so on). Do not encode the artifact class in `schema_version`.
+The artifact class comes from the schema file, JSON Schema `title`, and required ID fields (`bundle_id`, `receipt_id`, `signed_bundle_id`, and so on). Do not encode the class name in `schema_version`.
 
-Downstream repos must mirror schemas only as generated copies; see [downstream-schema-sync.md](downstream-schema-sync.md).
+Mirror schemas as read-only copies only: [downstream-schema-sync.md](downstream-schema-sync.md).
 
 ## Producer metadata
 
 Every major artifact includes:
 
-- `schema_version` (must be `v0` for v0.1)
-- `created_at` (ISO 8601 UTC)
-- `producer`, `producer_version`
-- `source_repo`, `source_commit`
-- `status`
-- `signature_or_digest` (`sha256:<64 hex>`)
+| Field | Requirement |
+|-------|-------------|
+| `schema_version` | `"v0"` for v0.1 |
+| `created_at` | ISO 8601 UTC |
+| `producer`, `producer_version` | Emitting component |
+| `source_repo`, `source_commit` | Git provenance (40-char SHA for releases) |
+| `status` | Registry-allowed value |
+| `signature_or_digest` | `sha256:<64 hex>` canonical digest |
 
-## Guarantee-type separation
+## Guarantee types
 
-Rendered claims and public pages must label evidence using exactly one of:
+Rendered claims and public pages must use exactly one label per evidence item:
 
 - `formally_checked`
 - `certificate_checked`
@@ -48,33 +50,40 @@ Rendered claims and public pages must label evidence using exactly one of:
 - `human_reviewed`
 - `unchecked_advisory`
 
-## Validating artifacts
+See [trust-model.md](trust-model.md).
+
+## Validate and hash
 
 ```bash
 pcs validate path/to/artifact.json
-```
-
-Schema-only validation uses JSON Schema Draft 2020-12. Semantic checks (trace hash alignment, assumption set presence) run in addition for composite bundles.
-
-## Canonical hash
-
-```bash
 pcs hash path/to/artifact.json
 ```
 
-See [hash-canonicalization.md](hash-canonicalization.md) for the canonicalization algorithm.
+Validation uses JSON Schema Draft 2020-12 plus semantic rules (trace hash alignment, assumption sets, release-mode provenance). Details: [hash-canonicalization.md](hash-canonicalization.md).
 
-## Importing schemas
+## Language bindings
 
-- **Python**: `pip install -e python/` then `from pcs_core.validate import validate_file`
-- **Rust**: depend on `pcs-core` crate; deserialize with `serde_json`
-- **TypeScript**: `@pcs/core` package; `parseArtifact` / `validateFile`
-- **Other**: copy `schemas/*.schema.json` from this repo; pin by git tag
+| Language | Integration |
+|----------|-------------|
+| Python | `pip install -e python/` → `pcs` CLI and `pcs_core.validate` |
+| Rust | `pcs-core` crate in `rust/` |
+| TypeScript | `@pcs/core` in `typescript/` |
+| Other | Copy `schemas/*.schema.json`; pin by git tag |
 
 ## Adding a future artifact type
 
-1. Add `NewArtifact.v1.schema.json` under `schemas/` (never mutate v0 schemas in place).
-2. Add valid/invalid examples.
-3. Extend bindings in Python, Rust, TypeScript, and Lean.
-4. Document in `hash-canonicalization.md` and release notes.
+1. Add `NewArtifact.v1.schema.json` under `schemas/` (do not mutate frozen `*.v0` schemas in place).
+2. Add valid and invalid examples under `examples/`.
+3. Extend Python, Rust, TypeScript, and Lean bindings.
+4. Document hashing and release notes.
 5. v0.1 consumers continue using `*.v0` unchanged.
+
+## Related documentation
+
+| Document | Topic |
+|----------|--------|
+| [README.md](README.md) | Documentation index |
+| [release-protocol.md](release-protocol.md) | Release manifests and handoffs |
+| [workflow-profiles.md](workflow-profiles.md) | Multi-domain workflows |
+| [artifact-lifecycle.md](artifact-lifecycle.md) | Status flows |
+| [downstream-schema-sync.md](downstream-schema-sync.md) | Vendoring policy |

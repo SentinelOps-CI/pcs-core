@@ -1,5 +1,7 @@
 # LabTrust schema conformance fixtures
 
-This directory holds **stable schema conformance** examples for PCS v0.1. Each file is hand-maintained or minimally edited to exercise `pcs validate`, semantic checks, and cross-binding tests.
+Stable **schema conformance** examples for PCS v0.1. Use with `pcs validate` and `test_labtrust_conformance.py`.
 
-Do **not** use these files as release evidence. Generated end-to-end pipeline outputs belong in [`../labtrust-release/`](../labtrust-release/).
+These files are hand-maintained to exercise validation and semantic binding. They are **not** release evidence.
+
+End-to-end release outputs belong in [`../labtrust-release/`](../labtrust-release/). Policy: [docs/labtrust-v0.1-profile.md](../../docs/labtrust-v0.1-profile.md), [docs/downstream-schema-sync.md](../../docs/downstream-schema-sync.md).

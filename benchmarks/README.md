@@ -1,40 +1,42 @@
 # PCS benchmark fixtures
 
-This directory holds the **benchmark evaluation protocol** fixtures for pcs-core. Benchmarks are a protocol extension: tasks, cases, runs, and reports are JSON artifacts with JSON Schema contracts under `schemas/`.
+Benchmark evaluation protocol for pcs-core: tasks, cases, runs, and reports as versioned JSON artifacts under `schemas/`.
+
+Guide: [docs/benchmarks.md](../docs/benchmarks.md).
 
 ## Layout
 
-Each suite has a fixture root (for example `labtrust-qc-release/`):
+Each suite directory (for example `labtrust-qc-release/`) contains:
 
 ```
 <suite>/
-  benchmark_task.v0.json       # BenchmarkTask.v0
-  benchmark_manifest.v0.json   # optional LabTrust-Gym gallery index (labtrust-qc-release)
+  benchmark_task.v0.json
+  benchmark_manifest.v0.json    # optional gallery index (LabTrust)
   valid/<case-id>/
     benchmark_case.v0.json
-    benchmark_run.<case-id>.v0.json   # produced by `pcs benchmark run`
+    benchmark_run.<case-id>.v0.json
   invalid/<case-id>/
     benchmark_case.v0.json
-    expected_failure.json             # FailureCaseManifest.v0
+    expected_failure.json
     expected_repair_hint.json
   expected_reports/
-    benchmark_report.v0.json          # golden BenchmarkReport.v0
+    benchmark_report.v0.json
 ```
 
-Cases reference release trees via `input_artifacts.release_directory` (repo-relative), usually under `examples/*-release` or synthesized trees such as `benchmarks/tool-use-safety/input_releases/`.
+Cases reference release trees via `input_artifacts.release_directory`, usually under `examples/*-release/` or `benchmarks/*/input_releases/`.
 
-## Registry
+## Suites
 
-Suite definitions live in `examples/benchmark_registry.valid.json`, generated from `python/pcs_core/benchmark_registry_data.py`.
+Definitions: `examples/benchmark_registry.valid.json` (from `python/pcs_core/benchmark_registry_data.py`).
 
-| Suite | Purpose |
-|-------|---------|
+| Suite ID | Purpose |
+|----------|---------|
 | `labtrust-qc-release-v0` | Hospital lab QC release chain |
-| `tool-use-safety-v0` | Agent tool-use safety releases |
+| `tool-use-safety-v0` | Agent tool-use safety |
 | `computation-reproducibility-v0` | Scientific computation witnesses |
 | `cross-domain-release-chain-v0` | All three valid release profiles |
-| `formal-trust-kernel-v0` | Lean proof obligation / check results |
-| `scientific-memory-rendering-v0` | Scientific Memory import interpretability |
+| `formal-trust-kernel-v0` | Lean proof obligations and checks |
+| `scientific-memory-rendering-v0` | Scientific Memory interpretability |
 
 ## Commands
 
@@ -44,40 +46,36 @@ python scripts/materialize_benchmark_fixtures.py
 pcs benchmark list
 pcs benchmark validate
 pcs benchmark run --suite labtrust-qc-release-v0
-pcs benchmark run --suite formal-trust-kernel-v0 --json --out /tmp/report.json
 pcs conformance run --suite benchmark
 pcs conformance run --suite benchmark-ingest
-pcs benchmark materialize-ingest
+pcs benchmark validate-ingest --release-grade
 ```
 
-## Canonical examples
+## Examples
 
 | Path | Contents |
 |------|----------|
-| `examples/benchmarks/` | pcs-core reference types (`BenchmarkCase`, `BenchmarkRun`, `BenchmarkReport`, coverage, explain-quality, `BenchmarkArtifactRef`) |
-| `examples/benchmark/` | Producer `BenchmarkReport` / `BenchmarkCase` snapshots |
-| `examples/benchmark_ingest/` | Producer `PcsBenchIngest.v0` bundles (embedded objects + `artifact_refs`) |
-| `examples/benchmark_metric_registry.valid.json` | Canonical `benchmark_metric_id` definitions |
+| `examples/benchmarks/` | Reference types (`BenchmarkCase`, `BenchmarkRun`, `BenchmarkReport`, …) |
+| `examples/benchmark/` | Producer report snapshots |
+| `examples/benchmark_ingest/` | `PcsBenchIngest.v0` goldens |
+| `examples/benchmark_metric_registry.valid.json` | Metric definitions |
 
-Regenerate everything:
+Regenerate:
 
 ```bash
 cd python
 python scripts/materialize_benchmark_fixtures.py
-# or individually:
-python scripts/materialize_benchmark_examples.py
 python scripts/materialize_benchmark_producer_examples.py
 ```
 
 ## Documentation
 
-- [docs/benchmark-object-model.md](../docs/benchmark-object-model.md) — artifacts and status dimensions
-- [docs/benchmarks.md](../docs/benchmarks.md) — benchmark overview and schema list
-- [docs/benchmark-metrics.md](../docs/benchmark-metrics.md) — metric definitions
-- [docs/benchmark-registry.md](../docs/benchmark-registry.md) — suite registry
-- [docs/producer-benchmark-ingest.md](../docs/producer-benchmark-ingest.md) — dialect normalization
-- [docs/benchmark-ingest-contract.md](../docs/benchmark-ingest-contract.md) — `PcsBenchIngest` object vs path refs
+- [docs/benchmark-object-model.md](../docs/benchmark-object-model.md)
+- [docs/benchmark-metrics.md](../docs/benchmark-metrics.md)
+- [docs/benchmark-registry.md](../docs/benchmark-registry.md)
+- [docs/benchmark-ingest-contract.md](../docs/benchmark-ingest-contract.md)
+- [docs/producer-benchmark-ingest.md](../docs/producer-benchmark-ingest.md)
 
-## External pcs-bench
+## pcs-bench
 
-Downstream repos should pin a pcs-core commit, import `BenchmarkRegistry.v0`, and add suites without redefining schemas. pcs-core remains the normative protocol owner.
+Downstream benchmark runners should pin a pcs-core commit, import `BenchmarkRegistry.v0`, and add suites without redefining schemas. pcs-core remains the normative owner.

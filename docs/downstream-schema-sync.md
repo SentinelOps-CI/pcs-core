@@ -1,11 +1,11 @@
-# Downstream schema sync policy
+# Downstream schema sync
 
-pcs-core is the canonical source for all PCS v0.1 JSON Schemas. LabTrust-Gym, CertifyEdge, Provability Fabric, and Scientific Memory must stay aligned with this repository.
+pcs-core is the canonical source for all PCS v0.1 JSON schemas. LabTrust-Gym, CertifyEdge, Provability Fabric, and Scientific Memory must stay aligned with this repository.
 
 ## Mirroring rules
 
 1. Downstream repos may mirror schemas **only as generated copies** of `pcs-core/schemas/`.
-2. Mirrored schemas must be **byte-for-byte equivalent** to pcs-core at the pinned revision, unless a file is explicitly documented as a **legacy fixture** (read-only negative example, never used for publish/import).
+2. Mirrored schemas must be **byte-for-byte equivalent** to pcs-core at the pinned revision, unless a file is explicitly documented as a **legacy fixture** (read-only negative example, never used for publish or import).
 3. Do not edit mirrored schema files in downstream repos. Refresh copies from pcs-core and record the git tag or commit in release notes.
 4. Typical mirror paths:
    - `schemas/pcs/` (Scientific Memory, Provability Fabric)
@@ -25,56 +25,55 @@ pcs-core reference check:
 just pcs-schema-diff schemas
 ```
 
-**Schema drift blocks v0.1 release.** CI must fail when the mirror differs from the pinned pcs-core revision.
+Schema drift **blocks release**. CI must fail when the mirror differs from the pinned pcs-core revision.
 
 ## LabTrust conformance fixtures
 
-Cross-repo validation must use the shared fixture set under `examples/labtrust/`:
+Cross-repo schema tests use `examples/labtrust/`:
 
 | File | Stage |
 |------|--------|
 | `science_claim_bundle.pending.valid.json` | LabTrust-Gym (pending bundle) |
 | `trace_certificate.valid.json` | CertifyEdge |
 | `science_claim_bundle.certified.valid.json` | LabTrust-Gym (certified bundle) |
-| `verification_result.valid.json` | Provability Fabric (verification) |
-| `signed_science_claim_bundle.valid.json` | Provability Fabric (signed export) → Scientific Memory import |
+| `verification_result.valid.json` | Provability Fabric |
+| `signed_science_claim_bundle.valid.json` | Provability Fabric → Scientific Memory import |
 
 Negative fixtures (must fail validation):
 
 | File | Failure reason |
 |------|----------------|
-| `invalid_signed_schema_version_artifact_name.json` | `schema_version: "SignedScienceClaimBundle.v0"` instead of `"v0"` |
-| `invalid_singular_runtime_receipt_bundle.json` | `runtime_receipt` instead of required `runtime_receipts` |
-| `invalid_failed_verification_result.json` | failed verification checks with import-ready top-level status |
-| `invalid_missing_trace_certificate.json` | certified claim without attached `TraceCertificate` |
+| `invalid_signed_schema_version_artifact_name.json` | `schema_version` must be `"v0"`, not the artifact class name |
+| `invalid_singular_runtime_receipt_bundle.json` | `runtime_receipts` array required |
+| `invalid_failed_verification_result.json` | failed checks with import-ready top-level status |
+| `invalid_missing_trace_certificate.json` | certified claim without `TraceCertificate` |
 
-Downstream test suites should copy or reference these paths and assert pass/fail accordingly. Python conformance tests live in `python/tests/test_labtrust_conformance.py`.
+Python tests: `python/tests/test_labtrust_conformance.py`.
 
-Fixture authority is defined in [labtrust-v0.1-profile.md](labtrust-v0.1-profile.md#release-fixture-authority).
+Fixture roles: [labtrust-v0.1-profile.md](labtrust-v0.1-profile.md).
 
-## Release-candidate fixtures (canonical)
+## LabTrust release fixtures (canonical)
 
-**Authority:** `pcs-core/examples/labtrust-release/` is the canonical PCS v0.1 RC fixture chain.
+**Authority:** `examples/labtrust-release/` is the canonical PCS v0.1 LabTrust release chain for v0.1.0.
 
 | Rule | Detail |
 |------|--------|
-| Source of truth | Sync against this directory at the pinned pcs-core commit, or prove canonical-hash equivalence to `RELEASE_FIXTURE_MANIFEST.json` |
-| Atomic refresh | Regenerate only via the full clean-checkout chain and atomic promote (`just generate-labtrust-release-fixtures` in pcs-core) |
-| Pin values | See [labtrust-release-fixtures.md](labtrust-release-fixtures.md) |
-| Verification | `pcs validate-release-chain examples/labtrust-release/` (30 checks; CI gate on `main`) |
+| Source of truth | Sync this directory at the pinned pcs-core tag, or prove canonical-hash equivalence to `RELEASE_FIXTURE_MANIFEST.json` |
+| Atomic refresh | Regenerate only via the full clean-checkout chain and `just generate-labtrust-release-fixtures` |
+| Pin values and checks | [labtrust-release-fixtures.md](labtrust-release-fixtures.md) |
+| Verification | `pcs validate-release-chain examples/labtrust-release/` (30 checks; CI on `main`) |
 
-Downstream release fixture tests must assert the same pin values as pcs-core. Schema conformance fixtures remain under `examples/labtrust/` (separate from release evidence).
+Schema conformance fixtures under `examples/labtrust/` are separate from release evidence.
 
-## Validation and hash
+Other workflow release trees: `examples/tool-use-release/`, `examples/computation-release/`.
 
-- Use `pcs validate` or pcs-core language bindings for schema + semantic checks.
-- Use `pcs hash` for canonical digests; do not reimplement canonicalization locally.
+## Validation and hashing
+
+- `pcs validate` — JSON Schema plus semantic checks.
+- `pcs hash` — canonical digest; do not reimplement locally ([hash-canonicalization.md](hash-canonicalization.md)).
 - Pin the same pcs-core version across all repos in a release train.
-- Run `pcs registry audit` after upgrading the registry pin.
-- Run `pcs conformance run --suite all` (or a subset from `conformance/`) in downstream CI.
-- Conformance reports are `ConformanceReport.v0` artifacts (`checks_passed`, `checks_failed`, `failures`).
-
-Python API (same behavior as the CLI):
+- `pcs registry audit` — semantic check catalog after registry upgrades.
+- `pcs conformance run --suite <name>` — protocol conformance ([../conformance/README.md](../conformance/README.md)).
 
 ```python
 from pcs_core.conformance import build_conformance_report_data, run_conformance
@@ -83,8 +82,12 @@ exit_code, errors = run_conformance("hash")
 report = build_conformance_report_data("hash")
 ```
 
-Shared hash vectors: `pcs shared-hash-vectors verify` (Python, Rust, TypeScript must agree).
+Cross-language hash vectors: `pcs shared-hash-vectors verify`.
 
-Protocol authority: [artifact-registry.md](artifact-registry.md), [semantic-check-policy.md](semantic-check-policy.md), [release-protocol.md](release-protocol.md).
+## Related documentation
 
-See also [protocol.md](protocol.md) and [labtrust-v0.1-profile.md](labtrust-v0.1-profile.md).
+- [protocol.md](protocol.md)
+- [release-protocol.md](release-protocol.md)
+- [artifact-registry.md](artifact-registry.md)
+- [semantic-check-policy.md](semantic-check-policy.md)
+- [labtrust-v0.1-profile.md](labtrust-v0.1-profile.md)

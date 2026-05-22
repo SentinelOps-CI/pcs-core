@@ -1,6 +1,6 @@
-# PCS workflow profiles (v0.1)
+# Workflow profiles (v0.1)
 
-`WorkflowProfile.v0` describes how a **domain workflow** maps onto the shared PCS trust loop without encoding domain-specific science or agent ontologies in core schemas.
+`WorkflowProfile.v0` describes how a **domain workflow** maps onto the shared PCS trust loop without encoding domain-specific ontologies in core schemas. Release fixtures: [release-protocol.md](release-protocol.md).
 
 ## Purpose
 

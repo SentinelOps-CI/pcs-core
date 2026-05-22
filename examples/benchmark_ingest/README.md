@@ -2,6 +2,8 @@
 
 Release-grade `PcsBenchIngest.v0` bundles per benchmark producer. **Do not hand-edit.** Regenerate from live producer exports (preferred) or pcs-core dialect fallbacks.
 
+Contract and tiers: [docs/benchmark-ingest-contract.md](../../docs/benchmark-ingest-contract.md). Producer guide: [docs/producer-benchmark-ingest.md](../../docs/producer-benchmark-ingest.md).
+
 ## Generate from producer repos (preferred)
 
 Check out producer repos as siblings of `pcs-core`, then in each producer repo:

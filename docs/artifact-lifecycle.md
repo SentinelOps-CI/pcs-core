@@ -25,7 +25,7 @@ All repos use the same status strings:
 4. **Attach** — Bundle updated; claim status moves toward `CertificateChecked`.
 5. **Verify & sign** — Provability Fabric emits `VerificationResult.v0`.
 6. **Import** — Scientific Memory renders with guarantee-type labels.
-7. **Record** — pcs-core publishes `ReleaseManifest.v0`, stage `HandoffManifest.v0` files, and `ReleaseChainValidationResult.v0` under `examples/labtrust-release/`.
+7. **Record** — pcs-core publishes `ReleaseManifest.v0`, stage `HandoffManifest.v0` files, and `ReleaseChainValidationResult.v0` under `examples/labtrust-release/` ([labtrust-release-fixtures.md](labtrust-release-fixtures.md)).
 
 ## Pending vs certified bundles
 
