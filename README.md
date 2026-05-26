@@ -1,6 +1,10 @@
+<div align="center">
+
 # pcs-core
 
 **Proof-Carrying Science (PCS)** brings together schemas, validation, and tooling so research and agent workflows can publish **evidence that independent reviewers can verify**, including structured artifacts that go far beyond unstructured logs alone.
+
+<br/>
 
 | | |
 |---|---|
@@ -8,6 +12,18 @@
 | **License** | [Apache-2.0](LICENSE) |
 | **Docs** | [docs/README.md](docs/README.md) |
 | **Release checklist** | [docs/releases/v0.1.0.md](docs/releases/v0.1.0.md) |
+
+<br/>
+
+<pre>
+#######################################################################################
+
+#######################################################################################
+</pre>
+
+<br/>
+
+</div>
 
 ---
 
