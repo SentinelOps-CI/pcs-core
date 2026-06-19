@@ -25,6 +25,8 @@ jobs:
           ruff format --check pcs_core tests
       - name: Schema drift check (reference)
         run: bash scripts/pcs-schema-diff.sh schemas
+      - name: PF-Core hash vector parity (Phase 7)
+        run: bash scripts/verify-pf-core-hash-vectors.sh python/tests/hash_vectors
 
   rust:
     runs-on: ubuntu-latest
