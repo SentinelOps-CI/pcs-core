@@ -543,11 +543,15 @@ pub fn validate_tenant_isolation(trace: &Value) -> Vec<String> {
     for (index, event) in events.iter().enumerate() {
         let base = format!("events[{index}]");
         let Some(principal) = event.get("principal") else {
-            errors.push(format!("TenantIsolation: {base} missing principal or action"));
+            errors.push(format!(
+                "TenantIsolation: {base} missing principal or action"
+            ));
             continue;
         };
         let Some(action) = event.get("action") else {
-            errors.push(format!("TenantIsolation: {base} missing principal or action"));
+            errors.push(format!(
+                "TenantIsolation: {base} missing principal or action"
+            ));
             continue;
         };
         let tenant = principal
@@ -705,8 +709,8 @@ mod tests {
 
     #[test]
     fn pf_core_trace_hash_mismatch_vector() {
-        let path = repo_root()
-            .join("python/tests/hash_vectors/pf_core/invalid/trace_hash_mismatch.json");
+        let path =
+            repo_root().join("python/tests/hash_vectors/pf_core/invalid/trace_hash_mismatch.json");
         let trace = load_json(path);
         let errors = validate_pfcore_trace_hash_chain(&trace);
         assert!(errors.iter().any(|err| err.contains("TraceHashMismatch")));
@@ -714,8 +718,8 @@ mod tests {
 
     #[test]
     fn pf_core_cross_tenant_leak_vector() {
-        let path = repo_root()
-            .join("python/tests/hash_vectors/pf_core/invalid/cross_tenant_leak.json");
+        let path =
+            repo_root().join("python/tests/hash_vectors/pf_core/invalid/cross_tenant_leak.json");
         let trace = load_json(path);
         let errors = validate_tenant_isolation(&trace);
         assert!(errors.iter().any(|err| err.contains("TenantIsolation")));
