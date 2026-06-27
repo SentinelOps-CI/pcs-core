@@ -1,0 +1,15 @@
+{
+  "schema_version": "v0",
+  "artifact_type": "PFCoreContract.v0",
+  "contract_id": "contract-file-read-v0",
+  "name": "Strict file read contract",
+  "pre": {
+    "require_policy_ref": "policy/default.v0"
+  },
+  "post": {},
+  "invariant": {},
+  "semantics_layer": {
+    "require_policy_ref": "runtime"
+  },
+  "signature_or_digest": "sha256:42d70b98f7ca8b5144d24f5af1222c8c41f4a097b8bdecb24bb5c6a13efec7ff"
+}
