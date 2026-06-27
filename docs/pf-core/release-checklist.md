@@ -6,7 +6,8 @@ Pre-release verification for PF-Core in `pcs-core`. Run from repository root unl
 
 | Job / step | Proves |
 |------------|--------|
-| `pytest tests/test_pf_core_*.py` | Python runtime, contracts, codegen, CertifyEdge mock, fixtures |
+| `pytest tests/test_pf_core_tier1.py` | semantics_layer, PCS envelope alias, negative vectors |
+| `pytest tests/test_pf_core_cross_language.py` | Python/Rust/TS parity on shared vectors |
 | `pcs pf-core audit-claims` | No forbidden overclaim phrases in docs/examples |
 | `pcs pf-core audit-boundary` | Trusted-boundary docs and registry consistency |
 | `pcs pf-core audit-lean-catalog` | Catalog symbols exist in Lean sources |
@@ -15,7 +16,8 @@ Pre-release verification for PF-Core in `pcs-core`. Run from repository root unl
 | Lean job: `lake build PFCore` | Kernel compiles; decider soundness theorems check |
 | Lean job: `pcs pf-core lean-check` | Concrete trace proof + `LeanKernelChecked` path on fixture |
 | Lean job: `validate-contracts` | Contract runtime checker on `contract_checked/` |
-| `PCS_CERTIFYEDGE_MOCK=1 pcs pf-core certifyedge-check` | External checker hook (mock attestation) |
+| `PCS_CERTIFYEDGE_MOCK=1 pcs pf-core certifyedge-check` | External checker hook (mock attestation; live CLI when installed) |
+| `bash scripts/run-pf-core-adapter-ci.sh` | provability-fabric-core hash vector parity (optional CI job) |
 
 ## Local full demo
 
