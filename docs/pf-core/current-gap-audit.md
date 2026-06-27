@@ -26,8 +26,8 @@ Summary of gaps between the PF-Core vision and the current `pcs-core` repository
 
 | Item | Status | Notes |
 |------|--------|-------|
-| Full global non-interference | Deferred | `non-interference.md` |
-| Lean RoleMap / role encoding | Deferred | Permanent assumption in `assumptions.md` |
+| Full global non-interference | Partial | `TraceCrossTenantSafe` link in `NonInterference.lean`; full global NI still open |
+| Lean RoleMap / role encoding | Partial | `runtimeRoleMap` parity with Python; kernel still uses explicit capabilities |
 | Full Lean role/policy/evidence contract encoding | Deferred | Runtime-only fields in semantics_layer |
 
 ## Tier 3 — operational (complete)
@@ -70,12 +70,33 @@ Summary of gaps between the PF-Core vision and the current `pcs-core` repository
 | Handoff preservation in trace compiler | Done | Stage 7 optional `handoffs` |
 | PCS release-envelope path clarity | Done | `pcs pcs-envelope check`; lean-check deprecated |
 
+## Phase H (research: state, cross-tenant NI, RoleMap parity)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| H1 — Rich operational state + handoff | Done | `Transition.lean`, `State.lean`; `stepState`, frames, strong handoff lemmas |
+| H2 — `TenantIsolation` + `TraceCrossTenantSafe` | Partial | `traceSafe_implies_tenant_isolation`; covert channels / timing open |
+| H3 — `runtimeRoleMap` Python parity | Done | `RoleMap.lean` + `test_pf_core_research.py` |
+| H4 — Research catalog tests | Done | `test_pf_core_research.py`, `test_pf_core_research_grade.py`, catalog updates |
+| H5 — Effect frames | Done | `EffectFrame.lean`; write exclusion under explicit footprint alignment |
+| H6 — Contract refinement | Done | `ContractRefinement`, `contract_refinement_preserves_trace_safe` |
+| H7 — Replay claim boundary | Done | `replay_preserves_claim_boundary` in `pf_core_replay.py` |
+
 ## Remaining research (deferred)
 
-1. **Compositional trust theorems** — see [compositional-trust-roadmap.md](compositional-trust-roadmap.md).
-2. **Full provability-fabric-core live adapter orchestration** — hash parity covered natively via adapter CI script; full cross-repo orchestration remains optional.
-3. **Full agent runtime, MCP, NL policy, model safety** — out of scope.
-4. **Global non-interference** — see `non-interference.md`.
+1. **Full global non-interference** — allowed-event tenant isolation proved; covert channels, timing, deny-side leaks open (`non-interference.md`).
+2. **Write footprint ↔ effect linkage** — `WriteFootprintRequiresWriteEffect` explicit; not derived from `ActionAdmissible` alone.
+3. **Full provability-fabric-core live adapter orchestration** — hash parity covered natively via adapter CI script.
+4. **Full agent runtime, MCP, NL policy, model safety** — out of scope.
+
+## Phase G (compositional trust + proof binding)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| G1 — Compositional Lean layer | Done | `Compositional.lean`: safe extension, handoff chain, contract seq invariants |
+| G2 — Minimal RoleMap Lean | Done | `RoleMap.lean`: alignment → `HasCapability` |
+| G3 — `verify-proof-binding` CLI | Done | `pcs pf-core verify-proof-binding` |
+| G4 — Compositional tests | Done | `test_pf_core_compositional.py` |
 
 ## Phase F (research-grade extensions)
 

@@ -25,6 +25,21 @@ Boolean deciders `eventTenantScopedD` and `traceTenantScopedD` mirror these pred
 | `traceSafe_allowed_event_tenant_scoped` | Allowed events in a `TraceSafe` trace are tenant-scoped |
 | `traceSafe_implies_tenant_scoped_for_allowed` | Same link, named for documentation |
 
+### Conservative cross-tenant safety (partial global NI)
+
+| Lean | Meaning |
+|------|---------|
+| `CrossTenantDenied ev` | Cross-tenant resource access implies `Decision.deny` |
+| `EventCrossTenantSafe ev` | In-tenant footprint or explicit deny |
+| `TraceCrossTenantSafe tr` | Every event is `EventCrossTenantSafe` |
+
+| Theorem | Statement |
+|---------|-----------|
+| `traceSafe_implies_trace_cross_tenant_safe` | `TraceSafe tr → TraceCrossTenantSafe tr` |
+| `traceSafe_implies_cross_tenant_safe` | Alias of the above |
+
+**Important:** This is **not** full global non-interference. Covert channels, deny-side leaks, cross-tenant handoffs, and scheduler-level information flow remain open.
+
 **Important:** `TraceSafe` does **not** imply `TraceTenantScoped` for denied events. A denied cross-tenant read is `EventSafe` but fails `EventTenantScoped`. Runtime `validate_tenant_isolation` flags such events regardless of decision.
 
 ## Runtime alignment
@@ -41,11 +56,11 @@ Invalid fixture: `examples/pf-core-invalid/cross_tenant_leak/`.
 
 ## RoleMap permanent assumption
 
-Lean `HasCapability` inspects `principal.capabilities` only; **roles are not expanded in the kernel**. The runtime compiler applies `ROLE_CAPABILITY_MAP` in `pf_core_runtime.py` when compiling observations. Unless a future Lean `RoleMap` module is added and promoted to the trusted catalog, role-to-capability expansion remains a **permanent trusted-boundary assumption** documented here and in [assumptions.md](assumptions.md).
+Lean `HasCapability` inspects `principal.capabilities` only; **roles are not expanded in the kernel** during proof discharge. The runtime compiler applies `ROLE_CAPABILITY_MAP` in `pf_core_runtime.py` when compiling observations. Lean `runtimeRoleMap` in `RoleMap.lean` mirrors the same keys for parity audits; codegen still emits explicit expanded capabilities on principals. Role-to-capability expansion at lean-check time remains a **trusted-boundary assumption** unless principals are proven aligned via `PrincipalCapabilitiesAligned`.
 
 ## Open (not claimed — full global NI deferred)
 
-1. **Full global cross-tenant non-interference** (information-flow between tenants under arbitrary schedulers and adversaries). Current theorems cover tenant-scoped allowed events in safe traces only; full global NI is deferred to later research.
+1. **Full global cross-tenant non-interference** (information-flow between tenants under arbitrary schedulers and adversaries). `traceSafe_implies_trace_cross_tenant_safe` covers in-tenant allows and explicit denies only.
 2. Non-interference under handoff across tenants (handoffs require matching tenants in `HandoffSafe`).
 3. Deny-event side channels or resource existence leaks.
 4. Compositional preservation of arbitrary user-defined contract invariants beyond the discharged JSON subset.

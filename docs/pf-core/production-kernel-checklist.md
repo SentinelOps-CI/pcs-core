@@ -4,13 +4,14 @@ One-page verification checklist for Tier 1 PF-Core production kernel readiness i
 
 ## Scope
 
-This checklist covers the **production trusted kernel** only: contract semantics, cross-language validation parity, PCS release-envelope separation (choice B), and integration hooks. It does **not** claim full global non-interference or Lean RoleMap discharge (Tier 2 deferrals).
+This checklist covers the **production trusted kernel** only: contract semantics, cross-language validation parity, PCS release-envelope separation (choice B), compositional trust lemmas, and integration hooks. It does **not** claim full global non-interference or complete Lean RoleMap/runtime catalog parity (partial RoleMap in `RoleMap.lean`).
 
 ## Evidence commands
 
 | Check | Command | Expected |
 |-------|---------|----------|
 | Tier 1 semantics + envelope | `cd python && pytest -q tests/test_pf_core_tier1.py` | All pass |
+| Compositional + proof binding | `cd python && pytest -q tests/test_pf_core_compositional.py` | All pass |
 | Cross-language parity | `cd python && pytest -q tests/test_pf_core_cross_language.py` | All pass (TS may skip if `node` absent) |
 | Cross-language conformance | `pcs conformance run --suite pf-core-cross-language` | Python vectors + Rust/TS tests pass |
 | Generated lean proof | `pcs conformance run --suite pf-core` | Includes `pf-core.generated-lean-proof` when `lake` available |
@@ -19,6 +20,7 @@ This checklist covers the **production trusted kernel** only: contract semantics
 | TypeScript hash vectors | `cd typescript/packages/core && npx tsc && node --test dist/tests/examples.test.js` | All pass |
 | PCS envelope path | `pcs pcs-envelope check --obligations examples/proof_obligation.valid.json --out /tmp/envelope.json --skip-lean-build` | No `LeanKernelChecked` in output |
 | Lean kernel (optional) | `cd lean && lake build PFCore && pcs pf-core lean-check --trace examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json` | `LeanKernelChecked` when full pipeline succeeds |
+| Proof binding (optional) | `pcs pf-core verify-proof-binding --certificate <cert> --trace <trace>` | OK when hashes and generated file match |
 | Adapter pin parity | `bash scripts/run-pf-core-adapter-ci.sh` | Vectors match `provability-fabric-core` pin |
 
 ## Artifact and policy checks

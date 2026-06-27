@@ -105,6 +105,12 @@ Stage 5 adds deterministic trace replay:
 
 Replay validates hash-chain integrity and compiler determinism. It does not imply `LeanKernelChecked`.
 
+### `replay_preserves_claim_boundary` (Python operational theorem)
+
+Replay certificates must not rank above the source trace `claim_class`. Implemented in `pcs_core.pf_core_replay.replay_preserves_claim_boundary` and enforced in `build_replay_certificate`.
+
+**Does not imply:** Lean kernel proof, contract discharge, or upgrade to `LeanKernelChecked`.
+
 ## AssumptionDeclared enforcement
 
 Registry semantic checks marked `allowed_to_skip: true` (for example `lean_kernel_proof` and `lean_library_build` on `PFCoreCertificate.v0`) are not treated as proved when skipped.

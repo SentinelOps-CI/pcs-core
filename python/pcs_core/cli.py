@@ -403,6 +403,23 @@ def cmd_pf_core_certifyedge_check(
     return 0
 
 
+def cmd_pf_core_verify_proof_binding(certificate: Path, trace: Path | None) -> int:
+    from pcs_core.pf_core_proof_binding import verify_proof_binding
+
+    result = verify_proof_binding(certificate, trace_path=trace)
+    if result.ok:
+        print(f"OK PF-Core verify-proof-binding {certificate}")
+        if result.proof_path:
+            print(f"  proof: {result.proof_path}")
+        if result.trace_path:
+            print(f"  trace: {result.trace_path}")
+        return 0
+    print(f"FAIL PF-Core verify-proof-binding {certificate}", file=sys.stderr)
+    for issue in result.issues:
+        print(f"  - {issue.code}: {issue.message}", file=sys.stderr)
+    return 1
+
+
 def cmd_pf_core_lean_check(
     trace: Path,
     out: Path | None,
@@ -662,6 +679,22 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="Write LeanCheckResult.v0 JSON",
     )
+    pf_core_verify_binding = pf_core_sub.add_parser(
+        "verify-proof-binding",
+        help="Verify certificate trace_hash, proof_term_hash, lean_environment_hash, and proof file",
+    )
+    pf_core_verify_binding.add_argument(
+        "--certificate",
+        type=Path,
+        required=True,
+        help="PFCoreCertificate.v0 JSON with LeanKernelChecked",
+    )
+    pf_core_verify_binding.add_argument(
+        "--trace",
+        type=Path,
+        default=None,
+        help="Optional PFCoreTrace.v0 JSON to verify trace_hash binding",
+    )
     pf_core_attach = pf_core_sub.add_parser(
         "attach-certificate-check",
         help="Wrap external checker attestation as CertificateChecked",
@@ -892,6 +925,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_pf_core_audit_lean_no_sorry()
     if args.command == "pf-core" and args.pf_core_cmd == "replay-trace":
         return cmd_pf_core_replay_trace(args.path, args.source, args.out, args.result_out)
+    if args.command == "pf-core" and args.pf_core_cmd == "verify-proof-binding":
+        return cmd_pf_core_verify_proof_binding(args.certificate, args.trace)
     if args.command == "pf-core" and args.pf_core_cmd == "attach-certificate-check":
         return cmd_pf_core_attach_certificate_check(
             args.trace,

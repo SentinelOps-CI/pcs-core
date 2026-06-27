@@ -1,20 +1,19 @@
 # PF-Core compositional trust roadmap
 
-Future research work only. **Not implemented in pcs-core v0.1.**
-
-## Goal
-
 Extend PF-Core from per-trace concrete proofs to compositional theorems that preserve trace safety under controlled extension (new events, delegated authority, contract refinement) without re-running full Lean codegen for every composition step.
 
-## Theorem targets (future)
+## Theorem targets
 
-| Theorem | Intent |
-|---------|--------|
-| `safe_extension_preserves_trace_safe` | Appending an `EventSafe` event to a `TraceSafe` trace yields `TraceSafe` |
-| `handoff_preserves_trace_safe` | `HandoffSafe` delegation followed by in-bounds actions preserves `TraceSafe` |
-| `contract_refinement_preserves_trace_safe` | Stricter contract discharge on a sub-trace preserves global trace safety |
-| `replay_preserves_claim_boundary` | Hash replay match implies no silent claim-class upgrade |
-| `certificate_binds_generated_model` | Certificate `trace_hash` + `proof_term_hash` + `lean_environment_hash` uniquely binds JSON to generated Lean model |
+| Theorem | Intent | Status |
+|---------|--------|--------|
+| `safe_extension_preserves_trace_safe` | Appending an `EventSafe` event to a `TraceSafe` trace yields `TraceSafe` | **Proved** (`lean/PFCore/Compositional.lean`; alias of `trace_safe_invariant_preserved_cons`) |
+| `handoff_composition_does_not_expand_authority` | Chained `HandoffSafe` records do not expand authority beyond the first source when the second hop stays within the first delegation envelope | **Proved** (`lean/PFCore/Compositional.lean`) |
+| `contract_invariant_preserved_by_safe_extension` | Trace-safe contract invariant preserved under `EventSafe` extension | **Proved** (`lean/PFCore/Compositional.lean`) |
+| `composed_contract_preserves_component_invariants` | `Contract.seq` invariant splits/joins component invariants | **Proved** (`lean/PFCore/Compositional.lean`) |
+| `handoff_preserves_trace_safe` | `HandoffSafe` delegation with minimal state model preserves `TraceSafe` and bounded authority | **Proved** (`lean/PFCore/State.lean`; minimal state, not full operational semantics) |
+| `contract_refinement_preserves_trace_safe` | Stricter contract discharge on a sub-trace preserves global trace safety | **Proved** (`lean/PFCore/Compositional.lean`) |
+| `replay_preserves_claim_boundary` | Hash replay match implies no silent claim-class upgrade | **Operational** (`python/pcs_core/pf_core_replay.py`; Python theorem + tests) |
+| `certificate_binds_generated_model` | Certificate hashes uniquely bind JSON to generated Lean model | **Operational** (`pcs pf-core verify-proof-binding`) |
 
 ## Dependencies
 
@@ -25,8 +24,28 @@ Extend PF-Core from per-trace concrete proofs to compositional theorems that pre
 
 ## Out of scope for this roadmap phase
 
-- Global non-interference across tenants
-- Lean RoleMap / role expansion discharge
-- Full JSON contract field encoding in Lean for role, policy, and evidence refs
+- Full global non-interference across tenants — **Partial**: `TenantIsolation` + `TraceCrossTenantSafe`; covert channels and timing not claimed ([non-interference.md](non-interference.md))
+- Full JSON contract field encoding in Lean — **Partial**: `require_role` lean discharge; policy/evidence refs runtime-only
 
 See [non-interference.md](non-interference.md) and [assumptions.md](assumptions.md) for current deferrals.
+
+## RoleMap (minimal kernel)
+
+| Item | Status |
+|------|--------|
+| `RoleMap` structure + `expandPrincipal` | **Proved** (`lean/PFCore/RoleMap.lean`) |
+| `aligned_role_capability_granted` | **Proved** (aligned principals → `HasCapability`) |
+| Full runtime `ROLE_CAPABILITY_MAP` parity in Lean | **Proved** (`runtimeRoleMap` + `runtime_role_expansion_subset`; key/cap parity tests in `test_pf_core_research.py`) |
+| `require_role` lean discharge | **Partial** | `ContractDecide.requireRole` + codegen when `semantics_layer.require_role = lean` |
+
+## Research-grade extensions (Phases I–IV)
+
+| Theorem | Intent | Status |
+|---------|--------|--------|
+| `stepState_frame_preserved` | Operational allow steps preserve frame invariants | **Proved** (`Transition.lean`) |
+| `traceExtendsSafely_of_step` | Successful step links to safe trace extension | **Proved** (`Transition.lean`) |
+| `safe_extension_preserves_trace_safe_strong` | Safe extension + frames → `TraceSafe (Trace.cons tr ev)` | **Proved** (`Transition.lean`) |
+| `effect_frame_prevents_undeclared_writes` | Write-free effect frame → no writes on `R` (with footprint alignment) | **Proved** (`EffectFrame.lean`) |
+| `handoff_preserves_trace_safe_strong` | Handoff + frames + trace safety | **Proved** (`State.lean`) |
+| `handoff_composition_global` | Multi-hop handoff authority bounded by first source | **Proved** (`Compositional.lean`) |
+| `traceSafe_implies_tenant_isolation` | Allowed events in safe traces stay tenant-scoped | **Proved** (`NonInterference.lean`) |

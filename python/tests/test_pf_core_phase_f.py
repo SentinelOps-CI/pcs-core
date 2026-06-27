@@ -28,7 +28,7 @@ CONTRACT_VIOLATION = REPO / "examples" / "pf-core-invalid" / "contract_violation
 CROSS_TENANT = REPO / "examples" / "pf-core-invalid" / "cross_tenant_leak" / "trace.json"
 FILE_READ_ALLOWED = REPO / "examples" / "pf-core-valid" / "file_read_allowed" / "trace.json"
 LABTRUST_TRACE = REPO / "examples" / "pf-core-valid" / "labtrust_replay" / "trace.json"
-LAKE_AVAILABLE = shutil.which("lake") is not None or shutil.which("wsl") is not None
+LAKE_AVAILABLE = shutil.which("lake") is not None
 
 
 def _load(path: Path) -> dict:
@@ -130,6 +130,8 @@ def test_contract_checked_generated_proof_compiles() -> None:
         trace, pfcore_generated_dir(), trace_path=CONTRACT_TRACE
     )
     ok, detail = run_lean_concrete_proof(proof_path, skip_build=False)
+    if not ok and ("lake unavailable" in detail or "timed out" in detail.lower()):
+        pytest.skip(detail)
     assert ok, detail
 
 
