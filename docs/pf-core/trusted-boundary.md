@@ -15,6 +15,8 @@ This document lists what PCS/PF-Core treats as trusted, untrusted, or assumed wh
 | Lean theorem catalog (PCS trusted set) | `python/pcs_core/lean_catalog.py` | Audited against `lean/PCS/Theorems.lean` |
 | Lean theorem catalog (PF-Core trusted set) | `python/pcs_core/lean_catalog.py` | Audited against `lean/PFCore/` |
 | PF-Core lean-check deciders | `python/pcs_core/lean_check.py` | Aligned with PF-Core Lean predicates; uses explicit `principal.capabilities` only |
+| Known capability catalog (Python) | `python/pcs_core/pf_core_runtime.py` | `CAPABILITY_CATALOG`, `validate_action_capabilities_known`, `validate_resource_scope` |
+| Known capability catalog (Lean) | `lean/PFCore/Capability.lean`, `lean/PFCore/Action.lean` | `KnownCapability`, `KnownCapabilityEffect` on `ActionAdmissible`; no resource-pattern discharge |
 | PF-Core concrete trace Lean proofs | `lean/PFCore/Generated/` (generated) | `lake env lean` on generated `concrete_trace_safe` theorem; certificate binds via `trace_hash`, `proof_term_hash`, `lean_environment_hash` |
 | Python PF-Core semantic validation | `python/pcs_core/validate_pf_core.py` | Binds JSON artifacts to closed enums and direct-trace effect/capability rules before Lean codegen |
 | Tool-use / witness hash alignment theorems | `lean/PCS/ToolUse.lean`, `lean/PCS/ComputationWitness.lean` | Promoted to trusted PCS catalog (Stage 4) |

@@ -81,6 +81,7 @@ Successful lean-check writes a certificate with matching `claim_class`, `assumpt
 
 - `LeanKernelChecked` requires `proof_term_ref`, `proof_ref`, `proof_term_hash`, `lean_environment_hash`, `lean_proof_checked: true`, successful concrete Lean proof, and **contract grounding** (non-empty event `contract_refs` or `default_contract_ref: "trace-safe"` aligned with `PFCore.traceSafeContract`).
 - `--skip-build` or `--skip-lean-proof` yields `RuntimeChecked` only (no `proof_term_ref`).
+- `LeanKernelChecked` does **not** prove capability `resource_pattern` scope (URI/pattern matching). Certificates list `resource_pattern_scope` under `contract_semantics_checked.runtime` when lean-check validates resource scope in Python; the Lean kernel does not discharge pattern matching.
 
 ### Mapping guidance for PF-Core certificates
 

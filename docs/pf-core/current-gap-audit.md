@@ -84,10 +84,23 @@ Summary of gaps between the PF-Core vision and the current `pcs-core` repository
 
 ## Remaining research (deferred)
 
-1. **Full global non-interference** — allowed-event tenant isolation proved; covert channels, timing, deny-side leaks open (`non-interference.md`).
-2. **Write footprint ↔ effect linkage** — `WriteFootprintRequiresWriteEffect` explicit; not derived from `ActionAdmissible` alone.
-3. **Full provability-fabric-core live adapter orchestration** — hash parity covered natively via adapter CI script.
-4. **Full agent runtime, MCP, NL policy, model safety** — out of scope.
+1. **Full global cross-tenant non-interference** — conservative tenant isolation for allowed events is proved; covert channels, timing, deny-side leaks open (`non-interference.md`).
+2. **Write footprint ↔ effect linkage** — `WriteFootprintRequiresWriteEffect` explicit; derived from `ActionAdmissible` + `KnownCapabilityEffect` for catalog capabilities.
+3. **Resource-pattern scope in Lean** — Python `validate_resource_scope` and certificate `contract_semantics_checked.runtime` (`resource_pattern_scope`); not discharged in Lean kernel.
+4. **Full provability-fabric-core live adapter orchestration** — hash parity covered natively via adapter CI script.
+5. **Full agent runtime, MCP, NL policy, model safety** — out of scope.
+
+## External audit remediation (2026-06)
+
+| Blocker | Status | Notes |
+|---------|--------|-------|
+| Lean `file_write_capability_aligns_write_footprint` soundness | Done | `KnownCapability` / `KnownCapabilityEffect` on `ActionAdmissible` |
+| Resource-pattern scope certificate boundary | Done | `contract_semantics_checked.runtime` + claim-boundary doc |
+| Conformance `--release-grade` for pf-core | Done | Fail closed without lake/WSL; verify-proof-binding gate |
+| `run-release-verify.sh` release path | Done | Runtime smoke vs full lean-check + verify-proof-binding |
+| CI lean job elan PATH + verify-proof-binding | Done | `.github/workflows/ci.yml` |
+| Cross-language invalid hash vectors | Done | trace/previous hash mismatch, cross-tenant leak |
+| TypeScript CI npm install in cross-language tests | Done | pytest + conformance suites |
 
 ## Phase G (compositional trust + proof binding)
 

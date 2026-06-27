@@ -4,7 +4,7 @@ This document states what PF-Core **proves** about tenant isolation versus what 
 
 ## Scope (conservative subset)
 
-PF-Core does **not** claim global non-interference across tenants, covert channels, or arbitrary compositional invariants. The Lean module `lean/PFCore/NonInterference.lean` formalizes a **tenant-scoped trace property** aligned with runtime checks.
+PF-Core does **not** claim global non-interference across tenants, covert channels, or arbitrary compositional invariants. The Lean module `lean/PFCore/NonInterference.lean` formalizes **conservative tenant isolation for allowed events** aligned with runtime checks.
 
 ### Definitions
 
