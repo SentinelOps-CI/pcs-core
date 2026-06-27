@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 import { canonicalHash, canonicalJsonBytes } from "../hash.js";
-import { detectArtifactType, validateArtifact, ValidationError } from "../validate.js";
+import { detectArtifactType, validateArtifact, ValidationError, type ArtifactType } from "../validate.js";
 
 const examplesDir = join(dirname(fileURLToPath(import.meta.url)), "../../../../../examples");
 const vectorsDir = join(
@@ -33,6 +33,19 @@ function walkJsonFiles(dir: string): string[] {
 function validExampleFiles(): string[] {
   return walkJsonFiles(examplesDir).filter((path) => path.includes(".valid."));
 }
+
+test("PF-Core explicit artifact_type detection", () => {
+  const cases: Array<[string, ArtifactType]> = [
+    ["pf-core-valid/tool_use_trace_compiled/pfcore_trace.json", "PFCoreTrace.v0"],
+    ["pf-core-valid/assumption_declared/certificate.json", "PFCoreCertificate.v0"],
+  ];
+  for (const [rel, expected] of cases) {
+    const data = JSON.parse(
+      readFileSync(join(examplesDir, rel), "utf8"),
+    ) as Record<string, unknown>;
+    assert.equal(detectArtifactType(data), expected, rel);
+  }
+});
 
 test("valid examples pass schema and semantic validation", () => {
   for (const path of validExampleFiles()) {
