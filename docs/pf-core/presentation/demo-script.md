@@ -74,15 +74,34 @@ pcs pf-core replay-trace examples/pf-core-valid/labtrust_replay/trace.json
 
 Expected: schema validation OK; replay match (adapter output per `docs/pf-core-trace-mapping.md`).
 
-## 7. PCS lean-check disclaimer (not per-trace Lean)
+## 7. PCS release-envelope check (not per-trace PF-Core Lean)
 
 ```bash
-pcs lean-check
+pcs pcs-envelope check --obligations examples/proof_obligation.valid.json --out /tmp/lean_check_result.json --skip-lean-build
 ```
 
-Expected: exit code 2, stderr explains PCS path is not Lean-backed per trace; directs to `pcs pf-core lean-check`.
+Legacy alias (prints deprecation notice):
 
-## 8. LabTrust end-to-end bridge (Phase E)
+```bash
+pcs lean-check --obligations examples/proof_obligation.valid.json --out /tmp/lean_check_result.json --skip-lean-build
+```
+
+Expected: `LeanCheckResult.v0` with PCS `ProofChecked` or rejection; stderr explains this is release-envelope consistency only and directs to `pcs pf-core lean-check` for PF-Core traces. Output must not mention `LeanKernelChecked`.
+
+## 8. CertifyEdge (live or mock)
+
+Install [CertifyEdge](https://github.com/fraware/CertifyEdge) and ensure `certifyedge` is on PATH, or use mock mode:
+
+```bash
+PCS_CERTIFYEDGE_MOCK=1 pcs pf-core certifyedge-check \
+  --trace examples/pf-core-valid/labtrust_replay/trace.json \
+  --property qc_release.temporal.safety \
+  --out /tmp/PFCoreCertificate.certifyedge.json
+```
+
+CI tries live CLI when available and falls back to mock without failing the pipeline.
+
+## 9. LabTrust end-to-end bridge (Phase E)
 
 Automated script:
 

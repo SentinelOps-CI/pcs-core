@@ -5,7 +5,7 @@ PF-Core proofs and certificates are conditional on explicit assumptions. This do
 ## Cryptographic assumptions
 
 - SHA-256 collision resistance for canonical artifact hashes and event hash chains.
-- `signature_or_digest` fields bind artifact bytes; full PKI signing infrastructure is out of scope for v0.1.
+- `signature_or_digest` fields bind artifact bytes; **PKI signing, HSM integration, and X.509 certificate chains are out of scope for PF-Core v0.1** (documented assumption only).
 
 ## Producer assumptions
 
@@ -18,7 +18,7 @@ PF-Core proofs and certificates are conditional on explicit assumptions. This do
 - `LeanKernelChecked` is emitted **only** when that concrete proof succeeds (`traceSafeD … = true` via `decide`). `--skip-build` or `--skip-lean-proof` yields `RuntimeChecked` only.
 - `lake build PFCore` means the PF-Core library compiles; individual traces still require generated proof files for kernel claims.
 - Theorem names in `PF_CORE_THEOREM_CATALOG` exist as Lean symbols (enforced by `pcs pf-core audit-lean-catalog`).
-- PCS `pcs lean-check` (without `--trace`) is **not** Lean-backed per trace. It prints the assurance boundary and exits; it must not be described as kernel-verified trace safety.
+- PCS `pcs pcs-envelope check` (alias `pcs lean-check`) validates release-envelope consistency only; it must not be described as PF-Core kernel-verified trace safety.
 
 ## Role and capability alignment (permanent boundary)
 
@@ -26,7 +26,7 @@ PF-Core proofs and certificates are conditional on explicit assumptions. This do
 - The PF-Core runtime compiler expands known roles into explicit capability ids on compiled principals.
 - Traces submitted to `pcs pf-core lean-check` must list those expanded capabilities explicitly; lean-check rejects principals where `capabilities` does not match role expansion.
 - Runtime authorization may still consult roles during compilation; lean-check and Lean proofs rely on the explicit capability list only.
-- This role-to-capability split is a **permanent trusted-boundary assumption**, not a temporary Stage 1 gap.
+- This role-to-capability split is a **permanent trusted-boundary assumption** unless a future Lean RoleMap stage expands kernel capability resolution.
 
 ## Registry assumptions
 

@@ -50,5 +50,6 @@
   "claim_class": "RuntimeChecked",
   "source_repo": "https://github.com/example/agent-runtime",
   "source_commit": "abc1234567890abc1234567890abc1234567890",
-  "signature_or_digest": "sha256:f37ea476d8395017e5a5bbafb4e48101cfff180e623aa50c2a85547bd6196ff6"
+  "signature_or_digest": "sha256:f37ea476d8395017e5a5bbafb4e48101cfff180e623aa50c2a85547bd6196ff6",
+  "sequence": 0
 }

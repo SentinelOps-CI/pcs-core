@@ -13,13 +13,25 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from pcs_core.hash import canonical_hash
-from pcs_core.lean_catalog import PF_CORE_FORBIDDEN_LEAN_TOKENS, PF_CORE_THEOREM_CATALOG
+from pcs_core.lean_catalog import (
+    PF_CORE_CONCRETE_PROOF_THEOREMS,
+    PF_CORE_FORBIDDEN_LEAN_TOKENS,
+    PF_CORE_LEAN_KERNEL_THEOREM_CATALOG,
+    PF_CORE_THEOREM_CATALOG,
+)
 from pcs_core.paths import repo_root
+from pcs_core.pf_core_contract_semantics import build_contract_semantics_checked
 from pcs_core.pf_core_lean_codegen import (
+    collect_contracts_for_trace,
     compute_lean_environment_hash,
     generate_proof_obligation_file,
     proof_term_ref_from_path,
     validate_contracts_before_codegen,
+)
+from pcs_core.pf_core_contract import (
+    DEFAULT_TRACE_SAFE_CONTRACT_ID,
+    default_trace_safe_contract_hash,
+    trace_has_contract_binding,
 )
 from pcs_core.pf_core_runtime import (
     compute_trace_hash,
@@ -30,12 +42,16 @@ from pcs_core.pf_core_runtime import (
 )
 from pcs_core.validate import validate_schema
 
+PCS_LEAN_CHECK_DEPRECATION = (
+    "Deprecation: `pcs lean-check` is deprecated for PCS release work; use "
+    "`pcs pcs-envelope check` for PCS release-envelope consistency checks."
+)
+
 PCS_LEAN_CHECK_DISCLAIMER = (
-    "PCS `lean-check` is not Lean-backed for arbitrary traces. It prints the PF-Core "
-    "assurance boundary and exits without kernel verification. Use "
-    "`pcs pf-core lean-check --trace <PFCoreTrace.v0.json>` for PF-Core trace checking "
-    "with Python deciders and optional concrete Lean proof (`LeanKernelChecked`). "
-    "Without that command, no trace receives LeanKernelChecked assurance."
+    "PCS release-envelope consistency check validates ProofObligation.v0 against "
+    "the PCS theorem catalog. A `ProofChecked` LeanCheckResult does not imply "
+    "PF-Core trace safety (`RuntimeChecked` / concrete Lean proof). Use "
+    "`pcs pf-core lean-check --trace <PFCoreTrace.v0.json>` for PF-Core kernel assurance."
 )
 
 LEAN_CHECK_DISCLAIMER = (
@@ -82,8 +98,13 @@ def pfcore_generated_dir() -> Path:
     return pfcore_lean_dir() / "Generated"
 
 
-def pfcore_theorems_checked() -> list[str]:
-    return sorted(PF_CORE_THEOREM_CATALOG)
+def pfcore_theorems_checked(*, lean_kernel: bool = False) -> list[str]:
+    catalog = PF_CORE_LEAN_KERNEL_THEOREM_CATALOG if lean_kernel else PF_CORE_THEOREM_CATALOG
+    return sorted(catalog)
+
+
+def pfcore_concrete_proof_theorems() -> list[str]:
+    return sorted(PF_CORE_CONCRETE_PROOF_THEOREMS)
 
 
 def lean_build_status(*, ok: bool, detail: str, target: str = "PFCore") -> dict[str, Any]:
@@ -319,6 +340,17 @@ def check_pfcore_trace_lean_semantics(trace: Mapping[str, Any]) -> list[PFCoreLe
     if events and not trace_safe_d(events):
         issues.append(PFCoreLeanCheckIssue("TraceUnsafe", "trace fails TraceSafe decider"))
 
+    claim_class = str(trace.get("claim_class") or "")
+    if claim_class == "LeanKernelChecked" and not trace_has_contract_binding(trace):
+        issues.append(
+            PFCoreLeanCheckIssue(
+                "ContractBindingMissing",
+                "claim_class LeanKernelChecked requires contract_refs on events or "
+                "default trace-safe contract binding",
+                "root",
+            )
+        )
+
     return issues
 
 
@@ -350,6 +382,23 @@ def build_pfcore_certificate(
         claim_class = "RuntimeChecked"
         proof_ref = None
 
+    contracts = collect_contracts_for_trace(trace)
+    contract_semantics = build_contract_semantics_checked(trace, contracts)
+
+    default_contract_ref: str | None = None
+    if lean_proof_checked:
+        explicit_default = str(trace.get("default_contract_ref") or "")
+        if explicit_default == DEFAULT_TRACE_SAFE_CONTRACT_ID:
+            default_contract_ref = DEFAULT_TRACE_SAFE_CONTRACT_ID
+        elif str(trace.get("contract_hash") or "") == default_trace_safe_contract_hash():
+            default_contract_ref = DEFAULT_TRACE_SAFE_CONTRACT_ID
+        elif trace_has_contract_binding(trace):
+            for event in events:
+                refs = event.get("contract_refs") if isinstance(event, dict) else None
+                if isinstance(refs, list) and refs:
+                    default_contract_ref = None
+                    break
+
     cert: dict[str, Any] = {
         "schema_version": "v0",
         "artifact_type": "PFCoreCertificate.v0",
@@ -361,7 +410,7 @@ def build_pfcore_certificate(
         "checker": checker,
         "checker_version": checker_version,
         "assumption_refs": list(PF_CORE_ASSUMPTION_REFS),
-        "theorems_checked": pfcore_theorems_checked(),
+        "theorems_checked": pfcore_theorems_checked(lean_kernel=lean_proof_checked),
         "obligations": obligations,
         "lean_build_status": lean_build_status(
             ok=lean_build_ok and not skip_build,
@@ -370,12 +419,15 @@ def build_pfcore_certificate(
         "lean_proof_checked": lean_proof_checked,
         "disclaimer": LEAN_CHECK_DISCLAIMER,
         "event_count": len(events),
+        "contract_semantics_checked": contract_semantics,
         "source_repo": str(trace.get("source_repo") or "https://github.com/example/pcs-core"),
         "source_commit": str(trace.get("source_commit") or "0000000"),
         "signature_or_digest": trace_hash,
     }
     if lean_environment_hash:
         cert["lean_environment_hash"] = lean_environment_hash
+    if default_contract_ref:
+        cert["default_contract_ref"] = default_contract_ref
     if proof_ref:
         cert["proof_ref"] = proof_ref
         cert["proof_term_ref"] = proof_ref
@@ -416,7 +468,9 @@ def build_lean_check_result(
         "issues": [{"code": i.code, "message": i.message, "path": i.path} for i in issues],
         "obligations": obligations,
         "assumption_refs": list(PF_CORE_ASSUMPTION_REFS),
-        "theorems_checked": pfcore_theorems_checked(),
+        "theorems_checked": pfcore_theorems_checked(
+            lean_kernel=bool(certificate and certificate.get("lean_proof_checked"))
+        ),
         "lean_build_status": lean_build_status(ok=build_ok and not skip_build, detail=build_detail),
         "lean_proof_checked": bool(certificate and certificate.get("lean_proof_checked")),
         "no_sorry_audit": {"ok": not no_sorry_errors, "errors": no_sorry_errors},
@@ -472,9 +526,26 @@ def run_pfcore_lean_check(
                     "proof_ref": proof_term_ref,
                 }
             )
+            obligations.append(
+                {
+                    "kind": "ConcreteTraceSafeProp",
+                    "theorem": "concrete_trace_safe_prop",
+                    "passed": False,
+                    "proof_ref": proof_term_ref,
+                }
+            )
+            obligations.append(
+                {
+                    "kind": "ConcreteAllowedEventsAllowed",
+                    "theorem": "concrete_allowed_events_allowed",
+                    "passed": False,
+                    "proof_ref": proof_term_ref,
+                }
+            )
             if not skip_build:
                 proof_ok, proof_detail = run_lean_concrete_proof(proof_path, skip_build=False)
-                obligations[-1]["passed"] = proof_ok
+                for entry in obligations[-3:]:
+                    entry["passed"] = proof_ok
         except OSError as exc:
             issues.append(PFCoreLeanCheckIssue("LeanCodegenFailed", str(exc)))
         except ValueError as exc:

@@ -67,6 +67,17 @@ PF_CORE_SOUNDNESS_THEOREMS = frozenset(
 
 PF_CORE_THEOREM_CATALOG = frozenset(PF_CORE_OBLIGATION_KIND_THEOREM.values()) | PF_CORE_SOUNDNESS_THEOREMS
 
+# Concrete proof obligations emitted by pf_core_lean_codegen (LeanKernelChecked only).
+PF_CORE_CONCRETE_PROOF_THEOREMS = frozenset(
+    {
+        "concrete_trace_safe",
+        "concrete_trace_safe_prop",
+        "concrete_allowed_events_allowed",
+    }
+)
+
+PF_CORE_LEAN_KERNEL_THEOREM_CATALOG = PF_CORE_THEOREM_CATALOG | PF_CORE_CONCRETE_PROOF_THEOREMS
+
 # Backward-compatible PCS aliases (Stage 1).
 OBLIGATION_KIND_THEOREM = PCS_OBLIGATION_KIND_THEOREM
 UNTRUSTED_OBLIGATION_KIND_THEOREM = PCS_UNTRUSTED_OBLIGATION_KIND_THEOREM

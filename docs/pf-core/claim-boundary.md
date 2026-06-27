@@ -29,11 +29,20 @@ The claim-boundary linter (`pcs pf-core audit-claims`) fails on these phrases in
 | fully verified runtime | runtime-checked trace with explicit claim class |
 | formally verified platform | release-envelope consistency theorem family (for PCS Lean scope) |
 
-## LeanCheckResult.v0 (PCS bridge artifact)
+## PCS release-envelope consistency (`pcs pcs-envelope check`)
+
+PCS release-envelope checks validate `ProofObligation.v0` against the PCS theorem catalog in `lean/PCS/Theorems.lean`.
+
+- Preferred command: `pcs pcs-envelope check --obligations … --out …`
+- Legacy alias: `pcs lean-check` (prints deprecation notice; same behavior)
+- Emits `LeanCheckResult.v0` with lifecycle status `ProofChecked` when obligations pass
+- Does **not** prove PF-Core trace safety; does not emit `LeanKernelChecked`
+
+Use `pcs pf-core lean-check --trace …` for PF-Core kernel assurance (`LeanKernelChecked` when concrete proof succeeds).
+
+## PF-Core lean-check (`pcs pf-core lean-check`)
 
 PF-Core `pcs pf-core lean-check` emits a registered `LeanCheckResult.v0` object alongside optional `PFCoreCertificate.v0` output.
-
-### Current behavior (Stage 4)
 
 - `status: LeanProofChecked` means Python deciders passed, the no-sorry audit passed, `lake build PFCore` succeeded, and a generated concrete proof file checked `traceSafeD tr = true` via the Lean kernel.
 - `status: DecidersPassed` means deciders (and no-sorry audit) passed but Lean proof was skipped (`--skip-build` or `--skip-lean-proof`) or only runtime assurance was requested.
@@ -52,7 +61,7 @@ Do **not** treat PCS lifecycle `ProofChecked` as a PF-Core formal claim. PF-Core
 
 Successful lean-check writes a certificate with matching `claim_class`, `assumption_refs`, `theorems_checked`, `obligations`, `lean_build_status`, `lean_proof_checked`, and `disclaimer`.
 
-- `LeanKernelChecked` requires `proof_term_ref`, `proof_ref`, `lean_proof_checked: true`, and successful concrete Lean proof.
+- `LeanKernelChecked` requires `proof_term_ref`, `proof_ref`, `lean_proof_checked: true`, successful concrete Lean proof, and **contract grounding** (non-empty event `contract_refs` or `default_contract_ref: "trace-safe"` aligned with `PFCore.traceSafeContract`).
 - `--skip-build` or `--skip-lean-proof` yields `RuntimeChecked` only (no `proof_term_ref`).
 
 ### Mapping guidance for PF-Core certificates

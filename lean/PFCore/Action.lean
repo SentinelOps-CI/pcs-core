@@ -30,6 +30,13 @@ def ActionWithinTenant (p : Principal) (a : Action) : Prop :=
 def actionWithinTenantD (p : Principal) (a : Action) : Bool :=
   resourcesSameTenantD p a.reads && resourcesSameTenantD p a.writes
 
+/--
+**Meaning:** The tenant decider matches in-tenant resource footprint for reads and writes.
+
+**Trusted use:** Tenant isolation checks aligned with runtime `validate_resource_scope`.
+
+**Does not imply:** Cross-tenant denial correctness or network egress safety.
+-/
 theorem actionWithinTenantD_sound (p : Principal) (a : Action) :
     actionWithinTenantD p a = true ↔ ActionWithinTenant p a := by
   simp [actionWithinTenantD, ActionWithinTenant, resourcesSameTenantD_sound, and_left_comm]
@@ -41,6 +48,13 @@ def ActionAllowed (p : Principal) (a : Action) : Prop :=
 def actionAllowedD (p : Principal) (a : Action) : Bool :=
   hasCapabilityD p a.capability && actionWithinTenantD p a
 
+/--
+**Meaning:** The combined action decider reflects capability plus tenant-scoped resources.
+
+**Trusted use:** Core allowance predicate for `EventSafe` and generated concrete proofs.
+
+**Does not imply:** Effect-level policy, contract postconditions, or external checker claims.
+-/
 theorem actionAllowedD_sound (p : Principal) (a : Action) :
     actionAllowedD p a = true ↔ ActionAllowed p a := by
   simp [actionAllowedD, ActionAllowed, hasCapabilityD_sound, actionWithinTenantD_sound, and_left_comm]

@@ -23,13 +23,25 @@ def traceSafeContract : Contract :=
     post := fun _ _ _ => True
     invariant := traceSafeInvariant }
 
-/-- Trace safety is preserved across `Trace.cons` when the new event is safe. -/
+/--
+**Meaning:** Appending a safe event preserves the canonical `TraceSafe` invariant.
+
+**Trusted use:** Contract invariant preservation for `require_trace_safe` JSON fields.
+
+**Does not imply:** Arbitrary user contract invariants are preserved without extra structure.
+-/
 theorem trace_safe_invariant_preserved_cons (tr : Trace) (ev : Event) :
     TraceSafe tr → EventSafe ev → TraceSafe (Trace.cons tr ev) := by
   intro htr hev
   exact (traceSafe_cons tr ev).mpr ⟨htr, hev⟩
 
-/-- `traceSafeContract.invariant` is preserved under cons (conservative invariant theorem). -/
+/--
+**Meaning:** The packaged trace-safe contract invariant is preserved under `Trace.cons`.
+
+**Trusted use:** Mapping JSON `invariant.require_trace_safe` to Lean preservation lemmas.
+
+**Does not imply:** Custom contract invariants hold without additional proof obligations.
+-/
 theorem invariant_preserved_cons (tr : Trace) (ev : Event) :
     traceSafeContract.invariant tr → EventSafe ev →
     traceSafeContract.invariant (Trace.cons tr ev) :=
@@ -54,7 +66,13 @@ def Contract.seq (c1 c2 : Contract) : Contract :=
     post := fun p a ev => c1.post p a ev ∧ c2.post p a ev
     invariant := fun tr => c1.invariant tr ∧ c2.invariant tr }
 
-/-- Sequential contract satisfaction on a single event splits component-wise. -/
+/--
+**Meaning:** Sequential contract satisfaction on an event splits to component contracts.
+
+**Trusted use:** Compositional contract reasoning in multi-contract traces.
+
+**Does not imply:** Sequential composition preserves invariants without both sides holding.
+-/
 theorem seq_contract_satisfaction_left (c1 c2 : Contract) (ev : Event) :
     SatisfiesContract (Contract.seq c1 c2) ev ↔
       SatisfiesContract c1 ev ∧ SatisfiesContract c2 ev := by
@@ -72,6 +90,13 @@ theorem seq_contract_satisfaction_left (c1 c2 : Contract) (ev : Event) :
     · exact Or.inl deny2
     · exact Or.inr ⟨post1, post2⟩
 
+/--
+**Meaning:** Sequential trace-level contract satisfaction splits to component traces.
+
+**Trusted use:** Trace-wide compositional contract discharge in Lean codegen.
+
+**Does not imply:** Either component contract alone certifies the composed system.
+-/
 theorem seq_contract_satisfaction_right (c1 c2 : Contract) (tr : Trace) :
     TraceSatisfiesContract (Contract.seq c1 c2) tr ↔
       TraceSatisfiesContract c1 tr ∧ TraceSatisfiesContract c2 tr := by

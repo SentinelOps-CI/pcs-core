@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import shutil
 import subprocess
@@ -80,6 +81,32 @@ def compare_hash_vector_trees(local: Path, upstream: Path) -> list[str]:
     return errors
 
 
+def verify_local_pf_core_hash_vectors(local: Path | None = None) -> list[str]:
+    """Verify PF-Core event/trace vectors under python/tests/hash_vectors/pf_core/."""
+    from pcs_core.pf_core_runtime import compute_event_hash, compute_trace_hash
+
+    errors: list[str] = []
+    root = hash_vectors_dir(local) / "pf_core"
+    if not root.is_dir():
+        return ["missing local PF-Core hash vectors at python/tests/hash_vectors/pf_core/"]
+    for name, computer in (
+        ("PFCoreEvent.v0", compute_event_hash),
+        ("PFCoreTrace.v0", compute_trace_hash),
+    ):
+        vector_dir = root / name
+        input_path = vector_dir / "input.json"
+        digest_path = vector_dir / "digest.txt"
+        if not input_path.is_file() or not digest_path.is_file():
+            errors.append(f"missing local PF-Core vector files for {name}")
+            continue
+        payload = json.loads(input_path.read_text(encoding="utf-8"))
+        expected = digest_path.read_text(encoding="utf-8").strip()
+        actual = computer(payload)
+        if actual != expected:
+            errors.append(f"PF-Core hash vector drift: {name} (expected {expected}, got {actual})")
+    return errors
+
+
 def verify_pf_core_hash_vectors(
     local: Path | None = None,
     *,
@@ -95,6 +122,9 @@ def verify_pf_core_hash_vectors(
     directory (or ``work_dir`` when provided).
     """
     local_root = hash_vectors_dir(local)
+    errors = verify_local_pf_core_hash_vectors(local_root)
+    if errors:
+        return errors
     tag = pf_core_tag or os.environ.get("PF_CORE_TAG", DEFAULT_PF_CORE_TAG)
     repo = pf_core_repo or os.environ.get("PF_CORE_REPO", DEFAULT_PF_CORE_REPO)
 

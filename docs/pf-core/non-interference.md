@@ -39,9 +39,13 @@ pcs pf-core validate-trace --tenant-isolation examples/pf-core-valid/file_read_a
 
 Invalid fixture: `examples/pf-core-invalid/cross_tenant_leak/`.
 
-## Open (not claimed)
+## RoleMap permanent assumption
 
-1. Full cross-tenant non-interference (no information flow between tenants).
+Lean `HasCapability` inspects `principal.capabilities` only; **roles are not expanded in the kernel**. The runtime compiler applies `ROLE_CAPABILITY_MAP` in `pf_core_runtime.py` when compiling observations. Unless a future Lean `RoleMap` module is added and promoted to the trusted catalog, role-to-capability expansion remains a **permanent trusted-boundary assumption** documented here and in [assumptions.md](assumptions.md).
+
+## Open (not claimed — full global NI deferred)
+
+1. **Full global cross-tenant non-interference** (information-flow between tenants under arbitrary schedulers and adversaries). Current theorems cover tenant-scoped allowed events in safe traces only; full global NI is deferred to later research.
 2. Non-interference under handoff across tenants (handoffs require matching tenants in `HandoffSafe`).
 3. Deny-event side channels or resource existence leaks.
 4. Compositional preservation of arbitrary user-defined contract invariants beyond the discharged JSON subset.

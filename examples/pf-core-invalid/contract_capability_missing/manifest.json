@@ -1,0 +1,4 @@
+{
+  "expected_error": "ContractCapabilityRequired",
+  "must_fail_at": "validate_trace_contracts"
+}

@@ -21,6 +21,13 @@ def EventTenantScoped (tenant : String) (ev : Event) : Prop :=
 def eventTenantScopedD (tenant : String) (ev : Event) : Bool :=
   decide (ev.principal.tenant = tenant) && actionWithinTenantD ev.principal ev.action
 
+/--
+**Meaning:** Event tenant-scoping decider matches principal tenant plus in-tenant resources.
+
+**Trusted use:** Runtime `--tenant-isolation` alignment and conservative isolation claims.
+
+**Does not imply:** Cross-tenant covert channels are absent or deny events are scoped.
+-/
 theorem eventTenantScopedD_sound (tenant : String) (ev : Event) :
     eventTenantScopedD tenant ev = true ↔ EventTenantScoped tenant ev := by
   cases ev with
@@ -38,6 +45,13 @@ def traceTenantScopedD (tenant : String) (tr : Trace) : Bool :=
   | Trace.empty => true
   | Trace.cons tr' ev => traceTenantScopedD tenant tr' && eventTenantScopedD tenant ev
 
+/--
+**Meaning:** Trace tenant-scoping decider reflects inductive tenant scope over events.
+
+**Trusted use:** Whole-trace tenant isolation checks in certificates.
+
+**Does not imply:** Trace hash integrity or completeness of observed runtime events.
+-/
 theorem traceTenantScopedD_sound (tenant : String) (tr : Trace) :
     traceTenantScopedD tenant tr = true ↔ TraceTenantScoped tenant tr := by
   induction tr with
@@ -45,14 +59,26 @@ theorem traceTenantScopedD_sound (tenant : String) (tr : Trace) :
   | cons tr' ev ih =>
     simp [traceTenantScopedD, TraceTenantScoped, eventTenantScopedD_sound, ih, and_left_comm]
 
-/-- Tenant scope is preserved under `Trace.cons` when the new event is scoped. -/
+/--
+**Meaning:** Tenant scope of a trace prefix is preserved when appending a scoped event.
+
+**Trusted use:** Inductive tenant isolation reasoning under `Trace.cons`.
+
+**Does not imply:** The appended event was allowed or safe.
+-/
 theorem cons_preserves_tenant_scope (tenant : String) (tr : Trace) (ev : Event) :
     TraceTenantScoped tenant tr → EventTenantScoped tenant ev →
     TraceTenantScoped tenant (Trace.cons tr ev) := by
   intro htr hev
   exact ⟨htr, hev⟩
 
-/-- Allowed safe events are tenant-scoped to the principal's tenant. -/
+/--
+**Meaning:** Allowed safe events place principal and resources within the principal tenant.
+
+**Trusted use:** Linking `EventSafe` to tenant-scoped non-interference for allow decisions.
+
+**Does not imply:** Denied events are tenant-scoped or policy-correct.
+-/
 theorem eventSafe_allow_implies_tenant_scoped (ev : Event) (h : EventSafe ev)
     (hallow : ev.decision = Decision.allow) :
     EventTenantScoped ev.principal.tenant ev := by
@@ -60,14 +86,26 @@ theorem eventSafe_allow_implies_tenant_scoped (ev : Event) (h : EventSafe ev)
   rcases hallowed with ⟨_, hwithin⟩
   exact ⟨rfl, hwithin⟩
 
-/-- Allowed events inside a safe trace are tenant-scoped (conservative non-interference link). -/
+/--
+**Meaning:** Allowed events inside a safe trace are tenant-scoped to the principal tenant.
+
+**Trusted use:** Primary non-interference lemma for certificates over safe traces.
+
+**Does not imply:** Full information-flow non-interference or cross-principal isolation.
+-/
 theorem traceSafe_allowed_event_tenant_scoped (tr : Trace) (ev : Event)
     (hTrace : TraceSafe tr) (hIn : EventIn ev tr) (hallow : ev.decision = Decision.allow) :
     EventTenantScoped ev.principal.tenant ev :=
   eventSafe_allow_implies_tenant_scoped ev
     (event_in_safe_trace_is_safe tr ev hTrace hIn) hallow
 
-/-- When a trace is tenant-scoped and safe, every allowed event stays within its principal tenant. -/
+/--
+**Meaning:** Alias lemma: safe traces imply tenant scope for allowed member events.
+
+**Trusted use:** Documentation-friendly entry point for tenant isolation claims.
+
+**Does not imply:** Stronger isolation properties beyond `traceSafe_allowed_event_tenant_scoped`.
+-/
 theorem traceSafe_implies_tenant_scoped_for_allowed (tr : Trace) (ev : Event)
     (hTrace : TraceSafe tr) (hIn : EventIn ev tr) (hallow : ev.decision = Decision.allow) :
     EventTenantScoped ev.principal.tenant ev :=

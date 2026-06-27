@@ -21,6 +21,13 @@ def SameTenantResource (p : Principal) (r : Resource) : Prop :=
 def sameTenantResourceD (p : Principal) (r : Resource) : Bool :=
   p.tenant == r.tenant
 
+/--
+**Meaning:** Tenant string equality between principal and resource is decidable and sound.
+
+**Trusted use:** Building blocks for action tenant checks and non-interference lemmas.
+
+**Does not imply:** Label-based access control or URI normalization correctness.
+-/
 theorem sameTenantResourceD_sound (p : Principal) (r : Resource) :
     sameTenantResourceD p r = true ↔ SameTenantResource p r := by
   simp [sameTenantResourceD, SameTenantResource, BEq.beq]
@@ -32,6 +39,13 @@ def allResourcesSameTenant (p : Principal) (rs : List Resource) : Prop :=
 def resourcesSameTenantD (p : Principal) (rs : List Resource) : Bool :=
   rs.all fun r => sameTenantResourceD p r
 
+/--
+**Meaning:** List tenant decider reflects universal tenant alignment over resources.
+
+**Trusted use:** Action read/write footprint validation in allowance deciders.
+
+**Does not imply:** Resource existence, reachability, or side-channel isolation.
+-/
 theorem resourcesSameTenantD_sound (p : Principal) (rs : List Resource) :
     resourcesSameTenantD p rs = true ↔ allResourcesSameTenant p rs := by
   simp [resourcesSameTenantD, allResourcesSameTenant, sameTenantResourceD_sound, List.all_eq_true]

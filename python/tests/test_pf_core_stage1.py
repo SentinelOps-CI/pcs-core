@@ -80,5 +80,5 @@ def test_lean_check_disclaimer_constant() -> None:
 
     assert "LeanKernelChecked" in LEAN_CHECK_DISCLAIMER
     assert "concrete Lean proof" in LEAN_CHECK_DISCLAIMER
-    assert "not Lean-backed" in PCS_LEAN_CHECK_DISCLAIMER
+    assert "release-envelope" in PCS_LEAN_CHECK_DISCLAIMER.lower()
     assert "pf-core lean-check" in PCS_LEAN_CHECK_DISCLAIMER

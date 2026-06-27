@@ -36,6 +36,21 @@ def certifyedge_mock_enabled() -> bool:
     return os.environ.get("PCS_CERTIFYEDGE_MOCK", "").strip() in {"1", "true", "yes"}
 
 
+def certifyedge_cli_available() -> bool:
+    return _find_certifyedge_cli() is not None
+
+
+def certifyedge_status() -> dict[str, object]:
+    """Report CertifyEdge CLI availability for operators and CI."""
+    cli = _find_certifyedge_cli()
+    return {
+        "available": cli is not None,
+        "cli_path": cli,
+        "mock_enabled": certifyedge_mock_enabled(),
+        "install_doc": CERTIFYEDGE_INSTALL_DOC,
+    }
+
+
 def _find_certifyedge_cli() -> str | None:
     return shutil.which("certifyedge")
 

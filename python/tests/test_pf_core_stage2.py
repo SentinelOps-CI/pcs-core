@@ -70,76 +70,18 @@ def test_valid_pf_core_fixtures(case_dir: Path) -> None:
     for path in sorted(case_dir.glob("*.json")):
         if path.name == "manifest.json":
             continue
+        if path.name == "tool_use_trace.json" and (case_dir / "pfcore_trace.json").is_file():
+            continue
         data = _load(path)
         artifact_type = detect_artifact_type(data)
         assert artifact_type is not None, f"Could not detect type for {path}"
         validate_artifact(data, artifact_type)
 
 
-@pytest.mark.parametrize("case_dir", sorted(INVALID.iterdir()) if INVALID.is_dir() else [])
-def test_invalid_pf_core_fixtures(case_dir: Path) -> None:
-    manifest = load_pf_core_fixture_manifest(case_dir)
-    expected_error = manifest["expected_error"]
-    must_fail_at = manifest["must_fail_at"]
+def test_invalid_pf_core_fixtures_harness() -> None:
+    from pcs_core.validate import check_pf_core_invalid_fixtures
 
-    if must_fail_at == "runtime_to_pfcore_event":
-        observation = _load(case_dir / "observation.json")
-        with pytest.raises((UnknownCapability, UnknownEffect, MissingPrincipal)) as exc:
-            compile_runtime_observation_to_event(observation)
-        assert exc.value.code == expected_error
-        return
-
-    if must_fail_at == "validate_pfcore_trace_hash_chain":
-        trace = _load(case_dir / "trace.json")
-        errors = validate_pfcore_trace_hash_chain(trace)
-        assert any(expected_error in err for err in errors)
-        return
-
-    if must_fail_at == "validate_denied_events_preserved":
-        tool_use_trace = _load(case_dir / "tool_use_trace.json")
-        pfcore_trace = _load(case_dir / "pfcore_trace.json")
-        with pytest.raises(DroppedDeniedEvent) as exc:
-            validate_denied_events_preserved(tool_use_trace, pfcore_trace)
-        assert exc.value.code == expected_error
-        return
-
-    if must_fail_at == "validate_handoff_authority":
-        handoff = _load(case_dir / "handoff.json")
-        with pytest.raises(HandoffAuthorityExpansion) as exc:
-            validate_handoff_authority(handoff)
-        assert exc.value.code == expected_error
-        return
-
-    if must_fail_at == "compile_tool_use_trace_to_pfcore_trace":
-        tool_use_trace = _load(case_dir / "tool_use_trace.json")
-        with pytest.raises(HandoffAuthorityExpansion) as exc:
-            compile_tool_use_trace_to_pfcore_trace(tool_use_trace)
-        assert exc.value.code == expected_error
-        return
-
-    if must_fail_at == "validate_trace_contracts":
-        from pcs_core.pf_core_contract import validate_trace_contracts
-
-        trace = _load(case_dir / "trace.json")
-        contracts = {
-            str(data["contract_id"]): data
-            for data in (
-                _load(path) for path in sorted((case_dir / "contracts").glob("*.json"))
-            )
-        }
-        issues = validate_trace_contracts(trace, contracts)
-        assert any(issue.code == expected_error for issue in issues)
-        return
-
-    if must_fail_at == "validate_tenant_isolation":
-        from pcs_core.pf_core_runtime import validate_tenant_isolation
-
-        trace = _load(case_dir / "trace.json")
-        errors = validate_tenant_isolation(trace)
-        assert any(expected_error in err for err in errors)
-        return
-
-    pytest.fail(f"Unknown must_fail_at {must_fail_at!r} in {case_dir}")
+    check_pf_core_invalid_fixtures()
 
 
 def test_tool_use_trace_compiles_to_pfcore_trace() -> None:

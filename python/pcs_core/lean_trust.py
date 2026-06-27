@@ -19,6 +19,13 @@ LEAN_VERSION = "leanprover/lean4:stable"
 
 PCS_CORE_COMMIT_PLACEHOLDER = "d444444444444444444444444444444444444444"
 
+PCS_LEAN_CHECK_DISCLAIMER = (
+    "PCS release-envelope consistency check validates ProofObligation.v0 release-envelope "
+    "consistency against the PCS theorem catalog. A `ProofChecked` LeanCheckResult does "
+    "not imply PF-Core trace safety. Use "
+    "`pcs pf-core lean-check --trace <PFCoreTrace.v0.json>` for PF-Core kernel assurance."
+)
+
 
 def _file_digest(content: bytes) -> str:
     from pcs_core.release_fixtures import file_digest
@@ -403,6 +410,9 @@ def run_lean_check(
     require_lean_build: bool = True,
 ) -> dict[str, Any]:
     """Evaluate obligations against the fixed PCS theorem set; emit LeanCheckResult.v0."""
+    import sys
+
+    print(PCS_LEAN_CHECK_DISCLAIMER, file=sys.stderr)
     build_ok, build_reason = run_lean_build() if require_lean_build else (True, "")
     obligation_results: list[dict[str, Any]] = []
     failures: list[str] = []
@@ -439,6 +449,7 @@ def run_lean_check(
 
     body: dict[str, Any] = {
         "schema_version": "v0",
+        "artifact_type": "LeanCheckResult.v0",
         "check_id": check_id or f"lean-check-{proof_obligation_id}",
         "proof_obligation_id": proof_obligation_id,
         "lean_module": str(obligations_doc.get("lean_module", LEAN_MODULE)),
@@ -450,6 +461,7 @@ def run_lean_check(
         "source_commit": source_commit
         or str(obligations_doc.get("source_commit", PCS_CORE_COMMIT_PLACEHOLDER)),
         "failure_reason": "; ".join(failures),
+        "disclaimer": PCS_LEAN_CHECK_DISCLAIMER,
         "obligation_results": obligation_results,
         "signature_or_digest": PLACEHOLDER_DIGEST,
     }

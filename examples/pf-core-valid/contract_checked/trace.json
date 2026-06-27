@@ -56,17 +56,17 @@
       ],
       "evidence_refs": [],
       "previous_event_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
-      "event_hash": "sha256:845ecd9de433a71ccd232200812506ed7b5884bc59e4326bf6be84444186a2ba",
       "source_repo": "https://github.com/example/agent-runtime",
       "source_commit": "abc1234567890abc1234567890abc1234567890",
+      "event_hash": "sha256:845ecd9de433a71ccd232200812506ed7b5884bc59e4326bf6be84444186a2ba",
       "signature_or_digest": "sha256:845ecd9de433a71ccd232200812506ed7b5884bc59e4326bf6be84444186a2ba"
     }
   ],
-  "trace_hash": "sha256:363ecde1488a23d2a0d128ac46a31d0dce8681e21f6b3ab78ba7a8152324ec26",
   "policy_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
-  "contract_hash": "sha256:ab672cb206542354c10afdbc0e739fe018acee2d4d7db40a7486bcf3071846b3",
+  "contract_hash": "sha256:ade8675a56d86d5a3d2cb576fde97b633e3153f01992005f784322e6c480ca2f",
   "claim_class": "RuntimeChecked",
   "source_repo": "https://github.com/example/agent-runtime",
   "source_commit": "abc1234567890abc1234567890abc1234567890",
-  "signature_or_digest": "sha256:363ecde1488a23d2a0d128ac46a31d0dce8681e21f6b3ab78ba7a8152324ec26"
+  "trace_hash": "sha256:fddb2a2f9ac45d4b7c7a4e8831080b8d9cfe9d3b9b2574871e45ee6616c8318f",
+  "signature_or_digest": "sha256:fddb2a2f9ac45d4b7c7a4e8831080b8d9cfe9d3b9b2574871e45ee6616c8318f"
 }

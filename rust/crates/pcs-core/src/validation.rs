@@ -616,6 +616,12 @@ pub fn validate_semantics(value: &Value, artifact_type: &str) -> Result<(), Vali
                 }
             }
         }
+        if artifact_type == "PFCoreTrace.v0" {
+            errors.extend(crate::pf_core::validate_pfcore_trace_hash_chain(value));
+        }
+        if artifact_type == "PFCoreCertificate.v0" {
+            errors.extend(crate::pf_core::validate_pfcore_certificate_semantics(value));
+        }
     }
 
     if errors.is_empty() {

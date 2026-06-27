@@ -1,0 +1,1 @@
+{"artifact_type":"PFCoreContract.v0","contract_id":"trace-safe","invariant":{"require_trace_safe":true},"name":"Trace-safe default","post":{},"pre":{},"schema_version":"v0","semantics_layer":{"require_trace_safe":"lean"}}

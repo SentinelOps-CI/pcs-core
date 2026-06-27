@@ -32,6 +32,13 @@ def actionHasEffect (a : Action) (e : Effect) : Prop := e ∈ a.effects
 
 def actionHasEffectD (a : Action) (e : Effect) : Bool := decide (e ∈ a.effects)
 
+/--
+**Meaning:** Effect membership decider reflects `actionHasEffect`.
+
+**Trusted use:** Contract preconditions requiring specific effects.
+
+**Does not imply:** Effect execution occurred or was authorized at runtime.
+-/
 theorem actionHasEffectD_sound (a : Action) (e : Effect) :
     actionHasEffectD a e = true ↔ actionHasEffect a e := by
   simp [actionHasEffectD, actionHasEffect, decide_eq_true_iff]
@@ -53,8 +60,15 @@ def ContractPreHolds (spec : ContractPreSpec) (p : Principal) (a : Action) : Pro
   (match spec.requireEffect with
     | none => True
     | some eff => actionHasEffect a eff) ∧
-  (if spec.requireTenantMatch then ActionWithinTenant p a else True)
+    (if spec.requireTenantMatch then ActionWithinTenant p a else True)
 
+/--
+**Meaning:** JSON contract pre decider reflects conservative `ContractPreHolds`.
+
+**Trusted use:** Generated `concrete_contract_pre_*` proof soundness.
+
+**Does not imply:** Unmapped JSON pre fields (`require_role`, refs) hold.
+-/
 theorem contractPreD_sound (spec : ContractPreSpec) (p : Principal) (a : Action) :
     contractPreD spec p a = true ↔ ContractPreHolds spec p a := by
   rcases spec with ⟨cap, eff, tenant⟩
@@ -76,6 +90,13 @@ def ContractPostHolds (spec : ContractPostSpec) (ev : Event) : Prop :=
     | some d => ev.decision = d) ∧
   (if spec.requireEventSafe then EventSafe ev else True)
 
+/--
+**Meaning:** JSON contract post decider reflects conservative `ContractPostHolds`.
+
+**Trusted use:** Generated `concrete_contract_post_*` proof soundness.
+
+**Does not imply:** Full PFCoreContract.v0 post semantics beyond mapped fields.
+-/
 theorem contractPostD_sound (spec : ContractPostSpec) (ev : Event) :
     contractPostD spec ev = true ↔ ContractPostHolds spec ev := by
   rcases spec with ⟨reqDec, reqSafe⟩
@@ -91,6 +112,13 @@ def contractInvariantD (spec : ContractInvariantSpec) (tr : Trace) : Bool :=
 def ContractInvariantHolds (spec : ContractInvariantSpec) (tr : Trace) : Prop :=
   if spec.requireTraceSafe then TraceSafe tr else True
 
+/--
+**Meaning:** JSON contract invariant decider reflects `ContractInvariantHolds`.
+
+**Trusted use:** Generated `concrete_trace_satisfies_*` invariant discharge.
+
+**Does not imply:** Custom invariants or unmapped contract fields hold.
+-/
 theorem contractInvariantD_sound (spec : ContractInvariantSpec) (tr : Trace) :
     contractInvariantD spec tr = true ↔ ContractInvariantHolds spec tr := by
   rcases spec with ⟨reqSafe⟩
@@ -102,6 +130,13 @@ def satisfiesContractSpecD (pre : ContractPreSpec) (post : ContractPostSpec) (ev
 def SatisfiesContractSpec (pre : ContractPreSpec) (post : ContractPostSpec) (ev : Event) : Prop :=
   ContractPreHolds pre ev.principal ev.action ∧ ContractPostHolds post ev
 
+/--
+**Meaning:** Per-event contract spec decider reflects `SatisfiesContractSpec`.
+
+**Trusted use:** Generated `concrete_satisfies_*` theorems.
+
+**Does not imply:** Trace-wide or sequential contract composition automatically.
+-/
 theorem satisfiesContractSpecD_sound (pre : ContractPreSpec) (post : ContractPostSpec) (ev : Event) :
     satisfiesContractSpecD pre post ev = true ↔ SatisfiesContractSpec pre post ev := by
   simp [satisfiesContractSpecD, SatisfiesContractSpec, contractPreD_sound, contractPostD_sound,
@@ -123,6 +158,13 @@ def TraceSatisfiesContractSpecs (pre : ContractPreSpec) (post : ContractPostSpec
     SatisfiesContractSpec pre post ev ∧
     ContractInvariantHolds inv (Trace.cons tr ev)
 
+/--
+**Meaning:** Trace-level contract spec decider reflects `TraceSatisfiesContractSpecs`.
+
+**Trusted use:** Generated trace-wide contract satisfaction proofs.
+
+**Does not imply:** Runtime-only contract fields or missing contract JSON are discharged.
+-/
 theorem traceSatisfiesContractSpecsD_sound (pre : ContractPreSpec) (post : ContractPostSpec)
     (inv : ContractInvariantSpec) (tr : Trace) :
     traceSatisfiesContractSpecsD pre post inv tr = true ↔

@@ -727,7 +727,7 @@ def main(argv: list[str] | None = None) -> int:
 
     p_lean_check = sub.add_parser(
         "lean-check",
-        help="Check ProofObligation.v0 against the PCS Lean trust kernel catalog",
+        help="Deprecated alias for `pcs pcs-envelope check` (release-envelope consistency)",
     )
     p_lean_check.add_argument(
         "--obligations",
@@ -742,6 +742,33 @@ def main(argv: list[str] | None = None) -> int:
         help="Output LeanCheckResult.v0 JSON path",
     )
     p_lean_check.add_argument(
+        "--skip-lean-build",
+        action="store_true",
+        help="Skip lake build (for tests only)",
+    )
+
+    envelope_parser = sub.add_parser(
+        "pcs-envelope",
+        help="PCS release-envelope consistency checks (ProofObligation.v0)",
+    )
+    envelope_sub = envelope_parser.add_subparsers(dest="envelope_cmd", required=True)
+    p_envelope_check = envelope_sub.add_parser(
+        "check",
+        help="Validate ProofObligation.v0 release-envelope consistency",
+    )
+    p_envelope_check.add_argument(
+        "--obligations",
+        type=Path,
+        required=True,
+        help="ProofObligation.v0 JSON path",
+    )
+    p_envelope_check.add_argument(
+        "--out",
+        type=Path,
+        required=True,
+        help="Output LeanCheckResult.v0 JSON path",
+    )
+    p_envelope_check.add_argument(
         "--skip-lean-build",
         action="store_true",
         help="Skip lake build (for tests only)",
@@ -892,7 +919,19 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "extract-proof-obligations":
         return cmd_extract_proof_obligations(args.release, args.out)
     if args.command == "lean-check":
-        return cmd_lean_check(args.obligations, args.out, skip_lean_build=args.skip_lean_build)
+        return cmd_pcs_envelope_check(
+            args.obligations,
+            args.out,
+            skip_lean_build=args.skip_lean_build,
+            deprecated=True,
+        )
+    if args.command == "pcs-envelope" and args.envelope_cmd == "check":
+        return cmd_pcs_envelope_check(
+            args.obligations,
+            args.out,
+            skip_lean_build=args.skip_lean_build,
+            deprecated=False,
+        )
     if args.command == "benchmark" and args.benchmark_cmd == "list":
         return cmd_benchmark_list()
     if args.command == "benchmark" and args.benchmark_cmd == "validate":
@@ -1074,8 +1113,19 @@ def cmd_extract_proof_obligations(release: Path, out_path: Path) -> int:
         return 1
 
 
-def cmd_lean_check(obligations_path: Path, out_path: Path, *, skip_lean_build: bool = False) -> int:
-    from pcs_core.lean_trust import run_lean_check
+def cmd_pcs_envelope_check(
+    obligations_path: Path,
+    out_path: Path,
+    *,
+    skip_lean_build: bool = False,
+    deprecated: bool = False,
+) -> int:
+    from pcs_core.lean_check import PCS_LEAN_CHECK_DEPRECATION
+    from pcs_core.lean_trust import PCS_LEAN_CHECK_DISCLAIMER, run_lean_check
+
+    if deprecated:
+        print(PCS_LEAN_CHECK_DEPRECATION, file=sys.stderr)
+    print(PCS_LEAN_CHECK_DISCLAIMER, file=sys.stderr)
 
     try:
         obligations_doc = _load_json(obligations_path)
@@ -1087,11 +1137,20 @@ def cmd_lean_check(obligations_path: Path, out_path: Path, *, skip_lean_build: b
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
         validate_file(out_path)
-        print(f"OK LeanCheckResult.v0 {out_path} status={result.get('status')}")
+        print(f"OK PCS release-envelope check {out_path} status={result.get('status')}")
         return 0 if result.get("status") == "ProofChecked" else 1
     except (ValidationError, ValueError) as exc:
-        print(f"FAIL lean-check: {exc}", file=sys.stderr)
+        print(f"FAIL pcs-envelope check: {exc}", file=sys.stderr)
         return 1
+
+
+def cmd_lean_check(obligations_path: Path, out_path: Path, *, skip_lean_build: bool = False) -> int:
+    return cmd_pcs_envelope_check(
+        obligations_path,
+        out_path,
+        skip_lean_build=skip_lean_build,
+        deprecated=True,
+    )
 
 
 if __name__ == "__main__":

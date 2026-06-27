@@ -10,7 +10,11 @@ from typing import Any, Mapping
 
 from pcs_core.hash import canonical_hash
 from pcs_core.paths import repo_root
-from pcs_core.pf_core_contract import load_contracts_from_dir, validate_trace_contracts
+from pcs_core.pf_core_contract import (
+    field_semantics_layer,
+    load_contracts_from_dir,
+    validate_trace_contracts,
+)
 
 EFFECT_KIND_TO_LEAN: dict[str, str] = {
     "file.read": "Effect.read",
@@ -174,12 +178,23 @@ def contract_pre_to_lean(contract: Mapping[str, Any], *, name: str) -> str:
     tenant_expr = "false"
     if isinstance(pre, dict):
         cap = pre.get("require_capability")
-        if isinstance(cap, str) and cap:
+        if (
+            isinstance(cap, str)
+            and cap
+            and field_semantics_layer(contract, section="pre", field="require_capability") == "lean"
+        ):
             cap_expr = f"some {lean_string_literal(cap)}"
         effect = pre.get("require_effect")
-        if isinstance(effect, str) and effect:
+        if (
+            isinstance(effect, str)
+            and effect
+            and field_semantics_layer(contract, section="pre", field="require_effect") == "lean"
+        ):
             effect_expr = f"some {effect_kind_to_lean(effect)}"
-        if pre.get("require_tenant_match") is True:
+        if (
+            pre.get("require_tenant_match") is True
+            and field_semantics_layer(contract, section="pre", field="require_tenant_match") == "lean"
+        ):
             tenant_expr = "true"
     return (
         f"def {name} : ContractPreSpec :=\n"
@@ -197,9 +212,16 @@ def contract_post_to_lean(contract: Mapping[str, Any], *, name: str) -> str:
     safe_expr = "false"
     if isinstance(post, dict):
         decision = post.get("require_decision")
-        if isinstance(decision, str) and decision:
+        if (
+            isinstance(decision, str)
+            and decision
+            and field_semantics_layer(contract, section="post", field="require_decision") == "lean"
+        ):
             decision_expr = f"some {decision_to_lean(decision)}"
-        if post.get("require_event_safe") is True:
+        if (
+            post.get("require_event_safe") is True
+            and field_semantics_layer(contract, section="post", field="require_event_safe") == "lean"
+        ):
             safe_expr = "true"
     return (
         f"def {name} : ContractPostSpec :=\n"
@@ -213,7 +235,11 @@ def contract_post_to_lean(contract: Mapping[str, Any], *, name: str) -> str:
 def contract_invariant_to_lean(contract: Mapping[str, Any], *, name: str) -> str:
     invariant = contract.get("invariant")
     safe_expr = "false"
-    if isinstance(invariant, dict) and invariant.get("require_trace_safe") is True:
+    if (
+        isinstance(invariant, dict)
+        and invariant.get("require_trace_safe") is True
+        and field_semantics_layer(contract, section="invariant", field="require_trace_safe") == "lean"
+    ):
         safe_expr = "true"
     return (
         f"def {name} : ContractInvariantSpec :=\n"
@@ -270,18 +296,59 @@ def generate_contract_proof_obligations(
                 f"satisfiesContractSpecD {base_name}Pre {base_name}Post {event_name} = true := by\n"
                 "  decide"
             )
-            theorems.append(
-                f"theorem concrete_contract_pre_{base_name}_{event_name} : "
-                f"contractPreD {base_name}Pre {event_name}Principal {event_name}Action = true := by\n"
-                "  decide"
-            )
-            theorems.append(
-                f"theorem concrete_contract_post_{base_name}_{event_name} : "
-                f"contractPostD {base_name}Post {event_name} = true := by\n"
-                "  decide"
-            )
+            if _contract_has_lean_pre_fields(contract):
+                theorems.append(
+                    f"theorem concrete_contract_pre_{base_name}_{event_name} : "
+                    f"contractPreD {base_name}Pre {event_name}Principal {event_name}Action = true := by\n"
+                    "  decide"
+                )
+            if _contract_has_lean_post_fields(contract):
+                theorems.append(
+                    f"theorem concrete_contract_post_{base_name}_{event_name} : "
+                    f"contractPostD {base_name}Post {event_name} = true := by\n"
+                    "  decide"
+                )
 
     return defs, theorems
+
+
+def _contract_has_lean_pre_fields(contract: Mapping[str, Any]) -> bool:
+    pre = contract.get("pre")
+    if not isinstance(pre, dict):
+        return False
+    if (
+        isinstance(pre.get("require_capability"), str)
+        and pre.get("require_capability")
+        and field_semantics_layer(contract, section="pre", field="require_capability") == "lean"
+    ):
+        return True
+    if (
+        isinstance(pre.get("require_effect"), str)
+        and pre.get("require_effect")
+        and field_semantics_layer(contract, section="pre", field="require_effect") == "lean"
+    ):
+        return True
+    if (
+        pre.get("require_tenant_match") is True
+        and field_semantics_layer(contract, section="pre", field="require_tenant_match") == "lean"
+    ):
+        return True
+    return False
+
+
+def _contract_has_lean_post_fields(contract: Mapping[str, Any]) -> bool:
+    post = contract.get("post")
+    if not isinstance(post, dict):
+        return False
+    if post.get("require_decision") and field_semantics_layer(
+        contract, section="post", field="require_decision"
+    ) == "lean":
+        return True
+    if post.get("require_event_safe") is True and field_semantics_layer(
+        contract, section="post", field="require_event_safe"
+    ) == "lean":
+        return True
+    return False
 
 
 def trace_has_contract_refs(trace: Mapping[str, Any]) -> bool:
@@ -453,7 +520,8 @@ def generate_proof_obligation_file(
             "run `pcs pf-core validate-contracts` before lean-check.\n"
         )
 
-    source = f"""import PFCore.TraceCheck
+    source = f"""import PFCore.Theorems
+import PFCore.TraceCheck
 
 /-!
 # Generated concrete trace proof for `{trace_id}`
@@ -468,6 +536,15 @@ namespace PFCore.Generated.{module}
 
 {contract_def_block}{handoff_block}theorem concrete_trace_safe : traceSafeD {trace_var} = true := by
   decide
+
+theorem concrete_trace_safe_prop : TraceSafe {trace_var} :=
+  (traceSafeD_sound {trace_var}).mp concrete_trace_safe
+
+theorem concrete_allowed_events_allowed :
+    ∀ ev, EventIn ev {trace_var} → ev.decision = Decision.allow →
+      ActionAllowed ev.principal ev.action :=
+  fun ev hIn hAllow =>
+    every_allowed_event_in_safe_trace_is_allowed {trace_var} ev concrete_trace_safe_prop hIn hAllow
 
 {event_theorem_block}{contract_theorem_block}end PFCore.Generated.{module}
 """

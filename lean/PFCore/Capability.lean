@@ -14,7 +14,13 @@ def HasCapability (p : Principal) (cap : String) : Prop :=
 def hasCapabilityD (p : Principal) (cap : String) : Bool :=
   decide (cap ∈ p.capabilities)
 
-/-- `hasCapabilityD` reflects `HasCapability` (soundness). -/
+/--
+**Meaning:** The boolean `hasCapabilityD` decider reflects capability list membership.
+
+**Trusted use:** Soundness bridge for action allowance and contract preconditions.
+
+**Does not imply:** Role expansion, runtime grant provenance, or delegated authority validity.
+-/
 theorem hasCapabilityD_sound (p : Principal) (cap : String) :
     hasCapabilityD p cap = true ↔ HasCapability p cap := by
   simp [hasCapabilityD, HasCapability, decide_eq_true_iff]

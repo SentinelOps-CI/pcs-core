@@ -1,0 +1,4 @@
+{
+  "expected_error": "TenantIsolation",
+  "must_fail_at": "validate_tenant_isolation"
+}

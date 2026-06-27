@@ -15,5 +15,13 @@
   "invariant": {
     "require_trace_safe": true
   },
-  "signature_or_digest": "sha256:ab672cb206542354c10afdbc0e739fe018acee2d4d7db40a7486bcf3071846b3"
+  "semantics_layer": {
+    "require_capability": "lean",
+    "require_effect": "lean",
+    "require_tenant_match": "lean",
+    "require_decision": "lean",
+    "require_event_safe": "lean",
+    "require_trace_safe": "lean"
+  },
+  "signature_or_digest": "sha256:ade8675a56d86d5a3d2cb576fde97b633e3153f01992005f784322e6c480ca2f"
 }
