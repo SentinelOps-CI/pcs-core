@@ -2,6 +2,38 @@
 
 Summary of gaps between the PF-Core vision and the current `pcs-core` repository.
 
+## Tier 1 — production trusted kernel (complete)
+
+**Status:** Tier 1 production kernel: complete (uncommitted)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| `semantics_layer` on `PFCoreContract.v0` | Done | Flat field map: `lean` / `runtime` / `out_of_scope`; validator defaults |
+| `contract_semantics_checked` on certificates | Done | Derived from semantics layers + checks |
+| Cross-language semantic parity | Done | Rust `pf_core.rs`, TS `pfCore.ts`, shared invalid vectors |
+| `pcs pcs-envelope check` | Done | Alias; `pcs lean-check` deprecated with notice |
+| PCS envelope-only framing (choice B) | Done | No `LeanKernelChecked` on PCS path; docs + tests |
+| CertifyEdge live-then-mock CI | Done | `pf_core_certifyedge.py`; CI mock fallback |
+| `scripts/run-pf-core-adapter-ci.sh` | Done | Pinned provability-fabric-core hash parity |
+| Tier 1 tests | Done | `test_pf_core_tier1.py` |
+
+## Tier 2 — documented deferrals (complete)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Full global non-interference | Deferred | `non-interference.md` |
+| Lean RoleMap / role encoding | Deferred | Permanent assumption in `assumptions.md` |
+| Full Lean role/policy/evidence contract encoding | Deferred | Runtime-only fields in semantics_layer |
+
+## Tier 3 — operational (complete)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Gap audit (this file) | Done | |
+| `generated-proofs.md` | Done | Regeneration policy for `lean/PFCore/Generated/` |
+| `CHANGELOG.md` PF-Core section | Done | |
+| `windows-lean.md` | Done | elan / WSL guide |
+
 ## Protocol and schemas
 
 | Gap | Status | Notes |
@@ -31,56 +63,26 @@ Summary of gaps between the PF-Core vision and the current `pcs-core` repository
 | Contract satisfaction runtime checker | Done | `pf_core_contract.py` |
 | Resource scope enforcement | Done | Stage 7 deciders + trace validation |
 | Handoff preservation in trace compiler | Done | Stage 7 optional `handoffs` |
-| PCS `lean-check` honest disclaimer | Done | Stage 7 release polish |
-
-## Stage 6 (complete)
-
-| Item | Status | Notes |
-|------|--------|-------|
-| LabTrust replay example | Done | `examples/pf-core-valid/labtrust_replay/` |
-| LabTrust adapter | Done | `pf_core_labtrust_adapter.py` |
-| Examples check + replay gate | Done | `replay_required` in manifest |
-| Hash vector parity | Done | Native checker `pf_core_hash_vector_parity.py` |
-| Bridge artifact spec | Done | `docs/pf-core/bridge-artifact.md` |
-
-## Stage 7 (complete subset)
-
-1. `python/pcs_core/pf_core_contract.py` — contract load + trace validation.
-2. Handoff events compiled from optional `ToolUseTrace.handoffs` with `HandoffAuthorityExpansion` gate.
-3. Resource scope checks in runtime, trace validation, and lean deciders.
-4. Fixtures: `contract_checked/`, `contract_violation/`, `resource_scope_violation/`, `handoff_compile_expansion/`.
-5. Tests in `python/tests/test_pf_core_stage7.py`.
-
-## Release polish (Phases A–E)
-
-| Item | Status | Notes |
-|------|--------|-------|
-| Phase A — documentation accuracy | Done | threat-model, assumptions, mission, gap audit |
-| Phase B — CI pf-core lean-check | Done | lean job runs full lean-check on fixture |
-| Phase C — TS/Rust PF-Core schemas | Done | explicit `artifact_type` detection |
-| Phase D — invariant theorem + richer codegen | Done | `Contract.lean`, per-event proofs, contract-semantics doc |
-| Phase E — bridge demo + AssumptionSet fixtures | Done | `assumption_declared/`, bridge script, tests |
-| Phase 6 partial — registry deferral consistency | Done | ProofChecked requires assumption refs when checks deferred |
-| Presentation bundle (`docs/pf-core/presentation/`) | Done | |
-| Registry merged with main PCS entries + PF-Core entries | Done | |
-| Cross-language parity tests | Done | `test_pf_core_cross_language.py` |
+| PCS release-envelope path clarity | Done | `pcs pcs-envelope check`; lean-check deprecated |
 
 ## Remaining research (deferred)
 
-1. **Full provability-fabric-core live adapter CI** — hash parity covered natively; full adapter orchestration remains cross-repo.
+1. **Full provability-fabric-core live adapter orchestration** — hash parity covered natively via adapter CI script; full cross-repo orchestration remains optional.
 2. **Full agent runtime, MCP, NL policy, model safety** — out of scope.
+3. **Global non-interference** — see `non-interference.md`.
 
 ## Phase F (research-grade extensions)
 
 | Item | Status | Notes |
 |------|--------|-------|
-| F1 — Conservative tenant non-interference | Done | `NonInterference.lean`, `validate_tenant_isolation`, `cross_tenant_leak/` |
-| F2 — JSON contract discharge in Lean codegen | Done | `ContractDecide.lean`, generated contract proofs, `contract-semantics.md` |
-| F3 — CertifyEdge hook + mock CI | Done | `pf_core_certifyedge.py`, `certifyedge-check` CLI |
-| Release checklist + theorem sheet | Done | `release-checklist.md`, updated presentation bundle |
+| F1 — Conservative tenant non-interference | Done | `NonInterference.lean`, `validate_tenant_isolation` |
+| F2 — JSON contract discharge in Lean codegen | Done | `ContractDecide.lean`, `contract-semantics.md` |
+| F3 — CertifyEdge hook + mock CI | Done | `pf_core_certifyedge.py` |
+| Release checklist + theorem sheet | Done | `release-checklist.md` |
 
-### Honest limitations (Phase F)
+### Honest limitations (Phase F + Tier 2)
 
 - Tenant theorems cover **allowed events in safe traces**, not global cross-tenant non-interference.
-- Lean contract discharge maps capability, effect, tenant, decision, event_safe, trace_safe only; role/policy/evidence refs remain runtime-only.
-- CertifyEdge live CLI depends on external install; CI uses `PCS_CERTIFYEDGE_MOCK=1`.
+- Lean contract discharge maps capability, effect, tenant, decision, event_safe, trace_safe only; role/policy/evidence refs remain runtime-only (`semantics_layer`).
+- CertifyEdge live CLI depends on external install; CI uses mock when absent.
+- PKI is documented out of scope for v0.1 only.
