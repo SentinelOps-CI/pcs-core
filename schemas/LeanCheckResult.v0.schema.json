@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pcs.sentinelops.ci/schemas/LeanCheckResult.v0.schema.json",
+  "title": "LeanCheckResult.v0",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "artifact_type",
+    "status",
+    "claim_class",
+    "assumption_refs",
+    "theorems_checked",
+    "lean_build_status",
+    "disclaimer",
+    "signature_or_digest"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "$ref": "common.defs.json#/$defs/schema_version" },
+    "artifact_type": { "const": "LeanCheckResult.v0" },
+    "status": {
+      "type": "string",
+      "enum": ["DecidersPassed", "LeanProofChecked", "ReplayValidated", "Rejected", "Stale"]
+    },
+    "claim_class": { "$ref": "pf_core.defs.json#/$defs/claim_class" },
+    "trace_path": { "type": "string", "minLength": 1 },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "message"],
+        "additionalProperties": false,
+        "properties": {
+          "code": { "type": "string", "minLength": 1 },
+          "message": { "type": "string", "minLength": 1 },
+          "path": { "type": "string" }
+        }
+      }
+    },
+    "obligations": {
+      "type": "array",
+      "items": { "$ref": "pf_core.defs.json#/$defs/lean_obligation" }
+    },
+    "assumption_refs": { "$ref": "common.defs.json#/$defs/ref_list" },
+    "theorems_checked": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "lean_build_status": {
+      "type": "object",
+      "required": ["ok", "target"],
+      "additionalProperties": false,
+      "properties": {
+        "ok": { "type": "boolean" },
+        "target": { "type": "string", "minLength": 1 },
+        "detail": { "type": "string" }
+      }
+    },
+    "lean_environment_hash": { "$ref": "common.defs.json#/$defs/hex_digest" },
+    "lean_proof_checked": { "type": "boolean" },
+    "replay_match": { "type": "boolean" },
+    "original_trace_hash": { "$ref": "common.defs.json#/$defs/hex_digest" },
+    "recomputed_trace_hash": { "$ref": "common.defs.json#/$defs/hex_digest" },
+    "no_sorry_audit": {
+      "type": "object",
+      "required": ["ok", "errors"],
+      "additionalProperties": false,
+      "properties": {
+        "ok": { "type": "boolean" },
+        "errors": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "disclaimer": { "type": "string" },
+    "certificate": { "$ref": "PFCoreCertificate.v0.schema.json" },
+    "signature_or_digest": { "$ref": "common.defs.json#/$defs/hex_digest" }
+  }
+}
