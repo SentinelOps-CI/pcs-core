@@ -12,7 +12,8 @@ from referencing import Registry, Resource
 from referencing.jsonschema import DRAFT202012
 
 from pcs_core.paths import examples_dir as default_examples_dir
-from pcs_core.paths import schemas_dir
+from pcs_core.paths import repo_root, schemas_dir
+from pcs_core.registry_data import PF_CORE_CLAIM_CLASSES
 from pcs_core.status import ARTIFACT_STATUSES, TRACE_CERTIFICATE_STATUSES
 
 ARTIFACT_SCHEMAS: dict[str, str] = {
@@ -25,7 +26,26 @@ ARTIFACT_SCHEMAS: dict[str, str] = {
     "ScienceClaimBundle.v0": "ScienceClaimBundle.v0.schema.json",
     "VerificationResult.v0": "VerificationResult.v0.schema.json",
     "SignedScienceClaimBundle.v0": "SignedScienceClaimBundle.v0.schema.json",
+    "PFCorePrincipal.v0": "PFCorePrincipal.v0.schema.json",
+    "PFCoreCapability.v0": "PFCoreCapability.v0.schema.json",
+    "PFCoreResource.v0": "PFCoreResource.v0.schema.json",
+    "PFCoreAction.v0": "PFCoreAction.v0.schema.json",
+    "PFCoreEffect.v0": "PFCoreEffect.v0.schema.json",
+    "PFCoreDecision.v0": "PFCoreDecision.v0.schema.json",
+    "PFCoreEvent.v0": "PFCoreEvent.v0.schema.json",
+    "PFCoreTrace.v0": "PFCoreTrace.v0.schema.json",
+    "PFCoreContract.v0": "PFCoreContract.v0.schema.json",
+    "PFCoreHandoff.v0": "PFCoreHandoff.v0.schema.json",
+    "PFCoreRuntimeObservation.v0": "PFCoreRuntimeObservation.v0.schema.json",
+    "PFCoreCertificate.v0": "PFCoreCertificate.v0.schema.json",
+    "LeanCheckResult.v0": "LeanCheckResult.v0.schema.json",
+    "ToolUseTrace.v0": "ToolUseTrace.v0.schema.json",
+    "PCSBridgeCertificate.v0": "PCSBridgeCertificate.v0.schema.json",
 }
+
+_PF_CORE_ARTIFACT_TYPES = frozenset(
+    key for key in ARTIFACT_SCHEMAS if key.startswith("PFCore") or key == "ToolUseTrace.v0"
+)
 
 CERTIFIED_CLAIM_STATUSES = frozenset(
     {
@@ -43,6 +63,16 @@ IMPORT_READY_VERIFICATION_STATUSES = frozenset(
     }
 )
 
+LEAN_CHECK_RESULT_STATUSES = frozenset(
+    {
+        "DecidersPassed",
+        "LeanProofChecked",
+        "ReplayValidated",
+        "Rejected",
+        "Stale",
+    }
+)
+
 _ZERO_COMMIT_RE = re.compile(r"^0+$")
 
 
@@ -54,7 +84,52 @@ class ValidationError(Exception):
         self.errors = errors or []
 
 
+def _resolve_schema_ref(schema: dict[str, Any], ref: str) -> dict[str, Any]:
+    if ref.startswith("pf_core.defs.json#/$defs/"):
+        defs_path = schemas_dir() / "pf_core.defs.json"
+        defs_schema = _load_schema(defs_path)
+        def_name = ref.split("/")[-1]
+        target = defs_schema.get("$defs", {}).get(def_name)
+        if isinstance(target, dict):
+            return target
+    return {}
+
+
+def _schema_requires_artifact_type(artifact_type: str) -> bool:
+    schema_name = ARTIFACT_SCHEMAS.get(artifact_type)
+    if not schema_name:
+        return False
+    schema = _load_schema(schemas_dir() / schema_name)
+    if "$ref" in schema:
+        ref = str(schema["$ref"])
+        if ref.endswith("embedded_event") and artifact_type == "PFCoreEvent.v0":
+            return True
+        resolved = _resolve_schema_ref(schema, ref)
+        if resolved:
+            schema = resolved
+    props = schema.get("properties")
+    if not isinstance(props, dict):
+        return False
+    artifact_type_schema = props.get("artifact_type")
+    if not isinstance(artifact_type_schema, dict):
+        return False
+    return artifact_type_schema.get("const") == artifact_type
+
+
 def detect_artifact_type(data: dict[str, Any]) -> str | None:
+    explicit = data.get("artifact_type")
+    if isinstance(explicit, str) and explicit in ARTIFACT_SCHEMAS:
+        if _schema_requires_artifact_type(explicit):
+            return explicit
+    if (
+        "trace_id" in data
+        and "tool_calls" in data
+        and "workflow_id" in data
+        and "agent_id" in data
+        and data.get("schema_version") == "v0"
+        and "artifact_type" not in data
+    ):
+        return "ToolUseTrace.v0"
     if "signed_bundle_id" in data and "science_claim_bundle" in data:
         return "SignedScienceClaimBundle.v0"
     if "bundle_id" in data and "claim_artifact" in data:
@@ -170,7 +245,9 @@ def _validate_status_fields(obj: Any, path: str, errors: list[str]) -> None:
         if "check_id" not in obj:
             status = obj.get("status")
             if isinstance(status, str):
-                if "certificate_id" in obj:
+                if path == "" and status in LEAN_CHECK_RESULT_STATUSES:
+                    pass
+                elif "certificate_id" in obj:
                     if status not in TRACE_CERTIFICATE_STATUSES:
                         errors.append(f"{path}: invalid TraceCertificate status {status!r}")
                 elif status not in ARTIFACT_STATUSES:
@@ -258,6 +335,68 @@ def _validate_verification_result(data: dict[str, Any]) -> list[str]:
     return errors
 
 
+def _validate_pfcore_claim_class(data: dict[str, Any], path: str, errors: list[str]) -> None:
+    claim_class = data.get("claim_class")
+    if not isinstance(claim_class, str):
+        return
+    if claim_class not in PF_CORE_CLAIM_CLASSES:
+        errors.append(f"{path}: invalid claim_class {claim_class!r}")
+        return
+    if claim_class == "LeanKernelChecked" and not data.get("proof_ref"):
+        errors.append(
+            f"{path}: claim_class LeanKernelChecked requires proof_ref (ClaimClassOverclaim)"
+        )
+    if claim_class == "LeanKernelChecked" and not data.get("proof_term_ref"):
+        errors.append(
+            f"{path}: claim_class LeanKernelChecked requires proof_term_ref (ClaimClassOverclaim)"
+        )
+    if claim_class == "LeanKernelChecked" and data.get("lean_proof_checked") is not True:
+        errors.append(
+            f"{path}: claim_class LeanKernelChecked requires lean_proof_checked=true"
+        )
+
+
+def _validate_pfcore_trace(data: dict[str, Any]) -> list[str]:
+    from pcs_core.pf_core_runtime import validate_pfcore_trace_hash_chain
+
+    errors: list[str] = []
+    _validate_pfcore_claim_class(data, "root", errors)
+    errors.extend(validate_pfcore_trace_hash_chain(data))
+    return errors
+
+
+def _validate_pfcore_certificate(data: dict[str, Any]) -> list[str]:
+    from pcs_core.registry_data import enforce_assumption_declared, registry_entries
+
+    errors: list[str] = []
+    _validate_pfcore_claim_class(data, "root", errors)
+    if data.get("lean_proof_checked") and not data.get("proof_term_ref"):
+        errors.append("root: lean_proof_checked requires proof_term_ref")
+    errors.extend(enforce_assumption_declared(data, registry_entries().get("PFCoreCertificate.v0")))
+    return errors
+
+
+def _validate_lean_check_result(data: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    claim_class = data.get("claim_class")
+    if isinstance(claim_class, str) and claim_class not in PF_CORE_CLAIM_CLASSES:
+        errors.append(f"root: invalid claim_class {claim_class!r}")
+    status = str(data.get("status") or "")
+    lean_proof_checked = data.get("lean_proof_checked") is True
+    if status == "LeanProofChecked" and claim_class != "LeanKernelChecked":
+        errors.append("root: status LeanProofChecked requires claim_class LeanKernelChecked")
+    if status == "ReplayValidated" and claim_class != "ReplayValidated":
+        errors.append("root: status ReplayValidated requires claim_class ReplayValidated")
+    if status == "LeanProofChecked" and not lean_proof_checked:
+        errors.append("root: status LeanProofChecked requires lean_proof_checked=true")
+    if claim_class == "LeanKernelChecked" and status != "LeanProofChecked":
+        errors.append("root: claim_class LeanKernelChecked requires status LeanProofChecked")
+    cert = data.get("certificate")
+    if isinstance(cert, dict):
+        errors.extend(_validate_pfcore_certificate(cert))
+    return errors
+
+
 def _validate_signed_bundle(data: dict[str, Any]) -> list[str]:
     errors: list[str] = []
     scb = data.get("science_claim_bundle")
@@ -283,6 +422,18 @@ def validate_semantics(data: dict[str, Any], artifact_type: str) -> list[str]:
 
     if artifact_type == "ScienceClaimBundle.v0":
         errors.extend(_validate_science_claim_bundle(data))
+        status = str(data.get("status") or "")
+        if status == "ProofChecked":
+            assumption_set = data.get("assumption_set")
+            if not isinstance(assumption_set, dict):
+                errors.append(
+                    "ScienceClaimBundle.v0 status ProofChecked requires assumption_set"
+                )
+
+    if artifact_type == "ClaimArtifact.v0":
+        status = str(data.get("status") or "")
+        if status == "ProofChecked" and not str(data.get("assumption_set_ref") or "").strip():
+            errors.append("ClaimArtifact.v0 status ProofChecked requires assumption_set_ref")
 
     if artifact_type == "VerificationResult.v0":
         errors.extend(_validate_verification_result(data))
@@ -295,7 +446,41 @@ def validate_semantics(data: dict[str, Any], artifact_type: str) -> list[str]:
         if status and status not in TRACE_CERTIFICATE_STATUSES:
             errors.append(f"TraceCertificate.v0 invalid status {status!r}")
 
+    if artifact_type == "PFCoreTrace.v0":
+        errors.extend(_validate_pfcore_trace(data))
+
+    if artifact_type == "PFCoreCertificate.v0":
+        errors.extend(_validate_pfcore_certificate(data))
+
+    if artifact_type == "LeanCheckResult.v0":
+        errors.extend(_validate_lean_check_result(data))
+
+    if artifact_type in _PF_CORE_ARTIFACT_TYPES and artifact_type not in {
+        "PFCoreTrace.v0",
+        "PFCoreCertificate.v0",
+        "LeanCheckResult.v0",
+        "ToolUseTrace.v0",
+    }:
+        _validate_pfcore_claim_class(data, "root", errors)
+
     return errors
+
+
+def iter_pf_core_example_dirs(kind: str) -> list[Path]:
+    root = repo_root() / "examples" / f"pf-core-{kind}"
+    if not root.is_dir():
+        return []
+    return sorted(path for path in root.iterdir() if path.is_dir())
+
+
+def load_pf_core_fixture_manifest(case_dir: Path) -> dict[str, Any]:
+    manifest_path = case_dir / "manifest.json"
+    if not manifest_path.is_file():
+        raise ValidationError(f"Missing manifest.json in {case_dir}")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if not isinstance(manifest, dict):
+        raise ValidationError(f"manifest.json root must be an object in {case_dir}")
+    return manifest
 
 
 def validate_artifact(data: dict[str, Any], artifact_type: str | None = None) -> None:
@@ -347,6 +532,147 @@ def check_valid_examples(examples_dir: Path | None = None) -> None:
     for path in iter_example_json_files(examples_dir):
         if _is_valid_example(path):
             validate_file(path)
+    check_pf_core_valid_fixtures()
+
+
+def check_pf_core_valid_fixtures() -> None:
+    from pcs_core.pf_core_replay import replay_trace
+
+    for case_dir in iter_pf_core_example_dirs("valid"):
+        manifest = None
+        manifest_path = case_dir / "manifest.json"
+        if manifest_path.is_file():
+            manifest = load_pf_core_fixture_manifest(case_dir)
+        for path in sorted(case_dir.glob("*.json")):
+            if path.name == "manifest.json":
+                continue
+            validate_file(path)
+        if manifest and manifest.get("replay_required"):
+            trace_path = case_dir / str(manifest.get("trace_file") or "trace.json")
+            if trace_path.is_file():
+                result = replay_trace(trace_path)
+                if not result.match:
+                    raise ValidationError(
+                        f"Replay failed for {case_dir}: {result.diffs!r}"
+                    )
+
+
+def check_pf_core_invalid_fixtures() -> None:
+    from pcs_core.pf_core_contract import validate_trace_contracts
+    from pcs_core.pf_core_runtime import (
+        DroppedDeniedEvent,
+        HandoffAuthorityExpansion,
+        MissingPrincipal,
+        UnknownCapability,
+        UnknownEffect,
+        compile_runtime_observation_to_event,
+        compile_tool_use_trace_to_pfcore_trace,
+        validate_denied_events_preserved,
+        validate_handoff_authority,
+        validate_pfcore_trace_hash_chain,
+    )
+
+    for case_dir in iter_pf_core_example_dirs("invalid"):
+        manifest = load_pf_core_fixture_manifest(case_dir)
+        expected_error = str(manifest["expected_error"])
+        must_fail_at = str(manifest["must_fail_at"])
+
+        if must_fail_at == "runtime_to_pfcore_event":
+            observation = json.loads((case_dir / "observation.json").read_text(encoding="utf-8"))
+            try:
+                compile_runtime_observation_to_event(observation)
+            except (UnknownCapability, UnknownEffect, MissingPrincipal) as exc:
+                if exc.code != expected_error:
+                    raise ValidationError(
+                        f"{case_dir}: expected {expected_error!r}, got {exc.code!r}"
+                    ) from exc
+            else:
+                raise ValidationError(f"Expected {case_dir} to fail at {must_fail_at}")
+            continue
+
+        if must_fail_at == "validate_pfcore_trace_hash_chain":
+            trace = json.loads((case_dir / "trace.json").read_text(encoding="utf-8"))
+            errors = validate_pfcore_trace_hash_chain(trace)
+            if not any(expected_error in err for err in errors):
+                raise ValidationError(
+                    f"Expected {case_dir} to fail with {expected_error!r}, got {errors!r}"
+                )
+            continue
+
+        if must_fail_at == "validate_denied_events_preserved":
+            tool_use_trace = json.loads(
+                (case_dir / "tool_use_trace.json").read_text(encoding="utf-8")
+            )
+            pfcore_trace = json.loads((case_dir / "pfcore_trace.json").read_text(encoding="utf-8"))
+            try:
+                validate_denied_events_preserved(tool_use_trace, pfcore_trace)
+            except DroppedDeniedEvent as exc:
+                if exc.code != expected_error:
+                    raise ValidationError(
+                        f"{case_dir}: expected {expected_error!r}, got {exc.code!r}"
+                    ) from exc
+            else:
+                raise ValidationError(f"Expected {case_dir} to fail at {must_fail_at}")
+            continue
+
+        if must_fail_at == "validate_handoff_authority":
+            handoff = json.loads((case_dir / "handoff.json").read_text(encoding="utf-8"))
+            try:
+                validate_handoff_authority(handoff)
+            except HandoffAuthorityExpansion as exc:
+                if exc.code != expected_error:
+                    raise ValidationError(
+                        f"{case_dir}: expected {expected_error!r}, got {exc.code!r}"
+                    ) from exc
+            else:
+                raise ValidationError(f"Expected {case_dir} to fail at {must_fail_at}")
+            continue
+
+        if must_fail_at == "compile_tool_use_trace_to_pfcore_trace":
+            tool_use_trace = json.loads(
+                (case_dir / "tool_use_trace.json").read_text(encoding="utf-8")
+            )
+            try:
+                compile_tool_use_trace_to_pfcore_trace(tool_use_trace)
+            except HandoffAuthorityExpansion as exc:
+                if exc.code != expected_error:
+                    raise ValidationError(
+                        f"{case_dir}: expected {expected_error!r}, got {exc.code!r}"
+                    ) from exc
+            else:
+                raise ValidationError(f"Expected {case_dir} to fail at {must_fail_at}")
+            continue
+
+        if must_fail_at == "validate_trace_contracts":
+            trace = json.loads((case_dir / "trace.json").read_text(encoding="utf-8"))
+            contracts_dir = case_dir / "contracts"
+            contracts = {
+                str(data["contract_id"]): data
+                for data in (
+                    json.loads(path.read_text(encoding="utf-8"))
+                    for path in sorted(contracts_dir.glob("*.json"))
+                )
+            }
+            issues = validate_trace_contracts(trace, contracts)
+            if not any(issue.code == expected_error for issue in issues):
+                raise ValidationError(
+                    f"Expected {case_dir} to fail with {expected_error!r}, got "
+                    f"{[issue.code for issue in issues]!r}"
+                )
+            continue
+
+        if must_fail_at == "validate_tenant_isolation":
+            from pcs_core.pf_core_runtime import validate_tenant_isolation
+
+            trace = json.loads((case_dir / "trace.json").read_text(encoding="utf-8"))
+            errors = validate_tenant_isolation(trace)
+            if not any(expected_error in err for err in errors):
+                raise ValidationError(
+                    f"Expected {case_dir} to fail with {expected_error!r}, got {errors!r}"
+                )
+            continue
+
+        raise ValidationError(f"Unknown must_fail_at {must_fail_at!r} in {case_dir}")
 
 
 def check_invalid_examples(examples_dir: Path | None = None) -> None:
@@ -372,3 +698,4 @@ def check_invalid_examples(examples_dir: Path | None = None) -> None:
         semantic_errors = validate_semantics(data, use_type)
         if not schema_errors and not semantic_errors:
             raise ValidationError(f"Expected {filename} to fail validation")
+    check_pf_core_invalid_fixtures()
