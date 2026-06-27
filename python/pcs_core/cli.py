@@ -578,6 +578,115 @@ def main(argv: list[str] | None = None) -> int:
     hash_write = hash_sub.add_parser("write", help="Regenerate frozen hash vectors")
     hash_write.add_argument("--force", action="store_true")
 
+    pf_core_parser = sub.add_parser("pf-core", help="PF-Core trust boundary commands")
+    pf_core_sub = pf_core_parser.add_subparsers(dest="pf_core_cmd", required=True)
+    pf_core_sub.add_parser("audit-claims", help="Scan docs/examples for forbidden claim phrases")
+    pf_core_sub.add_parser("audit-boundary", help="Verify PF-Core docs and registry entries")
+    pf_core_sub.add_parser(
+        "audit-lean-catalog",
+        help="Verify trusted Lean catalog symbols exist in lean/**/*.lean",
+    )
+    pf_core_validate = pf_core_sub.add_parser(
+        "validate-trace",
+        help="Validate PFCoreTrace.v0 hash chain",
+    )
+    pf_core_validate.add_argument("path", type=Path)
+    pf_core_validate.add_argument(
+        "--contracts-dir",
+        type=Path,
+        default=None,
+        help="Optional directory of PFCoreContract.v0 JSON files",
+    )
+    pf_core_validate.add_argument(
+        "--tenant-isolation",
+        action="store_true",
+        help="Also require conservative tenant isolation on all events",
+    )
+    pf_core_contracts = pf_core_sub.add_parser(
+        "validate-contracts",
+        help="Validate PFCoreTrace events against PFCoreContract.v0 predicates",
+    )
+    pf_core_contracts.add_argument("trace", type=Path)
+    pf_core_contracts.add_argument(
+        "--contracts-dir",
+        type=Path,
+        required=True,
+        help="Directory containing PFCoreContract.v0 JSON files",
+    )
+    pf_core_compile = pf_core_sub.add_parser(
+        "compile-trace",
+        help="Compile ToolUseTrace.v0 to PFCoreTrace.v0",
+    )
+    pf_core_compile.add_argument("path", type=Path)
+    pf_core_lean = pf_core_sub.add_parser(
+        "lean-check",
+        help="Check PFCoreTrace against deciders and PFCore Lean build",
+    )
+    pf_core_lean.add_argument("--trace", type=Path, required=True)
+    pf_core_lean.add_argument("--out", type=Path, default=None)
+    pf_core_lean.add_argument(
+        "--skip-build",
+        action="store_true",
+        help="Skip lake build and concrete Lean proof (claim_class will be RuntimeChecked)",
+    )
+    pf_core_lean.add_argument(
+        "--skip-lean-proof",
+        action="store_true",
+        help="Skip Lean codegen/proof; deciders only (claim_class will be RuntimeChecked)",
+    )
+    pf_core_lean.add_argument(
+        "--result-out",
+        type=Path,
+        default=None,
+        help="Write LeanCheckResult.v0 JSON (default: alongside --out certificate)",
+    )
+    pf_core_sub.add_parser(
+        "audit-lean-no-sorry",
+        help="Scan lean/PFCore/ for sorry/admit/axiom/unsafe",
+    )
+    pf_core_replay = pf_core_sub.add_parser(
+        "replay-trace",
+        help="Replay PFCoreTrace.v0 hash chain (ReplayValidated)",
+    )
+    pf_core_replay.add_argument("path", type=Path, help="PFCoreTrace.v0 JSON")
+    pf_core_replay.add_argument(
+        "--source",
+        type=Path,
+        default=None,
+        help="Optional ToolUseTrace.v0 or PFCoreRuntimeObservation.v0 source",
+    )
+    pf_core_replay.add_argument("--out", type=Path, default=None)
+    pf_core_replay.add_argument(
+        "--result-out",
+        type=Path,
+        default=None,
+        help="Write LeanCheckResult.v0 JSON",
+    )
+    pf_core_attach = pf_core_sub.add_parser(
+        "attach-certificate-check",
+        help="Wrap external checker attestation as CertificateChecked",
+    )
+    pf_core_attach.add_argument("--trace", type=Path, required=True)
+    pf_core_attach.add_argument("--checker", type=str, required=True)
+    pf_core_attach.add_argument("--checker-version", type=str, required=True)
+    pf_core_attach.add_argument("--attestation-ref", type=str, default=None)
+    pf_core_attach.add_argument("--out", type=Path, required=True)
+    pf_core_certifyedge = pf_core_sub.add_parser(
+        "certifyedge-check",
+        help="Run CertifyEdge (or mock) and emit CertificateChecked PFCoreCertificate",
+    )
+    pf_core_certifyedge.add_argument("--trace", type=Path, required=True)
+    pf_core_certifyedge.add_argument(
+        "--property",
+        type=str,
+        required=True,
+        help="CertifyEdge property id (e.g. qc_release.temporal.safety)",
+    )
+    pf_core_certifyedge.add_argument("--out", type=Path, required=True)
+    pf_core_certifyedge.add_argument("--checker-version", type=str, default="0.1.0")
+    pf_core_certifyedge.add_argument("--attestation-ref", type=str, default=None)
+
+
     shared_hash_parser = sub.add_parser("shared-hash-vectors", help="Cross-language hash vectors")
     shared_hash_sub = shared_hash_parser.add_subparsers(dest="shared_hash_cmd", required=True)
     shared_hash_sub.add_parser("verify", help="Verify test_vectors/hash parity")
@@ -727,6 +836,51 @@ def main(argv: list[str] | None = None) -> int:
         write_vectors(force=args.force)
         print("Wrote hash vectors")
         return 0
+
+    if args.command == "pf-core" and args.pf_core_cmd == "audit-claims":
+        return cmd_pf_core_audit_claims()
+    if args.command == "pf-core" and args.pf_core_cmd == "audit-boundary":
+        return cmd_pf_core_audit_boundary()
+    if args.command == "pf-core" and args.pf_core_cmd == "audit-lean-catalog":
+        return cmd_pf_core_audit_lean_catalog()
+    if args.command == "pf-core" and args.pf_core_cmd == "validate-trace":
+        return cmd_pf_core_validate_trace(
+            args.path,
+            args.contracts_dir,
+            tenant_isolation=args.tenant_isolation,
+        )
+    if args.command == "pf-core" and args.pf_core_cmd == "validate-contracts":
+        return cmd_pf_core_validate_contracts(args.trace, args.contracts_dir)
+    if args.command == "pf-core" and args.pf_core_cmd == "compile-trace":
+        return cmd_pf_core_compile_trace(args.path)
+    if args.command == "pf-core" and args.pf_core_cmd == "lean-check":
+        return cmd_pf_core_lean_check(
+            args.trace,
+            args.out,
+            args.result_out,
+            args.skip_build,
+            args.skip_lean_proof,
+        )
+    if args.command == "pf-core" and args.pf_core_cmd == "audit-lean-no-sorry":
+        return cmd_pf_core_audit_lean_no_sorry()
+    if args.command == "pf-core" and args.pf_core_cmd == "replay-trace":
+        return cmd_pf_core_replay_trace(args.path, args.source, args.out, args.result_out)
+    if args.command == "pf-core" and args.pf_core_cmd == "attach-certificate-check":
+        return cmd_pf_core_attach_certificate_check(
+            args.trace,
+            args.checker,
+            args.checker_version,
+            args.attestation_ref,
+            args.out,
+        )
+    if args.command == "pf-core" and args.pf_core_cmd == "certifyedge-check":
+        return cmd_pf_core_certifyedge_check(
+            args.trace,
+            args.property,
+            args.out,
+            checker_version=args.checker_version,
+            attestation_ref=args.attestation_ref,
+        )
     if args.command == "shared-hash-vectors" and args.shared_hash_cmd == "verify":
         return cmd_shared_hash_vectors_verify()
     if args.command == "shared-hash-vectors" and args.shared_hash_cmd == "write":
