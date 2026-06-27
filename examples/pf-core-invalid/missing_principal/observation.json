@@ -1,0 +1,50 @@
+{
+  "schema_version": "v0",
+  "artifact_type": "PFCoreRuntimeObservation.v0",
+  "observation_id": "obs-1",
+  "trace_id": "trace-1",
+  "event_id": "ev-1",
+  "observed_at": "2026-06-18T00:00:00Z",
+  "principal": {
+    "principal_id": "",
+    "principal_kind": "agent",
+    "tenant": "tenant-a",
+    "roles": [],
+    "capabilities": []
+  },
+  "action": {
+    "action_id": "act-1",
+    "tool_name": "filesystem.read",
+    "capability": {
+      "capability_id": "cap:file-read",
+      "effect_kind": "file.read",
+      "resource_pattern": "/data/*"
+    },
+    "effects": [
+      {
+        "effect_kind": "file.read"
+      }
+    ],
+    "reads": [
+      {
+        "resource_id": "res-1",
+        "uri": "/data/report.txt",
+        "tenant": "tenant-a"
+      }
+    ],
+    "writes": [],
+    "input_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "output_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "decision": "allow",
+  "decision_reason": "authorized",
+  "policy_ref": "policy/default.v0",
+  "evidence_refs": [],
+  "runtime_ref": "agent-runtime",
+  "previous_event_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "payload_hash": "sha256:b3e51555d4b30ba60c10a8076457d438b63f9c7fcd6ae7a864fa14d98aa7229f",
+  "claim_class": "RuntimeChecked",
+  "source_repo": "https://github.com/example/agent-runtime",
+  "source_commit": "abc1234567890abc1234567890abc1234567890",
+  "signature_or_digest": "sha256:b3e51555d4b30ba60c10a8076457d438b63f9c7fcd6ae7a864fa14d98aa7229f"
+}
