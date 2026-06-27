@@ -1,0 +1,4 @@
+{
+  "expected_error": "HandoffAuthorityExpansion",
+  "must_fail_at": "validate_handoff_authority"
+}
