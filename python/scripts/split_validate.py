@@ -63,7 +63,7 @@ from pcs_core.benchmark_validate import (
     validate_benchmark_suite_manifest_semantics,
     validate_benchmark_task_semantics,
 )
-from pcs_core.benchmark_ingest import validate_pcs_bench_ingest_semantics
+from pcs_core.benchmark_validate import validate_pcs_bench_ingest_semantics
 '''
 
 

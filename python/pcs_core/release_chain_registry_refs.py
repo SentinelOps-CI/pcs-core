@@ -69,5 +69,9 @@ RELEASE_CHAIN_REGISTRY_CHECK_REFS: dict[str, tuple[str, ...]] = {
     "scientific_memory_no_legacy": (),
     "pcs_artifact_schema_validation": (
         "ArtifactRegistry.v0.entries_cover_required_artifact_types",
+        "ToolUseCertificate.v0.certificate_status_checked_for_release",
+        "ToolUseCertificate.v0.source_commit_matches_release_manifest",
+        "ComputationWitness.v0.computation_status_checked_for_release",
+        "ComputationWitness.v0.source_commit_matches_release_manifest",
     ),
 }

@@ -261,6 +261,296 @@
       "enforcement_layer": "artifact_validate"
     },
     {
+      "registry_ref": "PFCoreAction.v0.explicit_artifact_type",
+      "artifact_type": "PFCoreAction.v0",
+      "check_id": "explicit_artifact_type",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "PFCoreAction.v0.schema_valid",
+      "artifact_type": "PFCoreAction.v0",
+      "check_id": "schema_valid",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "PFCoreCapability.v0.explicit_artifact_type",
+      "artifact_type": "PFCoreCapability.v0",
+      "check_id": "explicit_artifact_type",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "PFCoreCapability.v0.schema_valid",
+      "artifact_type": "PFCoreCapability.v0",
+      "check_id": "schema_valid",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "PFCoreCertificate.v0.claim_class_matches_assurance",
+      "artifact_type": "PFCoreCertificate.v0",
+      "check_id": "claim_class_matches_assurance",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "PFCoreCertificate.v0.explicit_artifact_type",
+      "artifact_type": "PFCoreCertificate.v0",
+      "check_id": "explicit_artifact_type",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "PFCoreCertificate.v0.lean_kernel_proof",
+      "artifact_type": "PFCoreCertificate.v0",
+      "check_id": "lean_kernel_proof",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "PFCoreCertificate.v0.lean_library_build",
+      "artifact_type": "PFCoreCertificate.v0",
+      "check_id": "lean_library_build",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "PFCoreCertificate.v0.schema_valid",
+      "artifact_type": "PFCoreCertificate.v0",
+      "check_id": "schema_valid",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "PFCoreContract.v0.explicit_artifact_type",
+      "artifact_type": "PFCoreContract.v0",
+      "check_id": "explicit_artifact_type",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "PFCoreContract.v0.schema_valid",
+      "artifact_type": "PFCoreContract.v0",
+      "check_id": "schema_valid",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "PFCoreEvent.v0.explicit_artifact_type",
+      "artifact_type": "PFCoreEvent.v0",
+      "check_id": "explicit_artifact_type",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "PFCoreEvent.v0.schema_valid",
+      "artifact_type": "PFCoreEvent.v0",
+      "check_id": "schema_valid",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "PFCoreHandoff.v0.explicit_artifact_type",
+      "artifact_type": "PFCoreHandoff.v0",
+      "check_id": "explicit_artifact_type",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "PFCoreHandoff.v0.schema_valid",
+      "artifact_type": "PFCoreHandoff.v0",
+      "check_id": "schema_valid",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "PFCorePrincipal.v0.explicit_artifact_type",
+      "artifact_type": "PFCorePrincipal.v0",
+      "check_id": "explicit_artifact_type",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "PFCorePrincipal.v0.schema_valid",
+      "artifact_type": "PFCorePrincipal.v0",
+      "check_id": "schema_valid",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "PFCoreResource.v0.explicit_artifact_type",
+      "artifact_type": "PFCoreResource.v0",
+      "check_id": "explicit_artifact_type",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "PFCoreResource.v0.schema_valid",
+      "artifact_type": "PFCoreResource.v0",
+      "check_id": "schema_valid",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "PFCoreRuntimeObservation.v0.claim_class_matches_assurance",
+      "artifact_type": "PFCoreRuntimeObservation.v0",
+      "check_id": "claim_class_matches_assurance",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "PFCoreRuntimeObservation.v0.explicit_artifact_type",
+      "artifact_type": "PFCoreRuntimeObservation.v0",
+      "check_id": "explicit_artifact_type",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "PFCoreRuntimeObservation.v0.lean_kernel_proof",
+      "artifact_type": "PFCoreRuntimeObservation.v0",
+      "check_id": "lean_kernel_proof",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "PFCoreRuntimeObservation.v0.lean_library_build",
+      "artifact_type": "PFCoreRuntimeObservation.v0",
+      "check_id": "lean_library_build",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "PFCoreRuntimeObservation.v0.schema_valid",
+      "artifact_type": "PFCoreRuntimeObservation.v0",
+      "check_id": "schema_valid",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "PFCoreTrace.v0.claim_class_matches_assurance",
+      "artifact_type": "PFCoreTrace.v0",
+      "check_id": "claim_class_matches_assurance",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "PFCoreTrace.v0.explicit_artifact_type",
+      "artifact_type": "PFCoreTrace.v0",
+      "check_id": "explicit_artifact_type",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "PFCoreTrace.v0.lean_kernel_proof",
+      "artifact_type": "PFCoreTrace.v0",
+      "check_id": "lean_kernel_proof",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "PFCoreTrace.v0.lean_library_build",
+      "artifact_type": "PFCoreTrace.v0",
+      "check_id": "lean_library_build",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "PFCoreTrace.v0.schema_valid",
+      "artifact_type": "PFCoreTrace.v0",
+      "check_id": "schema_valid",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
       "registry_ref": "ProofObligation.v0.obligations_reference_known_kinds",
       "artifact_type": "ProofObligation.v0",
       "check_id": "obligations_reference_known_kinds",
@@ -531,5 +821,5 @@
       "enforcement_layer": "registry_metadata"
     }
   ],
-  "signature_or_digest": "sha256:2eff7c2f8a2c05957db5a5223ce3fdf7e5b9ee3e5bbe7789c0e2ceb66ae9691d"
+  "signature_or_digest": "sha256:60c6c723c87f0456bdea46f0e67ba84ead10d59bea4ee1ee4fcc18892d9ef256"
 }

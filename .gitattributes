@@ -1,2 +1,4 @@
-﻿# LF line endings for release fixtures (CI runs on Linux; CRLF breaks manifest digests).
-examples/labtrust-release/** text eol=lf
+﻿# Normalize line endings for fixtures hashed on Linux CI.
+examples/** text eol=lf
+benchmarks/** text eol=lf
+test_vectors/** text eol=lf

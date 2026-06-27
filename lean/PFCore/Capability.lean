@@ -47,6 +47,6 @@ def knownCapabilityD (cap : String) : Bool :=
 theorem knownCapabilityD_sound (cap : String) :
     knownCapabilityD cap = true ↔ KnownCapability cap := by
   unfold knownCapabilityD KnownCapability
-  simp [Bool.or_eq_true, eq_comm]
+  cases cap <;> simp
 
 end PFCore

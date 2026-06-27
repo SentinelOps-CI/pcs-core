@@ -181,7 +181,7 @@ def validate_semantics(data: dict[str, Any], artifact_type: str) -> list[str]:
         return errors
 
     if artifact_type == "PcsBenchIngest.v0":
-        from pcs_core.benchmark_ingest import validate_pcs_bench_ingest_semantics
+        from pcs_core.benchmark_validate import validate_pcs_bench_ingest_semantics
 
         errors.extend(validate_pcs_bench_ingest_semantics(data))
         return errors

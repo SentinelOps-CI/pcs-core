@@ -101,7 +101,11 @@ def build_release_chain_validation_result(
         ) or (
             is_computation_release_directory(base) and profile_id == COMPUTATION_WORKFLOW_PROFILE_ID
         )
-        if profile_matches_on_disk and result_path.is_file():
+        if (
+            profile_id == LABTRUST_WORKFLOW_PROFILE_ID
+            and profile_matches_on_disk
+            and result_path.is_file()
+        ):
             try:
                 on_disk = json.loads(result_path.read_text(encoding="utf-8"))
             except json.JSONDecodeError:
@@ -119,14 +123,18 @@ def build_release_chain_validation_result(
                 on_disk_release = on_disk.get("release_id")
                 if isinstance(on_disk_release, str) and on_disk_release:
                     release_id = on_disk_release
-    if deferred_registry_checks is None:
-        deferred_registry_checks = build_deferred_registry_checks(checks)
     from pcs_core.workflow_profiles import required_release_blocking_refs_for_profile
 
+    required_refs = required_release_blocking_refs_for_profile(profile_id)
+    if deferred_registry_checks is None:
+        deferred_registry_checks = build_deferred_registry_checks(
+            checks,
+            required_refs=required_refs,
+        )
     coverage_errors = audit_release_chain_registry_coverage(
         checks,
         deferred_registry_checks,
-        required_refs=required_release_blocking_refs_for_profile(profile_id),
+        required_refs=required_refs,
     )
     failure_codes = sorted({issue.code for issue in issues})
     if coverage_errors:

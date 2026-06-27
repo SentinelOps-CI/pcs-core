@@ -9,11 +9,11 @@
     "trace_hash": "sha256:c3e8a3dc4ad86d533de1dfa4ae7fe2a338c2cff3c945404c96a75216524d58cd",
     "certificate_id": "cert-trace-a1b8ff9d-7d5f-489c-98b1-a3a630cb87d7",
     "certified_bundle_hash": "sha256:bb740698a01c4e918ca0f346e5bfaed83e6665da8df84e931c0d50e03ce82ffe",
-    "signed_bundle_hash": "sha256:308ef2f751e2fb3159c4b88cc294bed2e94944e97e268268c7c46a7f489019f6"
+    "signed_bundle_hash": "sha256:68e6752de71212161bb6bf7ce1ecfa91532b03315896a6f89ecdd61fd81d6fe1"
   },
   "release_chain_validation_result": {
     "path": "release_chain_validation_result.v0.json",
-    "sha256": "sha256:a8818725a80639b24f2fe0da9c33cbe714ec2b3d370ac231f8b776e7f2240e92"
+    "sha256": "sha256:4f6b1163da226a8f447ea2b0abd96e6615b0782341ce05d3178e975cdcb0b185"
   },
   "canonical_signed_bundle": {
     "path": "signed_science_claim_bundle.json",
@@ -50,7 +50,7 @@
       "producer": "LabTrust-Gym",
       "source_repo": "https://github.com/fraware/LabTrust-Gym",
       "source_commit": "17ed831acfd775889ab497d11004cceb083a9c2d",
-      "sha256": "sha256:3ad5c55458a79ef502508f86cd215c746d42b4f0cc5c9aa4feeba9c03b4e1d60"
+      "sha256": "sha256:0a421a44a1d003d4e39bee298edc329995165878bee27f5d28a9529ae8b6c027"
     },
     "science_claim_bundle.certified.json": {
       "artifact_type": "ScienceClaimBundle.v0",
@@ -58,7 +58,7 @@
       "producer": "LabTrust-Gym",
       "source_repo": "https://github.com/fraware/LabTrust-Gym",
       "source_commit": "17ed831acfd775889ab497d11004cceb083a9c2d",
-      "sha256": "sha256:b8af33a7b24abf12fd938a59af6be91ac5e761365d8ecf3639fd0f196969de36"
+      "sha256": "sha256:b2868d2c4d75ca91e034a05516813f75edc3b8f610d9b77388eb12d4c89f7567"
     },
     "science_claim_bundle.pending.json": {
       "artifact_type": "ScienceClaimBundle.v0",
@@ -66,7 +66,7 @@
       "producer": "LabTrust-Gym",
       "source_repo": "https://github.com/fraware/LabTrust-Gym",
       "source_commit": "17ed831acfd775889ab497d11004cceb083a9c2d",
-      "sha256": "sha256:f71e6d92c910f6db94661c712e06cf04c946bf560ede48346dd15e88cc54c6c8"
+      "sha256": "sha256:9f46da17526707af10a1893a236886c2cb5b5b42b6c5a79903a0cf48298694b0"
     },
     "scientific_memory_import_report.json": {
       "artifact_type": "ScientificMemory.ImportReport.v0",
@@ -82,7 +82,7 @@
       "producer": "Provability Fabric",
       "source_repo": "https://github.com/SentinelOps-CI/provability-fabric",
       "source_commit": "b0dbbbe1c110ec2301d452d2ef1074354cce170f",
-      "sha256": "sha256:308ef2f751e2fb3159c4b88cc294bed2e94944e97e268268c7c46a7f489019f6"
+      "sha256": "sha256:68e6752de71212161bb6bf7ce1ecfa91532b03315896a6f89ecdd61fd81d6fe1"
     },
     "trace.json": {
       "artifact_type": "LabTrust.Trace.v0",
@@ -90,7 +90,7 @@
       "producer": "LabTrust-Gym",
       "source_repo": "https://github.com/fraware/LabTrust-Gym",
       "source_commit": "17ed831acfd775889ab497d11004cceb083a9c2d",
-      "sha256": "sha256:f99eb0a90cd2b9819816a25ec4e938663d26ae8d40868cd8188665e940f7ad5c"
+      "sha256": "sha256:0b356b952c0eb5c033e4e7166113f5e34aa76af7f473362bcbc0d2b337dabb04"
     },
     "trace_certificate.json": {
       "artifact_type": "TraceCertificate.v0",
@@ -98,7 +98,7 @@
       "producer": "CertifyEdge",
       "source_repo": "https://github.com/fraware/CertifyEdge",
       "source_commit": "635fca3771ad54fe3f8b49d1bb77ee35d0680ddc",
-      "sha256": "sha256:3a9facf4f66ebeb0ac286865d3c801fc976128ba0e28d5b863c95549622f539c"
+      "sha256": "sha256:1fb39e4677c3a7838ec09079bf3d69684cd8fdb1d3e2f234ff333270920aaef7"
     },
     "verification_result.json": {
       "artifact_type": "VerificationResult.v0",
@@ -106,17 +106,9 @@
       "producer": "Provability Fabric",
       "source_repo": "https://github.com/SentinelOps-CI/provability-fabric",
       "source_commit": "b0dbbbe1c110ec2301d452d2ef1074354cce170f",
-      "sha256": "sha256:13e90d156047e9c23497a73813dd27491848b3d4787b2bb7bdb6b023685cb01d"
+      "sha256": "sha256:56bbe08d69049b9a254c3e25da4abefacba71312a5ddd5fbdd0e9cbb1f598ec1"
     }
   },
   "release_status": "Validated",
-  "signature_or_digest": "sha256:a6f51c871eb7e8462d7e7edb6862a22f1aa7546d561dd6478cceecb8cbd24b05",
-  "proof_obligation": {
-    "path": "proof_obligation.v0.json",
-    "sha256": "sha256:f7c8ce2220446e4289d67cfd31e14e7b762f7cade039fd54b5e58a22e1712a8c"
-  },
-  "lean_check_result": {
-    "path": "lean_check_result.v0.json",
-    "sha256": "sha256:412c16034d78706bf0d008ce3a47356f65f9dc8bcca229828b4269f3242d7584"
-  }
+  "signature_or_digest": "sha256:a62377cc795d945735fdcfd4ead8a242a8addbcc8d2be1d4f082202bfa97a6f8"
 }

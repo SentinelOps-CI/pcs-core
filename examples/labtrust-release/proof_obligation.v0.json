@@ -57,6 +57,6 @@
   },
   "lean_module": "PCS.Theorems",
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
-  "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:705996473b064263bf1be86aaee75a28d3ba818f3dfb40eb456412a86f91a2e5"
+  "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
+  "signature_or_digest": "sha256:982d2f2f70e678eb4ac35f74e180ed1b352ab52d9119c3700e160378c7949394"
 }

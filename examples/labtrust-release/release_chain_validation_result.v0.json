@@ -6,7 +6,7 @@
   "workflow_profile_id": "labtrust.qc_release_v0.1",
   "validator": "pcs-core",
   "validator_version": "0.1.0",
-  "checked_at": "2026-05-18T23:17:38Z",
+  "checked_at": "2026-06-27T22:56:28Z",
   "status": "ProofChecked",
   "checks": [
     {
@@ -312,7 +312,7 @@
   "failure_codes": [],
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
-  "signature_or_digest": "sha256:3000ec6b27f2fc65be0c647a2e8c68ee528babe9779c8fa1d411053d13f904dd",
+  "signature_or_digest": "sha256:85b7baf23ba1f312f5ca7338691bccd9a67f39daaa2e8d1412974b42c04ddca3",
   "formal_checks": [
     {
       "check_id": "lean.admissible_release_has_matching_trace_hash",

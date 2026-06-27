@@ -134,6 +134,14 @@ def detect_artifact_type(data: dict[str, Any]) -> str | None:
         return "VerificationResult.v0"
     if "receipt_id" in data:
         return "RuntimeReceipt.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("certificate_id"), str)
+        and "policy_hash" in data
+        and isinstance(data.get("violations"), list)
+        and "spec_hash" not in data
+    ):
+        return "ToolUseCertificate.v0"
     if "certificate_id" in data:
         return "TraceCertificate.v0"
     if "assumption_set_id" in data:

@@ -693,7 +693,6 @@ mod tests {
     }
 
     #[test]
-    #[test]
     fn valid_examples_pass_jsonschema_and_semantics() {
         for entry in WalkDir::new(examples_dir())
             .into_iter()

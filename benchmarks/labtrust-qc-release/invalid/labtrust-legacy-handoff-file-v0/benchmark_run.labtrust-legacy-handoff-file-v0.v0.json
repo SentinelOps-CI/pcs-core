@@ -3,8 +3,8 @@
   "run_id": "bench-run-labtrust-legacy-handoff-file-v0",
   "task_id": "labtrust-qc-release-v0",
   "case_id": "labtrust-legacy-handoff-file-v0",
-  "started_at": "2026-05-22T11:54:13Z",
-  "completed_at": "2026-05-22T11:54:13Z",
+  "started_at": "2026-06-27T23:10:34Z",
+  "completed_at": "2026-06-27T23:10:34Z",
   "commands": [
     {
       "command": "evaluate_labtrust_gallery benchmarks/labtrust-qc-release/invalid/labtrust-legacy-handoff-file-v0/input_artifacts",
@@ -24,8 +24,8 @@
   "certificate_status": "CertificateChecked",
   "scientific_memory_import_status": "not_applicable",
   "scientific_memory_render_status": "not_applicable",
-  "duration_ms": 2,
+  "duration_ms": 1,
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:76a63e5d31173089a57c9a9bfb53a2187fe7da1b91c3534e79efd9bb6adebfca"
+  "signature_or_digest": "sha256:084d12e4ac974a89f378b21b8cb6a3282578d0ff409b38e1a0e5d4c9406c7cbe"
 }

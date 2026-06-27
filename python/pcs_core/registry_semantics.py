@@ -252,11 +252,18 @@ def deferral_reason(check_id: str) -> str:
     )
 
 
-def build_deferred_registry_checks(chain_checks: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def build_deferred_registry_checks(
+    chain_checks: list[dict[str, Any]],
+    *,
+    required_refs: set[str] | None = None,
+) -> list[dict[str, Any]]:
     """Defer release-blocking checks not cited by release-chain checks."""
     cited = collect_chain_registry_refs(chain_checks)
+    required = (
+        required_refs if required_refs is not None else collect_required_release_blocking_refs()
+    )
     deferred: list[dict[str, Any]] = []
-    for ref in sorted(collect_required_release_blocking_refs() - cited):
+    for ref in sorted(required - cited):
         found = lookup_registry_check(ref)
         if found is None:
             continue
