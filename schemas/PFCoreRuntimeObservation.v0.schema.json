@@ -43,7 +43,7 @@
     "runtime_ref": { "type": "string", "minLength": 1 },
     "previous_event_hash": { "$ref": "pf_core.defs.json#/$defs/chain_hash" },
     "payload_hash": { "$ref": "common.defs.json#/$defs/hex_digest" },
-    "claim_class": { "$ref": "pf_core.defs.json#/$defs/claim_class" },
+    "claim_class": { "$ref": "pf_core.defs.json#/$defs/trace_claim_class" },
     "source_repo": { "type": "string", "format": "uri" },
     "source_commit": { "type": "string", "minLength": 7 },
     "local_dev": { "type": "boolean" },
