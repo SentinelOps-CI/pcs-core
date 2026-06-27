@@ -45,6 +45,21 @@ step "labtrust conformance pytest" pytest -q tests/test_labtrust_conformance.py
 step "multidomain pytest" pytest -q tests/test_multidomain_workflows.py
 step "pytest" pytest -q
 step "pytest protocol" pytest -q tests/test_protocol_conformance.py tests/test_benchmark_ingest_contract.py tests/test_release_chain.py
+step "pf-core valid fixtures" pcs pf-core validate-trace ../examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json
+step "pf-core lean no-sorry audit" pcs pf-core audit-lean-no-sorry
+step "pf-core pytest" pytest -q tests/test_pf_core_*.py
+
+if command -v wsl >/dev/null 2>&1; then
+  step "lake build PCS" wsl bash -lc "cd /mnt/c/Users/mateo/pcs-core/lean && lake build PCS"
+  step "lake build PFCore" wsl bash -lc "cd /mnt/c/Users/mateo/pcs-core/lean && lake build PFCore"
+elif command -v lake >/dev/null 2>&1; then
+  step "lake build PCS" bash -lc "cd ../lean && lake build PCS"
+  step "lake build PFCore" bash -lc "cd ../lean && lake build PFCore"
+else
+  echo "SKIP lake build (lake and wsl unavailable)"
+fi
+
+step "pf-core conformance" pcs conformance run --suite pf-core
 
 for suite in \
   labtrust-qc-release-v0 \

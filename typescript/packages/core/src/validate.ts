@@ -2,6 +2,10 @@ import {
   validateBenchmarkArtifactRefSemantics,
   validatePcsBenchIngestSemantics,
 } from "./benchmarkIngest.js";
+import {
+  validatePfcoreCertificateSemantics,
+  validatePfcoreTraceHashChain,
+} from "./pfCore.js";
 import { ARTIFACT_STATUSES, TRACE_CERTIFICATE_STATUSES } from "./status.js";
 import { isZeroSourceCommit } from "./hash.js";
 import { validateSchema } from "./schema.js";
@@ -532,6 +536,12 @@ export function validateArtifact(
     if (status && !TRACE_CERTIFICATE_STATUSES.has(status)) {
       errors.push(`TraceCertificate.v0 invalid status ${status}`);
     }
+  }
+  if (type === "PFCoreTrace.v0") {
+    errors.push(...validatePfcoreTraceHashChain(data));
+  }
+  if (type === "PFCoreCertificate.v0") {
+    errors.push(...validatePfcoreCertificateSemantics(data));
   }
   if (type === "BenchmarkArtifactRef.v0") {
     errors.push(...validateBenchmarkArtifactRefSemantics(data));

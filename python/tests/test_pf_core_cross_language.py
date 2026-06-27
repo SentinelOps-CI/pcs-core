@@ -10,6 +10,7 @@ from pathlib import Path
 
 import pytest
 
+from pcs_core.pf_core_runtime import compute_event_hash, compute_trace_hash, validate_pfcore_trace_hash_chain
 from pcs_core.validate import ARTIFACT_SCHEMAS, detect_artifact_type, validate_schema
 
 REPO = Path(__file__).resolve().parents[2]
@@ -22,6 +23,7 @@ PF_CORE_TYPES = sorted(
 
 TS_SCHEMAS = REPO / "typescript" / "packages" / "core" / "src" / "schema.ts"
 RUST_SCHEMAS = REPO / "rust" / "crates" / "pcs-core" / "src" / "validation.rs"
+VALID_TRACE = REPO / "examples" / "pf-core-valid" / "tool_use_trace_compiled" / "pfcore_trace.json"
 
 
 def _load_json(path: Path) -> dict:
@@ -77,9 +79,29 @@ def test_pf_core_schema_files_exist(artifact_type: str) -> None:
     assert schema_path.is_file(), f"missing schema for {artifact_type}"
 
 
+def test_python_pf_core_trace_hash_chain_valid_fixture() -> None:
+    trace = _load_json(VALID_TRACE)
+    assert validate_pfcore_trace_hash_chain(trace) == []
+
+
+def test_python_pf_core_trace_hash_recompute() -> None:
+    trace = _load_json(VALID_TRACE)
+    assert compute_trace_hash(trace) == trace["trace_hash"]
+    for event in trace["events"]:
+        assert compute_event_hash(event) == event["event_hash"]
+
+
+def test_python_claim_class_overclaim_on_trace() -> None:
+    trace = _load_json(VALID_TRACE)
+    trace = dict(trace)
+    trace["claim_class"] = "LeanKernelChecked"
+    errors = validate_pfcore_trace_hash_chain(trace)
+    assert any("ClaimClassOverclaim" in err for err in errors)
+
+
 def test_rust_pf_core_detection_tests_pass() -> None:
     result = subprocess.run(
-        ["cargo", "test", "pf_core_explicit_artifact_types", "--", "--nocapture"],
+        ["cargo", "test", "pf_core", "--", "--nocapture"],
         cwd=REPO / "rust",
         capture_output=True,
         text=True,
