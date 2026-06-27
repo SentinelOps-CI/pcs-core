@@ -1,0 +1,52 @@
+{
+  "schema_version": "v0",
+  "artifact_type": "PFCoreEvent.v0",
+  "event_id": "ev-denied-tenant-1",
+  "trace_id": "trace-denied-tenant-1",
+  "sequence": 0,
+  "timestamp": "2026-06-18T00:00:00Z",
+  "principal": {
+    "principal_id": "agent-1",
+    "principal_kind": "agent",
+    "tenant": "tenant-a",
+    "roles": [
+      "agent"
+    ],
+    "capabilities": [
+      "cap:file-read"
+    ]
+  },
+  "action": {
+    "action_id": "act-denied-1",
+    "tool_name": "filesystem.read",
+    "capability": {
+      "capability_id": "cap:file-read",
+      "effect_kind": "file.read",
+      "resource_pattern": "/data/*"
+    },
+    "effects": [
+      {
+        "effect_kind": "file.read"
+      }
+    ],
+    "reads": [
+      {
+        "resource_id": "res-x",
+        "uri": "/data/secret.txt",
+        "tenant": "tenant-b"
+      }
+    ],
+    "writes": [],
+    "input_hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "output_hash": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  },
+  "decision": "deny",
+  "decision_reason": "authorized",
+  "contract_refs": [],
+  "evidence_refs": [],
+  "previous_event_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "event_hash": "sha256:c335b1a5495af902ef0e056e6a1eff60715bc505160f5439acb97a5ddd837ce1",
+  "source_repo": "https://github.com/example/agent-runtime",
+  "source_commit": "abc1234567890abc1234567890abc1234567890",
+  "signature_or_digest": "sha256:c335b1a5495af902ef0e056e6a1eff60715bc505160f5439acb97a5ddd837ce1"
+}
