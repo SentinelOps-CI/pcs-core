@@ -7,7 +7,7 @@
       "run_id": "bench-run-valid-computation-release",
       "case_id": "valid-computation-release",
       "path": "benchmarks/cross-domain/valid/valid-computation-release/benchmark_run.valid-computation-release.v0.json",
-      "observed_status": "passed"
+      "observed_status": "failed"
     },
     {
       "run_id": "bench-run-valid-labtrust-release",
@@ -19,7 +19,7 @@
       "run_id": "bench-run-valid-tool-use-release",
       "case_id": "valid-tool-use-release",
       "path": "benchmarks/cross-domain/valid/valid-tool-use-release/benchmark_run.valid-tool-use-release.v0.json",
-      "observed_status": "passed"
+      "observed_status": "failed"
     }
   ],
   "metrics": [
@@ -30,11 +30,11 @@
   ],
   "summary": {
     "total_cases": 3,
-    "passed_cases": 3,
-    "failed_cases": 0,
+    "passed_cases": 1,
+    "failed_cases": 2,
     "expected_failures_detected": 0,
     "unexpected_passes": 0,
-    "unexpected_failures": 0,
+    "unexpected_failures": 2,
     "failure_localization_accuracy": 0.0,
     "repair_hint_accuracy": 0.0,
     "formal_check_coverage": 1.0,
@@ -84,34 +84,34 @@
       "schema_version": "v0",
       "coverage_id": "cross-domain-release-chain-v0-repro",
       "metric": "release_reproducibility",
-      "numerator": 3.0,
+      "numerator": 1.0,
       "denominator": 3.0,
-      "coverage_ratio": 1.0,
+      "coverage_ratio": 0.3333333333333333,
       "details": {},
       "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
       "source_commit": "d444444444444444444444444444444444444444",
-      "signature_or_digest": "sha256:b20b0100fc5729ffeef767388fd1c424a618c065d53f3c687b2a3d2eb722fd29"
+      "signature_or_digest": "sha256:2d625d14b3df6ee0367176878fbac895b0625858bad271307d7d561329947629"
     },
     "certificate_completeness": {
       "schema_version": "v0",
       "coverage_id": "cross-domain-release-chain-v0-cert",
       "metric": "certificate_completeness",
-      "numerator": 3.0,
+      "numerator": 1.0,
       "denominator": 3.0,
-      "coverage_ratio": 1.0,
+      "coverage_ratio": 0.3333333333333333,
       "details": {},
       "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
       "source_commit": "d444444444444444444444444444444444444444",
-      "signature_or_digest": "sha256:751f6063bf74901850422e70064cfcf05141d75fbdaa4030e3d1c0aa764d7014"
+      "signature_or_digest": "sha256:0e764bf721204d219f37294cd8624b12f15192485120515165d3d252f8ae314e"
     }
   },
   "metric_summaries": [
     {
       "schema_version": "v0",
       "metric_id": "release_reproducibility_score",
-      "score": 1.0,
+      "score": 0.3333333333333333,
       "applicability": "measured",
-      "numerator": 3.0,
+      "numerator": 1.0,
       "denominator": 3.0,
       "reason": "coverage from cross-domain-release-chain-v0-repro",
       "details": {
@@ -119,7 +119,7 @@
       },
       "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
       "source_commit": "d444444444444444444444444444444444444444",
-      "signature_or_digest": "sha256:f1560499911ea849f91f9134857ee1a18d8d788d2aea474244b358f448b34031"
+      "signature_or_digest": "sha256:3f6b9d47bd068c6d67e65f4625c9cbf55c043d2340f69580f5ac29e1c2bd87e7"
     },
     {
       "schema_version": "v0",
@@ -163,15 +163,26 @@
       "signature_or_digest": "sha256:ed095149b17a8e566cbc7e8c5da1aee28724a5d3ecbf9e6c247179be64a24534"
     }
   ],
-  "failures": [],
+  "failures": [
+    {
+      "case_id": "valid-computation-release",
+      "run_id": "bench-run-valid-computation-release",
+      "message": "expected passed got failed (manifest_hash_mismatch)"
+    },
+    {
+      "case_id": "valid-tool-use-release",
+      "run_id": "bench-run-valid-tool-use-release",
+      "message": "expected passed got failed (manifest_hash_mismatch)"
+    }
+  ],
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:b313fae33ae7a1398ab15b4b138df752273c87b38011f9a591bc371b970b46c4",
+  "signature_or_digest": "sha256:1c167eb5330fc90b5a67b625c304c2445eca919b53389d3adb05f64f257659b0",
   "conformance_refs": [
     {
       "suite": "multidomain",
-      "run_id": "conf-run-multidomain-20260627T232311Z",
-      "status": "passed"
+      "run_id": "conf-run-multidomain-20260627T233648Z",
+      "status": "failed"
     }
   ]
 }

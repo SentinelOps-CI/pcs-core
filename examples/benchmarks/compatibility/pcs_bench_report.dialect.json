@@ -8,7 +8,7 @@
       "run_id": "bench-run-labtrust-valid-release-v0",
       "case_id": "labtrust-valid-release-v0",
       "path": "benchmarks/labtrust-qc-release/valid/labtrust-valid-release-v0/benchmark_run.labtrust-valid-release-v0.v0.json",
-      "observed_status": "passed"
+      "observed_status": "failed"
     },
     {
       "run_id": "bench-run-labtrust-certificate-id-tamper-v0",
@@ -27,13 +27,13 @@
   ],
   "summary": {
     "total_cases": 13,
-    "passed_cases": 13,
-    "failed_cases": 0,
-    "expected_failures_detected": 12,
+    "passed_cases": 8,
+    "failed_cases": 5,
+    "expected_failures_detected": 8,
     "unexpected_passes": 0,
-    "unexpected_failures": 0,
-    "failure_localization_accuracy": 1.0,
-    "repair_hint_accuracy": 1.0,
+    "unexpected_failures": 5,
+    "failure_localization_accuracy": 0.8333333333333334,
+    "repair_hint_accuracy": 0.8333333333333334,
     "formal_check_coverage": 0.0,
     "registry_coverage": 0.0,
     "scientific_memory_render_coverage": 0.0
@@ -81,25 +81,25 @@
       "schema_version": "v0",
       "coverage_id": "labtrust-qc-release-v0-repro",
       "metric": "release_reproducibility",
-      "numerator": 13.0,
+      "numerator": 8.0,
       "denominator": 13.0,
-      "coverage_ratio": 1.0,
+      "coverage_ratio": 0.6153846153846154,
       "details": {},
       "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
       "source_commit": "d444444444444444444444444444444444444444",
-      "signature_or_digest": "sha256:f1c452c46cf4e302d2afd8daa4928500c279e0ff0de23c6d0c1c16d7eca8e30c"
+      "signature_or_digest": "sha256:61071b2645ac22dc45ff8134be1caf0e424a836c14daaac9c4152bd5660d0f62"
     },
     "certificate_completeness": {
       "schema_version": "v0",
       "coverage_id": "labtrust-qc-release-v0-cert",
       "metric": "certificate_completeness",
-      "numerator": 13.0,
+      "numerator": 8.0,
       "denominator": 13.0,
-      "coverage_ratio": 1.0,
+      "coverage_ratio": 0.6153846153846154,
       "details": {},
       "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
       "source_commit": "d444444444444444444444444444444444444444",
-      "signature_or_digest": "sha256:240ec8d9c238fe6ad316426ad330f3ae4ee3bda7da9021b4c42ff8471acc54b4"
+      "signature_or_digest": "sha256:c9c72e6e43c0670e578d427839187fd71d24bfed0ca5ba048bfc3dc687ce6968"
     }
   },
   "failures": [],

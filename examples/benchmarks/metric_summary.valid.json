@@ -1,9 +1,9 @@
 {
   "schema_version": "v0",
   "metric_id": "release_reproducibility_score",
-  "score": 1.0,
+  "score": 0.6153846153846154,
   "applicability": "measured",
-  "numerator": 13.0,
+  "numerator": 8.0,
   "denominator": 13.0,
   "reason": "coverage from labtrust-qc-release-v0-repro",
   "details": {
@@ -11,5 +11,5 @@
   },
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:ea8dd9d94b8f74d1d4b920c16287d9f5e34086ed3155f250f118a814caaf701b"
+  "signature_or_digest": "sha256:ee5320d18324bf139e2335315e9c91595cc80eae09101ec1b49e7f0b26dc0cd1"
 }
