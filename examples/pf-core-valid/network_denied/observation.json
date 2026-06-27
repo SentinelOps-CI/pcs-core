@@ -1,0 +1,52 @@
+{
+  "schema_version": "v0",
+  "artifact_type": "PFCoreRuntimeObservation.v0",
+  "observation_id": "obs-network-deny-1",
+  "trace_id": "trace-network-deny-1",
+  "event_id": "ev-network-deny-1",
+  "observed_at": "2026-06-18T00:00:00Z",
+  "principal": {
+    "principal_id": "agent-1",
+    "principal_kind": "agent",
+    "tenant": "tenant-a",
+    "roles": [
+      "agent"
+    ],
+    "capabilities": []
+  },
+  "action": {
+    "action_id": "act-network-1",
+    "tool_name": "network.request",
+    "capability": {
+      "capability_id": "cap:network",
+      "effect_kind": "network.egress",
+      "resource_pattern": "*"
+    },
+    "effects": [
+      {
+        "effect_kind": "network.egress"
+      }
+    ],
+    "reads": [
+      {
+        "resource_id": "res-net",
+        "uri": "https://example.com",
+        "tenant": "tenant-a"
+      }
+    ],
+    "writes": [],
+    "input_hash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "output_hash": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+  },
+  "decision": "deny",
+  "decision_reason": "network egress denied",
+  "policy_ref": "policy/default.v0",
+  "evidence_refs": [],
+  "runtime_ref": "agent-runtime",
+  "previous_event_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "payload_hash": "sha256:2b485a3185e6d101a6a4496b860c77706246c667ba903e9ed4c11d85285ae1b9",
+  "claim_class": "RuntimeChecked",
+  "source_repo": "https://github.com/example/agent-runtime",
+  "source_commit": "abc1234567890abc1234567890abc1234567890",
+  "signature_or_digest": "sha256:2b485a3185e6d101a6a4496b860c77706246c667ba903e9ed4c11d85285ae1b9"
+}
