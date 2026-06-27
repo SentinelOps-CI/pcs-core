@@ -1,0 +1,52 @@
+{
+  "schema_version": "v0",
+  "artifact_type": "PFCoreEvent.v0",
+  "event_id": "ev-file-read-1",
+  "trace_id": "trace-file-read-1",
+  "sequence": 0,
+  "timestamp": "2026-06-18T00:00:00Z",
+  "principal": {
+    "principal_id": "agent-1",
+    "principal_kind": "agent",
+    "tenant": "tenant-a",
+    "roles": [
+      "agent"
+    ],
+    "capabilities": [
+      "cap:file-read"
+    ]
+  },
+  "action": {
+    "action_id": "act-1",
+    "tool_name": "filesystem.read",
+    "capability": {
+      "capability_id": "cap:file-read",
+      "effect_kind": "file.read",
+      "resource_pattern": "/data/*"
+    },
+    "effects": [
+      {
+        "effect_kind": "file.read"
+      }
+    ],
+    "reads": [
+      {
+        "resource_id": "res-1",
+        "uri": "/data/report.txt",
+        "tenant": "tenant-a"
+      }
+    ],
+    "writes": [],
+    "input_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "output_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "decision": "allow",
+  "decision_reason": "authorized",
+  "contract_refs": [],
+  "evidence_refs": [],
+  "previous_event_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "event_hash": "sha256:e6ae0e0c4c702dd1f83a6adb29a97e7d89b9741537b3ebd95bb476f754ea4960",
+  "source_repo": "https://github.com/example/agent-runtime",
+  "source_commit": "abc1234567890abc1234567890abc1234567890",
+  "signature_or_digest": "sha256:e6ae0e0c4c702dd1f83a6adb29a97e7d89b9741537b3ebd95bb476f754ea4960"
+}
