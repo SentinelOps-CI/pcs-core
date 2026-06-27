@@ -43,6 +43,20 @@ When `contract_refs` appear on events and contract JSON is found alongside the t
 
 Fields marked **Not mapped** remain runtime-only; codegen documents the gap in the header when refs exist but contracts are missing.
 
+## contract_semantics_checked (PFCoreCertificate.v0)
+
+When `pcs pf-core lean-check` emits a certificate, it may include:
+
+```json
+"contract_semantics_checked": {
+  "lean": ["contract-id.pre.require_capability", "..."],
+  "runtime": ["contract-id.pre.require_role", "..."]
+}
+```
+
+- `lean`: contract fields discharged by generated Lean `ContractDecide` proofs.
+- `runtime`: fields validated only by Python (`pcs pf-core validate-contracts`) or not mapped.
+
 ## Invariant preservation (Lean)
 
 The canonical trace-safety invariant is `TraceSafe`. Lean proves conservative preservation:

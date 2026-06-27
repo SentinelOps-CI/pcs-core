@@ -395,6 +395,54 @@ def generated_module_name(trace: Mapping[str, Any]) -> str:
     return f"Trace_{digest[:16]}"
 
 
+def build_contract_semantics_checked(
+    trace: Mapping[str, Any],
+    contracts: Mapping[str, Mapping[str, Any]],
+) -> dict[str, list[str]]:
+    """Summarize which contract fields are checked in Lean vs runtime only."""
+    lean_checks: list[str] = []
+    runtime_checks: list[str] = []
+    if not trace_has_contract_refs(trace):
+        return {"lean": lean_checks, "runtime": runtime_checks}
+    for event in trace_events(trace):
+        refs = event.get("contract_refs")
+        if not isinstance(refs, list):
+            continue
+        for ref in refs:
+            contract_id = str(ref)
+            contract = contracts.get(contract_id)
+            if contract is None:
+                runtime_checks.append(f"missing_contract:{contract_id}")
+                continue
+            pre = contract.get("pre")
+            if isinstance(pre, dict):
+                if pre.get("require_capability"):
+                    lean_checks.append(f"{contract_id}.pre.require_capability")
+                if pre.get("require_effect"):
+                    lean_checks.append(f"{contract_id}.pre.require_effect")
+                if pre.get("require_tenant_match"):
+                    lean_checks.append(f"{contract_id}.pre.require_tenant_match")
+                if pre.get("require_role"):
+                    runtime_checks.append(f"{contract_id}.pre.require_role")
+                if pre.get("require_policy_ref"):
+                    runtime_checks.append(f"{contract_id}.pre.require_policy_ref")
+                if pre.get("require_evidence_ref"):
+                    runtime_checks.append(f"{contract_id}.pre.require_evidence_ref")
+            post = contract.get("post")
+            if isinstance(post, dict):
+                if post.get("require_decision"):
+                    lean_checks.append(f"{contract_id}.post.require_decision")
+                if post.get("require_event_safe"):
+                    lean_checks.append(f"{contract_id}.post.require_event_safe")
+            invariant = contract.get("invariant")
+            if isinstance(invariant, dict) and invariant.get("require_trace_safe"):
+                lean_checks.append(f"{contract_id}.invariant.require_trace_safe")
+    return {
+        "lean": sorted(set(lean_checks)),
+        "runtime": sorted(set(runtime_checks)),
+    }
+
+
 def generate_proof_obligation_file(
     trace: Mapping[str, Any],
     out_dir: Path,
@@ -453,7 +501,8 @@ def generate_proof_obligation_file(
             "run `pcs pf-core validate-contracts` before lean-check.\n"
         )
 
-    source = f"""import PFCore.TraceCheck
+    source = f"""import PFCore.Theorems
+import PFCore.TraceCheck
 
 /-!
 # Generated concrete trace proof for `{trace_id}`
@@ -468,6 +517,15 @@ namespace PFCore.Generated.{module}
 
 {contract_def_block}{handoff_block}theorem concrete_trace_safe : traceSafeD {trace_var} = true := by
   decide
+
+theorem concrete_trace_safe_prop : TraceSafe {trace_var} :=
+  (traceSafeD_sound {trace_var}).mp concrete_trace_safe
+
+theorem concrete_allowed_events_allowed :
+    ∀ ev, EventIn ev {trace_var} → ev.decision = Decision.allow →
+      ActionAllowed ev.principal ev.action :=
+  fun ev hIn hAllow =>
+    every_allowed_event_in_safe_trace_is_allowed {trace_var} ev concrete_trace_safe_prop hIn hAllow
 
 {event_theorem_block}{contract_theorem_block}end PFCore.Generated.{module}
 """

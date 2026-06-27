@@ -54,6 +54,20 @@
       }
     },
     "disclaimer": { "type": "string" },
+    "contract_semantics_checked": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "lean": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "runtime": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
     "event_count": { "type": "integer", "minimum": 0 },
     "replay_match": { "type": "boolean" },
     "original_trace_hash": { "$ref": "common.defs.json#/$defs/hex_digest" },

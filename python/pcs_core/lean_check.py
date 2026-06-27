@@ -13,9 +13,16 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from pcs_core.hash import canonical_hash
-from pcs_core.lean_catalog import PF_CORE_FORBIDDEN_LEAN_TOKENS, PF_CORE_THEOREM_CATALOG
+from pcs_core.lean_catalog import (
+    PF_CORE_CONCRETE_PROOF_THEOREMS,
+    PF_CORE_FORBIDDEN_LEAN_TOKENS,
+    PF_CORE_LEAN_KERNEL_THEOREM_CATALOG,
+    PF_CORE_THEOREM_CATALOG,
+)
 from pcs_core.paths import repo_root
 from pcs_core.pf_core_lean_codegen import (
+    build_contract_semantics_checked,
+    collect_contracts_for_trace,
     compute_lean_environment_hash,
     generate_proof_obligation_file,
     proof_term_ref_from_path,
@@ -82,8 +89,13 @@ def pfcore_generated_dir() -> Path:
     return pfcore_lean_dir() / "Generated"
 
 
-def pfcore_theorems_checked() -> list[str]:
-    return sorted(PF_CORE_THEOREM_CATALOG)
+def pfcore_theorems_checked(*, lean_kernel: bool = False) -> list[str]:
+    catalog = PF_CORE_LEAN_KERNEL_THEOREM_CATALOG if lean_kernel else PF_CORE_THEOREM_CATALOG
+    return sorted(catalog)
+
+
+def pfcore_concrete_proof_theorems() -> list[str]:
+    return sorted(PF_CORE_CONCRETE_PROOF_THEOREMS)
 
 
 def lean_build_status(*, ok: bool, detail: str, target: str = "PFCore") -> dict[str, Any]:
@@ -350,6 +362,9 @@ def build_pfcore_certificate(
         claim_class = "RuntimeChecked"
         proof_ref = None
 
+    contracts = collect_contracts_for_trace(trace)
+    contract_semantics = build_contract_semantics_checked(trace, contracts)
+
     cert: dict[str, Any] = {
         "schema_version": "v0",
         "artifact_type": "PFCoreCertificate.v0",
@@ -361,7 +376,7 @@ def build_pfcore_certificate(
         "checker": checker,
         "checker_version": checker_version,
         "assumption_refs": list(PF_CORE_ASSUMPTION_REFS),
-        "theorems_checked": pfcore_theorems_checked(),
+        "theorems_checked": pfcore_theorems_checked(lean_kernel=lean_proof_checked),
         "obligations": obligations,
         "lean_build_status": lean_build_status(
             ok=lean_build_ok and not skip_build,
@@ -370,6 +385,7 @@ def build_pfcore_certificate(
         "lean_proof_checked": lean_proof_checked,
         "disclaimer": LEAN_CHECK_DISCLAIMER,
         "event_count": len(events),
+        "contract_semantics_checked": contract_semantics,
         "source_repo": str(trace.get("source_repo") or "https://github.com/example/pcs-core"),
         "source_commit": str(trace.get("source_commit") or "0000000"),
         "signature_or_digest": trace_hash,
@@ -416,7 +432,9 @@ def build_lean_check_result(
         "issues": [{"code": i.code, "message": i.message, "path": i.path} for i in issues],
         "obligations": obligations,
         "assumption_refs": list(PF_CORE_ASSUMPTION_REFS),
-        "theorems_checked": pfcore_theorems_checked(),
+        "theorems_checked": pfcore_theorems_checked(
+            lean_kernel=bool(certificate and certificate.get("lean_proof_checked"))
+        ),
         "lean_build_status": lean_build_status(ok=build_ok and not skip_build, detail=build_detail),
         "lean_proof_checked": bool(certificate and certificate.get("lean_proof_checked")),
         "no_sorry_audit": {"ok": not no_sorry_errors, "errors": no_sorry_errors},
@@ -472,9 +490,26 @@ def run_pfcore_lean_check(
                     "proof_ref": proof_term_ref,
                 }
             )
+            obligations.append(
+                {
+                    "kind": "ConcreteTraceSafeProp",
+                    "theorem": "concrete_trace_safe_prop",
+                    "passed": False,
+                    "proof_ref": proof_term_ref,
+                }
+            )
+            obligations.append(
+                {
+                    "kind": "ConcreteAllowedEventsAllowed",
+                    "theorem": "concrete_allowed_events_allowed",
+                    "passed": False,
+                    "proof_ref": proof_term_ref,
+                }
+            )
             if not skip_build:
                 proof_ok, proof_detail = run_lean_concrete_proof(proof_path, skip_build=False)
-                obligations[-1]["passed"] = proof_ok
+                for entry in obligations[-3:]:
+                    entry["passed"] = proof_ok
         except OSError as exc:
             issues.append(PFCoreLeanCheckIssue("LeanCodegenFailed", str(exc)))
         except ValueError as exc:
