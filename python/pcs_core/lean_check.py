@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import platform
 import re
 import shutil
@@ -129,16 +130,37 @@ def _lake_invocation(args: list[str], *, cwd: Path) -> tuple[list[str], Path]:
     return ["lake", *args], cwd
 
 
+def _lake_timeout_seconds() -> float | None:
+    raw = os.environ.get("PCS_LAKE_TIMEOUT_SECONDS", "600")
+    if raw.strip().lower() in {"", "none", "0"}:
+        return None
+    try:
+        return float(raw)
+    except ValueError:
+        return 600.0
+
+
 def _run_lake(args: list[str], *, cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
     directory = cwd or lean_dir()
     command, _ = _lake_invocation(args, cwd=directory)
-    return subprocess.run(
-        command,
-        cwd=directory,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
+    timeout = _lake_timeout_seconds()
+    try:
+        return subprocess.run(
+            command,
+            cwd=directory,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=timeout,
+        )
+    except subprocess.TimeoutExpired as exc:
+        detail = (exc.stderr or exc.stdout or b"").decode("utf-8", errors="replace").strip()
+        return subprocess.CompletedProcess(
+            command,
+            returncode=124,
+            stdout=detail,
+            stderr=f"lake command timed out after {timeout}s",
+        )
 
 
 def run_lean_library_build(*, target: str = "PFCore", skip_build: bool = False) -> tuple[bool, str]:
@@ -155,6 +177,8 @@ def run_lean_library_build(*, target: str = "PFCore", skip_build: bool = False) 
     proc = _run_lake(["build", target], cwd=directory)
     if proc.returncode != 0:
         detail = (proc.stderr or proc.stdout or "").strip()
+        if "HCS_E_CONNECTION_TIMEOUT" in detail or "timed out" in detail.lower():
+            return False, f"lake unavailable: {detail}"
         return False, detail or f"lake build {target} failed"
     return True, "ok"
 

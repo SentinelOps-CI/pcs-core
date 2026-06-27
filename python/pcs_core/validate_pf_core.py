@@ -193,7 +193,18 @@ def _validate_lean_check_result(data: dict[str, Any]) -> list[str]:
     if status == "LeanProofChecked" and claim_class != "LeanKernelChecked":
         errors.append("root: status LeanProofChecked requires claim_class LeanKernelChecked")
     if status == "ReplayValidated" and claim_class != "ReplayValidated":
-        errors.append("root: status ReplayValidated requires claim_class ReplayValidated")
+        obligations = data.get("obligations")
+        boundary_ok = isinstance(obligations, list) and any(
+            isinstance(item, dict)
+            and item.get("theorem") == "replay_preserves_claim_boundary"
+            and item.get("passed") is True
+            for item in obligations
+        )
+        if not (data.get("replay_match") is True and boundary_ok):
+            errors.append(
+                "root: status ReplayValidated requires claim_class ReplayValidated "
+                "unless replay_preserves_claim_boundary holds with replay_match"
+            )
     if status == "LeanProofChecked" and not lean_proof_checked:
         errors.append("root: status LeanProofChecked requires lean_proof_checked=true")
     if claim_class == "LeanKernelChecked" and status != "LeanProofChecked":

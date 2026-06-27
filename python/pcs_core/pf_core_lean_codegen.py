@@ -1,4 +1,11 @@
-"""Generate concrete Lean terms and proof obligations from PFCoreTrace.v0."""
+"""Generate concrete Lean terms and proof obligations from PFCoreTrace.v0.
+
+Role expansion alignment: runtime ``ROLE_CAPABILITY_MAP`` in ``pf_core_runtime.py``
+must stay in sync with Lean ``runtimeRoleMap`` in ``lean/PFCore/RoleMap.lean``.
+Codegen emits principals with explicit ``capabilities`` (already expanded); it does
+not reference ``runtimeRoleMap`` directly. Parity is enforced by
+``tests/test_pf_core_research.py`` and ``pcs pf-core audit-lean-catalog``.
+"""
 
 from __future__ import annotations
 
@@ -179,6 +186,7 @@ def contract_pre_to_lean(contract: Mapping[str, Any], *, name: str) -> str:
     cap_expr = "none"
     effect_expr = "none"
     tenant_expr = "false"
+    role_expr = "none"
     if isinstance(pre, dict):
         cap = pre.get("require_capability")
         if (
@@ -199,12 +207,20 @@ def contract_pre_to_lean(contract: Mapping[str, Any], *, name: str) -> str:
             and field_semantics_layer(contract, section="pre", field="require_tenant_match") == "lean"
         ):
             tenant_expr = "true"
+        role = pre.get("require_role")
+        if (
+            isinstance(role, str)
+            and role
+            and field_semantics_layer(contract, section="pre", field="require_role") == "lean"
+        ):
+            role_expr = f"some {lean_string_literal(role)}"
     return (
         f"def {name} : ContractPreSpec :=\n"
         "  {\n"
         f"    requireCapability := {cap_expr},\n"
         f"    requireEffect := {effect_expr},\n"
-        f"    requireTenantMatch := {tenant_expr}\n"
+        f"    requireTenantMatch := {tenant_expr},\n"
+        f"    requireRole := {role_expr}\n"
         "  }"
     )
 
@@ -334,6 +350,12 @@ def _contract_has_lean_pre_fields(contract: Mapping[str, Any]) -> bool:
     if (
         pre.get("require_tenant_match") is True
         and field_semantics_layer(contract, section="pre", field="require_tenant_match") == "lean"
+    ):
+        return True
+    if (
+        isinstance(pre.get("require_role"), str)
+        and pre.get("require_role")
+        and field_semantics_layer(contract, section="pre", field="require_role") == "lean"
     ):
         return True
     return False

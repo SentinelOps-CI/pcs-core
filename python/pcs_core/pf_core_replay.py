@@ -23,8 +23,42 @@ REPLAY_DISCLAIMER = (
     "PF-Core replay-trace recomputes event and trace hashes deterministically and "
     "compares them to the stored PFCoreTrace.v0. When --source is provided, the "
     "compiler is re-run from ToolUseTrace.v0 or PFCoreRuntimeObservation.v0. "
-    "ReplayValidated is emitted only when hashes and compiled content match."
+    "ReplayValidated is emitted only when hashes and compiled content match. "
+    "Replay certificates cannot upgrade claim_class above the source trace."
 )
+
+# Monotonic assurance ordering for trace/certificate claim classes (low → high).
+_CLAIM_CLASS_RANK: dict[str, int] = {
+    "OutOfScope": 0,
+    "SchemaValidated": 1,
+    "RuntimeChecked": 2,
+    "ReplayValidated": 3,
+    "AssumptionDeclared": 4,
+    "CertificateChecked": 5,
+    "LeanKernelChecked": 6,
+}
+
+
+def claim_class_rank(claim_class: str) -> int | None:
+    """Return monotonic rank for a PF-Core claim class, or None when unknown."""
+    return _CLAIM_CLASS_RANK.get(str(claim_class or ""))
+
+
+def replay_preserves_claim_boundary(source_claim_class: str, replay_claim_class: str) -> bool:
+    """ReplayValidated certificates must not exceed the source trace claim class rank.
+
+    **Meaning:** Hash replay match does not silently upgrade assurance beyond what the
+    source trace already claimed.
+
+    **Trusted use:** ``build_replay_certificate`` and replay integration tests.
+
+    **Does not imply:** Lean kernel proof, contract discharge, or non-replay assurance.
+    """
+    source_rank = claim_class_rank(source_claim_class)
+    replay_rank = claim_class_rank(replay_claim_class)
+    if source_rank is None or replay_rank is None:
+        return False
+    return replay_rank <= source_rank
 
 _HASH_COMPARE_KEYS = frozenset({"trace_hash", "event_hash", "signature_or_digest"})
 
@@ -212,6 +246,10 @@ def replay_trace(trace_path: Path, source_path: Path | None = None) -> ReplayRes
 def build_replay_certificate(trace: Mapping[str, Any], result: ReplayResult) -> dict[str, Any]:
     events = trace.get("events")
     event_count = len(events) if isinstance(events, list) else 0
+    source_claim = str(trace.get("claim_class") or "RuntimeChecked")
+    replay_claim = source_claim if result.match else "OutOfScope"
+    if result.match and not replay_preserves_claim_boundary(source_claim, replay_claim):
+        replay_claim = "OutOfScope"
     cert: dict[str, Any] = {
         "schema_version": "v0",
         "artifact_type": "PFCoreCertificate.v0",
@@ -219,7 +257,7 @@ def build_replay_certificate(trace: Mapping[str, Any], result: ReplayResult) -> 
         "trace_hash": result.original_trace_hash,
         "contract_hash": str(trace.get("contract_hash") or GENESIS_HASH),
         "policy_hash": str(trace.get("policy_hash") or GENESIS_HASH),
-        "claim_class": "ReplayValidated" if result.match else "OutOfScope",
+        "claim_class": replay_claim,
         "checker": "pcs-core",
         "checker_version": "0.1.0",
         "assumption_refs": [
@@ -231,7 +269,12 @@ def build_replay_certificate(trace: Mapping[str, Any], result: ReplayResult) -> 
                 "kind": "TraceReplay",
                 "theorem": "trace_hash_replay",
                 "passed": result.match,
-            }
+            },
+            {
+                "kind": "ReplayClaimBoundary",
+                "theorem": "replay_preserves_claim_boundary",
+                "passed": replay_preserves_claim_boundary(source_claim, replay_claim),
+            },
         ],
         "replay_match": result.match,
         "original_trace_hash": result.original_trace_hash,
@@ -251,9 +294,17 @@ def build_replay_check_result(
     result: ReplayResult,
     *,
     certificate: dict[str, Any] | None = None,
+    source_trace: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
-    claim_class = "ReplayValidated" if result.match else "OutOfScope"
+    source_claim = str((source_trace or {}).get("claim_class") or "RuntimeChecked")
+    if certificate is not None:
+        claim_class = str(certificate.get("claim_class") or "OutOfScope")
+    elif result.match:
+        claim_class = source_claim
+    else:
+        claim_class = "OutOfScope"
     status = "ReplayValidated" if result.match else "Rejected"
+    replay_boundary_passed = replay_preserves_claim_boundary(source_claim, claim_class)
     issues: list[dict[str, Any]] = []
     if result.error:
         issues.append({"code": "ReplayError", "message": result.error})
@@ -273,11 +324,18 @@ def build_replay_check_result(
         "claim_class": claim_class,
         "trace_path": str(trace_path),
         "issues": issues,
+        "obligations": [
+            {
+                "kind": "ReplayClaimBoundary",
+                "theorem": "replay_preserves_claim_boundary",
+                "passed": replay_boundary_passed,
+            }
+        ],
         "assumption_refs": [
             "docs/pf-core/assumptions.md",
             "docs/pf-core/trusted-boundary.md",
         ],
-        "theorems_checked": ["trace_hash_replay"],
+        "theorems_checked": ["trace_hash_replay", "replay_preserves_claim_boundary"],
         "lean_build_status": {"ok": False, "target": "PFCore", "detail": "not-applicable"},
         "lean_proof_checked": False,
         "replay_match": result.match,
@@ -316,7 +374,9 @@ def run_replay_trace(
             )
             certificate = None
 
-    check_result = build_replay_check_result(trace_path, result, certificate=certificate)
+    check_result = build_replay_check_result(
+        trace_path, result, certificate=certificate, source_trace=original
+    )
 
     if result_out_path:
         result_out_path.write_text(json.dumps(check_result, indent=2), encoding="utf-8")
