@@ -16,6 +16,8 @@ typescript/packages/core/dist/
 lake-packages/
 lean/lakefile.olean.trace
 lean/build/
+lean/PFCore/Generated/*.lean
+!lean/PFCore/Generated/.gitkeep
 
 .DS_Store
 *.swp
