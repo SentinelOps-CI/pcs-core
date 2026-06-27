@@ -20,9 +20,9 @@ LEAN_VERSION = "leanprover/lean4:stable"
 PCS_CORE_COMMIT_PLACEHOLDER = "d444444444444444444444444444444444444444"
 
 PCS_LEAN_CHECK_DISCLAIMER = (
-    "PCS `lean-check` validates ProofObligation.v0 release-envelope consistency against "
-    "the PCS theorem catalog. A `ProofChecked` LeanCheckResult does not imply "
-    "PF-Core `LeanKernelChecked` trace safety. Use "
+    "PCS release-envelope consistency check validates ProofObligation.v0 release-envelope "
+    "consistency against the PCS theorem catalog. A `ProofChecked` LeanCheckResult does "
+    "not imply PF-Core trace safety. Use "
     "`pcs pf-core lean-check --trace <PFCoreTrace.v0.json>` for PF-Core kernel assurance."
 )
 
@@ -449,6 +449,7 @@ def run_lean_check(
 
     body: dict[str, Any] = {
         "schema_version": "v0",
+        "artifact_type": "LeanCheckResult.v0",
         "check_id": check_id or f"lean-check-{proof_obligation_id}",
         "proof_obligation_id": proof_obligation_id,
         "lean_module": str(obligations_doc.get("lean_module", LEAN_MODULE)),
