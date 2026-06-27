@@ -436,6 +436,48 @@ def validate_tenant_isolation(trace: Mapping[str, Any]) -> list[str]:
     return errors
 
 
+def validate_denied_observations_preserved(
+    observations: list[Any] | list[Mapping[str, Any]],
+    events: list[Mapping[str, Any]],
+) -> None:
+    """Ensure denied runtime observations appear as deny events in a compiled trace."""
+    compiled: dict[str, Mapping[str, Any]] = {}
+    for event in events:
+        if isinstance(event, dict):
+            compiled[str(event.get("event_id") or "")] = event
+    for index, observation in enumerate(observations):
+        if not isinstance(observation, dict):
+            continue
+        if str(observation.get("decision") or "") != "deny":
+            continue
+        event_id = str(observation.get("event_id") or "")
+        if not event_id:
+            raise DroppedDeniedEvent("<missing-event-id>", f"observations[{index}].event_id")
+        event = compiled.get(event_id)
+        if event is None:
+            raise DroppedDeniedEvent(event_id, "events")
+        if str(event.get("decision") or "") != "deny":
+            raise DroppedDeniedEvent(event_id, f"events[{event_id}].decision")
+
+
+def _observation_sequence(observation: Mapping[str, Any]) -> int:
+    sequence = observation.get("sequence")
+    if isinstance(sequence, int) and sequence >= 0:
+        return sequence
+    raise PFCoreRuntimeError(
+        "InvalidObservation",
+        "sequence must be a non-negative integer",
+        "sequence",
+    )
+
+
+def _sort_observations(observations: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Return observations ordered by ``sequence`` with stable index tie-breaking."""
+    indexed = list(enumerate(observations))
+    indexed.sort(key=lambda item: (_observation_sequence(item[1]), item[0]))
+    return [observation for _, observation in indexed]
+
+
 def compile_runtime_observation_to_event(observation: dict) -> dict:
     """Compile a schema-valid runtime observation into a PFCoreEvent.v0."""
     _require_schema_valid(observation, "PFCoreRuntimeObservation.v0")
@@ -451,22 +493,82 @@ def compile_runtime_observation_to_event(observation: dict) -> dict:
         elif not _same_tenant(principal, action):
             decision = "deny"
 
+    policy_ref = str(observation.get("policy_ref") or "").strip()
+    contract_refs = [policy_ref] if policy_ref else []
+
     event = _finalize_event(
         trace_id=str(observation["trace_id"]),
         event_id=str(observation["event_id"]),
-        sequence=0,
+        sequence=_observation_sequence(observation),
         timestamp=str(observation["observed_at"]),
         principal=principal,
         action=action,
         decision=decision,
         decision_reason=str(observation.get("decision_reason") or ""),
-        contract_refs=[],
+        contract_refs=contract_refs,
         evidence_refs=[str(ref) for ref in observation.get("evidence_refs", []) if ref],
         previous_event_hash=str(observation.get("previous_event_hash") or GENESIS_HASH),
         source_repo=str(observation["source_repo"]),
         source_commit=str(observation["source_commit"]),
     )
     return event
+
+
+def compile_runtime_observations_to_pfcore_trace(
+    observations: list[dict[str, Any]],
+    *,
+    workflow_id: str | None = None,
+) -> dict[str, Any]:
+    """Compile ordered runtime observations into a PFCoreTrace.v0 with chained hashes."""
+    if not observations:
+        raise PFCoreRuntimeError("InvalidTrace", "observations must be non-empty", "observations")
+
+    for index, observation in enumerate(observations):
+        _require_schema_valid(observation, "PFCoreRuntimeObservation.v0")
+
+    ordered = _sort_observations(observations)
+    trace_id = str(ordered[0]["trace_id"])
+    for observation in ordered[1:]:
+        if str(observation["trace_id"]) != trace_id:
+            raise PFCoreRuntimeError(
+                "InvalidTrace",
+                "all observations must share trace_id",
+                "trace_id",
+            )
+
+    events: list[dict[str, Any]] = []
+    previous_hash = GENESIS_HASH
+    for observation in ordered:
+        event = compile_runtime_observation_to_event(observation)
+        event = dict(event)
+        event["previous_event_hash"] = previous_hash
+        event["event_hash"] = compute_event_hash(event)
+        event["signature_or_digest"] = event["event_hash"]
+        events.append(event)
+        previous_hash = event["event_hash"]
+
+    validate_denied_observations_preserved(ordered, events)
+
+    claim_class = "RuntimeChecked"
+    _assert_claim_class_allowed(claim_class)
+
+    trace: dict[str, Any] = {
+        "schema_version": "v0",
+        "artifact_type": "PFCoreTrace.v0",
+        "trace_id": trace_id,
+        "workflow_id": workflow_id or str(ordered[0].get("runtime_ref") or "observation.batch"),
+        "events": events,
+        "trace_hash": GENESIS_HASH,
+        "policy_hash": GENESIS_HASH,
+        "contract_hash": GENESIS_HASH,
+        "claim_class": claim_class,
+        "source_repo": str(ordered[0]["source_repo"]),
+        "source_commit": str(ordered[0]["source_commit"]),
+        "signature_or_digest": GENESIS_HASH,
+    }
+    trace["trace_hash"] = compute_trace_hash(trace)
+    trace["signature_or_digest"] = trace["trace_hash"]
+    return trace
 
 
 def _resolve_tool_mapping(tool_name: str, tool_category: str) -> tuple[str, str, str]:
