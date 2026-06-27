@@ -1,0 +1,6 @@
+{
+  "expected_error": "lean_build_status.ok=true",
+  "must_fail_at": "validate_semantics",
+  "artifact_file": "certificate.json",
+  "artifact_type": "PFCoreCertificate.v0"
+}
