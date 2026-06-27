@@ -10,10 +10,17 @@ from pathlib import Path
 
 import pytest
 
-from pcs_core.pf_core_runtime import compute_event_hash, compute_trace_hash, validate_pfcore_trace_hash_chain
+from pcs_core.pf_core_contract import validate_trace_contracts
+from pcs_core.pf_core_runtime import (
+    compute_event_hash,
+    compute_trace_hash,
+    validate_denied_events_preserved,
+    validate_pfcore_trace_hash_chain,
+)
 from pcs_core.validate import ARTIFACT_SCHEMAS, detect_artifact_type, validate_schema
 
 REPO = Path(__file__).resolve().parents[2]
+INVALID_VECTORS = REPO / "python" / "tests" / "hash_vectors" / "pf_core" / "invalid"
 
 PF_CORE_TYPES = sorted(
     key
@@ -99,6 +106,44 @@ def test_python_claim_class_overclaim_on_trace() -> None:
     assert any("ClaimClassOverclaim" in err for err in errors)
 
 
+def test_python_pf_core_shared_hash_vectors() -> None:
+    vector_root = REPO / "python" / "tests" / "hash_vectors" / "pf_core"
+    for name in ("PFCoreEvent.v0", "PFCoreTrace.v0", "PFCoreContract.v0"):
+        payload = _load_json(vector_root / name / "input.json")
+        digest = (vector_root / name / "digest.txt").read_text(encoding="utf-8").strip()
+        if name == "PFCoreEvent.v0":
+            assert compute_event_hash(payload) == digest
+        elif name == "PFCoreTrace.v0":
+            assert compute_trace_hash(payload) == digest
+        else:
+            from pcs_core.hash import canonical_hash
+
+            assert canonical_hash(payload) == digest
+
+
+@pytest.mark.parametrize(
+    "relative,needle",
+    [
+        ("invalid/trace_hash_chain_break.json", "EventHashMismatch"),
+        ("invalid/claim_class_overclaim_trace.json", "ClaimClassOverclaim"),
+    ],
+)
+def test_python_invalid_pf_core_vectors(relative: str, needle: str) -> None:
+    trace = _load_json(REPO / "python" / "tests" / "hash_vectors" / "pf_core" / relative)
+    errors = validate_pfcore_trace_hash_chain(trace)
+    assert any(needle in err for err in errors)
+
+
+def test_python_denied_event_preserved_invalid_vector() -> None:
+    from pcs_core.pf_core_runtime import DroppedDeniedEvent, validate_denied_events_preserved
+
+    root = REPO / "python" / "tests" / "hash_vectors" / "pf_core" / "invalid" / "denied_event_dropped"
+    tool_use = _load_json(root / "tool_use_trace.json")
+    pfcore = _load_json(root / "pfcore_trace.json")
+    with pytest.raises(DroppedDeniedEvent):
+        validate_denied_events_preserved(tool_use, pfcore)
+
+
 def test_rust_pf_core_detection_tests_pass() -> None:
     result = subprocess.run(
         ["cargo", "test", "pf_core", "--", "--nocapture"],
@@ -115,6 +160,37 @@ def test_typescript_pf_core_detection_tests_pass() -> None:
     result = subprocess.run(
         ["npm", "test"],
         cwd=REPO / "typescript",
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_shared_negative_vectors_python() -> None:
+    trace = _load_json(INVALID_VECTORS / "trace_hash_chain_break.json")
+    assert any("EventHashMismatch" in err for err in validate_pfcore_trace_hash_chain(trace))
+
+    overclaim = _load_json(INVALID_VECTORS / "claim_class_overclaim_trace.json")
+    assert any("ClaimClassOverclaim" in err for err in validate_pfcore_trace_hash_chain(overclaim))
+
+    contract_dir = INVALID_VECTORS / "contract_capability_missing"
+    contract_trace = _load_json(contract_dir / "trace.json")
+    contract = _load_json(contract_dir / "contract.json")
+    issues = validate_trace_contracts(contract_trace, {contract["contract_id"]: contract})
+    assert any(issue.code == "ContractCapabilityRequired" for issue in issues)
+
+    denied_dir = INVALID_VECTORS / "denied_event_dropped"
+    with pytest.raises(Exception):
+        validate_denied_events_preserved(
+            _load_json(denied_dir / "tool_use_trace.json"),
+            _load_json(denied_dir / "pfcore_trace.json"),
+        )
+
+
+def test_rust_negative_vector_tests_in_pf_core_suite() -> None:
+    result = subprocess.run(
+        ["cargo", "test", "pf_core_", "--", "--nocapture"],
+        cwd=REPO / "rust",
         capture_output=True,
         text=True,
     )
