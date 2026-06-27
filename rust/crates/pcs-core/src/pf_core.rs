@@ -4,7 +4,31 @@ use crate::hash::canonical_hash;
 
 pub const GENESIS_HASH: &str = "sha256:0000000000000000000000000000000000000000000000000000000000000000";
 
+const TRACE_CLAIM_CLASSES: &[&str] = &[
+    "SchemaValidated",
+    "RuntimeChecked",
+    "ReplayValidated",
+    "AssumptionDeclared",
+    "OutOfScope",
+];
+
+const CERTIFICATE_CLAIM_CLASSES: &[&str] = &[
+    "SchemaValidated",
+    "RuntimeChecked",
+    "CertificateChecked",
+    "LeanKernelChecked",
+    "ReplayValidated",
+    "AssumptionDeclared",
+    "OutOfScope",
+];
+
 const LEAN_CLAIM_CLASSES: &[&str] = &["LeanKernelChecked"];
+
+const CONCRETE_PROOF_OBLIGATIONS: &[&str] = &[
+    "concrete_trace_safe",
+    "concrete_trace_safe_prop",
+    "concrete_allowed_events_allowed",
+];
 
 const AUTHORIZATION_TO_DECISION: &[(&str, &str)] = &[
     ("authorized", "allow"),
@@ -49,6 +73,33 @@ pub fn validate_claim_class_overclaim(
     proof_ref: Option<&Value>,
     lean_proof_checked: Option<&Value>,
 ) -> Result<(), String> {
+    validate_certificate_claim_class_overclaim(claim_class, proof_ref, lean_proof_checked)
+}
+
+pub fn validate_trace_claim_class_overclaim(claim_class: &str) -> Result<(), String> {
+    if !TRACE_CLAIM_CLASSES.contains(&claim_class) {
+        if claim_class == "LeanKernelChecked" || claim_class == "CertificateChecked" {
+            return Err(format!(
+                "ClaimClassOverclaim: claim_class {claim_class:?} is not valid on PFCoreTrace.v0"
+            ));
+        }
+        return Err(format!(
+            "ClaimClassOverclaim: invalid claim_class {claim_class:?} for trace"
+        ));
+    }
+    Ok(())
+}
+
+pub fn validate_certificate_claim_class_overclaim(
+    claim_class: &str,
+    proof_ref: Option<&Value>,
+    lean_proof_checked: Option<&Value>,
+) -> Result<(), String> {
+    if !CERTIFICATE_CLAIM_CLASSES.contains(&claim_class) {
+        return Err(format!(
+            "ClaimClassOverclaim: invalid claim_class {claim_class:?} for certificate"
+        ));
+    }
     let has_proof = proof_ref
         .and_then(|v| v.as_str())
         .is_some_and(|s| !s.is_empty());
@@ -56,12 +107,6 @@ pub fn validate_claim_class_overclaim(
         return Err(format!(
             "ClaimClassOverclaim: claim_class {claim_class:?} exceeds available assurance"
         ));
-    }
-    if claim_class == "CertificateChecked" {
-        return Err(
-            "ClaimClassOverclaim: claim_class \"CertificateChecked\" exceeds available assurance"
-                .into(),
-        );
     }
     if claim_class == "LeanKernelChecked" && lean_proof_checked != Some(&Value::Bool(true)) {
         return Err(
@@ -145,11 +190,7 @@ pub fn validate_pfcore_trace_hash_chain(trace: &Value) -> Vec<String> {
     }
 
     if let Some(claim_class) = trace.get("claim_class").and_then(|v| v.as_str()) {
-        if let Err(message) = validate_claim_class_overclaim(
-            claim_class,
-            trace.get("proof_ref").or(trace.get("proof_term_ref")),
-            trace.get("lean_proof_checked"),
-        ) {
+        if let Err(message) = validate_trace_claim_class_overclaim(claim_class) {
             errors.push(message);
         }
     }
@@ -163,7 +204,7 @@ pub fn validate_pfcore_certificate_semantics(certificate: &Value) -> Vec<String>
         .get("claim_class")
         .and_then(|v| v.as_str())
         .unwrap_or("");
-    if let Err(message) = validate_claim_class_overclaim(
+    if let Err(message) = validate_certificate_claim_class_overclaim(
         claim_class,
         certificate
             .get("proof_ref")
@@ -190,6 +231,13 @@ pub fn validate_pfcore_certificate_semantics(certificate: &Value) -> Vec<String>
             );
         }
         if certificate
+            .get("proof_term_hash")
+            .and_then(|v| v.as_str())
+            .is_none_or(|s| !s.starts_with("sha256:"))
+        {
+            errors.push("root: claim_class LeanKernelChecked requires proof_term_hash".into());
+        }
+        if certificate
             .get("lean_environment_hash")
             .and_then(|v| v.as_str())
             .is_none_or(|s| !s.starts_with("sha256:"))
@@ -203,6 +251,34 @@ pub fn validate_pfcore_certificate_semantics(certificate: &Value) -> Vec<String>
             .unwrap_or(false);
         if !build_ok {
             errors.push("root: lean_proof_checked requires lean_build_status.ok=true".into());
+        }
+        if certificate.get("lean_proof_checked") == Some(&Value::Bool(true)) {
+            if let Some(obligations) = certificate.get("obligations").and_then(|v| v.as_array()) {
+                let passed: std::collections::HashSet<String> = obligations
+                    .iter()
+                    .filter(|item| {
+                        item.get("passed").and_then(|v| v.as_bool()) == Some(true)
+                    })
+                    .filter_map(|item| {
+                        item.get("theorem")
+                            .and_then(|v| v.as_str())
+                            .map(str::to_string)
+                    })
+                    .collect();
+                for theorem in CONCRETE_PROOF_OBLIGATIONS {
+                    if !passed.contains(*theorem) {
+                        errors.push(format!(
+                            "root: lean_proof_checked obligations missing passed proofs for {theorem:?}"
+                        ));
+                    }
+                }
+            } else {
+                for theorem in CONCRETE_PROOF_OBLIGATIONS {
+                    errors.push(format!(
+                        "root: lean_proof_checked obligations missing passed proofs for {theorem:?}"
+                    ));
+                }
+            }
         }
     }
     errors

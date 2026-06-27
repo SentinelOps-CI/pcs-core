@@ -83,7 +83,7 @@ theorem eventSafe_allow_implies_tenant_scoped (ev : Event) (h : EventSafe ev)
     (hallow : ev.decision = Decision.allow) :
     EventTenantScoped ev.principal.tenant ev := by
   have hallowed := allowed_event_has_allowed_action ev h hallow
-  rcases hallowed with ⟨_, hwithin⟩
+  rcases hallowed with ⟨_, hwithin, _, _⟩
   exact ⟨rfl, hwithin⟩
 
 /--
