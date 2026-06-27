@@ -1,0 +1,29 @@
+{
+  "schema_version": "v0",
+  "trace_id": "trace-dropped-deny",
+  "workflow_id": "agent_tool_use.safety_v0",
+  "agent_id": "agent-1",
+  "policy_id": "policy/default.v0",
+  "policy_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "started_at": "2026-06-18T00:00:00Z",
+  "completed_at": "2026-06-18T00:00:01Z",
+  "tool_calls": [
+    {
+      "event_id": "evt-deny",
+      "timestamp": "2026-06-18T00:00:01Z",
+      "tool_name": "network.request",
+      "tool_category": "network",
+      "input_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "output_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "authorization_status": "rejected",
+      "policy_refs": [
+        "policy/default.v0"
+      ],
+      "tenant": "tenant-a"
+    }
+  ],
+  "trace_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "source_repo": "https://github.com/example/agent-runtime",
+  "source_commit": "abc1234567890abc1234567890abc1234567890",
+  "signature_or_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+}
