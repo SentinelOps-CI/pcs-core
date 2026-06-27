@@ -20,6 +20,12 @@ This document lists what PCS/PF-Core treats as trusted, untrusted, or assumed wh
 | Role → capability expansion | `python/pcs_core/pf_core_runtime.py` | Compiler expands roles; lean-check requires explicit capabilities on traces |
 | PF-Core no-sorry audit | `python/pcs_core/lean_check.py` | Scans `lean/PFCore/` for forbidden tokens |
 
+## PCS release-envelope path (Choice B — permanent)
+
+PCS `pcs pcs-envelope check` (and deprecated `pcs lean-check`) evaluate **release-envelope consistency** only (`ProofObligation.v0` against `lean/PCS/Theorems.lean`). This path is **envelope-only** and does not generate per-trace Lean proof terms or emit PF-Core `LeanKernelChecked` claims. Full PCS Lean term generation for arbitrary traces remains out of scope unless a future PCS-Lean stage is added.
+
+PF-Core trace kernel assurance requires `pcs pf-core lean-check --trace`.
+
 ## Untrusted (must not produce LeanKernelChecked claims)
 
 | Component | Reason |
@@ -36,7 +42,23 @@ This document lists what PCS/PF-Core treats as trusted, untrusted, or assumed wh
 
 See [assumptions.md](assumptions.md). Assumptions must appear in `AssumptionSet.v0` or PF-Core certificate assumption refs before any external claim.
 
-## Allowlisted Lean axioms
+## PCS release-envelope path (permanent envelope-only framing)
+
+PCS `pcs pcs-envelope check` (and deprecated `pcs lean-check`) validates `ProofObligation.v0` release-envelope consistency against the PCS theorem catalog. It emits `ProofChecked` on `LeanCheckResult.v0` when obligations pass; this is **not** PF-Core `LeanKernelChecked` trace safety.
+
+There is no silent upgrade from envelope checks to per-trace Lean kernel proofs. PF-Core kernel assurance requires `pcs pf-core lean-check --trace …` with concrete generated proof terms (see [generated-proofs.md](generated-proofs.md)).
+
+## PCS release-envelope path (permanent envelope-only scope)
+
+PCS `pcs pcs-envelope check` (formerly `pcs lean-check`) validates **release-envelope consistency** only:
+
+- Proof obligations against `lean/PCS/Theorems.lean`
+- Emits `ProofChecked` on `LeanCheckResult.v0`; never `LeanKernelChecked`
+- No per-trace PF-Core Lean term generation unless a future **Stage PCS-Lean** is added
+
+PF-Core kernel assurance remains exclusively on `pcs pf-core lean-check --trace …`.
+
+See `docs/pf-core/generated-proofs.md` for gitignored `lean/PFCore/Generated/` regeneration.
 
 No PF-Core trusted Lean file may contain `sorry`, `admit`, `axiom`, or `unsafe` unless listed here.
 
