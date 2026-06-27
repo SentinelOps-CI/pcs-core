@@ -47,12 +47,6 @@ def knownCapabilityD (cap : String) : Bool :=
 theorem knownCapabilityD_sound (cap : String) :
     knownCapabilityD cap = true ↔ KnownCapability cap := by
   unfold knownCapabilityD KnownCapability
-  constructor
-  · intro h
-    simp [Bool.or_eq_true, eq_comm] at h
-    tauto
-  · intro h
-    simp [Bool.or_eq_true, eq_comm]
-    tauto
+  simp [Bool.or_eq_true, eq_comm, decide_eq_true_iff]
 
 end PFCore
