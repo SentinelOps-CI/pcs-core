@@ -13,6 +13,7 @@ import {
   validateClaimClassOverclaim,
   validateDeniedEventsPreserved,
   validatePfcoreTraceHashChain,
+  validateTenantIsolation,
   validateTraceContracts,
 } from "../pfCore.js";
 import { detectArtifactType, validateArtifact, ValidationError, type ArtifactType } from "../validate.js";
@@ -236,6 +237,24 @@ test("pf-core negative hash vectors parity", () => {
   ) as Record<string, unknown>;
   const overclaimErrors = validatePfcoreTraceHashChain(overclaimTrace);
   assert.ok(overclaimErrors.some((err) => err.includes("ClaimClassOverclaim")));
+
+  const traceMismatch = JSON.parse(
+    readFileSync(join(pfCoreInvalidVectorsDir, "trace_hash_mismatch.json"), "utf8"),
+  ) as Record<string, unknown>;
+  const traceMismatchErrors = validatePfcoreTraceHashChain(traceMismatch);
+  assert.ok(traceMismatchErrors.some((err) => err.includes("TraceHashMismatch")));
+
+  const prevMismatch = JSON.parse(
+    readFileSync(join(pfCoreInvalidVectorsDir, "previous_event_hash_mismatch.json"), "utf8"),
+  ) as Record<string, unknown>;
+  const prevMismatchErrors = validatePfcoreTraceHashChain(prevMismatch);
+  assert.ok(prevMismatchErrors.some((err) => err.includes("EventHashMismatch")));
+
+  const crossTenant = JSON.parse(
+    readFileSync(join(pfCoreInvalidVectorsDir, "cross_tenant_leak.json"), "utf8"),
+  ) as Record<string, unknown>;
+  const tenantErrors = validateTenantIsolation(crossTenant);
+  assert.ok(tenantErrors.some((err) => err.includes("TenantIsolation")));
 
   const contractDir = join(pfCoreInvalidVectorsDir, "contract_capability_missing");
   const contractTrace = JSON.parse(

@@ -687,13 +687,8 @@ mod tests {
         ];
         for (rel, expected) in cases {
             let path = repo.join(rel);
-            let value: Value =
-                serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
-            assert_eq!(
-                detect_artifact_type(&value),
-                Some(expected),
-                "{rel}"
-            );
+            let value: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
+            assert_eq!(detect_artifact_type(&value), Some(expected), "{rel}");
         }
     }
 

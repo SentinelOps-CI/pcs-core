@@ -125,13 +125,17 @@ jobs:
         run: curl -sSfL https://github.com/leanprover/elan/releases/download/v4.0.0/elan-x86_64-unknown-linux-gnu.tar.gz | tar xz && ./elan-init -y --default-toolchain none
       - name: Build Lean libraries and PF-Core lean-check
         run: |
+          export PATH="$HOME/.elan/bin:$PATH"
           cd lean
           elan default leanprover/lean4:v4.14.0
           lake build PCS
           lake build PFCore
           cd ../python
           pip install -e .
-          pcs pf-core lean-check --trace ../examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json
+          pcs pf-core lean-check --trace ../examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json --out /tmp/pfcore-ci-cert.json
+          pcs pf-core verify-proof-binding \
+            --certificate /tmp/pfcore-ci-cert.json \
+            --trace ../examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json
           pcs pf-core validate-contracts \
             ../examples/pf-core-valid/contract_checked/trace.json \
             --contracts-dir ../examples/pf-core-valid/contract_checked

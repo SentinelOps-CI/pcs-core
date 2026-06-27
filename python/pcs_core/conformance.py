@@ -44,6 +44,17 @@ def labtrust_fixture_path(name: str) -> Path:
 
 SUITES: dict[str, SuiteFn] = {}
 
+_conformance_release_grade = False
+
+
+def conformance_release_grade() -> bool:
+    return _conformance_release_grade
+
+
+def set_conformance_release_grade(value: bool) -> None:
+    global _conformance_release_grade
+    _conformance_release_grade = value
+
 
 def _record(name: str) -> Callable[[SuiteFn], SuiteFn]:
     def decorator(fn: SuiteFn) -> SuiteFn:
@@ -596,33 +607,59 @@ def _suite_pf_core() -> tuple[list[str], list[str], int]:
 def _check_pf_core_generated_lean_proof(errors: list[str], checks: int) -> int:
     import platform
     import shutil
+    import tempfile
 
     from pcs_core.lean_check import run_pfcore_lean_check
+    from pcs_core.pf_core_proof_binding import verify_proof_binding
 
     trace_path = repo_root() / "examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json"
     if not trace_path.is_file():
         errors.append("pf-core.generated-lean-proof: missing canonical trace fixture")
         return checks + 1
-    if not shutil.which("lake") and not (
-        platform.system() == "Windows" and shutil.which("wsl")
-    ):
+
+    lake_available = shutil.which("lake") is not None
+    wsl_available = platform.system() == "Windows" and shutil.which("wsl") is not None
+    if not lake_available and not wsl_available:
+        if conformance_release_grade():
+            errors.append(
+                "pf-core.generated-lean-proof: release-grade requires lake or WSL "
+                "for Lean proof check"
+            )
+            return checks + 1
         return checks
+
     checks += 1
-    code, result = run_pfcore_lean_check(trace_path, skip_build=False, skip_lean_proof=False)
-    certificate = result.get("certificate")
-    if code != 0:
-        errors.append(
-            "pf-core.generated-lean-proof: lean-check failed "
-            f"({[issue.get('code') for issue in result.get('issues', [])]})"
+    with tempfile.TemporaryDirectory(prefix="pfcore-lean-cert-") as tmp_dir:
+        cert_path = Path(tmp_dir) / "pfcore-lean-cert.json"
+        code, result = run_pfcore_lean_check(
+            trace_path,
+            out_path=cert_path,
+            skip_build=False,
+            skip_lean_proof=False,
         )
-        return checks
-    if not isinstance(certificate, dict) or certificate.get("claim_class") != "LeanKernelChecked":
-        errors.append("pf-core.generated-lean-proof: expected claim_class LeanKernelChecked")
-        return checks
-    try:
-        validate_artifact(certificate, "PFCoreCertificate.v0")
-    except ValidationError as exc:
-        errors.append(f"pf-core.generated-lean-proof: certificate validation failed: {exc}")
+        certificate = result.get("certificate")
+        if code != 0:
+            errors.append(
+                "pf-core.generated-lean-proof: lean-check failed "
+                f"({[issue.get('code') for issue in result.get('issues', [])]})"
+            )
+            return checks
+        if (
+            not isinstance(certificate, dict)
+            or certificate.get("claim_class") != "LeanKernelChecked"
+        ):
+            errors.append("pf-core.generated-lean-proof: expected claim_class LeanKernelChecked")
+            return checks
+        try:
+            validate_artifact(certificate, "PFCoreCertificate.v0")
+        except ValidationError as exc:
+            errors.append(f"pf-core.generated-lean-proof: certificate validation failed: {exc}")
+            return checks
+        if conformance_release_grade():
+            binding = verify_proof_binding(cert_path, trace_path=trace_path)
+            if not binding.ok:
+                for issue in binding.issues:
+                    errors.append(f"pf-core.verify-proof-binding: {issue.code}: {issue.message}")
     return checks
 
 
@@ -642,6 +679,8 @@ def _suite_pf_core_cross_language() -> tuple[list[str], list[str], int]:
     cases: tuple[tuple[str, str], ...] = (
         ("invalid/trace_hash_chain_break.json", "EventHashMismatch"),
         ("invalid/claim_class_overclaim_trace.json", "ClaimClassOverclaim"),
+        ("invalid/trace_hash_mismatch.json", "TraceHashMismatch"),
+        ("invalid/previous_event_hash_mismatch.json", "EventHashMismatch"),
     )
     for relative, needle in cases:
         checks += 1
@@ -670,6 +709,16 @@ def _suite_pf_core_cross_language() -> tuple[list[str], list[str], int]:
         except Exception:
             pass
 
+    cross_tenant_path = vector_root / "invalid" / "cross_tenant_leak.json"
+    if cross_tenant_path.is_file():
+        checks += 1
+        from pcs_core.pf_core_runtime import validate_tenant_isolation
+
+        trace = json.loads(cross_tenant_path.read_text(encoding="utf-8"))
+        tenant_errors = validate_tenant_isolation(trace)
+        if not any("TenantIsolation" in err for err in tenant_errors):
+            errors.append("python cross_tenant_leak vector failed")
+
     rust = repo_root() / "rust"
     proc = subprocess.run(
         ["cargo", "test", "pf_core_", "--", "--nocapture"],
@@ -683,6 +732,15 @@ def _suite_pf_core_cross_language() -> tuple[list[str], list[str], int]:
 
     ts_root = repo_root() / "typescript"
     if (ts_root / "package.json").is_file():
+        install = subprocess.run(
+            ["npm", "install", "--silent"],
+            cwd=ts_root,
+            capture_output=True,
+            text=True,
+        )
+        checks += 1
+        if install.returncode != 0:
+            errors.append(f"typescript npm install failed: {install.stderr or install.stdout}")
         proc = subprocess.run(
             ["npm", "test", "--silent"],
             cwd=ts_root,
@@ -700,8 +758,10 @@ def list_suites() -> list[str]:
     return sorted(SUITES.keys())
 
 
-def run_conformance(suite: str) -> tuple[int, list[str]]:
+def run_conformance(suite: str, *, release_grade: bool = False) -> tuple[int, list[str]]:
     """Run one suite or `all`. Returns (exit_code, human-readable error lines)."""
+    global _conformance_release_grade
+    _conformance_release_grade = release_grade
     report = build_conformance_report_data(suite)
     lines: list[str] = []
     if report["status"] == "failed":

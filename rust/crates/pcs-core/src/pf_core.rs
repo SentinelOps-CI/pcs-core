@@ -2,7 +2,8 @@ use serde_json::{Map, Value};
 
 use crate::hash::canonical_hash;
 
-pub const GENESIS_HASH: &str = "sha256:0000000000000000000000000000000000000000000000000000000000000000";
+pub const GENESIS_HASH: &str =
+    "sha256:0000000000000000000000000000000000000000000000000000000000000000";
 
 const TRACE_CLAIM_CLASSES: &[&str] = &[
     "SchemaValidated",
@@ -142,7 +143,9 @@ pub fn validate_pfcore_trace_hash_chain(trace: &Value) -> Vec<String> {
         {
             Some(Ok(value)) => value,
             _ => {
-                errors.push(format!("EventHashMismatch: invalid previous_event_hash at {base}"));
+                errors.push(format!(
+                    "EventHashMismatch: invalid previous_event_hash at {base}"
+                ));
                 continue;
             }
         };
@@ -242,7 +245,8 @@ pub fn validate_pfcore_certificate_semantics(certificate: &Value) -> Vec<String>
             .and_then(|v| v.as_str())
             .is_none_or(|s| !s.starts_with("sha256:"))
         {
-            errors.push("root: claim_class LeanKernelChecked requires lean_environment_hash".into());
+            errors
+                .push("root: claim_class LeanKernelChecked requires lean_environment_hash".into());
         }
         let build_ok = certificate
             .get("lean_build_status")
@@ -256,9 +260,7 @@ pub fn validate_pfcore_certificate_semantics(certificate: &Value) -> Vec<String>
             if let Some(obligations) = certificate.get("obligations").and_then(|v| v.as_array()) {
                 let passed: std::collections::HashSet<String> = obligations
                     .iter()
-                    .filter(|item| {
-                        item.get("passed").and_then(|v| v.as_bool()) == Some(true)
-                    })
+                    .filter(|item| item.get("passed").and_then(|v| v.as_bool()) == Some(true))
                     .filter_map(|item| {
                         item.get("theorem")
                             .and_then(|v| v.as_str())
@@ -355,10 +357,14 @@ fn tenant_matches(principal: &Value, action: &Value) -> bool {
 pub fn validate_event_against_contract(event: &Value, contract: &Value, path: &str) -> Vec<String> {
     let mut errors = Vec::new();
     let Some(principal) = event.get("principal") else {
-        return vec![format!("ContractEventInvalid: event missing principal or action at {path}")];
+        return vec![format!(
+            "ContractEventInvalid: event missing principal or action at {path}"
+        )];
     };
     let Some(action) = event.get("action") else {
-        return vec![format!("ContractEventInvalid: event missing principal or action at {path}")];
+        return vec![format!(
+            "ContractEventInvalid: event missing principal or action at {path}"
+        )];
     };
     let contract_id = contract
         .get("contract_id")
@@ -528,7 +534,43 @@ fn authorization_decision(status: &str) -> &'static str {
         .unwrap_or("deny")
 }
 
-pub fn validate_denied_events_preserved(tool_use_trace: &Value, pfcore_trace: &Value) -> Vec<String> {
+pub fn validate_tenant_isolation(trace: &Value) -> Vec<String> {
+    let mut errors = Vec::new();
+    let events = match trace.get("events").and_then(|v| v.as_array()) {
+        Some(items) => items,
+        None => return vec!["TraceInvalid: events must be an array".into()],
+    };
+    for (index, event) in events.iter().enumerate() {
+        let base = format!("events[{index}]");
+        let Some(principal) = event.get("principal") else {
+            errors.push(format!("TenantIsolation: {base} missing principal or action"));
+            continue;
+        };
+        let Some(action) = event.get("action") else {
+            errors.push(format!("TenantIsolation: {base} missing principal or action"));
+            continue;
+        };
+        let tenant = principal
+            .get("tenant")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        if tenant.is_empty() {
+            errors.push(format!("TenantIsolation: {base}.principal.tenant is empty"));
+            continue;
+        }
+        if !tenant_matches(principal, action) {
+            errors.push(format!(
+                "TenantIsolation: cross-tenant resource access at {base} (principal tenant {tenant:?})"
+            ));
+        }
+    }
+    errors
+}
+
+pub fn validate_denied_events_preserved(
+    tool_use_trace: &Value,
+    pfcore_trace: &Value,
+) -> Vec<String> {
     let Some(tool_calls) = tool_use_trace.get("tool_calls").and_then(|v| v.as_array()) else {
         return Vec::new();
     };
@@ -587,7 +629,8 @@ mod tests {
 
     #[test]
     fn pf_core_trace_hash_chain_valid_fixture() {
-        let path = repo_root().join("examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json");
+        let path =
+            repo_root().join("examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json");
         let trace = load_json(path);
         let errors = validate_pfcore_trace_hash_chain(&trace);
         assert!(errors.is_empty(), "{errors:?}");
@@ -615,7 +658,8 @@ mod tests {
 
     #[test]
     fn pf_core_invalid_hash_chain_vector() {
-        let path = repo_root().join("python/tests/hash_vectors/pf_core/invalid/trace_hash_chain_break.json");
+        let path = repo_root()
+            .join("python/tests/hash_vectors/pf_core/invalid/trace_hash_chain_break.json");
         let trace = load_json(path);
         let errors = validate_pfcore_trace_hash_chain(&trace);
         assert!(errors.iter().any(|err| err.contains("EventHashMismatch")));
@@ -623,7 +667,8 @@ mod tests {
 
     #[test]
     fn pf_core_claim_class_overclaim_vector() {
-        let path = repo_root().join("python/tests/hash_vectors/pf_core/invalid/claim_class_overclaim_trace.json");
+        let path = repo_root()
+            .join("python/tests/hash_vectors/pf_core/invalid/claim_class_overclaim_trace.json");
         let trace = load_json(path);
         let errors = validate_pfcore_trace_hash_chain(&trace);
         assert!(errors.iter().any(|err| err.contains("ClaimClassOverclaim")));
@@ -631,7 +676,8 @@ mod tests {
 
     #[test]
     fn pf_core_contract_violation_vector() {
-        let root = repo_root().join("python/tests/hash_vectors/pf_core/invalid/contract_capability_missing");
+        let root = repo_root()
+            .join("python/tests/hash_vectors/pf_core/invalid/contract_capability_missing");
         let trace = load_json(root.join("trace.json"));
         let contract = load_json(root.join("contract.json"));
         let contract_id = contract
@@ -642,15 +688,36 @@ mod tests {
         let mut contracts = HashMap::new();
         contracts.insert(contract_id, contract);
         let errors = validate_trace_contracts(&trace, &contracts);
-        assert!(errors.iter().any(|err| err.contains("ContractCapabilityRequired")));
+        assert!(errors
+            .iter()
+            .any(|err| err.contains("ContractCapabilityRequired")));
     }
 
     #[test]
     fn pf_core_denied_event_dropped_vector() {
-        let root = repo_root().join("python/tests/hash_vectors/pf_core/invalid/denied_event_dropped");
+        let root =
+            repo_root().join("python/tests/hash_vectors/pf_core/invalid/denied_event_dropped");
         let tool_use = load_json(root.join("tool_use_trace.json"));
         let pfcore = load_json(root.join("pfcore_trace.json"));
         let errors = validate_denied_events_preserved(&tool_use, &pfcore);
         assert!(errors.iter().any(|err| err.contains("DroppedDeniedEvent")));
+    }
+
+    #[test]
+    fn pf_core_trace_hash_mismatch_vector() {
+        let path = repo_root()
+            .join("python/tests/hash_vectors/pf_core/invalid/trace_hash_mismatch.json");
+        let trace = load_json(path);
+        let errors = validate_pfcore_trace_hash_chain(&trace);
+        assert!(errors.iter().any(|err| err.contains("TraceHashMismatch")));
+    }
+
+    #[test]
+    fn pf_core_cross_tenant_leak_vector() {
+        let path = repo_root()
+            .join("python/tests/hash_vectors/pf_core/invalid/cross_tenant_leak.json");
+        let trace = load_json(path);
+        let errors = validate_tenant_isolation(&trace);
+        assert!(errors.iter().any(|err| err.contains("TenantIsolation")));
     }
 }

@@ -527,3 +527,43 @@ export function validateDeniedEventsPreserved(
   }
   return errors;
 }
+
+export function validateTenantIsolation(trace: Record<string, unknown>): string[] {
+  const errors: string[] = [];
+  const events = trace.events;
+  if (!Array.isArray(events)) {
+    return ["TraceInvalid: events must be an array"];
+  }
+  for (let index = 0; index < events.length; index += 1) {
+    const base = `events[${index}]`;
+    const event = events[index];
+    if (!event || typeof event !== "object" || Array.isArray(event)) {
+      continue;
+    }
+    const eventObj = event as Record<string, unknown>;
+    const principal = eventObj.principal;
+    const action = eventObj.action;
+    if (
+      !principal ||
+      typeof principal !== "object" ||
+      Array.isArray(principal) ||
+      !action ||
+      typeof action !== "object" ||
+      Array.isArray(action)
+    ) {
+      errors.push(`TenantIsolation: ${base} missing principal or action`);
+      continue;
+    }
+    const tenant = String((principal as Record<string, unknown>).tenant ?? "");
+    if (!tenant) {
+      errors.push(`TenantIsolation: ${base}.principal.tenant is empty`);
+      continue;
+    }
+    if (!tenantMatches(principal as Record<string, unknown>, action as Record<string, unknown>)) {
+      errors.push(
+        `TenantIsolation: cross-tenant resource access at ${base} (principal tenant ${JSON.stringify(tenant)})`,
+      );
+    }
+  }
+  return errors;
+}

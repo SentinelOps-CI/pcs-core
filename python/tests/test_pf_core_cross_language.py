@@ -126,6 +126,8 @@ def test_python_pf_core_shared_hash_vectors() -> None:
     [
         ("invalid/trace_hash_chain_break.json", "EventHashMismatch"),
         ("invalid/claim_class_overclaim_trace.json", "ClaimClassOverclaim"),
+        ("invalid/trace_hash_mismatch.json", "TraceHashMismatch"),
+        ("invalid/previous_event_hash_mismatch.json", "EventHashMismatch"),
     ],
 )
 def test_python_invalid_pf_core_vectors(relative: str, needle: str) -> None:
@@ -157,9 +159,17 @@ def test_rust_pf_core_detection_tests_pass() -> None:
 def test_typescript_pf_core_detection_tests_pass() -> None:
     if sys.platform == "win32":
         pytest.skip("typescript workspace test runner uses shell globs unavailable on Windows")
+    ts_root = REPO / "typescript"
+    install = subprocess.run(
+        ["npm", "install", "--silent"],
+        cwd=ts_root,
+        capture_output=True,
+        text=True,
+    )
+    assert install.returncode == 0, install.stdout + install.stderr
     result = subprocess.run(
         ["npm", "test"],
-        cwd=REPO / "typescript",
+        cwd=ts_root,
         capture_output=True,
         text=True,
     )
@@ -172,6 +182,17 @@ def test_shared_negative_vectors_python() -> None:
 
     overclaim = _load_json(INVALID_VECTORS / "claim_class_overclaim_trace.json")
     assert any("ClaimClassOverclaim" in err for err in validate_pfcore_trace_hash_chain(overclaim))
+
+    trace_mismatch = _load_json(INVALID_VECTORS / "trace_hash_mismatch.json")
+    assert any("TraceHashMismatch" in err for err in validate_pfcore_trace_hash_chain(trace_mismatch))
+
+    prev_mismatch = _load_json(INVALID_VECTORS / "previous_event_hash_mismatch.json")
+    assert any("EventHashMismatch" in err for err in validate_pfcore_trace_hash_chain(prev_mismatch))
+
+    from pcs_core.pf_core_runtime import validate_tenant_isolation
+
+    cross_tenant = _load_json(INVALID_VECTORS / "cross_tenant_leak.json")
+    assert any("TenantIsolation" in err for err in validate_tenant_isolation(cross_tenant))
 
     contract_dir = INVALID_VECTORS / "contract_capability_missing"
     contract_trace = _load_json(contract_dir / "trace.json")
