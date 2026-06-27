@@ -47,6 +47,14 @@ def knownCapabilityD (cap : String) : Bool :=
 theorem knownCapabilityD_sound (cap : String) :
     knownCapabilityD cap = true ↔ KnownCapability cap := by
   unfold knownCapabilityD KnownCapability
-  cases cap <;> simp
+  cases cap with
+  | "cap:file-read" => simp
+  | "cap:file-write" => simp
+  | "cap:network" => simp
+  | "cap:email-send" => simp
+  | "cap:handoff" => simp
+  | "cap:mcp-invoke" => simp
+  | "cap:lab-release" => simp
+  | _ => simp
 
 end PFCore
