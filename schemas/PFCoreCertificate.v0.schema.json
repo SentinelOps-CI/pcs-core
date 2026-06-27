@@ -68,6 +68,7 @@
         }
       }
     },
+    "default_contract_ref": { "type": "string", "minLength": 1 },
     "event_count": { "type": "integer", "minimum": 0 },
     "replay_match": { "type": "boolean" },
     "original_trace_hash": { "$ref": "common.defs.json#/$defs/hex_digest" },
