@@ -1,0 +1,79 @@
+{
+  "schema_version": "v0",
+  "trace_id": "trace-handoff-bad-compile",
+  "workflow_id": "agent_tool_use.safety_v0",
+  "agent_id": "agent-safety-conformance-001",
+  "policy_id": "policy-no-secret-exfiltration-v0",
+  "policy_hash": "sha256:76d4443f09c6fb0d6cc7bebc5c80eae53bd008e4a212ab61d0d1844ac773b5cd",
+  "started_at": "2026-05-18T00:00:00Z",
+  "completed_at": "2026-05-18T00:00:05Z",
+  "tool_calls": [
+    {
+      "event_id": "evt-001",
+      "timestamp": "2026-05-18T00:00:01Z",
+      "tool_name": "filesystem.read",
+      "tool_category": "filesystem",
+      "input_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "output_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "authorization_status": "authorized",
+      "policy_refs": [
+        "policy-no-secret-exfiltration-v0"
+      ],
+      "resource_uri": "/data/report.txt",
+      "tenant": "tenant-a"
+    },
+    {
+      "event_id": "evt-002",
+      "timestamp": "2026-05-18T00:00:02Z",
+      "tool_name": "network.request",
+      "tool_category": "network",
+      "input_hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "output_hash": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "authorization_status": "rejected",
+      "policy_refs": [
+        "policy-no-secret-exfiltration-v0"
+      ],
+      "resource_uri": "https://example.com",
+      "tenant": "tenant-a"
+    }
+  ],
+  "trace_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "source_repo": "https://github.com/example/agent-runtime",
+  "source_commit": "a111111111111111111111111111111111111111",
+  "signature_or_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "handoffs": [
+    {
+      "schema_version": "v0",
+      "artifact_type": "PFCoreHandoff.v0",
+      "handoff_id": "handoff-bad-1",
+      "from_principal": {
+        "principal_id": "agent-1",
+        "principal_kind": "agent",
+        "tenant": "tenant-a",
+        "roles": [
+          "file_reader"
+        ],
+        "capabilities": []
+      },
+      "to_principal": {
+        "principal_id": "agent-2",
+        "principal_kind": "agent",
+        "tenant": "tenant-a",
+        "roles": [
+          "handoff_delegate"
+        ],
+        "capabilities": []
+      },
+      "delegated_capabilities": [
+        {
+          "capability_id": "cap:network",
+          "effect_kind": "network.egress",
+          "resource_pattern": "*"
+        }
+      ],
+      "reason": "over-delegation",
+      "evidence_refs": [],
+      "signature_or_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  ]
+}
