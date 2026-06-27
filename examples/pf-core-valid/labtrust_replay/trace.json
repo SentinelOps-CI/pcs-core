@@ -1,0 +1,71 @@
+{
+  "schema_version": "v0",
+  "artifact_type": "PFCoreTrace.v0",
+  "trace_id": "runs-qc-release",
+  "workflow_id": "labtrust.qc_release.v0",
+  "events": [
+    {
+      "schema_version": "v0",
+      "artifact_type": "PFCoreEvent.v0",
+      "event_id": "evt-lab-release-001",
+      "trace_id": "runs-qc-release",
+      "sequence": 0,
+      "timestamp": "2026-05-16T11:58:00Z",
+      "principal": {
+        "principal_id": "lab-operator-1",
+        "principal_kind": "human",
+        "tenant": "labtrust-qc",
+        "roles": [
+          "lab_operator"
+        ],
+        "capabilities": [
+          "cap:lab-release"
+        ]
+      },
+      "action": {
+        "action_id": "act-lab-release-001",
+        "tool_name": "lab.release",
+        "capability": {
+          "capability_id": "cap:lab-release",
+          "effect_kind": "lab.release",
+          "resource_pattern": "lab:*"
+        },
+        "effects": [
+          {
+            "effect_kind": "lab.release"
+          }
+        ],
+        "reads": [
+          {
+            "resource_id": "res-lab-release-001",
+            "uri": "lab:qc-release/run-001",
+            "tenant": "labtrust-qc"
+          }
+        ],
+        "writes": [],
+        "input_hash": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+        "output_hash": "sha256:5555555555555555555555555555555555555555555555555555555555555555"
+      },
+      "decision": "allow",
+      "decision_reason": "CertificateChecked",
+      "contract_refs": [
+        "qc_release.temporal.safety"
+      ],
+      "evidence_refs": [
+        "cert-trace-qc-release-v0.1"
+      ],
+      "previous_event_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "event_hash": "sha256:2b93b9f8b982b6780d83c1862f979f4b265f7cf8a02c663b5f52a77bf257d379",
+      "source_repo": "https://github.com/fraware/CertifyEdge",
+      "source_commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "signature_or_digest": "sha256:2b93b9f8b982b6780d83c1862f979f4b265f7cf8a02c663b5f52a77bf257d379"
+    }
+  ],
+  "trace_hash": "sha256:b7466cd65c822b9f14d7e8590d128a4aafd21114b1a43e302cdf0abbaf33ae43",
+  "policy_hash": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+  "contract_hash": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+  "claim_class": "RuntimeChecked",
+  "source_repo": "https://github.com/fraware/CertifyEdge",
+  "source_commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "signature_or_digest": "sha256:b7466cd65c822b9f14d7e8590d128a4aafd21114b1a43e302cdf0abbaf33ae43"
+}
