@@ -39,6 +39,21 @@ Both repos agree on:
 
 PCS hash vectors under `python/tests/hash_vectors/` must match provability-fabric-core `adapters/pcs/tests/fixtures/hash_vectors/` at the pinned PF-Core tag.
 
+PF-Core-specific vectors live under `python/tests/hash_vectors/pf_core/` (`PFCoreEvent.v0`, `PFCoreTrace.v0`, `PFCoreContract.v0`) and are verified in Python, Rust, and TypeScript parity tests.
+
+---
+
+## Runtime observation ordering
+
+`PFCoreRuntimeObservation.v0` carries a required non-negative `sequence` field. Deterministic trace compilation orders observations by `(sequence, source_index)` before hash chaining:
+
+1. Sort observations by `sequence` ascending; equal sequences preserve input order.
+2. Compile each observation to `PFCoreEvent.v0` using its `sequence` value.
+3. Recompute `previous_event_hash` / `event_hash` sequentially from genesis.
+4. Reject traces that drop denied observations (`DroppedDeniedEvent`).
+
+Single-observation compile paths (`compile_runtime_observation_to_event`) preserve the observation `sequence` and `policy_ref` as `contract_refs`.
+
 ---
 
 ## LabTrust replay path
