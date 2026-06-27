@@ -5,13 +5,28 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 import { canonicalHash, canonicalJsonBytes } from "../hash.js";
-import { detectArtifactType, validateArtifact, ValidationError } from "../validate.js";
+import {
+  canonicalEventJsonBytes,
+  canonicalTraceJsonBytes,
+  computeEventHash,
+  computeTraceHash,
+  validateClaimClassOverclaim,
+  validateDeniedEventsPreserved,
+  validatePfcoreTraceHashChain,
+  validateTraceContracts,
+} from "../pfCore.js";
+import { detectArtifactType, validateArtifact, ValidationError, type ArtifactType } from "../validate.js";
 
 const examplesDir = join(dirname(fileURLToPath(import.meta.url)), "../../../../../examples");
 const vectorsDir = join(
   dirname(fileURLToPath(import.meta.url)),
   "../../../../../python/tests/hash_vectors",
 );
+const pfCoreVectorsDir = join(
+  dirname(fileURLToPath(import.meta.url)),
+  "../../../../../python/tests/hash_vectors/pf_core",
+);
+const pfCoreInvalidVectorsDir = join(pfCoreVectorsDir, "invalid");
 const sharedVectorsDir = join(
   dirname(fileURLToPath(import.meta.url)),
   "../../../../../test_vectors/hash",
@@ -55,7 +70,7 @@ test("benchmark ingest examples include artifact refs", () => {
 });
 
 test("PF-Core explicit artifact_type detection", () => {
-  const cases: Array<[string, ArtifactType]> = [
+  const cases: Array<[string, string]> = [
     ["pf-core-valid/tool_use_trace_compiled/pfcore_trace.json", "PFCoreTrace.v0"],
     ["pf-core-valid/assumption_declared/certificate.json", "PFCoreCertificate.v0"],
   ];
@@ -185,6 +200,69 @@ test("hash vectors match frozen fixtures", () => {
     assert.equal(Buffer.from(canonicalJsonBytes(data)).toString("utf8"), expectedCanonical);
     assert.equal(canonicalHash(data), expectedDigest);
   }
+});
+
+test("pf-core hash vectors match frozen fixtures", () => {
+  for (const artifact of ["PFCoreEvent.v0", "PFCoreTrace.v0"]) {
+    const dir = join(pfCoreVectorsDir, artifact);
+    const data = JSON.parse(readFileSync(join(dir, "input.json"), "utf8")) as Record<
+      string,
+      unknown
+    >;
+    const expectedCanonical = readFileSync(join(dir, "canonical.txt"), "utf8").trim();
+    const expectedDigest = readFileSync(join(dir, "digest.txt"), "utf8").trim();
+    const canonicalBytes =
+      artifact === "PFCoreEvent.v0"
+        ? canonicalEventJsonBytes(data)
+        : canonicalTraceJsonBytes(data);
+    assert.equal(Buffer.from(canonicalBytes).toString("utf8"), expectedCanonical);
+    if (artifact === "PFCoreEvent.v0") {
+      assert.equal(computeEventHash(data), expectedDigest);
+    } else {
+      assert.equal(computeTraceHash(data), expectedDigest);
+    }
+  }
+});
+
+test("pf-core negative hash vectors parity", () => {
+  const trace = JSON.parse(
+    readFileSync(join(pfCoreInvalidVectorsDir, "trace_hash_chain_break.json"), "utf8"),
+  ) as Record<string, unknown>;
+  const hashErrors = validatePfcoreTraceHashChain(trace);
+  assert.ok(hashErrors.some((err) => err.includes("EventHashMismatch")));
+
+  const overclaimTrace = JSON.parse(
+    readFileSync(join(pfCoreInvalidVectorsDir, "claim_class_overclaim_trace.json"), "utf8"),
+  ) as Record<string, unknown>;
+  const overclaimErrors = validatePfcoreTraceHashChain(overclaimTrace);
+  assert.ok(overclaimErrors.some((err) => err.includes("ClaimClassOverclaim")));
+
+  const contractDir = join(pfCoreInvalidVectorsDir, "contract_capability_missing");
+  const contractTrace = JSON.parse(
+    readFileSync(join(contractDir, "trace.json"), "utf8"),
+  ) as Record<string, unknown>;
+  const contract = JSON.parse(
+    readFileSync(join(contractDir, "contract.json"), "utf8"),
+  ) as Record<string, unknown>;
+  const contractId = String(contract.contract_id ?? "");
+  const contractErrors = validateTraceContracts(contractTrace, { [contractId]: contract });
+  assert.ok(contractErrors.some((err) => err.includes("ContractCapabilityRequired")));
+
+  const deniedDir = join(pfCoreInvalidVectorsDir, "denied_event_dropped");
+  const toolUse = JSON.parse(
+    readFileSync(join(deniedDir, "tool_use_trace.json"), "utf8"),
+  ) as Record<string, unknown>;
+  const pfcore = JSON.parse(
+    readFileSync(join(deniedDir, "pfcore_trace.json"), "utf8"),
+  ) as Record<string, unknown>;
+  const deniedErrors = validateDeniedEventsPreserved(toolUse, pfcore);
+  assert.ok(deniedErrors.some((err) => err.includes("DroppedDeniedEvent")));
+
+  assert.ok(
+    validateClaimClassOverclaim("LeanKernelChecked", undefined, undefined)?.includes(
+      "ClaimClassOverclaim",
+    ),
+  );
 });
 
 test("shared hash vectors match test_vectors/hash fixtures", () => {
