@@ -13,3 +13,8 @@ import PFCore.Theorems
 import PFCore.NonInterference
 import PFCore.ContractDecide
 import PFCore.TraceCheck
+import PFCore.Compositional
+import PFCore.RoleMap
+import PFCore.Transition
+import PFCore.EffectFrame
+import PFCore.State

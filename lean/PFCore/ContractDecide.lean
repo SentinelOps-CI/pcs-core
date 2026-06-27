@@ -1,4 +1,5 @@
 import PFCore.Contract
+import PFCore.RoleMap
 
 /-!
 # PF-Core JSON contract deciders
@@ -15,6 +16,7 @@ structure ContractPreSpec where
   requireCapability : Option String := none
   requireEffect : Option Effect := none
   requireTenantMatch : Bool := false
+  requireRole : Option String := none
 deriving Repr
 
 /-- JSON contract postconditions (subset discharged in Lean). -/
@@ -43,6 +45,23 @@ theorem actionHasEffectD_sound (a : Action) (e : Effect) :
     actionHasEffectD a e = true ↔ actionHasEffect a e := by
   simp [actionHasEffectD, actionHasEffect, decide_eq_true_iff]
 
+def principalHasRole (p : Principal) (role : String) : Prop :=
+  role ∈ p.roles
+
+def principalHasRoleD (p : Principal) (role : String) : Bool :=
+  decide (role ∈ p.roles)
+
+/--
+**Meaning:** Role membership decider reflects `principalHasRole`.
+
+**Trusted use:** Optional `require_role` discharge when semantics_layer is `lean`.
+
+**Does not imply:** Role expansion to capabilities without `PrincipalCapabilitiesAligned`.
+-/
+theorem principalHasRoleD_sound (p : Principal) (role : String) :
+    principalHasRoleD p role = true ↔ principalHasRole p role := by
+  simp [principalHasRoleD, principalHasRole, decide_eq_true_iff]
+
 def contractPreD (spec : ContractPreSpec) (p : Principal) (a : Action) : Bool :=
   let capOk := match spec.requireCapability with
     | none => true
@@ -51,7 +70,10 @@ def contractPreD (spec : ContractPreSpec) (p : Principal) (a : Action) : Bool :=
     | none => true
     | some eff => actionHasEffectD a eff
   let tenantOk := if spec.requireTenantMatch then actionWithinTenantD p a else true
-  capOk && effectOk && tenantOk
+  let roleOk := match spec.requireRole with
+    | none => true
+    | some role => principalHasRoleD p role
+  capOk && effectOk && tenantOk && roleOk
 
 def ContractPreHolds (spec : ContractPreSpec) (p : Principal) (a : Action) : Prop :=
   (match spec.requireCapability with
@@ -60,22 +82,25 @@ def ContractPreHolds (spec : ContractPreSpec) (p : Principal) (a : Action) : Pro
   (match spec.requireEffect with
     | none => True
     | some eff => actionHasEffect a eff) ∧
-    (if spec.requireTenantMatch then ActionWithinTenant p a else True)
+  (if spec.requireTenantMatch then ActionWithinTenant p a else True) ∧
+  (match spec.requireRole with
+    | none => True
+    | some role => principalHasRole p role)
 
 /--
 **Meaning:** JSON contract pre decider reflects conservative `ContractPreHolds`.
 
 **Trusted use:** Generated `concrete_contract_pre_*` proof soundness.
 
-**Does not imply:** Unmapped JSON pre fields (`require_role`, refs) hold.
+**Does not imply:** Unmapped JSON pre fields (`require_role` when runtime-only, policy/evidence refs) hold.
 -/
 theorem contractPreD_sound (spec : ContractPreSpec) (p : Principal) (a : Action) :
     contractPreD spec p a = true ↔ ContractPreHolds spec p a := by
-  rcases spec with ⟨cap, eff, tenant⟩
+  rcases spec with ⟨cap, eff, tenant, role⟩
   unfold contractPreD ContractPreHolds
-  cases cap <;> cases eff <;> cases tenant <;>
+  cases cap <;> cases eff <;> cases tenant <;> cases role <;>
     simp [hasCapabilityD_sound, actionHasEffectD_sound, actionWithinTenantD_sound,
-      decide_eq_true_iff, and_left_comm, and_assoc]
+      principalHasRoleD_sound, decide_eq_true_iff, and_left_comm, and_assoc]
 
 def contractPostD (spec : ContractPostSpec) (ev : Event) : Bool :=
   let decisionOk := match spec.requireDecision with
@@ -181,5 +206,27 @@ theorem traceSatisfiesContractSpecsD_sound (pre : ContractPreSpec) (post : Contr
       cases reqSafe <;>
         simp [traceSatisfiesContractSpecsD, TraceSatisfiesContractSpecs, ih,
           satisfiesContractSpecD_sound, contractInvariantD_sound, and_assoc, and_left_comm]
+
+/--
+**Meaning:** Role pre discharge plus alignment yields capability via static `RoleMap`.
+
+**Trusted use:** Generated role discharge when `semantics_layer.require_role = lean`.
+
+**Does not imply:** Unmapped JSON pre fields (policy/evidence refs) or automatic capability expansion.
+-/
+theorem contractPre_role_aligned_capability (spec : ContractPreSpec) (rm : RoleMap) (p : Principal)
+    (role cap : String) :
+    spec.requireRole = some role → ContractPreHolds spec p defaultAction →
+    PrincipalCapabilitiesAligned rm p → cap ∈ rm.lookup role → HasCapability p cap := by
+  intro hrole hpre hAlign hcap
+  have hroleIn : principalHasRole p role := by
+    rcases hpre with ⟨_, _, _, hroleHold⟩
+    rw [hrole] at hroleHold
+    exact hroleHold
+  exact aligned_role_capability_granted rm p role cap hAlign hroleIn hcap
+
+private def defaultAction : Action :=
+  { id := "", toolName := "", capability := "", capabilityEffect := Effect.read,
+    effects := [], reads := [], writes := [] }
 
 end PFCore
