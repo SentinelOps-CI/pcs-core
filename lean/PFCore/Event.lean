@@ -29,6 +29,13 @@ def eventSafeD (ev : Event) : Bool :=
   | Decision.deny => true
   | Decision.allow => actionAllowedD ev.principal ev.action
 
+/--
+**Meaning:** The boolean `eventSafeD` decider reflects the `EventSafe` predicate.
+
+**Trusted use:** Soundness link between per-event deciders and Prop-level event safety.
+
+**Does not imply:** Denied events were safe to deny, or external policy correctness.
+-/
 theorem eventSafeD_sound (ev : Event) :
     eventSafeD ev = true ↔ EventSafe ev := by
   cases ev with

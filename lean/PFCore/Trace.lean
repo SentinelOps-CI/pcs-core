@@ -30,12 +30,33 @@ def eventInD (ev : Event) (tr : Trace) : Bool :=
   | Trace.empty => false
   | Trace.cons tr' e => decide (ev == e) || eventInD ev tr'
 
+/--
+**Meaning:** The empty trace is trivially safe.
+
+**Trusted use:** Base case for trace-safety induction and empty-trace decider proofs.
+
+**Does not imply:** Any runtime activity occurred or was authorized.
+-/
 theorem traceSafe_empty : TraceSafe Trace.empty := trivial
 
+/--
+**Meaning:** A cons trace is safe exactly when its prefix is safe and the new head event is safe.
+
+**Trusted use:** Structural reasoning and `traceSafe_cons` in generated prop-level proofs.
+
+**Does not imply:** Hash-chain integrity or sequential contract composition beyond PF-Core rules.
+-/
 theorem traceSafe_cons (tr : Trace) (ev : Event) :
     TraceSafe (Trace.cons tr ev) ↔ TraceSafe tr ∧ EventSafe ev := by
   rfl
 
+/--
+**Meaning:** The boolean `traceSafeD` decider reflects the `TraceSafe` predicate.
+
+**Trusted use:** Lifting decider results (including `decide` proofs) to Prop-level `TraceSafe`.
+
+**Does not imply:** Decider completeness for artifacts outside the PF-Core JSON mapping.
+-/
 theorem traceSafeD_sound (tr : Trace) :
     traceSafeD tr = true ↔ TraceSafe tr := by
   induction tr with
@@ -43,6 +64,13 @@ theorem traceSafeD_sound (tr : Trace) :
   | cons tr ev ih =>
     simp [traceSafeD, TraceSafe, eventSafeD_sound, ih, and_left_comm]
 
+/--
+**Meaning:** The boolean `eventInD` decider reflects structural `EventIn` membership.
+
+**Trusted use:** Generated proofs referencing event membership in concrete traces.
+
+**Does not imply:** Semantic equality of events beyond structural `Event` equality.
+-/
 theorem eventInD_sound (ev : Event) (tr : Trace) :
     eventInD ev tr = true ↔ EventIn ev tr := by
   induction tr with
