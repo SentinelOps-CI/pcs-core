@@ -33,9 +33,47 @@ export type ArtifactType =
   | "EvidenceBundle.v0"
   | "ScienceClaimBundle.v0"
   | "VerificationResult.v0"
-  | "SignedScienceClaimBundle.v0";
+  | "SignedScienceClaimBundle.v0"
+  | "PFCorePrincipal.v0"
+  | "PFCoreCapability.v0"
+  | "PFCoreResource.v0"
+  | "PFCoreAction.v0"
+  | "PFCoreEffect.v0"
+  | "PFCoreDecision.v0"
+  | "PFCoreEvent.v0"
+  | "PFCoreTrace.v0"
+  | "PFCoreContract.v0"
+  | "PFCoreHandoff.v0"
+  | "PFCoreRuntimeObservation.v0"
+  | "PFCoreCertificate.v0"
+  | "LeanCheckResult.v0"
+  | "ToolUseTrace.v0"
+  | "PCSBridgeCertificate.v0";
+
+const EXPLICIT_ARTIFACT_TYPES = new Set<ArtifactType>([
+  "PFCorePrincipal.v0",
+  "PFCoreCapability.v0",
+  "PFCoreResource.v0",
+  "PFCoreAction.v0",
+  "PFCoreEffect.v0",
+  "PFCoreDecision.v0",
+  "PFCoreEvent.v0",
+  "PFCoreTrace.v0",
+  "PFCoreContract.v0",
+  "PFCoreHandoff.v0",
+  "PFCoreRuntimeObservation.v0",
+  "PFCoreCertificate.v0",
+  "LeanCheckResult.v0",
+  "ToolUseTrace.v0",
+  "PCSBridgeCertificate.v0",
+  "ClaimArtifact.v0",
+]);
 
 export function detectArtifactType(data: Record<string, unknown>): ArtifactType | null {
+  const explicit = data.artifact_type;
+  if (typeof explicit === "string" && EXPLICIT_ARTIFACT_TYPES.has(explicit as ArtifactType)) {
+    return explicit as ArtifactType;
+  }
   if ("signed_bundle_id" in data && "science_claim_bundle" in data) {
     return "SignedScienceClaimBundle.v0";
   }
