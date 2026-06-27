@@ -1,0 +1,15 @@
+{
+  "schema_version": "v0",
+  "artifact_type": "PFCoreContract.v0",
+  "contract_id": "trace-safe",
+  "name": "Trace-safe default",
+  "pre": {},
+  "post": {},
+  "invariant": {
+    "require_trace_safe": true
+  },
+  "semantics_layer": {
+    "require_trace_safe": "lean"
+  },
+  "signature_or_digest": "sha256:d399d3289e5438986ea1af914820bd8a5b0a6b674e7253482fc5d56c12ff763c"
+}
