@@ -3,30 +3,27 @@
 from __future__ import annotations
 
 import os
-import subprocess
 from pathlib import Path
 
 import pytest
 
+from pcs_core.pf_core_hash_vector_parity import verify_pf_core_hash_vectors
+
 ROOT = Path(__file__).resolve().parents[2]
-SCRIPT = ROOT / "scripts" / "verify-pf-core-hash-vectors.sh"
 LOCAL_VECTORS = Path(__file__).resolve().parent / "hash_vectors"
 PF_CORE_TAG = os.environ.get("PF_CORE_TAG", "pf-core-v0.6.0")
+UPSTREAM_FIXTURES = os.environ.get("PF_CORE_UPSTREAM_VECTORS")
 
 
-@pytest.mark.skipif(not SCRIPT.is_file(), reason="verify script missing")
-def test_hash_vectors_match_pf_core_adapter() -> None:
-    """Frozen vectors under python/tests/hash_vectors match pf-core tag."""
-    env = {**os.environ, "PF_CORE_TAG": PF_CORE_TAG}
-    proc = subprocess.run(
-        ["bash", str(SCRIPT), str(LOCAL_VECTORS)],
-        cwd=ROOT,
-        capture_output=True,
-        text=True,
-        env=env,
-        check=False,
+def test_hash_vectors_match_pf_core_adapter_native() -> None:
+    """Frozen vectors match pf-core tag via native parity checker (CI-friendly)."""
+    upstream = Path(UPSTREAM_FIXTURES) if UPSTREAM_FIXTURES else None
+    drift = verify_pf_core_hash_vectors(
+        LOCAL_VECTORS,
+        pf_core_tag=PF_CORE_TAG,
+        upstream_dir=upstream,
     )
-    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert drift == [], "\n".join(drift)
 
 
 def test_trace_certificate_vector_has_sha256_prefix_digest() -> None:
