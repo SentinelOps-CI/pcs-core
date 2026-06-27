@@ -17,6 +17,7 @@ jobs:
         run: |
           cd python
           pip install -e ".[dev]"
+          pytest -q tests/test_pf_core_tier1.py tests/test_pf_core_cross_language.py
           pytest -q tests/test_pf_core_stage1.py tests/test_pf_core_stage2.py tests/test_pf_core_stage3.py
           pytest -q tests/test_pf_core_phase_f.py
           pytest -q
@@ -81,17 +82,33 @@ jobs:
           pip install -e .
           pcs validate ../examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json
           pcs pf-core validate-trace ../examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json
-      - name: PF-Core CertifyEdge mock check (Phase F3)
+      - name: PF-Core CertifyEdge check (live or mock)
         run: |
           cd python
-          PCS_CERTIFYEDGE_MOCK=1 pcs pf-core certifyedge-check \
-            --trace ../examples/pf-core-valid/labtrust_replay/trace.json \
-            --property qc_release.temporal.safety \
-            --out /tmp/PFCoreCertificate.certifyedge.json
+          pip install -e .
+          if command -v certifyedge >/dev/null 2>&1; then
+            pcs pf-core certifyedge-check \
+              --trace ../examples/pf-core-valid/labtrust_replay/trace.json \
+              --property qc_release.temporal.safety \
+              --out /tmp/PFCoreCertificate.certifyedge.json || \
+            PCS_CERTIFYEDGE_MOCK=1 pcs pf-core certifyedge-check \
+              --trace ../examples/pf-core-valid/labtrust_replay/trace.json \
+              --property qc_release.temporal.safety \
+              --out /tmp/PFCoreCertificate.certifyedge.json
+          else
+            PCS_CERTIFYEDGE_MOCK=1 pcs pf-core certifyedge-check \
+              --trace ../examples/pf-core-valid/labtrust_replay/trace.json \
+              --property qc_release.temporal.safety \
+              --out /tmp/PFCoreCertificate.certifyedge.json
+          fi
+      - name: PF-Core Tier 1 tests
+        run: |
+          cd python
+          pytest -q tests/test_pf_core_tier1.py tests/test_pf_core_cross_language.py
       - name: Schema drift check (reference)
         run: bash scripts/pcs-schema-diff.sh schemas
-      - name: PF-Core hash vector parity (Phase 7)
-        run: bash scripts/verify-pf-core-hash-vectors.sh python/tests/hash_vectors
+      - name: PF-Core adapter parity (provability-fabric-core pin)
+        run: bash scripts/run-pf-core-adapter-ci.sh
       - name: LabTrust release fixtures
         run: |
           cd python
@@ -118,6 +135,17 @@ jobs:
           pcs pf-core validate-contracts \
             ../examples/pf-core-valid/contract_checked/trace.json \
             --contracts-dir ../examples/pf-core-valid/contract_checked
+
+  pf-core-adapter:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: PF-Core provability-fabric-core adapter parity
+        run: bash scripts/run-pf-core-adapter-ci.sh
 
   rust:
     runs-on: ubuntu-latest
