@@ -90,6 +90,26 @@ AUTHORIZATION_TO_DECISION = {
 }
 
 RUNTIME_CHECKED_CLAIM_CLASSES = frozenset({"SchemaValidated", "RuntimeChecked", "OutOfScope"})
+TRACE_CLAIM_CLASSES = frozenset(
+    {
+        "SchemaValidated",
+        "RuntimeChecked",
+        "ReplayValidated",
+        "AssumptionDeclared",
+        "OutOfScope",
+    }
+)
+CERTIFICATE_CLAIM_CLASSES = frozenset(
+    {
+        "SchemaValidated",
+        "RuntimeChecked",
+        "CertificateChecked",
+        "LeanKernelChecked",
+        "ReplayValidated",
+        "AssumptionDeclared",
+        "OutOfScope",
+    }
+)
 LEAN_CLAIM_CLASSES = frozenset({"LeanKernelChecked"})
 
 
@@ -139,6 +159,15 @@ class ClaimClassOverclaim(PFCoreRuntimeError):
         super().__init__(
             "ClaimClassOverclaim",
             f"claim_class {claim_class!r} exceeds available assurance",
+            path,
+        )
+
+
+class CapabilityEffectMismatch(PFCoreRuntimeError):
+    def __init__(self, capability: str, effect: str, path: str | None = None):
+        super().__init__(
+            "CapabilityEffectMismatch",
+            f"capability {capability!r} effect_kind {effect!r} not listed in action effects",
             path,
         )
 
@@ -315,11 +344,41 @@ def _validate_principal(principal: Any, *, path: str = "principal") -> dict[str,
 
 
 def _assert_claim_class_allowed(claim_class: str, *, proof_ref: str | None = None) -> None:
+    if claim_class not in TRACE_CLAIM_CLASSES:
+        raise ClaimClassOverclaim(claim_class, "claim_class")
     proof_term_ref = proof_ref
     if claim_class in LEAN_CLAIM_CLASSES and not proof_term_ref:
         raise ClaimClassOverclaim(claim_class, "claim_class")
     if claim_class == "CertificateChecked":
         raise ClaimClassOverclaim(claim_class, "claim_class")
+
+
+def validate_action_effects_known(action: Mapping[str, Any], *, path: str = "action") -> None:
+    effects = action.get("effects")
+    if not isinstance(effects, list):
+        raise UnknownEffect("<missing>", f"{path}.effects")
+    _validate_effects(effects, path=f"{path}.effects")
+
+
+def validate_action_capabilities_known(action: Mapping[str, Any], *, path: str = "action") -> None:
+    capability = action.get("capability")
+    if not isinstance(capability, dict):
+        raise UnknownCapability("<missing>", f"{path}.capability")
+    _validate_capability(capability, path=f"{path}.capability")
+
+
+def validate_action_capability_effects(action: Mapping[str, Any], *, path: str = "action") -> None:
+    capability = action.get("capability")
+    if not isinstance(capability, dict):
+        raise UnknownCapability("<missing>", f"{path}.capability")
+    cap = _validate_capability(capability, path=f"{path}.capability")
+    effects = action.get("effects")
+    if not isinstance(effects, list):
+        raise UnknownEffect("<missing>", f"{path}.effects")
+    validated_effects = _validate_effects(effects, path=f"{path}.effects")
+    cap_effect = cap["effect_kind"]
+    if not any(effect["effect_kind"] == cap_effect for effect in validated_effects):
+        raise CapabilityEffectMismatch(cap["capability_id"], cap_effect, f"{path}.effects")
 
 
 def _finalize_event(

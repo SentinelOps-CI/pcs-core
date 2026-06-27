@@ -78,8 +78,10 @@ def resource_to_lean(resource: Mapping[str, Any]) -> str:
 def action_to_lean(action: Mapping[str, Any], *, name: str) -> str:
     capability = action.get("capability")
     cap_id = ""
+    cap_effect_expr = "Effect.read"
     if isinstance(capability, dict):
         cap_id = str(capability.get("capability_id") or "")
+        cap_effect_expr = effect_kind_to_lean(str(capability.get("effect_kind") or "file.read"))
     effects = action.get("effects")
     effect_exprs: list[str] = []
     if isinstance(effects, list):
@@ -108,6 +110,7 @@ def action_to_lean(action: Mapping[str, Any], *, name: str) -> str:
         f"    id := {lean_string_literal(str(action.get('action_id') or ''))},\n"
         f"    toolName := {lean_string_literal(str(action.get('tool_name') or ''))},\n"
         f"    capability := {lean_string_literal(cap_id)},\n"
+        f"    capabilityEffect := {cap_effect_expr},\n"
         f"    effects := [{', '.join(effect_exprs)}],\n"
         f"    reads := {reads_expr},\n"
         f"    writes := {writes_expr}\n"

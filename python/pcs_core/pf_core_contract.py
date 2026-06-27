@@ -102,16 +102,9 @@ def trace_has_contract_binding(trace: Mapping[str, Any]) -> bool:
 
 
 def validate_trace_contract_binding(trace: Mapping[str, Any]) -> list[str]:
-    """Return errors when LeanKernelChecked traces lack contract grounding."""
-    claim_class = str(trace.get("claim_class") or "")
-    if claim_class != "LeanKernelChecked":
-        return []
-    if trace_has_contract_binding(trace):
-        return []
-    return [
-        "ContractBindingMissing: claim_class LeanKernelChecked requires contract_refs on "
-        f"events or default_contract_ref {DEFAULT_TRACE_SAFE_CONTRACT_ID!r}"
-    ]
+    """Traces no longer carry LeanKernelChecked; contract binding is certificate-side."""
+    _ = trace
+    return []
 
 
 def _validate_contract_layers(data: dict[str, Any], path: Path | str) -> None:
