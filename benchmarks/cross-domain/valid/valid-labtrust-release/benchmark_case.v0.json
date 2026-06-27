@@ -1,0 +1,18 @@
+{
+  "schema_version": "v0",
+  "case_id": "valid-labtrust-release",
+  "task_id": "cross-domain-release-chain-v0",
+  "workflow_id": "labtrust.qc_release_v0.1",
+  "case_kind": "valid_release",
+  "input_artifacts": {
+    "release_directory": "examples/labtrust-release"
+  },
+  "expected_status": "passed",
+  "expected_system_outcome": "admitted",
+  "expected_failure_code": null,
+  "expected_responsible_component": null,
+  "expected_repair_hint_kind": null,
+  "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+  "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
+  "signature_or_digest": "sha256:f0ed8a829c774c1c05879b53e76aa2c99f74b243b41829e7d50c5ad243867428"
+}

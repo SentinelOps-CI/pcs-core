@@ -1,0 +1,28 @@
+{
+  "schema_version": "v0",
+  "run_id": "bench-run-invalid-witness-hash",
+  "task_id": "computation-reproducibility-v0",
+  "case_id": "invalid-witness-hash",
+  "started_at": "2026-05-22T11:54:19Z",
+  "completed_at": "2026-05-22T11:54:19Z",
+  "commands": [
+    {
+      "command": "validate_release_chain benchmarks/computation-reproducibility/input_releases/invalid-witness-hash",
+      "exit_code": 1
+    }
+  ],
+  "artifacts_produced": [],
+  "observed_status": "passed",
+  "observed_failure_code": "rejected_computation_witness",
+  "observed_responsible_component": "certificate_producer",
+  "observed_repair_hint": "align_certificate_id",
+  "system_admission_outcome": "not_evaluated",
+  "release_chain_status": "invalid",
+  "certificate_status": "not_applicable",
+  "scientific_memory_import_status": "not_applicable",
+  "scientific_memory_render_status": "not_applicable",
+  "duration_ms": 85,
+  "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+  "source_commit": "d444444444444444444444444444444444444444",
+  "signature_or_digest": "sha256:033f7300562a95ae6fc6658f30b09141099395a6b3c68169a4267606d3f2beb5"
+}

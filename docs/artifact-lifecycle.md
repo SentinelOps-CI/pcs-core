@@ -2,7 +2,7 @@
 
 ## Canonical status enum
 
-All repos use the same status strings:
+All repositories use the same status strings.
 
 `Draft`, `Extracted`, `HumanReviewed`, `Formalized`, `ProofPending`, `ProofChecked`, `CertificatePending`, `CertificateChecked`, `RuntimeObserved`, `RuntimeChecked`, `Rejected`, `EmpiricalOnly`, `Deprecated`, `Stale`
 
@@ -11,7 +11,7 @@ All repos use the same status strings:
 | Status | Role |
 |--------|------|
 | `Draft` | Work in progress |
-| `RuntimeObserved` | Run completed; receipt recorded |
+| `RuntimeObserved` | Run completed with receipt recorded |
 | `CertificatePending` | Awaiting CertifyEdge |
 | `CertificateChecked` | Certificate attached and valid |
 | `Rejected` | Checker or verifier failed |
@@ -19,20 +19,20 @@ All repos use the same status strings:
 
 ## Typical LabTrust v0.1 flow
 
-1. **Run** — LabTrust produces run output; receipt status `RuntimeObserved`.
-2. **Export** — `RuntimeReceipt.v0`, `trace.json`, pending `ScienceClaimBundle.v0` (`certificates` may be empty).
-3. **Certify** — CertifyEdge emits `TraceCertificate.v0` (`CertificateChecked` or `Rejected`).
-4. **Attach** — Bundle updated; claim status moves toward `CertificateChecked`.
-5. **Verify & sign** — Provability Fabric emits `VerificationResult.v0`.
-6. **Import** — Scientific Memory renders with guarantee-type labels.
+LabTrust produces run output with receipt status `RuntimeObserved`, then exports `RuntimeReceipt.v0`, `trace.json`, and a pending `ScienceClaimBundle.v0` that may ship with an empty `certificates` array.
 
-## Pending vs certified bundles
+CertifyEdge emits `TraceCertificate.v0` with status `CertificateChecked` or `Rejected`, the bundle is updated toward `CertificateChecked`, and Provability Fabric emits `VerificationResult.v0` followed by signing.
 
-- **Pending**: `certificates: []` allowed; claim may be `CertificatePending`.
-- **Certified**: at least one `TraceCertificate.v0`; semantic trace-hash alignment required.
+Scientific Memory imports and renders with guarantee-type labels, and pcs-core publishes `ReleaseManifest.v0`, stage `HandoffManifest.v0` files, and `ReleaseChainValidationResult.v0` under `examples/labtrust-release/` as described in [labtrust-release-fixtures.md](labtrust-release-fixtures.md).
+
+## Pending and certified bundles
+
+Pending bundles allow `certificates: []` while the claim may remain `CertificatePending`, and certified bundles include at least one `TraceCertificate.v0` with semantic trace-hash alignment enforced by validation.
 
 ## Rejection paths
 
-- Checker returns `Rejected` on `TraceCertificate.v0`.
-- Verifier records `failed` checks on `VerificationResult.v0`.
-- Invalid schema or semantic mismatch: reject at validation (no artifact promotion).
+Checkers may return `Rejected` on `TraceCertificate.v0`, verifiers may record failed checks on `VerificationResult.v0`, and invalid schema or semantic mismatch stops validation before any artifact promotion.
+
+## Registry enforcement
+
+`pcs registry check-artifact` verifies JSON Schema validity, registry-allowed status, required release fields, and schema file presence as documented in [artifact-registry.md](artifact-registry.md) and [status-transition-policy.md](status-transition-policy.md).

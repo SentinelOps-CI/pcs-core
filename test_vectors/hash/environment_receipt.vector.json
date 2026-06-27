@@ -1,0 +1,6 @@
+{
+  "artifact_type": "EnvironmentReceipt.v0",
+  "input_file": "examples/environment_receipt.valid.json",
+  "expected_digest": "sha256:3739a2ed0a132d5c55dc6e7f53dabca2c7e57cbb188962a0ce670762850f4e01",
+  "canonical_json": "{\"architecture\":\"x86_64\",\"container_digest\":\"\",\"container_image\":\"\",\"environment_id\":\"env-repro-001\",\"environment_kind\":\"uv\",\"hardware_summary\":\"conformance-runner\",\"language_runtimes\":[\"python==3.12.3\"],\"os\":\"linux\",\"packages\":[\"numpy==2.1.0\",\"pandas==2.2.2\"],\"schema_version\":\"v0\",\"source_commit\":\"e555555555555555555555555555555555555555\",\"source_repo\":\"https://github.com/example/scientific-computation-runner\"}"
+}

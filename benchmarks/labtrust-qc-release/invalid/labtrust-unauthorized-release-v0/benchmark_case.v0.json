@@ -1,0 +1,35 @@
+{
+  "case_id": "labtrust-unauthorized-release-v0",
+  "case_kind": "invalid_render",
+  "expected_failure_code": "unauthorized_release",
+  "expected_repair_hint_kind": "unknown",
+  "expected_responsible_component": "runtime_producer",
+  "expected_status": "failed",
+  "expected_system_outcome": "render_failed",
+  "input_artifacts": {
+    "artifacts": [
+      {
+        "artifact_type": "RunMeta.v0",
+        "path": "run_meta.json",
+        "role": "run_meta_json"
+      },
+      {
+        "artifact_type": "RuntimeReceipt.v0",
+        "path": "runtime_receipt.json",
+        "role": "runtime_receipt_json"
+      },
+      {
+        "artifact_type": "LabTrustTrace.v0",
+        "path": "trace.json",
+        "role": "trace_json"
+      }
+    ],
+    "release_directory": "benchmarks/labtrust-qc-release/invalid/labtrust-unauthorized-release-v0/input_artifacts"
+  },
+  "schema_version": "v0",
+  "signature_or_digest": "sha256:4a46de1adf80ead9d62f5fdd709c466772426ce4f599f026dbdde30f4fdbc462",
+  "source_commit": "5eac714fd7dc813d2523febcb85c56821558a1b7",
+  "source_repo": "https://github.com/fraware/LabTrust-Gym",
+  "task_id": "labtrust-qc-release-v0",
+  "workflow_id": "hospital_lab.qc_release"
+}

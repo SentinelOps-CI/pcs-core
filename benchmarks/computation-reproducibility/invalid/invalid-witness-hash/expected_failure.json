@@ -1,0 +1,13 @@
+{
+  "schema_version": "v0",
+  "manifest_id": "failure-manifest-invalid-witness-hash",
+  "case_id": "invalid-witness-hash",
+  "task_id": "computation-reproducibility-v0",
+  "failure_code": "rejected_computation_witness",
+  "responsible_component": "certificate_producer",
+  "repair_hint_kind": "align_certificate_id",
+  "message": "Computation witness status must be CertificateChecked for release.",
+  "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+  "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
+  "signature_or_digest": "sha256:8da70bf7513006c76a6ff90c5c265fdfe64ce159eecbc99afeff2481ce42e240"
+}

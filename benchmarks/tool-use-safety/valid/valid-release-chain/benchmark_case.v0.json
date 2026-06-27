@@ -1,0 +1,19 @@
+{
+  "schema_version": "v0",
+  "case_id": "valid-release-chain",
+  "task_id": "tool-use-safety-v0",
+  "workflow_id": "agent_tool_use.safety_v0",
+  "case_kind": "valid_release",
+  "input_artifacts": {
+    "release_directory": "examples/tool-use-release"
+  },
+  "expected_status": "passed",
+  "expected_system_outcome": "admitted",
+  "expected_failure_code": null,
+  "expected_responsible_component": null,
+  "expected_repair_hint_kind": null,
+  "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+  "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
+  "signature_or_digest": "sha256:a63be7a33957049a668f86e1ea2b0647986c41b4cba202d0ff381718c2527967",
+  "expected_detection_layer": "labtrust"
+}

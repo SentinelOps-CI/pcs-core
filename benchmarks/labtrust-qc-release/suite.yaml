@@ -1,0 +1,62 @@
+schema_version: v0
+suite_id: labtrust-qc-release-v0
+workflow_id: hospital_lab.qc_release
+task_id: labtrust-qc-release-v0
+generator: labtrust
+generator_version: 0.2.0
+seed: 42
+valid_cases:
+- labtrust-valid-release-v0
+invalid_cases:
+- labtrust-certificate-id-tamper-v0
+- labtrust-lean-rejected-certificate-v0
+- labtrust-lean-signed-hash-mismatch-v0
+- labtrust-lean-stale-certificate-v0
+- labtrust-lean-trace-hash-mismatch-v0
+- labtrust-legacy-handoff-file-v0
+- labtrust-missing-qc-result-v0
+- labtrust-placeholder-commit-v0
+- labtrust-scientific-memory-import-failure-v0
+- labtrust-stale-trace-after-certificate-v0
+- labtrust-trace-hash-tamper-v0
+- labtrust-unauthorized-release-v0
+cases:
+- case_id: labtrust-certificate-id-tamper-v0
+  polarity: invalid
+  path: invalid/labtrust-certificate-id-tamper-v0
+- case_id: labtrust-lean-rejected-certificate-v0
+  polarity: invalid
+  path: invalid/labtrust-lean-rejected-certificate-v0
+- case_id: labtrust-lean-signed-hash-mismatch-v0
+  polarity: invalid
+  path: invalid/labtrust-lean-signed-hash-mismatch-v0
+- case_id: labtrust-lean-stale-certificate-v0
+  polarity: invalid
+  path: invalid/labtrust-lean-stale-certificate-v0
+- case_id: labtrust-lean-trace-hash-mismatch-v0
+  polarity: invalid
+  path: invalid/labtrust-lean-trace-hash-mismatch-v0
+- case_id: labtrust-legacy-handoff-file-v0
+  polarity: invalid
+  path: invalid/labtrust-legacy-handoff-file-v0
+- case_id: labtrust-missing-qc-result-v0
+  polarity: invalid
+  path: invalid/labtrust-missing-qc-result-v0
+- case_id: labtrust-placeholder-commit-v0
+  polarity: invalid
+  path: invalid/labtrust-placeholder-commit-v0
+- case_id: labtrust-scientific-memory-import-failure-v0
+  polarity: invalid
+  path: invalid/labtrust-scientific-memory-import-failure-v0
+- case_id: labtrust-stale-trace-after-certificate-v0
+  polarity: invalid
+  path: invalid/labtrust-stale-trace-after-certificate-v0
+- case_id: labtrust-trace-hash-tamper-v0
+  polarity: invalid
+  path: invalid/labtrust-trace-hash-tamper-v0
+- case_id: labtrust-unauthorized-release-v0
+  polarity: invalid
+  path: invalid/labtrust-unauthorized-release-v0
+- case_id: labtrust-valid-release-v0
+  polarity: valid
+  path: valid/labtrust-valid-release-v0

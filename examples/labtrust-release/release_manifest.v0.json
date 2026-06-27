@@ -1,0 +1,122 @@
+{
+  "schema_version": "v0",
+  "release_id": "release-pcs-v0.1-labtrust-qc",
+  "release_candidate": "pcs-v0.1.0-rc1",
+  "generated_at": "2026-05-18T23:17:38Z",
+  "validation_profile": "labtrust-v0.1-release-chain",
+  "workflow_profile_id": "labtrust.qc_release_v0.1",
+  "chain_root": {
+    "trace_hash": "sha256:c3e8a3dc4ad86d533de1dfa4ae7fe2a338c2cff3c945404c96a75216524d58cd",
+    "certificate_id": "cert-trace-a1b8ff9d-7d5f-489c-98b1-a3a630cb87d7",
+    "certified_bundle_hash": "sha256:bb740698a01c4e918ca0f346e5bfaed83e6665da8df84e931c0d50e03ce82ffe",
+    "signed_bundle_hash": "sha256:308ef2f751e2fb3159c4b88cc294bed2e94944e97e268268c7c46a7f489019f6"
+  },
+  "release_chain_validation_result": {
+    "path": "release_chain_validation_result.v0.json",
+    "sha256": "sha256:2fac46ed0a92ce95505662fef25bdc09ebca1af7ad8fdfc8c3153936b8a46a37"
+  },
+  "canonical_signed_bundle": {
+    "path": "signed_science_claim_bundle.json",
+    "sha256": "sha256:308ef2f751e2fb3159c4b88cc294bed2e94944e97e268268c7c46a7f489019f6"
+  },
+  "canonical_claim_id": "claim-pcs-qc-release-v0.1",
+  "limitations_notice": "PCS v0.1 demonstrates a proof-carrying simulated lab workflow; it does not claim clinical validity or production certification.",
+  "producer_repos": {
+    "pcs_core": {
+      "repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9"
+    },
+    "labtrust_gym": {
+      "repo": "https://github.com/fraware/LabTrust-Gym",
+      "commit": "17ed831acfd775889ab497d11004cceb083a9c2d"
+    },
+    "certifyedge": {
+      "repo": "https://github.com/fraware/CertifyEdge",
+      "commit": "635fca3771ad54fe3f8b49d1bb77ee35d0680ddc"
+    },
+    "provability_fabric": {
+      "repo": "https://github.com/SentinelOps-CI/provability-fabric",
+      "commit": "b0dbbbe1c110ec2301d452d2ef1074354cce170f"
+    },
+    "scientific_memory": {
+      "repo": "https://github.com/fraware/scientific-memory",
+      "commit": "0e059e934bc95bcc4dc0cb6593b18b07a28529a2"
+    }
+  },
+  "artifacts": {
+    "runtime_receipt.json": {
+      "artifact_type": "RuntimeReceipt.v0",
+      "schema": "RuntimeReceipt.v0.schema.json",
+      "producer": "LabTrust-Gym",
+      "source_repo": "https://github.com/fraware/LabTrust-Gym",
+      "source_commit": "17ed831acfd775889ab497d11004cceb083a9c2d",
+      "sha256": "sha256:3ad5c55458a79ef502508f86cd215c746d42b4f0cc5c9aa4feeba9c03b4e1d60"
+    },
+    "science_claim_bundle.certified.json": {
+      "artifact_type": "ScienceClaimBundle.v0",
+      "schema": "ScienceClaimBundle.v0.schema.json",
+      "producer": "LabTrust-Gym",
+      "source_repo": "https://github.com/fraware/LabTrust-Gym",
+      "source_commit": "17ed831acfd775889ab497d11004cceb083a9c2d",
+      "sha256": "sha256:b8af33a7b24abf12fd938a59af6be91ac5e761365d8ecf3639fd0f196969de36"
+    },
+    "science_claim_bundle.pending.json": {
+      "artifact_type": "ScienceClaimBundle.v0",
+      "schema": "ScienceClaimBundle.v0.schema.json",
+      "producer": "LabTrust-Gym",
+      "source_repo": "https://github.com/fraware/LabTrust-Gym",
+      "source_commit": "17ed831acfd775889ab497d11004cceb083a9c2d",
+      "sha256": "sha256:f71e6d92c910f6db94661c712e06cf04c946bf560ede48346dd15e88cc54c6c8"
+    },
+    "scientific_memory_import_report.json": {
+      "artifact_type": "ScientificMemory.ImportReport.v0",
+      "schema": "scientific_memory_import_report.json",
+      "producer": "Scientific Memory",
+      "source_repo": "https://github.com/fraware/scientific-memory",
+      "source_commit": "0e059e934bc95bcc4dc0cb6593b18b07a28529a2",
+      "sha256": "sha256:11d2e48a0c811ebc3bd683516c76f42b2849f604717758798c83abdb739251a3"
+    },
+    "signed_science_claim_bundle.json": {
+      "artifact_type": "SignedScienceClaimBundle.v0",
+      "schema": "SignedScienceClaimBundle.v0.schema.json",
+      "producer": "Provability Fabric",
+      "source_repo": "https://github.com/SentinelOps-CI/provability-fabric",
+      "source_commit": "b0dbbbe1c110ec2301d452d2ef1074354cce170f",
+      "sha256": "sha256:308ef2f751e2fb3159c4b88cc294bed2e94944e97e268268c7c46a7f489019f6"
+    },
+    "trace.json": {
+      "artifact_type": "LabTrust.Trace.v0",
+      "schema": "trace.json",
+      "producer": "LabTrust-Gym",
+      "source_repo": "https://github.com/fraware/LabTrust-Gym",
+      "source_commit": "17ed831acfd775889ab497d11004cceb083a9c2d",
+      "sha256": "sha256:f99eb0a90cd2b9819816a25ec4e938663d26ae8d40868cd8188665e940f7ad5c"
+    },
+    "trace_certificate.json": {
+      "artifact_type": "TraceCertificate.v0",
+      "schema": "TraceCertificate.v0.schema.json",
+      "producer": "CertifyEdge",
+      "source_repo": "https://github.com/fraware/CertifyEdge",
+      "source_commit": "635fca3771ad54fe3f8b49d1bb77ee35d0680ddc",
+      "sha256": "sha256:3a9facf4f66ebeb0ac286865d3c801fc976128ba0e28d5b863c95549622f539c"
+    },
+    "verification_result.json": {
+      "artifact_type": "VerificationResult.v0",
+      "schema": "VerificationResult.v0.schema.json",
+      "producer": "Provability Fabric",
+      "source_repo": "https://github.com/SentinelOps-CI/provability-fabric",
+      "source_commit": "b0dbbbe1c110ec2301d452d2ef1074354cce170f",
+      "sha256": "sha256:13e90d156047e9c23497a73813dd27491848b3d4787b2bb7bdb6b023685cb01d"
+    }
+  },
+  "release_status": "Validated",
+  "signature_or_digest": "sha256:a6f51c871eb7e8462d7e7edb6862a22f1aa7546d561dd6478cceecb8cbd24b05",
+  "proof_obligation": {
+    "path": "proof_obligation.v0.json",
+    "sha256": "sha256:de6c1071065220ba134757eefc88d99dd4fc1e60df1e5f74ade12c5b6be2f348"
+  },
+  "lean_check_result": {
+    "path": "lean_check_result.v0.json",
+    "sha256": "sha256:7d63fb9226f64fa235b67666146aff7e6396b82bd9059afce5ce9d29b4d368b8"
+  }
+}

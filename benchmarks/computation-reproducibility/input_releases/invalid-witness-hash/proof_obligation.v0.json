@@ -1,0 +1,65 @@
+{
+  "schema_version": "v0",
+  "obligation_id": "proof-obligation-release-pcs-v0.1-scientific-computation",
+  "release_id": "release-pcs-v0.1-scientific-computation",
+  "workflow_id": "scientific_computation.reproducibility_v0",
+  "obligations": [
+    {
+      "obligation_id": "computation_witness_hash_alignment",
+      "kind": "ComputationWitnessHashAlignment",
+      "inputs": {
+        "witness_id": "witness-sci-comp-repro-001",
+        "witness_result_hashes": [
+          "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        ],
+        "result_artifact_sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "witness_status": "CertificateChecked",
+        "run_receipt_hash": "sha256:9c74749d2ad46c6a60394db676e5527929f9b7bef9a012439d6d14b26d960828"
+      }
+    },
+    {
+      "obligation_id": "verification_admits_bundle",
+      "kind": "VerificationAdmitsBundle",
+      "inputs": {
+        "verification_status": "ProofChecked",
+        "verified_input_bundle_hash": "sha256:c47168f2de32da5f25407f34ab66cba9e853390e22108bf56ea24712343fd60d",
+        "certified_bundle_hash": "sha256:c47168f2de32da5f25407f34ab66cba9e853390e22108bf56ea24712343fd60d",
+        "release_blocking_checks_passed": true
+      }
+    },
+    {
+      "obligation_id": "signed_bundle_admissible",
+      "kind": "SignedBundleAdmissible",
+      "inputs": {
+        "signed_input_bundle_hash": "sha256:c47168f2de32da5f25407f34ab66cba9e853390e22108bf56ea24712343fd60d",
+        "verified_input_bundle_hash": "sha256:c47168f2de32da5f25407f34ab66cba9e853390e22108bf56ea24712343fd60d"
+      }
+    }
+  ],
+  "source_artifacts": {
+    "computation_witness.json": {
+      "path": "computation_witness.json",
+      "artifact_type": "ComputationWitness.v0"
+    },
+    "result_artifact.json": {
+      "path": "result_artifact.json",
+      "artifact_type": "ResultArtifact.v0"
+    },
+    "computation_run_receipt.json": {
+      "path": "computation_run_receipt.json",
+      "artifact_type": "ComputationRunReceipt.v0"
+    },
+    "verification_result.json": {
+      "path": "verification_result.json",
+      "artifact_type": "VerificationResult.v0"
+    },
+    "signed_science_claim_bundle.json": {
+      "path": "signed_science_claim_bundle.json",
+      "artifact_type": "SignedScienceClaimBundle.v0"
+    }
+  },
+  "lean_module": "PCS.Theorems",
+  "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+  "source_commit": "d444444444444444444444444444444444444444",
+  "signature_or_digest": "sha256:8b5791def92cff90bb899cf228e7a26d3305e8e141fae361d698c23bb2dd14b6"
+}

@@ -1,0 +1,51 @@
+{
+  "schema_version": "v0",
+  "producer_id": "labtrust-gym",
+  "suite_id": "labtrust-qc-release-v0",
+  "workflow_id": "hospital_lab.qc_release",
+  "benchmark_runs": [],
+  "coverage_reports": [
+    {
+      "schema_version": "v0",
+      "coverage_id": "labtrust-qc-release-v0-repro",
+      "metric": "release_reproducibility",
+      "numerator": 13.0,
+      "denominator": 13.0,
+      "coverage_ratio": 1.0,
+      "details": {},
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:f1c452c46cf4e302d2afd8daa4928500c279e0ff0de23c6d0c1c16d7eca8e30c"
+    }
+  ],
+  "failure_localization_reports": [],
+  "explain_quality_reports": [],
+  "profile_coverage_reports": [],
+  "commands": [],
+  "logs": [],
+  "source_repo": "https://github.com/fraware/LabTrust-Gym",
+  "source_commit": "5eac714fd7dc813d2523febcb85c56821558a1b7",
+  "signature_or_digest": "sha256:f4ee4fe774cf48660e0fa7b34c7a629edbe8490985dfc62d82b00cce5e5317a0",
+  "artifact_refs": [
+    {
+      "schema_version": "v0",
+      "artifact_type": "BenchmarkRun.v0",
+      "path": "valid/labtrust-valid-release-v0/benchmark_run.labtrust-valid-release-v0.v0.json",
+      "sha256": "sha256:ee83b3920ea273bcc6e1d5860401e15497728638392c0af5ac242fac40919350",
+      "role": "producer_export",
+      "source_repo": "https://github.com/fraware/LabTrust-Gym",
+      "source_commit": "5eac714fd7dc813d2523febcb85c56821558a1b7",
+      "signature_or_digest": "sha256:beda167d29a7114587aeebdc960d30715bf1520e8d9903bc997ac06209d07b17"
+    },
+    {
+      "schema_version": "v0",
+      "artifact_type": "CoverageReport.v0",
+      "path": "benchmarks/reproducibility/coverage_report.labtrust-qc-release-v0-repro.v0.json",
+      "sha256": "sha256:f1c452c46cf4e302d2afd8daa4928500c279e0ff0de23c6d0c1c16d7eca8e30c",
+      "role": "producer_export",
+      "source_repo": "https://github.com/fraware/LabTrust-Gym",
+      "source_commit": "5eac714fd7dc813d2523febcb85c56821558a1b7",
+      "signature_or_digest": "sha256:e089c64c944a38a6a18830c9ff7586fbf1d0fcfc26e9a76c34b01f4430d96817"
+    }
+  ]
+}

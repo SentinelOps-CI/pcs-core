@@ -1,0 +1,272 @@
+{
+  "schema_version": "v0",
+  "report_id": "benchmark-report-labtrust-qc-release-v0",
+  "benchmark_suite_id": "labtrust-qc-release-v0",
+  "runs": [
+    {
+      "run_id": "bench-run-labtrust-valid-release-v0",
+      "case_id": "labtrust-valid-release-v0",
+      "path": "benchmarks/labtrust-qc-release/valid/labtrust-valid-release-v0/benchmark_run.labtrust-valid-release-v0.v0.json",
+      "observed_status": "passed"
+    },
+    {
+      "run_id": "bench-run-labtrust-certificate-id-tamper-v0",
+      "case_id": "labtrust-certificate-id-tamper-v0",
+      "path": "benchmarks/labtrust-qc-release/invalid/labtrust-certificate-id-tamper-v0/benchmark_run.labtrust-certificate-id-tamper-v0.v0.json",
+      "observed_status": "passed"
+    },
+    {
+      "run_id": "bench-run-labtrust-lean-rejected-certificate-v0",
+      "case_id": "labtrust-lean-rejected-certificate-v0",
+      "path": "benchmarks/labtrust-qc-release/invalid/labtrust-lean-rejected-certificate-v0/benchmark_run.labtrust-lean-rejected-certificate-v0.v0.json",
+      "observed_status": "passed"
+    },
+    {
+      "run_id": "bench-run-labtrust-lean-signed-hash-mismatch-v0",
+      "case_id": "labtrust-lean-signed-hash-mismatch-v0",
+      "path": "benchmarks/labtrust-qc-release/invalid/labtrust-lean-signed-hash-mismatch-v0/benchmark_run.labtrust-lean-signed-hash-mismatch-v0.v0.json",
+      "observed_status": "passed"
+    },
+    {
+      "run_id": "bench-run-labtrust-lean-stale-certificate-v0",
+      "case_id": "labtrust-lean-stale-certificate-v0",
+      "path": "benchmarks/labtrust-qc-release/invalid/labtrust-lean-stale-certificate-v0/benchmark_run.labtrust-lean-stale-certificate-v0.v0.json",
+      "observed_status": "passed"
+    },
+    {
+      "run_id": "bench-run-labtrust-lean-trace-hash-mismatch-v0",
+      "case_id": "labtrust-lean-trace-hash-mismatch-v0",
+      "path": "benchmarks/labtrust-qc-release/invalid/labtrust-lean-trace-hash-mismatch-v0/benchmark_run.labtrust-lean-trace-hash-mismatch-v0.v0.json",
+      "observed_status": "passed"
+    },
+    {
+      "run_id": "bench-run-labtrust-legacy-handoff-file-v0",
+      "case_id": "labtrust-legacy-handoff-file-v0",
+      "path": "benchmarks/labtrust-qc-release/invalid/labtrust-legacy-handoff-file-v0/benchmark_run.labtrust-legacy-handoff-file-v0.v0.json",
+      "observed_status": "passed"
+    },
+    {
+      "run_id": "bench-run-labtrust-missing-qc-result-v0",
+      "case_id": "labtrust-missing-qc-result-v0",
+      "path": "benchmarks/labtrust-qc-release/invalid/labtrust-missing-qc-result-v0/benchmark_run.labtrust-missing-qc-result-v0.v0.json",
+      "observed_status": "passed"
+    },
+    {
+      "run_id": "bench-run-labtrust-placeholder-commit-v0",
+      "case_id": "labtrust-placeholder-commit-v0",
+      "path": "benchmarks/labtrust-qc-release/invalid/labtrust-placeholder-commit-v0/benchmark_run.labtrust-placeholder-commit-v0.v0.json",
+      "observed_status": "passed"
+    },
+    {
+      "run_id": "bench-run-labtrust-scientific-memory-import-failure-v0",
+      "case_id": "labtrust-scientific-memory-import-failure-v0",
+      "path": "benchmarks/labtrust-qc-release/invalid/labtrust-scientific-memory-import-failure-v0/benchmark_run.labtrust-scientific-memory-import-failure-v0.v0.json",
+      "observed_status": "passed"
+    },
+    {
+      "run_id": "bench-run-labtrust-stale-trace-after-certificate-v0",
+      "case_id": "labtrust-stale-trace-after-certificate-v0",
+      "path": "benchmarks/labtrust-qc-release/invalid/labtrust-stale-trace-after-certificate-v0/benchmark_run.labtrust-stale-trace-after-certificate-v0.v0.json",
+      "observed_status": "passed"
+    },
+    {
+      "run_id": "bench-run-labtrust-trace-hash-tamper-v0",
+      "case_id": "labtrust-trace-hash-tamper-v0",
+      "path": "benchmarks/labtrust-qc-release/invalid/labtrust-trace-hash-tamper-v0/benchmark_run.labtrust-trace-hash-tamper-v0.v0.json",
+      "observed_status": "passed"
+    },
+    {
+      "run_id": "bench-run-labtrust-unauthorized-release-v0",
+      "case_id": "labtrust-unauthorized-release-v0",
+      "path": "benchmarks/labtrust-qc-release/invalid/labtrust-unauthorized-release-v0/benchmark_run.labtrust-unauthorized-release-v0.v0.json",
+      "observed_status": "passed"
+    }
+  ],
+  "metrics": [
+    "release_reproducibility_score",
+    "failure_localization_accuracy",
+    "certificate_completeness_score",
+    "registry_coverage_score",
+    "formal_check_coverage_score",
+    "scientific_memory_interpretability_score"
+  ],
+  "summary": {
+    "total_cases": 13,
+    "passed_cases": 13,
+    "failed_cases": 0,
+    "expected_failures_detected": 12,
+    "unexpected_passes": 0,
+    "unexpected_failures": 0,
+    "failure_localization_accuracy": 1.0,
+    "repair_hint_accuracy": 1.0,
+    "formal_check_coverage": 0.0,
+    "registry_coverage": 0.0,
+    "scientific_memory_render_coverage": 0.0
+  },
+  "coverage": {
+    "registry": {
+      "schema_version": "v0",
+      "coverage_id": "labtrust-qc-release-v0-registry",
+      "metric": "registry_coverage",
+      "numerator": 0.0,
+      "denominator": 1.0,
+      "coverage_ratio": 0.0,
+      "details": {
+        "registry_entry_count": 38
+      },
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:ca04448ed60d7722ea387e594d6fc6468e1a783454d438a19fc9108358866f47"
+    },
+    "formal_checks": {
+      "schema_version": "v0",
+      "coverage_id": "labtrust-qc-release-v0-formal",
+      "metric": "formal_check_coverage",
+      "numerator": 0.0,
+      "denominator": 1.0,
+      "coverage_ratio": 0.0,
+      "details": {},
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:75d775af2bbbef7d3c84e99a8607bf21582e65bad210dd5d4efed4cc5a014f0d"
+    },
+    "scientific_memory": {
+      "schema_version": "v0",
+      "coverage_id": "labtrust-qc-release-v0-sm",
+      "metric": "scientific_memory_interpretability",
+      "numerator": 0.0,
+      "denominator": 1.0,
+      "coverage_ratio": 0.0,
+      "details": {},
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:209c9269d78fb085964b26cca6c3f181cc558b9983e72a5f3e4d4a5b07a84809"
+    },
+    "release_reproducibility": {
+      "schema_version": "v0",
+      "coverage_id": "labtrust-qc-release-v0-repro",
+      "metric": "release_reproducibility",
+      "numerator": 13.0,
+      "denominator": 13.0,
+      "coverage_ratio": 1.0,
+      "details": {},
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:f1c452c46cf4e302d2afd8daa4928500c279e0ff0de23c6d0c1c16d7eca8e30c"
+    },
+    "certificate_completeness": {
+      "schema_version": "v0",
+      "coverage_id": "labtrust-qc-release-v0-cert",
+      "metric": "certificate_completeness",
+      "numerator": 13.0,
+      "denominator": 13.0,
+      "coverage_ratio": 1.0,
+      "details": {},
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:240ec8d9c238fe6ad316426ad330f3ae4ee3bda7da9021b4c42ff8471acc54b4"
+    }
+  },
+  "metric_summaries": [
+    {
+      "schema_version": "v0",
+      "metric_id": "release_reproducibility_score",
+      "score": 1.0,
+      "applicability": "measured",
+      "numerator": 13.0,
+      "denominator": 13.0,
+      "reason": "coverage from labtrust-qc-release-v0-repro",
+      "details": {
+        "coverage_id": "labtrust-qc-release-v0-repro"
+      },
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:ea8dd9d94b8f74d1d4b920c16287d9f5e34086ed3155f250f118a814caaf701b"
+    },
+    {
+      "schema_version": "v0",
+      "metric_id": "failure_localization_accuracy",
+      "score": 1.0,
+      "applicability": "measured",
+      "numerator": 12.0,
+      "denominator": 12.0,
+      "reason": "component alignment on invalid cases",
+      "details": {},
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:1f9d4d72eff63570a369de72394e04e72fd596b12396d858e1f436cf977bc0e5"
+    },
+    {
+      "schema_version": "v0",
+      "metric_id": "certificate_completeness_score",
+      "score": 1.0,
+      "applicability": "measured",
+      "numerator": 13.0,
+      "denominator": 13.0,
+      "reason": "coverage from labtrust-qc-release-v0-cert",
+      "details": {
+        "coverage_id": "labtrust-qc-release-v0-cert"
+      },
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:75d72bd397b836fae0f2e7ec49f6a79a5f79a68f3832378a40adc125abd41bf3"
+    },
+    {
+      "schema_version": "v0",
+      "metric_id": "registry_coverage_score",
+      "score": 0.0,
+      "applicability": "measured",
+      "numerator": 0.0,
+      "denominator": 1.0,
+      "reason": "coverage from labtrust-qc-release-v0-registry",
+      "details": {
+        "coverage_id": "labtrust-qc-release-v0-registry"
+      },
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:270670f4f04ea2d55ee7a8e4016a6aba1b51224cbddce6e333a747eafba15ba0"
+    },
+    {
+      "schema_version": "v0",
+      "metric_id": "formal_check_coverage_score",
+      "score": 0.0,
+      "applicability": "measured",
+      "numerator": 0.0,
+      "denominator": 1.0,
+      "reason": "coverage from labtrust-qc-release-v0-formal",
+      "details": {
+        "coverage_id": "labtrust-qc-release-v0-formal"
+      },
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:733e434925d25788f0625656faa1a408142b717df679f5767726bec83741e2d0"
+    },
+    {
+      "schema_version": "v0",
+      "metric_id": "scientific_memory_interpretability_score",
+      "score": 0.0,
+      "applicability": "measured",
+      "numerator": 0.0,
+      "denominator": 1.0,
+      "reason": "coverage from labtrust-qc-release-v0-sm",
+      "details": {
+        "coverage_id": "labtrust-qc-release-v0-sm"
+      },
+      "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+      "source_commit": "d444444444444444444444444444444444444444",
+      "signature_or_digest": "sha256:53d0f8688f6d6e7d724d8f14976bfdb2a0a4b70eab44fceea6fa82d87b1b8d14"
+    }
+  ],
+  "failures": [],
+  "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+  "source_commit": "d444444444444444444444444444444444444444",
+  "signature_or_digest": "sha256:6456dcc3287fc82cd7366439399f965310607c4861c6bd87bdac7065e6e93fa1",
+  "conformance_refs": [
+    {
+      "suite": "release-chain",
+      "run_id": "conf-run-release-chain-20260521T112227Z",
+      "status": "passed"
+    }
+  ],
+  "producer_id": "pcs-core"
+}

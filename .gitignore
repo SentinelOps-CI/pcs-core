@@ -21,3 +21,6 @@ lean/PFCore/Generated/*.lean
 
 .DS_Store
 *.swp
+
+release-run/
+examples/labtrust-release/.ci_validation_result.json

@@ -1,0 +1,7 @@
+{
+  "coverage_id": "certifyedge-cert-bench-v0",
+  "certificate_id": "cert-labtrust-qc-v0",
+  "checks_passed": 4,
+  "checks_total": 4,
+  "violations": []
+}

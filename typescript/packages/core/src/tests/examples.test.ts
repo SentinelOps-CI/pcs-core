@@ -5,12 +5,16 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 import { canonicalHash, canonicalJsonBytes } from "../hash.js";
-import { detectArtifactType, validateArtifact, ValidationError, type ArtifactType } from "../validate.js";
+import { detectArtifactType, validateArtifact, ValidationError } from "../validate.js";
 
 const examplesDir = join(dirname(fileURLToPath(import.meta.url)), "../../../../../examples");
 const vectorsDir = join(
   dirname(fileURLToPath(import.meta.url)),
   "../../../../../python/tests/hash_vectors",
+);
+const sharedVectorsDir = join(
+  dirname(fileURLToPath(import.meta.url)),
+  "../../../../../test_vectors/hash",
 );
 
 function load(rel: string): Record<string, unknown> {
@@ -33,6 +37,22 @@ function walkJsonFiles(dir: string): string[] {
 function validExampleFiles(): string[] {
   return walkJsonFiles(examplesDir).filter((path) => path.includes(".valid."));
 }
+
+test("benchmark ingest examples include artifact refs", () => {
+  const ingestDir = join(examplesDir, "benchmark_ingest");
+  for (const name of readdirSync(ingestDir)) {
+    if (!name.endsWith(".pcs_bench_ingest.valid.json")) {
+      continue;
+    }
+    const data = JSON.parse(
+      readFileSync(join(ingestDir, name), "utf8"),
+    ) as Record<string, unknown>;
+    assert.equal(detectArtifactType(data), "PcsBenchIngest.v0", name);
+    validateArtifact(data, "PcsBenchIngest.v0");
+    const refs = data.artifact_refs;
+    assert.ok(Array.isArray(refs) && refs.length > 0, `${name} must include artifact_refs`);
+  }
+});
 
 test("PF-Core explicit artifact_type detection", () => {
   const cases: Array<[string, ArtifactType]> = [
@@ -69,6 +89,31 @@ test("invalid mismatched trace hash", () => {
   assert.throws(() => validateArtifact(load("invalid_mismatched_trace_hash.json")));
 });
 
+test("invalid pcs bench ingest missing refs", () => {
+  const data = load("invalid_pcs_bench_ingest_missing_refs.json");
+  assert.throws(() => validateArtifact(data, "PcsBenchIngest.v0"));
+});
+
+test("invalid pcs bench ingest bad ref digest", () => {
+  const data = load("invalid_pcs_bench_ingest_bad_ref_digest.json");
+  assert.throws(() => validateArtifact(data, "PcsBenchIngest.v0"));
+});
+
+test("invalid pcs bench ingest zero commit", () => {
+  const data = load("invalid_pcs_bench_ingest_zero_commit.json");
+  assert.throws(() => validateArtifact(data, "PcsBenchIngest.v0"));
+});
+
+test("invalid pcs bench ingest empty runs", () => {
+  const data = load("invalid_pcs_bench_ingest_empty_runs.json");
+  assert.throws(() => validateArtifact(data, "PcsBenchIngest.v0"));
+});
+
+test("invalid pcs bench ingest path only", () => {
+  const data = load("invalid_pcs_bench_ingest_path_only.json");
+  assert.throws(() => validateArtifact(data, "PcsBenchIngest.v0"));
+});
+
 test("invalid zero source commit", () => {
   assert.throws(() =>
     validateArtifact(load("invalid_zero_source_commit.release.json"), "RuntimeReceipt.v0"),
@@ -103,6 +148,21 @@ test("labtrust invalid missing trace certificate", () => {
   );
 });
 
+test("computation artifacts detect and validate", () => {
+  for (const rel of [
+    "dataset_receipt.valid.json",
+    "environment_receipt.valid.json",
+    "computation_run_receipt.valid.json",
+    "result_artifact.valid.json",
+    "computation_witness.valid.json",
+  ]) {
+    const data = load(rel);
+    const type = detectArtifactType(data);
+    assert.ok(type, `detect type for ${rel}`);
+    validateArtifact(data, type);
+  }
+});
+
 test("canonical hash stable", () => {
   const data = load("science_claim_bundle.certified.valid.json");
   assert.equal(canonicalHash(data), canonicalHash(data));
@@ -124,5 +184,26 @@ test("hash vectors match frozen fixtures", () => {
     const expectedDigest = readFileSync(join(dir, "digest.txt"), "utf8").trim();
     assert.equal(Buffer.from(canonicalJsonBytes(data)).toString("utf8"), expectedCanonical);
     assert.equal(canonicalHash(data), expectedDigest);
+  }
+});
+
+test("shared hash vectors match test_vectors/hash fixtures", () => {
+  for (const fileName of readdirSync(sharedVectorsDir)) {
+    if (!fileName.endsWith(".vector.json")) {
+      continue;
+    }
+    const vector = JSON.parse(
+      readFileSync(join(sharedVectorsDir, fileName), "utf8"),
+    ) as {
+      artifact_type: string;
+      input?: string;
+      input_file?: string;
+      expected_digest: string;
+      canonical_json: string;
+    };
+    const inputPath = vector.input ?? vector.input_file ?? "";
+    const data = load(inputPath.replace(/^examples\//, ""));
+    assert.equal(Buffer.from(canonicalJsonBytes(data)).toString("utf8"), vector.canonical_json);
+    assert.equal(canonicalHash(data), vector.expected_digest);
   }
 });

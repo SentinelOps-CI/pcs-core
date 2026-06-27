@@ -1,0 +1,6 @@
+{
+  "artifact_type": "ResultArtifact.v0",
+  "input_file": "examples/result_artifact.valid.json",
+  "expected_digest": "sha256:0e5c2b0fe61ffc5536c6bcb91e712a606e7feb19834075060471f70ae72c1887",
+  "canonical_json": "{\"description\":\"Primary reproducibility metric output\",\"media_type\":\"application/json\",\"path\":\"outputs/metrics.json\",\"produced_by_run\":\"run-sci-comp-001\",\"result_id\":\"result-metric-001\",\"result_kind\":\"metric\",\"schema_version\":\"v0\",\"sha256\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"size_bytes\":2048,\"source_commit\":\"e555555555555555555555555555555555555555\",\"source_repo\":\"https://github.com/example/scientific-computation-runner\"}"
+}

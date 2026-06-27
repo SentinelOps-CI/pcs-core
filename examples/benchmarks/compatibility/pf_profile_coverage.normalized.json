@@ -1,0 +1,34 @@
+{
+  "schema_version": "v0",
+  "coverage_id": "pf-profile-coverage-v0",
+  "workflow_profile_id": "provability_fabric.admission_v0",
+  "producer_id": "provability-fabric",
+  "suite_id": "pf-admission-v0",
+  "artifact_types_required": [
+    "VerificationResult.v0",
+    "SignedScienceClaimBundle.v0"
+  ],
+  "artifact_types_covered": [
+    "VerificationResult.v0",
+    "SignedScienceClaimBundle.v0"
+  ],
+  "semantic_checks_required": [
+    "signed_input_hash_matches_verified_input"
+  ],
+  "semantic_checks_covered": [
+    "signed_input_hash_matches_verified_input"
+  ],
+  "handoff_steps_required": [
+    "bundle_to_verifier"
+  ],
+  "handoff_steps_covered": [
+    "bundle_to_verifier"
+  ],
+  "numerator": 4.0,
+  "denominator": 4.0,
+  "coverage_ratio": 1.0,
+  "details": {},
+  "source_repo": "https://github.com/SentinelOps-CI/provability-fabric",
+  "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
+  "signature_or_digest": "sha256:bf28e9943e1cdfd02a8d68d64279feea1f7abeccff41c87f4086a1034ceac8e1"
+}

@@ -1,0 +1,6 @@
+{
+  "artifact_type": "ComputationRunReceipt.v0",
+  "input_file": "examples/computation_run_receipt.valid.json",
+  "expected_digest": "sha256:9c74749d2ad46c6a60394db676e5527929f9b7bef9a012439d6d14b26d960828",
+  "canonical_json": "{\"code_commit\":\"e555555555555555555555555555555555555555\",\"code_repo\":\"https://github.com/example/scientific-computation-runner\",\"command\":\"python -m experiment.run --seed 42\",\"completed_at\":\"2026-05-18T00:00:10Z\",\"dataset_receipt_ref\":\"dataset-input-001\",\"environment_receipt_ref\":\"env-repro-001\",\"exit_code\":0,\"result_artifact_refs\":[\"result-metric-001\"],\"run_id\":\"run-sci-comp-001\",\"schema_version\":\"v0\",\"source_commit\":\"e555555555555555555555555555555555555555\",\"source_repo\":\"https://github.com/example/scientific-computation-runner\",\"started_at\":\"2026-05-18T00:00:01Z\",\"stderr_hash\":\"sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"stdout_hash\":\"sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"workflow_id\":\"scientific_computation.reproducibility_v0\"}"
+}

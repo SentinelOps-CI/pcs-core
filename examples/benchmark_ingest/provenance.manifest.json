@@ -1,0 +1,53 @@
+{
+  "schema_version": "v0",
+  "contract_version": "1.0",
+  "contract": "PcsBenchIngest.v0",
+  "policy_doc": "docs/benchmark-ingest-contract.md",
+  "release_grade_doc": "docs/benchmark-ingest-contract.md",
+  "entries": [
+    {
+      "golden_file": "examples/benchmark_ingest/labtrust.pcs_bench_ingest.valid.json",
+      "producer_ingest_path": "LabTrust-Gym/benchmark_runs/labtrust_reproducibility/pcs_bench_ingest.v0.json",
+      "dialect_fixture": "examples/benchmarks/compatibility/labtrust_case_manifest.dialect.json",
+      "producer_id": "labtrust-gym",
+      "producer_repo": "LabTrust-Gym",
+      "producer_command": "make pcs-bench-producer",
+      "pcs_core_generator": "build_labtrust_pcs_bench_ingest",
+      "materialized_from": "LabTrust-Gym/benchmark_runs/labtrust_reproducibility/pcs_bench_ingest.v0.json",
+      "adequacy_tier": "external-review-grade"
+    },
+    {
+      "golden_file": "examples/benchmark_ingest/certifyedge.pcs_bench_ingest.valid.json",
+      "producer_ingest_path": "CertifyEdge/benchmark_runs/tool_use_safety/pcs_bench_ingest.v0.json",
+      "dialect_fixture": "examples/benchmarks/compatibility/certifyedge_certificate_benchmark.dialect.json",
+      "producer_id": "certifyedge",
+      "producer_repo": "CertifyEdge",
+      "producer_command": "make pcs-bench-producer",
+      "pcs_core_generator": "build_certifyedge_pcs_bench_ingest",
+      "materialized_from": "CertifyEdge/benchmark_runs/tool_use_safety/pcs_bench_ingest.v0.json",
+      "adequacy_tier": "external-review-grade"
+    },
+    {
+      "golden_file": "examples/benchmark_ingest/provability_fabric.pcs_bench_ingest.valid.json",
+      "producer_ingest_path": "provability-fabric/benchmark_runs/labtrust_admission/pcs_bench_ingest.v0.json",
+      "dialect_fixture": "examples/benchmarks/compatibility/pf_admission_explain_quality.dialect.json",
+      "producer_id": "provability-fabric",
+      "producer_repo": "provability-fabric",
+      "producer_command": "make pcs-bench-producer",
+      "pcs_core_generator": "build_pf_pcs_bench_ingest",
+      "materialized_from": "provability-fabric/benchmark_runs/labtrust_admission/pcs_bench_ingest.v0.json",
+      "adequacy_tier": "external-review-grade"
+    },
+    {
+      "golden_file": "examples/benchmark_ingest/scientific_memory.pcs_bench_ingest.valid.json",
+      "producer_ingest_path": "scientific-memory/benchmark_runs/labtrust_rendering/pcs_bench_ingest.v0.json",
+      "dialect_fixture": "examples/benchmarks/compatibility/scientific_memory_render_benchmark.dialect.json",
+      "producer_id": "scientific-memory",
+      "producer_repo": "scientific-memory",
+      "producer_command": "make pcs-bench-producer",
+      "pcs_core_generator": "build_scientific_memory_pcs_bench_ingest",
+      "materialized_from": "scientific-memory/benchmark_runs/labtrust_rendering/pcs_bench_ingest.v0.json",
+      "adequacy_tier": "external-review-grade"
+    }
+  ]
+}

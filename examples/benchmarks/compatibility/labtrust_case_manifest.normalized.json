@@ -1,0 +1,18 @@
+{
+  "schema_version": "v0",
+  "case_id": "labtrust-qc-valid-release",
+  "task_id": "labtrust-qc-release-v0",
+  "workflow_id": "labtrust.qc_release_v0.1",
+  "case_kind": "valid_release",
+  "input_artifacts": {
+    "release_directory": "examples/labtrust-release"
+  },
+  "expected_status": "passed",
+  "expected_failure_code": null,
+  "expected_responsible_component": null,
+  "expected_repair_hint_kind": null,
+  "source_repo": "https://github.com/fraware/LabTrust-Gym",
+  "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
+  "signature_or_digest": "sha256:b7500be2cd4ffa2a55308ba369664587b6fabf8f72d6b0e0df5724782f86b4e6",
+  "expected_system_outcome": "admitted"
+}

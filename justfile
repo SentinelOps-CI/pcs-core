@@ -1,6 +1,7 @@
 set shell := ["bash", "-cu"]
-
-root := justfile_directory()
+# Bash (including Git Bash on Windows) needs forward slashes in paths.
+root_native := justfile_directory()
+root := replace(justfile_directory(), "\\", "/")
 
 default:
     @just ci
@@ -15,6 +16,18 @@ validate-examples:
 
 labtrust-check:
     cd "{{root}}/python" && pytest -q tests/test_labtrust_conformance.py
+
+generate-labtrust-release-fixtures:
+    cd "{{root}}/python" && python -m pcs_core.release_fixtures --write
+
+validate-labtrust-release-fixtures:
+    cd "{{root}}/python" && pcs validate-release-chain ../examples/labtrust-release/
+
+test-release-chain:
+    cd "{{root}}/python" && pytest -q tests/test_release_chain.py tests/test_release_fixtures.py
+
+pcs-v01-clean-chain:
+    pwsh -File "{{root}}/scripts/run-pcs-v01-clean-chain.ps1"
 
 python-test:
     cd "{{root}}/python" && pytest -q
@@ -31,11 +44,83 @@ hash-vectors-write:
 hash-vectors-verify:
     cd "{{root}}/python" && python -m pcs_core.hash_vectors --verify
 
+shared-hash-vectors-write:
+    cd "{{root}}/python" && pcs shared-hash-vectors write
+
+shared-hash-vectors-verify:
+    cd "{{root}}/python" && pcs shared-hash-vectors verify
+
+[unix]
+materialize-labtrust-protocol:
+    bash "{{root}}/scripts/materialize-labtrust-protocol.sh"
+
+[windows]
+materialize-labtrust-protocol:
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File "{{root}}/scripts/materialize-labtrust-protocol.ps1"
+
+[unix]
+materialize-tool-use-protocol:
+    bash "{{root}}/scripts/materialize-tool-use-protocol.sh"
+
+[windows]
+materialize-tool-use-protocol:
+    cd "{{root}}/python" && python scripts/materialize_tool_use_fixtures.py
+
+[unix]
+materialize-protocol:
+    bash "{{root}}/scripts/materialize-protocol.sh"
+
+[windows]
+materialize-protocol:
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File "{{root}}/scripts/materialize-protocol.ps1"
+
 pcs-schema-diff vendor_dir="schemas":
     bash "{{root}}/scripts/pcs-schema-diff.sh" "{{root}}/{{vendor_dir}}"
 
-ci: build python-test rust-test ts-test validate-examples labtrust-check hash-vectors-verify pcs-schema-diff
+protocol-conformance:
+    cd "{{root}}/python" && pytest -q tests/test_protocol_conformance.py
+    cd "{{root}}/python" && pcs conformance run --suite all
+
+multidomain-conformance:
+    cd "{{root}}/python" && pcs conformance run --suite multidomain
+
+computation-conformance:
+    cd "{{root}}/python" && pcs conformance run --suite computation
+
+materialize-benchmark-ingest:
+    cd "{{root}}/python" && python scripts/materialize_benchmark_producer_examples.py
+
+validate-benchmark-ingest:
+    cd "{{root}}/python" && python ../scripts/validate_benchmark_ingest_examples.py --release-grade
+
+benchmark-ingest-conformance:
+    cd "{{root}}/python" && pcs conformance run --suite benchmark-ingest
+    cd "{{root}}/python" && pcs benchmark validate-ingest --release-grade
+
+validate-computation-release-fixtures:
+    cd "{{root}}/python" && pcs validate-release-chain ../examples/computation-release/
+
+# Commit without running Git hooks (avoids Cursor Co-authored-by trailers).
+[unix]
+commit MESSAGE:
+    bash "{{root}}/scripts/pcs-commit.sh" -m "{{MESSAGE}}"
+
+[windows]
+commit MESSAGE:
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File "{{root}}/scripts/pcs-commit.ps1" -m "{{MESSAGE}}"
+
+# Full release gate (same checks as scripts/run-release-verify.sh).
+release-verify:
+    bash "{{root}}/scripts/run-release-verify.sh"
+
+ci: build python-test rust-test ts-test validate-examples labtrust-check validate-labtrust-release-fixtures validate-computation-release-fixtures protocol-conformance computation-conformance multidomain-conformance benchmark-ingest-conformance hash-vectors-verify shared-hash-vectors-verify pcs-schema-diff
     cd "{{root}}/python" && pcs schema check
+    cd "{{root}}/python" && pcs registry validate ../examples/artifact_registry.valid.json
+    cd "{{root}}/python" && pcs registry audit
+    cd "{{root}}/python" && pcs validate ../examples/labtrust-release/release_manifest.v0.json
+    cd "{{root}}/python" && pcs validate-release-chain ../examples/labtrust-release/ --out ../examples/labtrust-release/.ci_validation_result.json
+    cd "{{root}}/python" && pcs validate ../examples/labtrust-release/.ci_validation_result.json
+    cd "{{root}}/rust" && cargo test shared_hash_vectors
     cd "{{root}}/python" && ruff check pcs_core tests
     cd "{{root}}/python" && ruff format --check pcs_core tests
     cd "{{root}}/rust" && cargo fmt --check

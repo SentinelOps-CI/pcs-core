@@ -1,38 +1,36 @@
-# PCS Trust Model (v0.1)
+# Trust model (v0.1)
 
-PCS artifacts are **evidence containers**, not automatic truth claims. Trust is layered and must be displayed separately.
+PCS artifacts function as **evidence containers** that carry attestations and measurements, and each container requires an explicit guarantee label in user interfaces and exports because trust is layered by design.
 
-## Layers
+## Guarantee types
 
-| Layer | Meaning | Typical source |
-|-------|---------|----------------|
-| `runtime_observed` | A run occurred; hashes bind inputs/outputs/trace | LabTrust-Gym `RuntimeReceipt.v0` |
-| `certificate_checked` | Temporal (or other) checker attests trace vs spec | CertifyEdge `TraceCertificate.v0` |
-| `formally_checked` | Proof or formal verification completed | Provability Fabric (deferred depth in v0.1) |
-| `human_reviewed` | Assumptions or claims reviewed by a person | AssumptionSet, ClaimArtifact status |
-| `empirically_measured` | Measured data, not proof | External datasets (out of v0.1 scope) |
-| `unchecked_advisory` | Commentary without verification | Docs, UI notes |
+| Type | Meaning | Typical source |
+|------|---------|----------------|
+| `runtime_observed` | A run occurred and hashes bind inputs, outputs, and trace | `RuntimeReceipt.v0` |
+| `certificate_checked` | A checker attests the trace against a specification | `TraceCertificate.v0` |
+| `formally_checked` | Proof or formal verification completed | Provability Fabric and the Lean kernel |
+| `human_reviewed` | A person reviewed assumptions or claims | `AssumptionSet` and `ClaimArtifact` |
+| `empirically_measured` | Measured data without formal proof | External datasets outside v0.1 scope |
+| `unchecked_advisory` | Commentary without verification | Documentation and user interface notes |
 
-## What v0.1 does not guarantee
+Protocol rules appear in [protocol.md](protocol.md).
 
-The LabTrust-Gym demonstration is a **proof-carrying simulation workflow**. It is not:
+## Scope limits in v0.1
 
-- Clinical validation
-- Production medical certification
-- A guarantee about a real hospital laboratory
-
-Domain assumptions must state simulation scope explicitly.
+The LabTrust demonstration implements a **proof-carrying simulation workflow** aimed at integration testing and protocol education, and the workflow targets simulated hospital-lab scenarios with explicit domain assumptions instead of clinical validation, production medical certification, or claims about real hospital operations.
 
 ## Hash binding
 
-- `RuntimeReceipt.v0` binds `events_hash`, `policy_hash`, `trace_hash`.
-- `TraceCertificate.v0` references the same `trace_hash` and `spec_hash`.
-- `ScienceClaimBundle.v0` semantic validation rejects receipt/certificate trace hash mismatch.
+`RuntimeReceipt.v0` binds `events_hash`, `policy_hash`, and `trace_hash`. `TraceCertificate.v0` references the same `trace_hash` and `spec_hash`. `ScienceClaimBundle.v0` validation enforces alignment between receipt and certificate trace hashes.
+
+The canonical algorithm is documented in [hash-canonicalization.md](hash-canonicalization.md).
 
 ## Signatures
 
-v0.1 includes `signature_or_digest` on artifacts. Full signing services are out of scope; downstream repos (e.g. Provability Fabric) attach signatures after verification.
+v0.1 includes `signature_or_digest` on artifacts, while full signing infrastructure remains outside the initial release and downstream verifiers attach signatures after checks complete.
 
 ## Staleness
 
-Status `Stale` marks artifacts superseded by newer commits, specs, or traces. Consumers must not treat stale certificates as current evidence.
+Status `Stale` marks artifacts superseded by newer commits, specifications, or traces, and consumers should treat stale certificates as historical evidence only.
+
+Status policy appears in [artifact-lifecycle.md](artifact-lifecycle.md) and [status-transition-policy.md](status-transition-policy.md).

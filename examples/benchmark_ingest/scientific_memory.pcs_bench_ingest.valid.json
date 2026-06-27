@@ -1,0 +1,297 @@
+{
+  "schema_version": "v0",
+  "producer_id": "scientific-memory",
+  "suite_id": "scientific-memory-rendering-v0",
+  "workflow_id": "pcs.scientific_memory",
+  "benchmark_runs": [
+    {
+      "schema_version": "v0",
+      "run_id": "sm-bench-run-labtrust_qc_release",
+      "task_id": "scientific-memory-rendering-v0",
+      "case_id": "labtrust_qc_release",
+      "started_at": "2026-05-22T11:49:51.272627+00:00",
+      "completed_at": "2026-05-22T11:49:51.564068+00:00",
+      "commands": [
+        {
+          "command": "scientific_memory_render_benchmark labtrust_qc_release",
+          "exit_code": 0
+        }
+      ],
+      "artifacts_produced": [
+        "read_model.json"
+      ],
+      "observed_status": "passed",
+      "observed_failure_code": null,
+      "observed_responsible_component": null,
+      "observed_repair_hint": null,
+      "system_admission_outcome": "admitted",
+      "release_chain_status": "not_applicable",
+      "certificate_status": "not_applicable",
+      "scientific_memory_import_status": "passed",
+      "scientific_memory_render_status": "rendered",
+      "duration_ms": 990,
+      "source_repo": "https://github.com/fraware/scientific-memory",
+      "source_commit": "2fe935daf9f72fa5139ac233ac8e69c80bfa47c0",
+      "signature_or_digest": "sha256:05f8d23ac7887d6c751c4c1ea3aebb956a6c3e21731ae6ecb65f97e4cdfd039c"
+    }
+  ],
+  "coverage_reports": [
+    {
+      "schema_version": "v0",
+      "coverage_id": "scientific-memory-rendering-v0-interpretability",
+      "metric": "scientific_memory_interpretability",
+      "numerator": 1.0,
+      "denominator": 1.0,
+      "coverage_ratio": 1.0,
+      "details": {
+        "sm_metric": "scientific_memory_interpretability",
+        "case_count": 1,
+        "passed_cases": 1,
+        "applicability": "measured",
+        "cases": [
+          {
+            "case_id": "labtrust_qc_release",
+            "passed": true
+          }
+        ]
+      },
+      "source_repo": "https://github.com/fraware/scientific-memory",
+      "source_commit": "2fe935daf9f72fa5139ac233ac8e69c80bfa47c0",
+      "signature_or_digest": "sha256:8b25b460a7ebca5228f6d91d59872db75b13006814751f11932d6986a2847bea"
+    },
+    {
+      "schema_version": "v0",
+      "coverage_id": "scientific-memory-rendering-v0-query-correctness",
+      "metric": "scientific_memory_interpretability",
+      "numerator": 1.0,
+      "denominator": 1.0,
+      "coverage_ratio": 1.0,
+      "details": {
+        "sm_metric": "query_correctness",
+        "case_count": 1,
+        "passed_cases": 1,
+        "applicability": "measured",
+        "cases": [
+          {
+            "case_id": "labtrust_qc_release",
+            "passed": true
+          }
+        ]
+      },
+      "source_repo": "https://github.com/fraware/scientific-memory",
+      "source_commit": "2fe935daf9f72fa5139ac233ac8e69c80bfa47c0",
+      "signature_or_digest": "sha256:899e750dbc2970cb4abd7367aeba52c03219e7623665f0ebad97a98c326cb3c4"
+    },
+    {
+      "schema_version": "v0",
+      "coverage_id": "scientific-memory-rendering-v0-failed-release-rendering",
+      "metric": "failure_localization",
+      "numerator": 1.0,
+      "denominator": 1.0,
+      "coverage_ratio": 1.0,
+      "details": {
+        "sm_metric": "failed_release_rendering",
+        "case_count": 0,
+        "passed_cases": 0,
+        "applicability": "not_applicable",
+        "cases": []
+      },
+      "source_repo": "https://github.com/fraware/scientific-memory",
+      "source_commit": "2fe935daf9f72fa5139ac233ac8e69c80bfa47c0",
+      "signature_or_digest": "sha256:6ee302f557bbc63154cbc989334d0c507129fd240b17d6143f6077c9757d5211"
+    },
+    {
+      "schema_version": "v0",
+      "coverage_id": "scientific-memory-rendering-v0-release-comparison",
+      "metric": "scientific_memory_interpretability",
+      "numerator": 1.0,
+      "denominator": 1.0,
+      "coverage_ratio": 1.0,
+      "details": {
+        "sm_metric": "release_comparison",
+        "case_count": 1,
+        "passed_cases": 1,
+        "applicability": "measured",
+        "cases": [
+          {
+            "case_id": "labtrust_qc_release",
+            "passed": true
+          }
+        ]
+      },
+      "source_repo": "https://github.com/fraware/scientific-memory",
+      "source_commit": "2fe935daf9f72fa5139ac233ac8e69c80bfa47c0",
+      "signature_or_digest": "sha256:c80e90f3225a0ffea8ad55f7c81af51eb3fc31daa8c84684f53b99de30c6c098"
+    },
+    {
+      "schema_version": "v0",
+      "coverage_id": "scientific-memory-rendering-v0-staleness-detection",
+      "metric": "repair_hint_quality",
+      "numerator": 1.0,
+      "denominator": 1.0,
+      "coverage_ratio": 1.0,
+      "details": {
+        "sm_metric": "staleness_detection",
+        "case_count": 1,
+        "passed_cases": 1,
+        "applicability": "measured",
+        "cases": [
+          {
+            "case_id": "labtrust_qc_release",
+            "passed": true
+          }
+        ]
+      },
+      "source_repo": "https://github.com/fraware/scientific-memory",
+      "source_commit": "2fe935daf9f72fa5139ac233ac8e69c80bfa47c0",
+      "signature_or_digest": "sha256:52bbc41cca2981f41d99526dc7fbcfde9ed7bf312c291d6fdadc4fa9f4fc9b9e"
+    }
+  ],
+  "failure_localization_reports": [],
+  "explain_quality_reports": [
+    {
+      "schema_version": "v0",
+      "report_id": "explain-quality-labtrust_qc_release",
+      "suite_id": "scientific-memory-rendering-v0",
+      "case_id": "labtrust_qc_release",
+      "producer_id": "scientific-memory",
+      "workflow_id": "pcs.scientific_memory",
+      "required_sections": [
+        "provenance",
+        "hashes",
+        "handoffs",
+        "verification",
+        "formal_checks",
+        "limitations",
+        "lineage",
+        "repair_hints"
+      ],
+      "sections": {
+        "provenance": {
+          "present": true,
+          "score": 1.0
+        },
+        "hashes": {
+          "present": true,
+          "score": 1.0
+        },
+        "handoffs": {
+          "present": true,
+          "score": 1.0
+        },
+        "verification": {
+          "present": true,
+          "score": 1.0
+        },
+        "formal_checks": {
+          "present": true,
+          "score": 1.0
+        },
+        "limitations": {
+          "present": true,
+          "score": 1.0
+        },
+        "lineage": {
+          "present": true,
+          "score": 1.0
+        },
+        "repair_hints": {
+          "present": true,
+          "score": 1.0
+        }
+      },
+      "sections_present_count": 8,
+      "sections_required_count": 8,
+      "quality_score": 1.0,
+      "gaps": [],
+      "source_repo": "https://github.com/fraware/scientific-memory",
+      "source_commit": "2fe935daf9f72fa5139ac233ac8e69c80bfa47c0",
+      "signature_or_digest": "sha256:547af3143507148c47f138f6aa4b196d18b722d92713199f9d01f0456670a294"
+    }
+  ],
+  "profile_coverage_reports": [],
+  "commands": [
+    {
+      "command": "sm-pipeline pcs-benchmark-rendering --cases benchmarks/rendering/labtrust_qc_release --out benchmark_runs/labtrust_rendering --validate-pcs-core-output C:\\Users\\mateo\\pcs-core --release-grade",
+      "exit_code": 0
+    }
+  ],
+  "logs": [
+    "rendering_benchmark_summary.md"
+  ],
+  "source_repo": "https://github.com/fraware/scientific-memory",
+  "source_commit": "2fe935daf9f72fa5139ac233ac8e69c80bfa47c0",
+  "signature_or_digest": "sha256:afb0fd0fb4d5efba926d4db731b6d357f1f78c42029a43a599f90df58c0ade76",
+  "artifact_refs": [
+    {
+      "schema_version": "v0",
+      "artifact_type": "BenchmarkRun.v0",
+      "path": "benchmark_run.v0.json",
+      "sha256": "sha256:05f8d23ac7887d6c751c4c1ea3aebb956a6c3e21731ae6ecb65f97e4cdfd039c",
+      "role": "producer_export",
+      "source_repo": "https://github.com/fraware/scientific-memory",
+      "source_commit": "2fe935daf9f72fa5139ac233ac8e69c80bfa47c0",
+      "signature_or_digest": "sha256:01012bce581198abd0cdc65718715f53446500308d602863c100bd7ef6ab2434"
+    },
+    {
+      "schema_version": "v0",
+      "artifact_type": "ExplainQualityReport.v0",
+      "path": "explain_quality_reports/explain-quality-labtrust_qc_release.v0.json",
+      "sha256": "sha256:547af3143507148c47f138f6aa4b196d18b722d92713199f9d01f0456670a294",
+      "role": "producer_export",
+      "source_repo": "https://github.com/fraware/scientific-memory",
+      "source_commit": "2fe935daf9f72fa5139ac233ac8e69c80bfa47c0",
+      "signature_or_digest": "sha256:fc5d5f1ea23426be5156b1396c4a79ec266a316f55889b9f252252c17f635011"
+    },
+    {
+      "schema_version": "v0",
+      "artifact_type": "CoverageReport.v0",
+      "path": "coverage_reports/scientific-memory-rendering-v0-interpretability.v0.json",
+      "sha256": "sha256:8b25b460a7ebca5228f6d91d59872db75b13006814751f11932d6986a2847bea",
+      "role": "producer_export",
+      "source_repo": "https://github.com/fraware/scientific-memory",
+      "source_commit": "2fe935daf9f72fa5139ac233ac8e69c80bfa47c0",
+      "signature_or_digest": "sha256:237c8927e84f2afefc1a089a1963c2a6d349ee3a1e936edab6e3123a804b4a1c"
+    },
+    {
+      "schema_version": "v0",
+      "artifact_type": "CoverageReport.v0",
+      "path": "coverage_reports/scientific-memory-rendering-v0-query-correctness.v0.json",
+      "sha256": "sha256:899e750dbc2970cb4abd7367aeba52c03219e7623665f0ebad97a98c326cb3c4",
+      "role": "producer_export",
+      "source_repo": "https://github.com/fraware/scientific-memory",
+      "source_commit": "2fe935daf9f72fa5139ac233ac8e69c80bfa47c0",
+      "signature_or_digest": "sha256:0e7f08ff3aa0b7218c1b439f2e0f383ef371ecc31877292cb316f56f5bdfa603"
+    },
+    {
+      "schema_version": "v0",
+      "artifact_type": "CoverageReport.v0",
+      "path": "coverage_reports/scientific-memory-rendering-v0-failed-release-rendering.v0.json",
+      "sha256": "sha256:6ee302f557bbc63154cbc989334d0c507129fd240b17d6143f6077c9757d5211",
+      "role": "producer_export",
+      "source_repo": "https://github.com/fraware/scientific-memory",
+      "source_commit": "2fe935daf9f72fa5139ac233ac8e69c80bfa47c0",
+      "signature_or_digest": "sha256:d4c4dd5373025a0197d83e6b2bb5fe95a2ada15ccc95c3040a95d0c271e0ec60"
+    },
+    {
+      "schema_version": "v0",
+      "artifact_type": "CoverageReport.v0",
+      "path": "coverage_reports/scientific-memory-rendering-v0-release-comparison.v0.json",
+      "sha256": "sha256:c80e90f3225a0ffea8ad55f7c81af51eb3fc31daa8c84684f53b99de30c6c098",
+      "role": "producer_export",
+      "source_repo": "https://github.com/fraware/scientific-memory",
+      "source_commit": "2fe935daf9f72fa5139ac233ac8e69c80bfa47c0",
+      "signature_or_digest": "sha256:db4afa03b960d3c7c6e1f9686f18332a8ec7c49e62ba358ec67feb78eb67d3cc"
+    },
+    {
+      "schema_version": "v0",
+      "artifact_type": "CoverageReport.v0",
+      "path": "coverage_reports/scientific-memory-rendering-v0-staleness-detection.v0.json",
+      "sha256": "sha256:52bbc41cca2981f41d99526dc7fbcfde9ed7bf312c291d6fdadc4fa9f4fc9b9e",
+      "role": "producer_export",
+      "source_repo": "https://github.com/fraware/scientific-memory",
+      "source_commit": "2fe935daf9f72fa5139ac233ac8e69c80bfa47c0",
+      "signature_or_digest": "sha256:2dcaf5d0ce81c4a3c51193636e5bb048f047e77dee040acaf7699ebb164af873"
+    }
+  ]
+}

@@ -47,9 +47,81 @@ const ARTIFACT_SCHEMAS: &[(&str, &str)] = &[
         "PFCoreRuntimeObservation.v0.schema.json",
     ),
     ("PFCoreCertificate.v0", "PFCoreCertificate.v0.schema.json"),
-    ("LeanCheckResult.v0", "LeanCheckResult.v0.schema.json"),
+    ("ReleaseManifest.v0", "ReleaseManifest.v0.schema.json"),
+    ("HandoffManifest.v0", "HandoffManifest.v0.schema.json"),
+    (
+        "ReleaseChainValidationResult.v0",
+        "ReleaseChainValidationResult.v0.schema.json",
+    ),
+    ("ArtifactRegistry.v0", "ArtifactRegistry.v0.schema.json"),
+    ("MigrationReport.v0", "MigrationReport.v0.schema.json"),
+    ("WorkflowProfile.v0", "WorkflowProfile.v0.schema.json"),
     ("ToolUseTrace.v0", "ToolUseTrace.v0.schema.json"),
-    ("PCSBridgeCertificate.v0", "PCSBridgeCertificate.v0.schema.json"),
+    ("ToolUseCertificate.v0", "ToolUseCertificate.v0.schema.json"),
+    ("DatasetReceipt.v0", "DatasetReceipt.v0.schema.json"),
+    ("EnvironmentReceipt.v0", "EnvironmentReceipt.v0.schema.json"),
+    (
+        "ComputationRunReceipt.v0",
+        "ComputationRunReceipt.v0.schema.json",
+    ),
+    ("ResultArtifact.v0", "ResultArtifact.v0.schema.json"),
+    ("ComputationWitness.v0", "ComputationWitness.v0.schema.json"),
+    ("ProofObligation.v0", "ProofObligation.v0.schema.json"),
+    ("LeanCheckResult.v0", "LeanCheckResult.v0.schema.json"),
+    ("BenchmarkRegistry.v0", "BenchmarkRegistry.v0.schema.json"),
+    (
+        "BenchmarkSuiteManifest.v0",
+        "BenchmarkSuiteManifest.v0.schema.json",
+    ),
+    ("BenchmarkTask.v0", "BenchmarkTask.v0.schema.json"),
+    ("BenchmarkCase.v0", "BenchmarkCase.v0.schema.json"),
+    ("BenchmarkRun.v0", "BenchmarkRun.v0.schema.json"),
+    ("BenchmarkReport.v0", "BenchmarkReport.v0.schema.json"),
+    ("MetricSummary.v0", "MetricSummary.v0.schema.json"),
+    ("PcsBenchIngest.v0", "PcsBenchIngest.v0.schema.json"),
+    (
+        "BenchmarkArtifactRef.v0",
+        "BenchmarkArtifactRef.v0.schema.json",
+    ),
+    ("ConformanceRun.v0", "ConformanceRun.v0.schema.json"),
+    (
+        "FailureCaseManifest.v0",
+        "FailureCaseManifest.v0.schema.json",
+    ),
+    (
+        "FailureLocalizationResult.v0",
+        "FailureLocalizationResult.v0.schema.json",
+    ),
+    ("CoverageReport.v0", "CoverageReport.v0.schema.json"),
+    (
+        "ExplainQualityReport.v0",
+        "ExplainQualityReport.v0.schema.json",
+    ),
+    (
+        "ProfileCoverageReport.v0",
+        "ProfileCoverageReport.v0.schema.json",
+    ),
+    (
+        "BenchmarkMetricRegistry.v0",
+        "BenchmarkMetricRegistry.v0.schema.json",
+    ),
+    ("ConformanceReport.v0", "ConformanceReport.v0.schema.json"),
+    (
+        "SemanticCheckExecution.v0",
+        "SemanticCheckExecution.v0.schema.json",
+    ),
+    (
+        "ComponentReleaseFragment.v0",
+        "ComponentReleaseFragment.v0.schema.json",
+    ),
+];
+
+const PROTOCOL_ARTIFACT_TYPES: &[&str] = &[
+    "ReleaseManifest.v0",
+    "HandoffManifest.v0",
+    "ReleaseChainValidationResult.v0",
+    "ArtifactRegistry.v0",
+    "MigrationReport.v0",
 ];
 
 const EXPLICIT_ARTIFACT_TYPES: &[&str] = &[
@@ -84,6 +156,274 @@ pub fn detect_artifact_type(value: &Value) -> Option<&'static str> {
         if let Some(artifact_type) = explicit_artifact_type(explicit) {
             return Some(artifact_type);
         }
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("registry_id").and_then(|v| v.as_str()).is_some()
+        && obj.get("metrics").map(|v| v.is_object()).unwrap_or(false)
+        && obj.contains_key("registry_version")
+        && !obj.contains_key("suites")
+    {
+        return Some("BenchmarkMetricRegistry.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("registry_id").and_then(|v| v.as_str()).is_some()
+        && obj.get("suites").map(|v| v.is_object()).unwrap_or(false)
+        && obj.contains_key("registry_version")
+    {
+        return Some("BenchmarkRegistry.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("report_id").and_then(|v| v.as_str()).is_some()
+        && obj
+            .get("required_sections")
+            .map(|v| v.is_array())
+            .unwrap_or(false)
+        && obj.contains_key("quality_score")
+    {
+        return Some("ExplainQualityReport.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("coverage_id").and_then(|v| v.as_str()).is_some()
+        && obj
+            .get("workflow_profile_id")
+            .and_then(|v| v.as_str())
+            .is_some()
+        && obj
+            .get("artifact_types_required")
+            .map(|v| v.is_array())
+            .unwrap_or(false)
+    {
+        return Some("ProfileCoverageReport.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("artifact_type").and_then(|v| v.as_str()).is_some()
+        && obj.get("path").and_then(|v| v.as_str()).is_some()
+        && obj.get("sha256").and_then(|v| v.as_str()).is_some()
+        && obj.get("role").and_then(|v| v.as_str()).is_some()
+        && !obj.contains_key("producer_id")
+        && !obj.contains_key("benchmark_runs")
+    {
+        return Some("BenchmarkArtifactRef.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("producer_id").and_then(|v| v.as_str()).is_some()
+        && obj.get("suite_id").and_then(|v| v.as_str()).is_some()
+        && obj
+            .get("benchmark_runs")
+            .map(|v| v.is_array())
+            .unwrap_or(false)
+        && obj.get("logs").map(|v| v.is_array()).unwrap_or(false)
+        && obj.contains_key("workflow_id")
+    {
+        return Some("PcsBenchIngest.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("metric_id").and_then(|v| v.as_str()).is_some()
+        && obj.contains_key("applicability")
+        && obj.contains_key("score")
+        && obj.contains_key("numerator")
+        && !obj.contains_key("benchmark_suite_id")
+    {
+        return Some("MetricSummary.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("report_id").and_then(|v| v.as_str()).is_some()
+        && obj
+            .get("benchmark_suite_id")
+            .and_then(|v| v.as_str())
+            .is_some()
+        && obj.get("summary").map(|v| v.is_object()).unwrap_or(false)
+    {
+        return Some("BenchmarkReport.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("run_id").and_then(|v| v.as_str()).is_some()
+        && obj.get("case_id").and_then(|v| v.as_str()).is_some()
+        && obj.contains_key("duration_ms")
+        && obj.contains_key("observed_status")
+    {
+        return Some("BenchmarkRun.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("case_id").and_then(|v| v.as_str()).is_some()
+        && obj.get("case_kind").and_then(|v| v.as_str()).is_some()
+        && obj.contains_key("input_artifacts")
+    {
+        return Some("BenchmarkCase.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("suite_id").and_then(|v| v.as_str()).is_some()
+        && obj.get("case_ids").map(|v| v.is_array()).unwrap_or(false)
+        && obj.get("cases").map(|v| v.is_array()).unwrap_or(false)
+        && obj.contains_key("case_count")
+        && obj.get("task_id").and_then(|v| v.as_str()).is_some()
+    {
+        return Some("BenchmarkSuiteManifest.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("task_id").and_then(|v| v.as_str()).is_some()
+        && obj.get("metrics").map(|v| v.is_array()).unwrap_or(false)
+        && obj.contains_key("success_criteria")
+    {
+        return Some("BenchmarkTask.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("coverage_id").and_then(|v| v.as_str()).is_some()
+        && obj.contains_key("coverage_ratio")
+        && obj.contains_key("numerator")
+        && (obj.contains_key("metric") || obj.contains_key("metric_id"))
+    {
+        return Some("CoverageReport.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("result_id").and_then(|v| v.as_str()).is_some()
+        && obj.contains_key("localized_correctly")
+    {
+        return Some("FailureLocalizationResult.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("manifest_id").and_then(|v| v.as_str()).is_some()
+        && obj.get("failure_code").and_then(|v| v.as_str()).is_some()
+        && obj.contains_key("repair_hint_kind")
+    {
+        return Some("FailureCaseManifest.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("run_id").and_then(|v| v.as_str()).is_some()
+        && obj.get("suite").and_then(|v| v.as_str()).is_some()
+        && obj.contains_key("started_at")
+        && obj.contains_key("completed_at")
+    {
+        return Some("ConformanceRun.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("suite").is_some()
+        && obj.get("checks_passed").is_some()
+        && obj.get("failures").map(|v| v.is_array()).unwrap_or(false)
+    {
+        return Some("ConformanceReport.v0");
+    }
+    if obj.contains_key("policy_id")
+        && obj.contains_key("severity_definitions")
+        && obj.get("checks").map(|v| v.is_array()).unwrap_or(false)
+    {
+        return Some("SemanticCheckExecution.v0");
+    }
+    if obj.contains_key("from_version")
+        && obj.contains_key("to_version")
+        && obj.contains_key("changes")
+        && obj.contains_key("artifact_type")
+    {
+        return Some("MigrationReport.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("check_id").and_then(|v| v.as_str()).is_some()
+        && obj
+            .get("proof_obligation_id")
+            .and_then(|v| v.as_str())
+            .is_some()
+        && obj.contains_key("lean_theorem")
+        && obj.contains_key("lean_version")
+    {
+        return Some("LeanCheckResult.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("obligation_id").and_then(|v| v.as_str()).is_some()
+        && obj
+            .get("obligations")
+            .map(|v| v.is_array())
+            .unwrap_or(false)
+        && obj.contains_key("lean_module")
+    {
+        return Some("ProofObligation.v0");
+    }
+    if obj.contains_key("validation_id") && obj.contains_key("artifacts_checked") {
+        return Some("ReleaseChainValidationResult.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("component").is_some()
+        && obj.get("artifacts").map(|v| v.is_object()).unwrap_or(false)
+        && obj.contains_key("signature_or_digest")
+        && obj.contains_key("source_commit")
+    {
+        return Some("ComponentReleaseFragment.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("workflow_id").is_some()
+        && obj.get("domain").is_some()
+        && obj
+            .get("handoff_sequence")
+            .map(|v| v.is_array())
+            .unwrap_or(false)
+        && obj
+            .get("runtime_artifacts")
+            .map(|v| v.is_array())
+            .unwrap_or(false)
+    {
+        return Some("WorkflowProfile.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("witness_id").is_some()
+        && obj.get("dataset_hash").is_some()
+        && obj.get("run_receipt_hash").is_some()
+    {
+        return Some("ComputationWitness.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("dataset_id").is_some()
+        && obj.get("aggregate_hash").is_some()
+        && obj.get("files").map(|v| v.is_array()).unwrap_or(false)
+    {
+        return Some("DatasetReceipt.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("environment_id").is_some()
+        && obj.get("environment_kind").is_some()
+    {
+        return Some("EnvironmentReceipt.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("run_id").is_some()
+        && obj.get("command").is_some()
+        && obj.contains_key("dataset_receipt_ref")
+    {
+        return Some("ComputationRunReceipt.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("result_id").is_some()
+        && obj.get("result_kind").is_some()
+    {
+        return Some("ResultArtifact.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("trace_id").is_some()
+        && obj.get("tool_calls").map(|v| v.is_array()).unwrap_or(false)
+    {
+        return Some("ToolUseTrace.v0");
+    }
+    if obj.get("schema_version") == Some(&Value::String("v0".into()))
+        && obj.get("certificate_id").is_some()
+        && obj.contains_key("policy_hash")
+        && obj.get("violations").map(|v| v.is_array()).unwrap_or(false)
+        && !obj.contains_key("spec_hash")
+    {
+        return Some("ToolUseCertificate.v0");
+    }
+    if obj.contains_key("handoff_id") && obj.contains_key("handoff_kind") {
+        return Some("HandoffManifest.v0");
+    }
+    if obj.contains_key("registry_id")
+        && obj.contains_key("entries")
+        && obj.contains_key("registry_version")
+    {
+        return Some("ArtifactRegistry.v0");
+    }
+    if obj.contains_key("release_id")
+        && obj.contains_key("producer_repos")
+        && obj.contains_key("validation_profile")
+        && obj.contains_key("workflow_profile_id")
+    {
+        return Some("ReleaseManifest.v0");
     }
     if obj.contains_key("signed_bundle_id") && obj.contains_key("science_claim_bundle") {
         return Some("SignedScienceClaimBundle.v0");
@@ -241,6 +581,9 @@ fn validate_verification_result(obj: &serde_json::Map<String, Value>, errors: &m
 }
 
 pub fn validate_semantics(value: &Value, artifact_type: &str) -> Result<(), ValidationError> {
+    if PROTOCOL_ARTIFACT_TYPES.contains(&artifact_type) {
+        return Ok(());
+    }
     let mut errors = Vec::new();
     check_source_commits(value, "", &mut errors, false);
 
@@ -319,6 +662,10 @@ mod tests {
         PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../python/tests/hash_vectors")
     }
 
+    fn shared_hash_vectors_dir() -> PathBuf {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../test_vectors/hash")
+    }
+
     #[test]
     fn pf_core_explicit_artifact_types_detect() {
         let repo = examples_dir();
@@ -345,6 +692,7 @@ mod tests {
     }
 
     #[test]
+    #[test]
     fn valid_examples_pass_jsonschema_and_semantics() {
         for entry in WalkDir::new(examples_dir())
             .into_iter()
@@ -352,6 +700,12 @@ mod tests {
         {
             let path = entry.path();
             if !entry.file_type().is_file() {
+                continue;
+            }
+            let path_str = path.to_string_lossy();
+            if path_str.contains("tool-use-release-invalid")
+                || path_str.contains("computation-release-invalid")
+            {
                 continue;
             }
             let name = path.file_name().unwrap().to_string_lossy();
@@ -385,6 +739,101 @@ mod tests {
                 .to_string();
             assert_eq!(canonical_json_string(&data), expected, "{name} canonical");
             assert_eq!(canonical_hash(&data), expected_digest, "{name} digest");
+        }
+    }
+
+    #[test]
+    fn hash_vectors_match_shared_fixtures() {
+        shared_hash_vectors_match_repo_fixtures_inner();
+    }
+
+    #[test]
+    fn shared_hash_vectors_match_repo_fixtures() {
+        shared_hash_vectors_match_repo_fixtures_inner();
+    }
+
+    #[test]
+    fn detect_benchmark_registry() {
+        let examples = examples_dir();
+        let path = examples.join("benchmark_registry.valid.json");
+        if !path.is_file() {
+            return;
+        }
+        let data: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
+        assert_eq!(detect_artifact_type(&data), Some("BenchmarkRegistry.v0"));
+    }
+
+    #[test]
+    fn detect_benchmark_artifact_ref() {
+        let examples = examples_dir();
+        let path = examples.join("benchmarks/benchmark_artifact_ref.valid.json");
+        if !path.is_file() {
+            return;
+        }
+        let data: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
+        assert_eq!(detect_artifact_type(&data), Some("BenchmarkArtifactRef.v0"));
+        validate_artifact(&data, "BenchmarkArtifactRef.v0").unwrap();
+    }
+
+    #[test]
+    fn detect_scientific_memory_pcs_bench_ingest() {
+        let path =
+            examples_dir().join("benchmark_ingest/scientific_memory.pcs_bench_ingest.valid.json");
+        if !path.is_file() {
+            return;
+        }
+        let data: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
+        assert_eq!(detect_artifact_type(&data), Some("PcsBenchIngest.v0"));
+        validate_artifact(&data, "PcsBenchIngest.v0").unwrap();
+        let refs = data.get("artifact_refs").and_then(|v| v.as_array());
+        assert!(refs.is_some_and(|rows| !rows.is_empty()));
+    }
+
+    #[test]
+    fn detect_labtrust_benchmark_suite_manifest() {
+        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../..")
+            .join("benchmarks/labtrust-qc-release/benchmark_manifest.v0.json");
+        if !path.is_file() {
+            return;
+        }
+        let data: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
+        assert_eq!(
+            detect_artifact_type(&data),
+            Some("BenchmarkSuiteManifest.v0")
+        );
+    }
+
+    fn shared_hash_vectors_match_repo_fixtures_inner() {
+        let examples = examples_dir();
+        for file_name in std::fs::read_dir(shared_hash_vectors_dir()).unwrap() {
+            let path = file_name.unwrap().path();
+            if path.extension().and_then(|s| s.to_str()) != Some("json") {
+                continue;
+            }
+            let vector: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
+            let artifact_type = vector["artifact_type"].as_str().unwrap();
+            let example_name = vector["input"]
+                .as_str()
+                .or_else(|| vector["input_file"].as_str())
+                .unwrap();
+            let example_path = if example_name.starts_with("examples/") {
+                PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                    .join("../../..")
+                    .join(example_name)
+            } else {
+                examples.join(example_name)
+            };
+            let data: Value =
+                serde_json::from_str(&fs::read_to_string(&example_path).unwrap()).unwrap();
+            let expected_digest = vector["expected_digest"].as_str().unwrap();
+            let expected_canonical = vector["canonical_json"].as_str().unwrap();
+            assert_eq!(
+                canonical_json_string(&data),
+                expected_canonical,
+                "{artifact_type}"
+            );
+            assert_eq!(canonical_hash(&data), expected_digest, "{artifact_type}");
         }
     }
 }

@@ -1,0 +1,535 @@
+{
+  "schema_version": "v0",
+  "policy_id": "pcs-semantic-check-execution-v0.1",
+  "policy_version": "0.1.0",
+  "severity_definitions": {
+    "required": {
+      "description": "Must run in release mode; failure is fatal.",
+      "fatal_if_skipped_in_release_mode": true,
+      "downstream_must_report_execution": true
+    },
+    "optional": {
+      "description": "May be skipped; failures are non-fatal.",
+      "fatal_if_skipped_in_release_mode": false,
+      "downstream_must_report_execution": false
+    },
+    "warning_only": {
+      "description": "Non-blocking advisory check.",
+      "fatal_if_skipped_in_release_mode": false,
+      "downstream_must_report_execution": false
+    },
+    "release_blocking": {
+      "description": "Must run in release mode; blocks Validated/ProofChecked status.",
+      "fatal_if_skipped_in_release_mode": true,
+      "downstream_must_report_execution": true
+    },
+    "producer_responsible": {
+      "description": "Runtime producer must execute and attest before handoff.",
+      "fatal_if_skipped_in_release_mode": true,
+      "downstream_must_report_execution": true
+    },
+    "consumer_responsible": {
+      "description": "Consumer must execute at import/admission time.",
+      "fatal_if_skipped_in_release_mode": true,
+      "downstream_must_report_execution": true
+    },
+    "validator_responsible": {
+      "description": "Release validator (pcs-core) must execute and cite in validation results.",
+      "fatal_if_skipped_in_release_mode": true,
+      "downstream_must_report_execution": true
+    }
+  },
+  "checks": [
+    {
+      "registry_ref": "ArtifactRegistry.v0.entries_cover_required_artifact_types",
+      "artifact_type": "ArtifactRegistry.v0",
+      "check_id": "entries_cover_required_artifact_types",
+      "severity": "required",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "registry_metadata"
+    },
+    {
+      "registry_ref": "AssumptionSet.v0.source_commit_not_placeholder",
+      "artifact_type": "AssumptionSet.v0",
+      "check_id": "source_commit_not_placeholder",
+      "severity": "release_blocking",
+      "responsible_component": "LabTrust-Gym",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ClaimArtifact.v0.assumption_set_ref_present",
+      "artifact_type": "ClaimArtifact.v0",
+      "check_id": "assumption_set_ref_present",
+      "severity": "release_blocking",
+      "responsible_component": "LabTrust-Gym",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ComponentReleaseFragment.v0.component_artifacts_match_release_pins",
+      "artifact_type": "ComponentReleaseFragment.v0",
+      "check_id": "component_artifacts_match_release_pins",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ComputationRunReceipt.v0.signature_or_digest_valid",
+      "artifact_type": "ComputationRunReceipt.v0",
+      "check_id": "signature_or_digest_valid",
+      "severity": "release_blocking",
+      "responsible_component": "scientific-computation demo producer",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ComputationRunReceipt.v0.source_commit_not_placeholder",
+      "artifact_type": "ComputationRunReceipt.v0",
+      "check_id": "source_commit_not_placeholder",
+      "severity": "release_blocking",
+      "responsible_component": "scientific-computation demo producer",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ComputationWitness.v0.code_commit_present",
+      "artifact_type": "ComputationWitness.v0",
+      "check_id": "code_commit_present",
+      "severity": "release_blocking",
+      "responsible_component": "CertifyEdge",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ComputationWitness.v0.computation_status_checked_for_release",
+      "artifact_type": "ComputationWitness.v0",
+      "check_id": "computation_status_checked_for_release",
+      "severity": "release_blocking",
+      "responsible_component": "CertifyEdge",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "ComputationWitness.v0.dataset_hash_matches_receipt",
+      "artifact_type": "ComputationWitness.v0",
+      "check_id": "dataset_hash_matches_receipt",
+      "severity": "release_blocking",
+      "responsible_component": "CertifyEdge",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ComputationWitness.v0.environment_hash_matches_receipt",
+      "artifact_type": "ComputationWitness.v0",
+      "check_id": "environment_hash_matches_receipt",
+      "severity": "release_blocking",
+      "responsible_component": "CertifyEdge",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ComputationWitness.v0.result_hashes_match_result_artifacts",
+      "artifact_type": "ComputationWitness.v0",
+      "check_id": "result_hashes_match_result_artifacts",
+      "severity": "release_blocking",
+      "responsible_component": "CertifyEdge",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ComputationWitness.v0.run_receipt_hash_matches_declared_run",
+      "artifact_type": "ComputationWitness.v0",
+      "check_id": "run_receipt_hash_matches_declared_run",
+      "severity": "release_blocking",
+      "responsible_component": "CertifyEdge",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ComputationWitness.v0.signature_or_digest_valid",
+      "artifact_type": "ComputationWitness.v0",
+      "check_id": "signature_or_digest_valid",
+      "severity": "release_blocking",
+      "responsible_component": "CertifyEdge",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ComputationWitness.v0.source_commit_matches_release_manifest",
+      "artifact_type": "ComputationWitness.v0",
+      "check_id": "source_commit_matches_release_manifest",
+      "severity": "release_blocking",
+      "responsible_component": "CertifyEdge",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "DatasetReceipt.v0.signature_or_digest_valid",
+      "artifact_type": "DatasetReceipt.v0",
+      "check_id": "signature_or_digest_valid",
+      "severity": "release_blocking",
+      "responsible_component": "scientific-computation demo producer",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "DatasetReceipt.v0.source_commit_not_placeholder",
+      "artifact_type": "DatasetReceipt.v0",
+      "check_id": "source_commit_not_placeholder",
+      "severity": "release_blocking",
+      "responsible_component": "scientific-computation demo producer",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "EnvironmentReceipt.v0.signature_or_digest_valid",
+      "artifact_type": "EnvironmentReceipt.v0",
+      "check_id": "signature_or_digest_valid",
+      "severity": "release_blocking",
+      "responsible_component": "scientific-computation demo producer",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "EnvironmentReceipt.v0.source_commit_not_placeholder",
+      "artifact_type": "EnvironmentReceipt.v0",
+      "check_id": "source_commit_not_placeholder",
+      "severity": "release_blocking",
+      "responsible_component": "scientific-computation demo producer",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "EvidenceBundle.v0.certificate_refs_resolve",
+      "artifact_type": "EvidenceBundle.v0",
+      "check_id": "certificate_refs_resolve",
+      "severity": "producer_responsible",
+      "responsible_component": "LabTrust-Gym",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "consumer"
+    },
+    {
+      "registry_ref": "HandoffManifest.v0.handoff_input_hashes_when_validated",
+      "artifact_type": "HandoffManifest.v0",
+      "check_id": "handoff_input_hashes_when_validated",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "LeanCheckResult.v0.lean_theorem_in_catalog",
+      "artifact_type": "LeanCheckResult.v0",
+      "check_id": "lean_theorem_in_catalog",
+      "severity": "required",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "registry_metadata"
+    },
+    {
+      "registry_ref": "LeanCheckResult.v0.obligation_results_match_proof_obligation",
+      "artifact_type": "LeanCheckResult.v0",
+      "check_id": "obligation_results_match_proof_obligation",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ProofObligation.v0.obligations_reference_known_kinds",
+      "artifact_type": "ProofObligation.v0",
+      "check_id": "obligations_reference_known_kinds",
+      "severity": "required",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ReleaseChainValidationResult.v0.status_matches_check_outcomes",
+      "artifact_type": "ReleaseChainValidationResult.v0",
+      "check_id": "status_matches_check_outcomes",
+      "severity": "validator_responsible",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "ReleaseManifest.v0.artifact_hashes_match_files",
+      "artifact_type": "ReleaseManifest.v0",
+      "check_id": "artifact_hashes_match_files",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "ReleaseManifest.v0.release_mode_commit_policy",
+      "artifact_type": "ReleaseManifest.v0",
+      "check_id": "release_mode_commit_policy",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ResultArtifact.v0.signature_or_digest_valid",
+      "artifact_type": "ResultArtifact.v0",
+      "check_id": "signature_or_digest_valid",
+      "severity": "release_blocking",
+      "responsible_component": "scientific-computation demo producer",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ResultArtifact.v0.source_commit_not_placeholder",
+      "artifact_type": "ResultArtifact.v0",
+      "check_id": "source_commit_not_placeholder",
+      "severity": "release_blocking",
+      "responsible_component": "scientific-computation demo producer",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "RuntimeReceipt.v0.source_commit_matches_release_manifest",
+      "artifact_type": "RuntimeReceipt.v0",
+      "check_id": "source_commit_matches_release_manifest",
+      "severity": "release_blocking",
+      "responsible_component": "LabTrust-Gym",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "RuntimeReceipt.v0.trace_hash_present",
+      "artifact_type": "RuntimeReceipt.v0",
+      "check_id": "trace_hash_present",
+      "severity": "release_blocking",
+      "responsible_component": "LabTrust-Gym",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ScienceClaimBundle.v0.certified_bundle_has_certificate_when_checked",
+      "artifact_type": "ScienceClaimBundle.v0",
+      "check_id": "certified_bundle_has_certificate_when_checked",
+      "severity": "release_blocking",
+      "responsible_component": "LabTrust-Gym",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ScienceClaimBundle.v0.non_empty_runtime_receipts",
+      "artifact_type": "ScienceClaimBundle.v0",
+      "check_id": "non_empty_runtime_receipts",
+      "severity": "release_blocking",
+      "responsible_component": "LabTrust-Gym",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "SignedScienceClaimBundle.v0.embedded_bundle_passes_science_claim_semantics",
+      "artifact_type": "SignedScienceClaimBundle.v0",
+      "check_id": "embedded_bundle_passes_science_claim_semantics",
+      "severity": "producer_responsible",
+      "responsible_component": "Provability Fabric",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "consumer"
+    },
+    {
+      "registry_ref": "SignedScienceClaimBundle.v0.signed_input_bundle_hash_matches_certified",
+      "artifact_type": "SignedScienceClaimBundle.v0",
+      "check_id": "signed_input_bundle_hash_matches_certified",
+      "severity": "release_blocking",
+      "responsible_component": "Provability Fabric",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "SourceSpan.v0.source_commit_not_placeholder",
+      "artifact_type": "SourceSpan.v0",
+      "check_id": "source_commit_not_placeholder",
+      "severity": "release_blocking",
+      "responsible_component": "LabTrust-Gym",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ToolUseCertificate.v0.certificate_status_checked_for_release",
+      "artifact_type": "ToolUseCertificate.v0",
+      "check_id": "certificate_status_checked_for_release",
+      "severity": "release_blocking",
+      "responsible_component": "CertifyEdge",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "ToolUseCertificate.v0.no_unauthorized_tool_calls",
+      "artifact_type": "ToolUseCertificate.v0",
+      "check_id": "no_unauthorized_tool_calls",
+      "severity": "release_blocking",
+      "responsible_component": "CertifyEdge",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ToolUseCertificate.v0.policy_hash_matches_certificate",
+      "artifact_type": "ToolUseCertificate.v0",
+      "check_id": "policy_hash_matches_certificate",
+      "severity": "release_blocking",
+      "responsible_component": "CertifyEdge",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ToolUseCertificate.v0.signature_or_digest_valid",
+      "artifact_type": "ToolUseCertificate.v0",
+      "check_id": "signature_or_digest_valid",
+      "severity": "release_blocking",
+      "responsible_component": "CertifyEdge",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ToolUseCertificate.v0.source_commit_matches_release_manifest",
+      "artifact_type": "ToolUseCertificate.v0",
+      "check_id": "source_commit_matches_release_manifest",
+      "severity": "release_blocking",
+      "responsible_component": "CertifyEdge",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "ToolUseCertificate.v0.tool_trace_hash_matches_certificate",
+      "artifact_type": "ToolUseCertificate.v0",
+      "check_id": "tool_trace_hash_matches_certificate",
+      "severity": "release_blocking",
+      "responsible_component": "CertifyEdge",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ToolUseTrace.v0.no_unknown_authorization_status",
+      "artifact_type": "ToolUseTrace.v0",
+      "check_id": "no_unknown_authorization_status",
+      "severity": "release_blocking",
+      "responsible_component": "agent-tool-use demo producer",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "ToolUseTrace.v0.trace_hash_present",
+      "artifact_type": "ToolUseTrace.v0",
+      "check_id": "trace_hash_present",
+      "severity": "release_blocking",
+      "responsible_component": "agent-tool-use demo producer",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "TraceCertificate.v0.source_commit_matches_release_manifest",
+      "artifact_type": "TraceCertificate.v0",
+      "check_id": "source_commit_matches_release_manifest",
+      "severity": "release_blocking",
+      "responsible_component": "CertifyEdge",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "TraceCertificate.v0.status_is_certificate_checked_for_release",
+      "artifact_type": "TraceCertificate.v0",
+      "check_id": "status_is_certificate_checked_for_release",
+      "severity": "release_blocking",
+      "responsible_component": "CertifyEdge",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "TraceCertificate.v0.trace_hash_matches_runtime_receipt",
+      "artifact_type": "TraceCertificate.v0",
+      "check_id": "trace_hash_matches_runtime_receipt",
+      "severity": "release_blocking",
+      "responsible_component": "CertifyEdge",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "VerificationResult.v0.failed_checks_block_import_ready_status",
+      "artifact_type": "VerificationResult.v0",
+      "check_id": "failed_checks_block_import_ready_status",
+      "severity": "release_blocking",
+      "responsible_component": "Provability Fabric",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "artifact_validate"
+    },
+    {
+      "registry_ref": "VerificationResult.v0.verified_input_bundle_hash_matches_certified",
+      "artifact_type": "VerificationResult.v0",
+      "check_id": "verified_input_bundle_hash_matches_certified",
+      "severity": "release_blocking",
+      "responsible_component": "Provability Fabric",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "WorkflowProfile.v0.required_registry_entries_registered",
+      "artifact_type": "WorkflowProfile.v0",
+      "check_id": "required_registry_entries_registered",
+      "severity": "required",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "registry_metadata"
+    }
+  ],
+  "signature_or_digest": "sha256:2eff7c2f8a2c05957db5a5223ce3fdf7e5b9ee3e5bbe7789c0e2ceb66ae9691d"
+}

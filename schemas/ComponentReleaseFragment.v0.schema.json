@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pcs.sentinelops.ci/schemas/ComponentReleaseFragment.v0.schema.json",
+  "title": "ComponentReleaseFragment.v0",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "component",
+    "source_repo",
+    "source_commit",
+    "artifacts",
+    "signature_or_digest"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^v0$"
+    },
+    "component": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_repo": {
+      "type": "string",
+      "format": "uri"
+    },
+    "source_commit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "artifacts": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "required": ["artifact_type", "sha256"],
+        "additionalProperties": false,
+        "properties": {
+          "artifact_type": { "type": "string", "minLength": 1 },
+          "sha256": {
+            "type": "string",
+            "pattern": "^sha256:[a-f0-9]{64}$"
+          }
+        }
+      }
+    },
+    "component_version": { "type": "string", "minLength": 1 },
+    "generated_at": { "$ref": "common.defs.json#/$defs/iso8601_datetime" },
+    "upstream_release_manifest": { "$ref": "common.defs.json#/$defs/manifest_path_ref" },
+    "handoff_artifacts": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "validation_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": { "type": "string", "minLength": 1 },
+        "checks_passed": { "type": "integer", "minimum": 0 },
+        "checks_failed": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "signature_or_digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    }
+  }
+}

@@ -20,13 +20,59 @@ jobs:
           pytest -q tests/test_pf_core_stage1.py tests/test_pf_core_stage2.py tests/test_pf_core_stage3.py
           pytest -q tests/test_pf_core_phase_f.py
           pytest -q
+          pytest -q tests/test_protocol_conformance.py
           pcs schema check
           pcs pf-core audit-claims
           pcs pf-core audit-boundary
           pcs pf-core audit-lean-catalog
           pcs pf-core audit-lean-no-sorry
           pcs examples check
+          pcs validate-release-chain ../examples/labtrust-release/
+          pcs validate-release-chain ../examples/labtrust-release/ --json > /dev/null
+          pcs validate-release-chain ../examples/labtrust-release/ --out ../examples/labtrust-release/.ci_validation_result.json
+          pcs validate ../examples/labtrust-release/.ci_validation_result.json
+          test -f ../examples/labtrust-release/release_manifest.v0.json
+          pcs validate ../examples/labtrust-release/release_manifest.v0.json
           python -m pcs_core.hash_vectors --verify
+          pcs shared-hash-vectors verify
+          pcs conformance run --suite all
+          pcs conformance run --suite multidomain
+          pcs conformance run --suite all --json > /tmp/conformance_report.json
+          pcs validate /tmp/conformance_report.json
+          pcs registry validate ../examples/artifact_registry.valid.json
+          pcs registry audit
+          test -f ../examples/tool-use-release/tool_use_trace.valid.json
+          test -f ../examples/tool-use-release/tool_use_certificate.valid.json
+          test -f ../examples/tool-use-release/RELEASE_FIXTURE_MANIFEST.json
+          pcs validate ../examples/workflow_profiles/labtrust_qc_release.valid.json
+          pcs validate ../examples/workflow_profiles/agent_tool_use_safety.valid.json
+          pcs validate ../examples/workflow_profiles/scientific_computation_reproducibility.valid.json
+          pcs validate-release-chain ../examples/tool-use-release/
+          test -f ../examples/computation-release/computation_witness.json
+          test -f ../examples/computation-release/RELEASE_FIXTURE_MANIFEST.json
+          pcs validate-release-chain ../examples/computation-release/
+          pcs conformance run --suite computation
+          pcs benchmark validate
+          pcs conformance run --suite benchmark
+          pcs conformance run --suite benchmark-ingest
+          pcs conformance run --suite benchmark-report
+          pcs benchmark run --suite labtrust-qc-release-v0
+          pcs benchmark run --suite tool-use-safety-v0
+          pcs benchmark run --suite computation-reproducibility-v0
+          pcs benchmark run --suite scientific-memory-rendering-v0
+          pcs benchmark run --suite formal-trust-kernel-v0
+          pcs benchmark run --suite cross-domain-release-chain-v0
+          python scripts/materialize_benchmark_examples.py
+          python scripts/materialize_benchmark_producer_examples.py
+          python ../scripts/validate_benchmark_ingest_examples.py --release-grade
+          pcs benchmark validate-ingest --release-grade
+          pcs validate ../examples/benchmark_registry.valid.json
+          pcs validate ../examples/benchmark_metric_registry.valid.json
+          for f in ../examples/benchmark/pcs_bench_report.valid.json ../examples/benchmark/labtrust_benchmark_case.valid.json; do pcs validate "$f"; done
+          for f in ../examples/benchmark_ingest/*.pcs_bench_ingest.valid.json; do pcs validate "$f"; done
+          pcs validate ../examples/tool_use_trace.valid.json
+          pcs validate ../examples/tool_use_certificate.valid.json
+          pytest -q tests/test_multidomain_workflows.py
           ruff check pcs_core tests
           ruff format --check pcs_core tests
       - name: PF-Core fixture validation
@@ -46,6 +92,10 @@ jobs:
         run: bash scripts/pcs-schema-diff.sh schemas
       - name: PF-Core hash vector parity (Phase 7)
         run: bash scripts/verify-pf-core-hash-vectors.sh python/tests/hash_vectors
+      - name: LabTrust release fixtures
+        run: |
+          cd python
+          pcs validate-release-chain ../examples/labtrust-release/
 
   lean:
     runs-on: ubuntu-latest
@@ -82,6 +132,7 @@ jobs:
           cargo fmt --check
           cargo clippy --all-targets -- -D warnings
           cargo test
+          cargo test hash_vectors
 
   typescript:
     runs-on: ubuntu-latest
@@ -95,6 +146,7 @@ jobs:
           cd typescript
           npm install
           npm test
+          npm run test:hash-vectors -w @pcs/core
           npm run lint
 
   validate-cli-contract:
@@ -112,5 +164,14 @@ jobs:
           pcs validate ../examples/science_claim_bundle.certified.valid.json
           pcs validate ../examples/signed_science_claim_bundle.valid.json
           pcs validate ../examples/labtrust/signed_science_claim_bundle.valid.json
+          pcs validate ../examples/tool_use_trace.valid.json
+          pcs validate ../examples/tool_use_certificate.valid.json
           pcs hash ../examples/science_claim_bundle.certified.valid.json
           pcs examples check
+          pcs validate-release-chain ../examples/labtrust-release/
+          pcs validate-release-chain ../examples/tool-use-release/
+          pcs validate-release-chain ../examples/computation-release/
+          pcs conformance run --suite workflow-profile
+          pcs conformance run --suite tool-use
+          pcs conformance run --suite computation
+          pcs conformance run --suite multidomain

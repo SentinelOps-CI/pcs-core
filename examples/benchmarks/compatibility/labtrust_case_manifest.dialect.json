@@ -1,0 +1,6 @@
+{
+  "case_id": "labtrust-qc-valid-release",
+  "workflow_id": "labtrust.qc_release_v0.1",
+  "release_directory": "examples/labtrust-release",
+  "expected_status": "passed"
+}

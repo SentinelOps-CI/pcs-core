@@ -1,8 +1,8 @@
-import PCS.ReleaseChain
-
 /-!
 # PCS trust-envelope theorems (first family)
 -/
+
+import PCS.ReleaseChain
 
 namespace PCS
 
@@ -23,7 +23,7 @@ theorem admissible_release_has_certificate_checked
     (bundleHash : Hash)
     (signedInputHash : Hash)
     (h : ReleaseChainAdmissible cert receipt verification bundleHash signedInputHash) :
-    cert.status = ArtifactStatus.certificateChecked := by
+    cert.status = ArtifactStatus.CertificateChecked := by
   exact certificateCheckedInAdmissibleRelease cert receipt verification bundleHash signedInputHash h
 
 theorem admissible_release_has_proof_checked_verification
@@ -33,7 +33,7 @@ theorem admissible_release_has_proof_checked_verification
     (bundleHash : Hash)
     (signedInputHash : Hash)
     (h : ReleaseChainAdmissible cert receipt verification bundleHash signedInputHash) :
-    verification.status = ArtifactStatus.proofChecked := by
+    verification.status = ArtifactStatus.ProofChecked := by
   exact verificationProofCheckedInAdmissibleRelease cert receipt verification bundleHash signedInputHash h
 
 theorem admissible_release_has_verified_input_hash_equal_to_bundle_hash
@@ -44,7 +44,7 @@ theorem admissible_release_has_verified_input_hash_equal_to_bundle_hash
     (signedInputHash : Hash)
     (h : ReleaseChainAdmissible cert receipt verification bundleHash signedInputHash) :
     verification.verifiedInputBundleHash = bundleHash := by
-  exact h.right.left.right.left
+  exact h.right.left.right
 
 theorem admissible_release_has_signed_input_hash_equal_to_verified_input_hash
     (cert : Certificate)
@@ -62,8 +62,8 @@ theorem rejected_certificate_cannot_produce_admissible_release
     (verification : VerificationResult)
     (bundleHash : Hash)
     (signedInputHash : Hash)
-    (hCert : cert.status = ArtifactStatus.rejected) :
-    ¬ ReleaseChainAdmissible cert receipt verification bundleHash signedInputHash := by
+    (hCert : cert.status = ArtifactStatus.Rejected) :
+    ┬¼ ReleaseChainAdmissible cert receipt verification bundleHash signedInputHash := by
   intro h
   have hChecked := certificateCheckedInAdmissibleRelease cert receipt verification bundleHash signedInputHash h
   rw [hCert] at hChecked
@@ -75,8 +75,8 @@ theorem stale_certificate_cannot_produce_admissible_release
     (verification : VerificationResult)
     (bundleHash : Hash)
     (signedInputHash : Hash)
-    (hCert : cert.status = ArtifactStatus.stale) :
-    ¬ ReleaseChainAdmissible cert receipt verification bundleHash signedInputHash := by
+    (hCert : cert.status = ArtifactStatus.Stale) :
+    ┬¼ ReleaseChainAdmissible cert receipt verification bundleHash signedInputHash := by
   intro h
   have hChecked := certificateCheckedInAdmissibleRelease cert receipt verification bundleHash signedInputHash h
   rw [hCert] at hChecked
@@ -89,10 +89,10 @@ theorem failed_release_blocking_check_prevents_admissible_release
     (bundleHash : Hash)
     (signedInputHash : Hash)
     (hFailed : verification.releaseBlockingChecksPassed = false) :
-    ¬ ReleaseChainAdmissible cert receipt verification bundleHash signedInputHash := by
+    ┬¼ ReleaseChainAdmissible cert receipt verification bundleHash signedInputHash := by
   intro h
-  have hPassed := h.right.left.right.right
-  rw [hFailed] at hPassed
-  cases hPassed
+  have hAdmits := h.right.left
+  rw [hFailed] at hAdmits
+  cases hAdmits
 
 end PCS

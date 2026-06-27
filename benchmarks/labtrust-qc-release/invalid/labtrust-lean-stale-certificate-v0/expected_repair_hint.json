@@ -1,0 +1,10 @@
+{
+  "expected_detection_layer": "Lean trust kernel",
+  "failure_code": "lean_certificate_stale",
+  "repair_hint": {
+    "command": "labtrust attach-certificate ...",
+    "description": "Re-attach certificate after trace mutation; mark Stale only after intentional divergence tests.",
+    "kind": "rerun_formal_check"
+  },
+  "responsible_component": "formal_kernel"
+}

@@ -1,0 +1,9 @@
+{
+  "schema_version": "v0",
+  "from_version": "v0",
+  "to_version": "v0",
+  "artifact_type": "RuntimeReceipt.v0",
+  "source_path": "examples/runtime_receipt.valid.json",
+  "changes": [],
+  "status": "noop"
+}

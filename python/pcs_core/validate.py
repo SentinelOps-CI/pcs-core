@@ -16,6 +16,23 @@ from pcs_core.paths import repo_root, schemas_dir
 from pcs_core.registry_data import PF_CORE_CLAIM_CLASSES
 from pcs_core.status import ARTIFACT_STATUSES, TRACE_CERTIFICATE_STATUSES
 
+from pcs_core.lean_validate import (
+    validate_lean_check_result_semantics,
+    validate_proof_obligation_semantics,
+)
+from pcs_core.protocol_validate import (
+    validate_artifact_registry_semantics,
+    validate_conformance_report_semantics,
+    validate_handoff_manifest_semantics,
+    validate_release_chain_validation_result_semantics,
+    validate_release_manifest_fixture_refs,
+    validate_release_manifest_semantics,
+)
+from pcs_core.tool_use_validate import (
+    validate_tool_use_certificate_semantics,
+    validate_tool_use_trace_semantics,
+    validate_workflow_profile_semantics,
+)
 ARTIFACT_SCHEMAS: dict[str, str] = {
     "AssumptionSet.v0": "AssumptionSet.v0.schema.json",
     "SourceSpan.v0": "SourceSpan.v0.schema.json",
@@ -26,6 +43,40 @@ ARTIFACT_SCHEMAS: dict[str, str] = {
     "ScienceClaimBundle.v0": "ScienceClaimBundle.v0.schema.json",
     "VerificationResult.v0": "VerificationResult.v0.schema.json",
     "SignedScienceClaimBundle.v0": "SignedScienceClaimBundle.v0.schema.json",
+    "ReleaseManifest.v0": "ReleaseManifest.v0.schema.json",
+    "HandoffManifest.v0": "HandoffManifest.v0.schema.json",
+    "ReleaseChainValidationResult.v0": "ReleaseChainValidationResult.v0.schema.json",
+    "ArtifactRegistry.v0": "ArtifactRegistry.v0.schema.json",
+    "MigrationReport.v0": "MigrationReport.v0.schema.json",
+    "ComponentReleaseFragment.v0": "ComponentReleaseFragment.v0.schema.json",
+    "SemanticCheckExecution.v0": "SemanticCheckExecution.v0.schema.json",
+    "ConformanceReport.v0": "ConformanceReport.v0.schema.json",
+    "WorkflowProfile.v0": "WorkflowProfile.v0.schema.json",
+    "ToolUseTrace.v0": "ToolUseTrace.v0.schema.json",
+    "ToolUseCertificate.v0": "ToolUseCertificate.v0.schema.json",
+    "DatasetReceipt.v0": "DatasetReceipt.v0.schema.json",
+    "EnvironmentReceipt.v0": "EnvironmentReceipt.v0.schema.json",
+    "ComputationRunReceipt.v0": "ComputationRunReceipt.v0.schema.json",
+    "ResultArtifact.v0": "ResultArtifact.v0.schema.json",
+    "ComputationWitness.v0": "ComputationWitness.v0.schema.json",
+    "ProofObligation.v0": "ProofObligation.v0.schema.json",
+    "LeanCheckResult.v0": "LeanCheckResult.v0.schema.json",
+    "BenchmarkTask.v0": "BenchmarkTask.v0.schema.json",
+    "BenchmarkCase.v0": "BenchmarkCase.v0.schema.json",
+    "BenchmarkRun.v0": "BenchmarkRun.v0.schema.json",
+    "BenchmarkReport.v0": "BenchmarkReport.v0.schema.json",
+    "BenchmarkRegistry.v0": "BenchmarkRegistry.v0.schema.json",
+    "BenchmarkSuiteManifest.v0": "BenchmarkSuiteManifest.v0.schema.json",
+    "ConformanceRun.v0": "ConformanceRun.v0.schema.json",
+    "FailureCaseManifest.v0": "FailureCaseManifest.v0.schema.json",
+    "FailureLocalizationResult.v0": "FailureLocalizationResult.v0.schema.json",
+    "CoverageReport.v0": "CoverageReport.v0.schema.json",
+    "ExplainQualityReport.v0": "ExplainQualityReport.v0.schema.json",
+    "ProfileCoverageReport.v0": "ProfileCoverageReport.v0.schema.json",
+    "BenchmarkMetricRegistry.v0": "BenchmarkMetricRegistry.v0.schema.json",
+    "MetricSummary.v0": "MetricSummary.v0.schema.json",
+    "PcsBenchIngest.v0": "PcsBenchIngest.v0.schema.json",
+    "BenchmarkArtifactRef.v0": "BenchmarkArtifactRef.v0.schema.json",
     "PFCorePrincipal.v0": "PFCorePrincipal.v0.schema.json",
     "PFCoreCapability.v0": "PFCoreCapability.v0.schema.json",
     "PFCoreResource.v0": "PFCoreResource.v0.schema.json",
@@ -38,10 +89,35 @@ ARTIFACT_SCHEMAS: dict[str, str] = {
     "PFCoreHandoff.v0": "PFCoreHandoff.v0.schema.json",
     "PFCoreRuntimeObservation.v0": "PFCoreRuntimeObservation.v0.schema.json",
     "PFCoreCertificate.v0": "PFCoreCertificate.v0.schema.json",
-    "LeanCheckResult.v0": "LeanCheckResult.v0.schema.json",
-    "ToolUseTrace.v0": "ToolUseTrace.v0.schema.json",
     "PCSBridgeCertificate.v0": "PCSBridgeCertificate.v0.schema.json",
 }
+
+CERTIFIED_CLAIM_STATUSES = frozenset(
+    {
+        "CertificateChecked",
+        "ProofChecked",
+        "RuntimeChecked",
+    }
+)
+
+IMPORT_READY_VERIFICATION_STATUSES = frozenset(
+    {
+        "ProofChecked",
+        "CertificateChecked",
+        "RuntimeChecked",
+    }
+)
+
+_ZERO_COMMIT_RE = re.compile(r"^0+$")
+
+
+class ValidationError(Exception):
+    """Raised when artifact validation fails."""
+
+    def __init__(self, message: str, errors: list[str] | None = None):
+        super().__init__(message)
+        self.errors = errors or []
+
 
 _PF_CORE_ARTIFACT_TYPES = frozenset(
     key for key in ARTIFACT_SCHEMAS if key.startswith("PFCore") or key == "ToolUseTrace.v0"
@@ -116,6 +192,7 @@ def _schema_requires_artifact_type(artifact_type: str) -> bool:
     return artifact_type_schema.get("const") == artifact_type
 
 
+
 def detect_artifact_type(data: dict[str, Any]) -> str | None:
     explicit = data.get("artifact_type")
     if isinstance(explicit, str) and explicit in ARTIFACT_SCHEMAS:
@@ -144,11 +221,262 @@ def detect_artifact_type(data: dict[str, Any]) -> str | None:
         return "AssumptionSet.v0"
     if "source_span_id" in data:
         return "SourceSpan.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("registry_id"), str)
+        and isinstance(data.get("metrics"), dict)
+        and "registry_version" in data
+        and "suites" not in data
+    ):
+        return "BenchmarkMetricRegistry.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("registry_id"), str)
+        and isinstance(data.get("suites"), dict)
+        and "registry_version" in data
+    ):
+        return "BenchmarkRegistry.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("suite_id"), str)
+        and isinstance(data.get("case_ids"), list)
+        and isinstance(data.get("cases"), list)
+        and "case_count" in data
+        and "task_id" in data
+    ):
+        return "BenchmarkSuiteManifest.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("report_id"), str)
+        and isinstance(data.get("required_sections"), list)
+        and "quality_score" in data
+    ):
+        return "ExplainQualityReport.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("coverage_id"), str)
+        and isinstance(data.get("workflow_profile_id"), str)
+        and isinstance(data.get("artifact_types_required"), list)
+    ):
+        return "ProfileCoverageReport.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("artifact_type"), str)
+        and isinstance(data.get("path"), str)
+        and isinstance(data.get("sha256"), str)
+        and isinstance(data.get("role"), str)
+        and "producer_id" not in data
+        and "benchmark_runs" not in data
+    ):
+        return "BenchmarkArtifactRef.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("producer_id"), str)
+        and isinstance(data.get("suite_id"), str)
+        and isinstance(data.get("benchmark_runs"), list)
+        and isinstance(data.get("logs"), list)
+        and "workflow_id" in data
+    ):
+        return "PcsBenchIngest.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("metric_id"), str)
+        and "applicability" in data
+        and "score" in data
+        and "numerator" in data
+        and "benchmark_suite_id" not in data
+    ):
+        return "MetricSummary.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("report_id"), str)
+        and isinstance(data.get("benchmark_suite_id"), str)
+        and isinstance(data.get("summary"), dict)
+    ):
+        return "BenchmarkReport.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("run_id"), str)
+        and isinstance(data.get("case_id"), str)
+        and "duration_ms" in data
+        and "observed_status" in data
+    ):
+        return "BenchmarkRun.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("case_id"), str)
+        and isinstance(data.get("case_kind"), str)
+        and "input_artifacts" in data
+    ):
+        return "BenchmarkCase.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("task_id"), str)
+        and isinstance(data.get("metrics"), list)
+        and "success_criteria" in data
+    ):
+        return "BenchmarkTask.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("coverage_id"), str)
+        and "coverage_ratio" in data
+        and "numerator" in data
+        and ("metric" in data or "metric_id" in data)
+    ):
+        return "CoverageReport.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("result_id"), str)
+        and "localized_correctly" in data
+    ):
+        return "FailureLocalizationResult.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("manifest_id"), str)
+        and isinstance(data.get("failure_code"), str)
+        and "repair_hint_kind" in data
+    ):
+        return "FailureCaseManifest.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("run_id"), str)
+        and isinstance(data.get("suite"), str)
+        and "started_at" in data
+        and "completed_at" in data
+    ):
+        return "ConformanceRun.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("suite"), str)
+        and "checks_passed" in data
+        and "checks_failed" in data
+        and isinstance(data.get("failures"), list)
+    ):
+        return "ConformanceReport.v0"
+    if (
+        "policy_id" in data
+        and "severity_definitions" in data
+        and isinstance(data.get("checks"), list)
+    ):
+        return "SemanticCheckExecution.v0"
+    if (
+        "from_version" in data
+        and "to_version" in data
+        and "changes" in data
+        and "artifact_type" in data
+    ):
+        return "MigrationReport.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("check_id"), str)
+        and isinstance(data.get("proof_obligation_id"), str)
+        and "lean_theorem" in data
+        and "lean_version" in data
+    ):
+        return "LeanCheckResult.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("obligation_id"), str)
+        and isinstance(data.get("obligations"), list)
+        and "lean_module" in data
+    ):
+        return "ProofObligation.v0"
+    if "validation_id" in data and "artifacts_checked" in data:
+        return "ReleaseChainValidationResult.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("component"), str)
+        and isinstance(data.get("artifacts"), dict)
+        and "signature_or_digest" in data
+        and "source_commit" in data
+    ):
+        return "ComponentReleaseFragment.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("workflow_id"), str)
+        and isinstance(data.get("domain"), str)
+        and isinstance(data.get("handoff_sequence"), list)
+        and isinstance(data.get("runtime_artifacts"), list)
+    ):
+        return "WorkflowProfile.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("witness_id"), str)
+        and isinstance(data.get("dataset_hash"), str)
+        and isinstance(data.get("run_receipt_hash"), str)
+    ):
+        return "ComputationWitness.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("dataset_id"), str)
+        and isinstance(data.get("aggregate_hash"), str)
+        and isinstance(data.get("files"), list)
+    ):
+        return "DatasetReceipt.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("environment_id"), str)
+        and isinstance(data.get("environment_kind"), str)
+    ):
+        return "EnvironmentReceipt.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("run_id"), str)
+        and isinstance(data.get("command"), str)
+        and "dataset_receipt_ref" in data
+    ):
+        return "ComputationRunReceipt.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("result_id"), str)
+        and isinstance(data.get("result_kind"), str)
+    ):
+        return "ResultArtifact.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("trace_id"), str)
+        and isinstance(data.get("tool_calls"), list)
+    ):
+        return "ToolUseTrace.v0"
+    if "handoff_id" in data and "handoff_kind" in data:
+        return "HandoffManifest.v0"
+    if "registry_id" in data and "entries" in data and "registry_version" in data:
+        return "ArtifactRegistry.v0"
+    if (
+        "release_id" in data
+        and "producer_repos" in data
+        and "validation_profile" in data
+        and "workflow_profile_id" in data
+    ):
+        return "ReleaseManifest.v0"
+    if "signed_bundle_id" in data and "science_claim_bundle" in data:
+        return "SignedScienceClaimBundle.v0"
+    if "bundle_id" in data and "claim_artifact" in data:
+        return "ScienceClaimBundle.v0"
+    if "verification_id" in data:
+        return "VerificationResult.v0"
+    if "receipt_id" in data:
+        return "RuntimeReceipt.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("certificate_id"), str)
+        and "policy_hash" in data
+        and isinstance(data.get("violations"), list)
+        and "spec_hash" not in data
+    ):
+        return "ToolUseCertificate.v0"
+    if "certificate_id" in data:
+        return "TraceCertificate.v0"
+    if "assumption_set_id" in data:
+        return "AssumptionSet.v0"
+    if "source_span_id" in data:
+        return "SourceSpan.v0"
     if data.get("artifact_type") == "ClaimArtifact.v0":
         return "ClaimArtifact.v0"
     if "bundle_id" in data and "claim_refs" in data:
         return "EvidenceBundle.v0"
     return None
+
 
 
 def _load_schema(path: Path) -> dict[str, Any]:
@@ -245,9 +573,7 @@ def _validate_status_fields(obj: Any, path: str, errors: list[str]) -> None:
         if "check_id" not in obj:
             status = obj.get("status")
             if isinstance(status, str):
-                if path == "" and status in LEAN_CHECK_RESULT_STATUSES:
-                    pass
-                elif "certificate_id" in obj:
+                if "certificate_id" in obj:
                     if status not in TRACE_CERTIFICATE_STATUSES:
                         errors.append(f"{path}: invalid TraceCertificate status {status!r}")
                 elif status not in ARTIFACT_STATUSES:
@@ -335,6 +661,50 @@ def _validate_verification_result(data: dict[str, Any]) -> list[str]:
     return errors
 
 
+def _validate_signed_bundle(data: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    scb = data.get("science_claim_bundle")
+    if isinstance(scb, dict):
+        errors.extend(_validate_science_claim_bundle(scb))
+    vr = data.get("verification_result")
+    if isinstance(vr, dict):
+        _validate_status_fields(vr, "verification_result", errors)
+        errors.extend(_validate_verification_result(vr))
+    return errors
+
+
+def _resolve_schema_ref(schema: dict[str, Any], ref: str) -> dict[str, Any]:
+    if ref.startswith("pf_core.defs.json#/$defs/"):
+        defs_path = schemas_dir() / "pf_core.defs.json"
+        defs_schema = _load_schema(defs_path)
+        def_name = ref.split("/")[-1]
+        target = defs_schema.get("$defs", {}).get(def_name)
+        if isinstance(target, dict):
+            return target
+    return {}
+
+
+def _schema_requires_artifact_type(artifact_type: str) -> bool:
+    schema_name = ARTIFACT_SCHEMAS.get(artifact_type)
+    if not schema_name:
+        return False
+    schema = _load_schema(schemas_dir() / schema_name)
+    if "$ref" in schema:
+        ref = str(schema["$ref"])
+        if ref.endswith("embedded_event") and artifact_type == "PFCoreEvent.v0":
+            return True
+        resolved = _resolve_schema_ref(schema, ref)
+        if resolved:
+            schema = resolved
+    props = schema.get("properties")
+    if not isinstance(props, dict):
+        return False
+    artifact_type_schema = props.get("artifact_type")
+    if not isinstance(artifact_type_schema, dict):
+        return False
+    return artifact_type_schema.get("const") == artifact_type
+
+
 def _validate_pfcore_claim_class(data: dict[str, Any], path: str, errors: list[str]) -> None:
     claim_class = data.get("claim_class")
     if not isinstance(claim_class, str):
@@ -395,22 +765,147 @@ def _validate_lean_check_result(data: dict[str, Any]) -> list[str]:
     if isinstance(cert, dict):
         errors.extend(_validate_pfcore_certificate(cert))
     return errors
-
-
-def _validate_signed_bundle(data: dict[str, Any]) -> list[str]:
-    errors: list[str] = []
-    scb = data.get("science_claim_bundle")
-    if isinstance(scb, dict):
-        errors.extend(_validate_science_claim_bundle(scb))
-    vr = data.get("verification_result")
-    if isinstance(vr, dict):
-        _validate_status_fields(vr, "verification_result", errors)
-        errors.extend(_validate_verification_result(vr))
-    return errors
-
-
 def validate_semantics(data: dict[str, Any], artifact_type: str) -> list[str]:
     errors: list[str] = []
+
+    if artifact_type == "ArtifactRegistry.v0":
+        errors.extend(validate_artifact_registry_semantics(data))
+        return errors
+
+    if artifact_type == "ComponentReleaseFragment.v0":
+        _check_source_commits(data, "", errors)
+        return errors
+
+    if artifact_type == "MigrationReport.v0":
+        return errors
+
+    if artifact_type == "ReleaseManifest.v0":
+        errors.extend(validate_release_manifest_semantics(data))
+        return errors
+
+    if artifact_type == "HandoffManifest.v0":
+        errors.extend(validate_handoff_manifest_semantics(data))
+        return errors
+
+    if artifact_type == "ConformanceReport.v0":
+        errors.extend(validate_conformance_report_semantics(data))
+        return errors
+
+    if artifact_type == "WorkflowProfile.v0":
+        errors.extend(validate_workflow_profile_semantics(data))
+        return errors
+
+    if artifact_type == "ToolUseTrace.v0":
+        errors.extend(validate_tool_use_trace_semantics(data))
+        return errors
+
+    if artifact_type == "ToolUseCertificate.v0":
+        errors.extend(validate_tool_use_certificate_semantics(data))
+        return errors
+
+    if artifact_type == "DatasetReceipt.v0":
+        errors.extend(validate_dataset_receipt_semantics(data))
+        return errors
+
+    if artifact_type == "EnvironmentReceipt.v0":
+        errors.extend(validate_environment_receipt_semantics(data))
+        return errors
+
+    if artifact_type == "ComputationRunReceipt.v0":
+        errors.extend(validate_computation_run_receipt_semantics(data))
+        return errors
+
+    if artifact_type == "ResultArtifact.v0":
+        errors.extend(validate_result_artifact_semantics(data))
+        return errors
+
+    if artifact_type == "ComputationWitness.v0":
+        errors.extend(validate_computation_witness_semantics(data))
+        return errors
+
+    if artifact_type == "ProofObligation.v0":
+        errors.extend(validate_proof_obligation_semantics(data))
+        return errors
+
+    if artifact_type == "LeanCheckResult.v0":
+        if data.get("artifact_type") == "LeanCheckResult.v0":
+            errors.extend(_validate_lean_check_result(data))
+        elif "check_id" in data:
+            errors.extend(validate_lean_check_result_semantics(data))
+        else:
+            errors.append(
+                "LeanCheckResult.v0: expected PF-Core artifact_type or PCS check_id shape"
+            )
+        return errors
+
+
+    if artifact_type == "BenchmarkMetricRegistry.v0":
+        errors.extend(validate_benchmark_metric_registry_semantics(data))
+        return errors
+
+    if artifact_type == "BenchmarkRegistry.v0":
+        errors.extend(validate_benchmark_registry_semantics(data))
+        return errors
+
+    if artifact_type == "BenchmarkSuiteManifest.v0":
+        errors.extend(validate_benchmark_suite_manifest_semantics(data))
+        return errors
+
+    if artifact_type == "BenchmarkTask.v0":
+        errors.extend(validate_benchmark_task_semantics(data))
+        return errors
+
+    if artifact_type == "BenchmarkCase.v0":
+        errors.extend(validate_benchmark_case_semantics(data))
+        return errors
+
+    if artifact_type == "BenchmarkRun.v0":
+        errors.extend(validate_benchmark_run_semantics(data))
+        return errors
+
+    if artifact_type == "BenchmarkReport.v0":
+        errors.extend(validate_benchmark_report_semantics(data))
+        return errors
+
+    if artifact_type == "MetricSummary.v0":
+        return errors
+
+    if artifact_type == "BenchmarkArtifactRef.v0":
+        from pcs_core.benchmark_validate import validate_benchmark_artifact_ref_semantics
+
+        errors.extend(validate_benchmark_artifact_ref_semantics(data))
+        return errors
+
+    if artifact_type == "PcsBenchIngest.v0":
+        errors.extend(validate_pcs_bench_ingest_semantics(data))
+        return errors
+
+    if artifact_type == "ConformanceRun.v0":
+        return errors
+
+    if artifact_type == "FailureCaseManifest.v0":
+        return errors
+
+    if artifact_type == "FailureLocalizationResult.v0":
+        return errors
+
+    if artifact_type == "CoverageReport.v0":
+        return errors
+
+    if artifact_type == "ExplainQualityReport.v0":
+        return errors
+
+    if artifact_type == "ProfileCoverageReport.v0":
+        return errors
+
+    if artifact_type == "ReleaseChainValidationResult.v0":
+        errors.extend(validate_release_chain_validation_result_semantics(data))
+        checks = data.get("checks")
+        if isinstance(checks, list):
+            for index, check in enumerate(checks):
+                if isinstance(check, dict):
+                    _validate_status_fields(check, f"checks[{index}]", errors)
+        return errors
 
     _check_source_commits(data, "", errors)
     _validate_status_fields(data, "", errors)
@@ -422,18 +917,6 @@ def validate_semantics(data: dict[str, Any], artifact_type: str) -> list[str]:
 
     if artifact_type == "ScienceClaimBundle.v0":
         errors.extend(_validate_science_claim_bundle(data))
-        status = str(data.get("status") or "")
-        if status == "ProofChecked":
-            assumption_set = data.get("assumption_set")
-            if not isinstance(assumption_set, dict):
-                errors.append(
-                    "ScienceClaimBundle.v0 status ProofChecked requires assumption_set"
-                )
-
-    if artifact_type == "ClaimArtifact.v0":
-        status = str(data.get("status") or "")
-        if status == "ProofChecked" and not str(data.get("assumption_set_ref") or "").strip():
-            errors.append("ClaimArtifact.v0 status ProofChecked requires assumption_set_ref")
 
     if artifact_type == "VerificationResult.v0":
         errors.extend(_validate_verification_result(data))
@@ -464,6 +947,98 @@ def validate_semantics(data: dict[str, Any], artifact_type: str) -> list[str]:
         _validate_pfcore_claim_class(data, "root", errors)
 
     return errors
+    return errors
+def validate_artifact(data: dict[str, Any], artifact_type: str | None = None) -> None:
+    artifact_type = artifact_type or detect_artifact_type(data)
+    if not artifact_type:
+        raise ValidationError("Could not detect artifact type from JSON content")
+
+    schema_errors = validate_schema(data, artifact_type)
+    semantic_errors = validate_semantics(data, artifact_type)
+    all_errors = schema_errors + semantic_errors
+    if all_errors:
+        raise ValidationError(
+            f"Validation failed for {artifact_type}",
+            errors=all_errors,
+        )
+
+
+def validate_file(path: Path | str) -> str:
+    path = Path(path)
+    with path.open(encoding="utf-8") as f:
+        data = json.load(f)
+    if not isinstance(data, dict):
+        raise ValidationError("Artifact root must be a JSON object")
+    artifact_type = detect_artifact_type(data)
+    if not artifact_type:
+        raise ValidationError(f"Could not detect artifact type in {path}")
+    validate_artifact(data, artifact_type)
+    if artifact_type == "ReleaseManifest.v0":
+        ref_errors = validate_release_manifest_fixture_refs(data, path.parent)
+        if ref_errors:
+            raise ValidationError(
+                f"Validation failed for {artifact_type}",
+                errors=ref_errors,
+            )
+    return artifact_type
+
+
+def _is_valid_example(path: Path) -> bool:
+    if "tool-use-release-invalid" in path.parts or "computation-release-invalid" in path.parts:
+        return False
+    return path.suffix == ".json" and ".valid." in path.name
+
+
+def iter_example_json_files(examples_dir: Path) -> list[Path]:
+    return sorted(p for p in examples_dir.rglob("*.json") if p.is_file())
+
+
+def check_all_schemas() -> None:
+    for artifact_type, schema_name in ARTIFACT_SCHEMAS.items():
+        schema_path = schemas_dir() / schema_name
+        schema = _load_schema(schema_path)
+        Draft202012Validator.check_schema(schema)
+        get_validator(artifact_type)
+
+
+def check_valid_examples(examples_dir: Path | None = None) -> None:
+    examples_dir = examples_dir or default_examples_dir()
+    for path in iter_example_json_files(examples_dir):
+        if _is_valid_example(path):
+            validate_file(path)
+    for name in (
+        "release_manifest.valid.json",
+        "handoff_manifest.valid.json",
+        "release_chain_validation_result.valid.json",
+        "artifact_registry.valid.json",
+        "migration_report.valid.json",
+        "proof_obligation.valid.json",
+        "lean_check_result.valid.json",
+        "benchmark_registry.valid.json",
+        "benchmark_metric_registry.valid.json",
+    ):
+        validate_file(examples_dir / name)
+
+    benchmarks_examples = examples_dir / "benchmarks"
+    if benchmarks_examples.is_dir():
+        for path in sorted(benchmarks_examples.rglob("*.valid.json")):
+            validate_file(path)
+        compat = benchmarks_examples / "compatibility"
+        if compat.is_dir():
+            for path in sorted(compat.glob("*.normalized.json")) + sorted(
+                compat.glob("*.pcs_bench_ingest.normalized.json"),
+            ):
+                validate_file(path)
+
+    producer_examples = examples_dir / "benchmark"
+    if producer_examples.is_dir():
+        for path in sorted(producer_examples.glob("*.valid.json")):
+            validate_file(path)
+
+    ingest_examples = examples_dir / "benchmark_ingest"
+    if ingest_examples.is_dir():
+        for path in sorted(ingest_examples.glob("*.pcs_bench_ingest.valid.json")):
+            validate_file(path)
 
 
 def iter_pf_core_example_dirs(kind: str) -> list[Path]:
@@ -673,6 +1248,7 @@ def check_pf_core_invalid_fixtures() -> None:
             continue
 
         raise ValidationError(f"Unknown must_fail_at {must_fail_at!r} in {case_dir}")
+
 
 
 def check_invalid_examples(examples_dir: Path | None = None) -> None:
