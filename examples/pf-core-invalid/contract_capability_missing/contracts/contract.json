@@ -1,0 +1,15 @@
+{
+  "schema_version": "v0",
+  "artifact_type": "PFCoreContract.v0",
+  "contract_id": "contract-file-read-v0",
+  "name": "Strict file read contract",
+  "pre": {
+    "require_capability": "cap:file-read"
+  },
+  "post": {},
+  "invariant": {},
+  "semantics_layer": {
+    "require_capability": "lean"
+  },
+  "signature_or_digest": "sha256:e8885483b7bad56b9854dae186f2dc9c9261895fd27329897306426cd116e085"
+}
