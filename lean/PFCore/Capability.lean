@@ -25,17 +25,18 @@ theorem hasCapabilityD_sound (p : Principal) (cap : String) :
     hasCapabilityD p cap = true ↔ HasCapability p cap := by
   simp [hasCapabilityD, HasCapability, decide_eq_true_iff]
 
-/-- Capability id is from the closed PF-Core catalog (mirrors Python ``CAPABILITY_CATALOG``). -/
+/-- Closed PF-Core capability catalog (mirrors Python ``CAPABILITY_CATALOG``). -/
+def knownCatalogCaps : List String :=
+  ["cap:file-read", "cap:file-write", "cap:network", "cap:email-send",
+    "cap:handoff", "cap:mcp-invoke", "cap:lab-release"]
+
+/-- Capability id is from the closed PF-Core catalog. -/
 def KnownCapability (cap : String) : Prop :=
-  cap = "cap:file-read" ∨ cap = "cap:file-write" ∨ cap = "cap:network" ∨
-    cap = "cap:email-send" ∨ cap = "cap:handoff" ∨ cap = "cap:mcp-invoke" ∨
-    cap = "cap:lab-release"
+  cap ∈ knownCatalogCaps
 
 /-- Boolean decider for ``KnownCapability``. -/
 def knownCapabilityD (cap : String) : Bool :=
-  cap = "cap:file-read" || cap = "cap:file-write" || cap = "cap:network" ||
-    cap = "cap:email-send" || cap = "cap:handoff" || cap = "cap:mcp-invoke" ||
-    cap = "cap:lab-release"
+  cap ∈ knownCatalogCaps
 
 /--
 **Meaning:** The known-capability decider reflects catalog membership.
@@ -46,7 +47,6 @@ def knownCapabilityD (cap : String) : Bool :=
 -/
 theorem knownCapabilityD_sound (cap : String) :
     knownCapabilityD cap = true ↔ KnownCapability cap := by
-  unfold knownCapabilityD KnownCapability
-  simp [Bool.or_eq_true, eq_comm, decide_eq_true_iff]
+  simp [knownCapabilityD, KnownCapability, decide_eq_true_iff]
 
 end PFCore
