@@ -1,0 +1,133 @@
+{
+  "schema_version": "v0",
+  "artifact_type": "PFCoreTrace.v0",
+  "trace_id": "trace-agent-safety-001",
+  "workflow_id": "agent_tool_use.safety_v0",
+  "events": [
+    {
+      "schema_version": "v0",
+      "artifact_type": "PFCoreEvent.v0",
+      "event_id": "evt-001",
+      "trace_id": "trace-agent-safety-001",
+      "sequence": 0,
+      "timestamp": "2026-05-18T00:00:01Z",
+      "principal": {
+        "principal_id": "agent-safety-conformance-001",
+        "principal_kind": "agent",
+        "tenant": "tenant-a",
+        "roles": [
+          "agent"
+        ],
+        "capabilities": [
+          "cap:file-read",
+          "cap:email-send",
+          "cap:handoff",
+          "cap:mcp-invoke"
+        ]
+      },
+      "action": {
+        "action_id": "act-evt-001",
+        "tool_name": "filesystem.read",
+        "capability": {
+          "capability_id": "cap:file-read",
+          "effect_kind": "file.read",
+          "resource_pattern": "/data/*"
+        },
+        "effects": [
+          {
+            "effect_kind": "file.read"
+          }
+        ],
+        "reads": [
+          {
+            "resource_id": "res-evt-001",
+            "uri": "/data/report.txt",
+            "tenant": "tenant-a"
+          }
+        ],
+        "writes": [],
+        "input_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "output_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "decision": "allow",
+      "decision_reason": "authorized",
+      "contract_refs": [
+        "policy-no-secret-exfiltration-v0"
+      ],
+      "evidence_refs": [
+        "policy-no-secret-exfiltration-v0"
+      ],
+      "previous_event_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "event_hash": "sha256:91f2c6090442e9ddfa99dde83bd8bcc6762103e8b5e4adfd0a612cba20e68a01",
+      "source_repo": "https://github.com/example/agent-runtime",
+      "source_commit": "a111111111111111111111111111111111111111",
+      "signature_or_digest": "sha256:91f2c6090442e9ddfa99dde83bd8bcc6762103e8b5e4adfd0a612cba20e68a01"
+    },
+    {
+      "schema_version": "v0",
+      "artifact_type": "PFCoreEvent.v0",
+      "event_id": "evt-002",
+      "trace_id": "trace-agent-safety-001",
+      "sequence": 1,
+      "timestamp": "2026-05-18T00:00:02Z",
+      "principal": {
+        "principal_id": "agent-safety-conformance-001",
+        "principal_kind": "agent",
+        "tenant": "tenant-a",
+        "roles": [
+          "agent"
+        ],
+        "capabilities": [
+          "cap:file-read",
+          "cap:email-send",
+          "cap:handoff",
+          "cap:mcp-invoke"
+        ]
+      },
+      "action": {
+        "action_id": "act-evt-002",
+        "tool_name": "network.request",
+        "capability": {
+          "capability_id": "cap:network",
+          "effect_kind": "network.egress",
+          "resource_pattern": "*"
+        },
+        "effects": [
+          {
+            "effect_kind": "network.egress"
+          }
+        ],
+        "reads": [
+          {
+            "resource_id": "res-evt-002",
+            "uri": "https://example.com",
+            "tenant": "tenant-a"
+          }
+        ],
+        "writes": [],
+        "input_hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "output_hash": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      },
+      "decision": "deny",
+      "decision_reason": "rejected",
+      "contract_refs": [
+        "policy-no-secret-exfiltration-v0"
+      ],
+      "evidence_refs": [
+        "policy-no-secret-exfiltration-v0"
+      ],
+      "previous_event_hash": "sha256:91f2c6090442e9ddfa99dde83bd8bcc6762103e8b5e4adfd0a612cba20e68a01",
+      "event_hash": "sha256:7994dfefd17f813d69a257195ba97cba519c4698f475b55a90933fc29a5db839",
+      "source_repo": "https://github.com/example/agent-runtime",
+      "source_commit": "a111111111111111111111111111111111111111",
+      "signature_or_digest": "sha256:7994dfefd17f813d69a257195ba97cba519c4698f475b55a90933fc29a5db839"
+    }
+  ],
+  "trace_hash": "sha256:716cbed45d37ebe49deffd517021e74f7f8751f6baf6e00c2fdc6c3022b626f3",
+  "policy_hash": "sha256:76d4443f09c6fb0d6cc7bebc5c80eae53bd008e4a212ab61d0d1844ac773b5cd",
+  "contract_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "claim_class": "RuntimeChecked",
+  "source_repo": "https://github.com/example/agent-runtime",
+  "source_commit": "a111111111111111111111111111111111111111",
+  "signature_or_digest": "sha256:716cbed45d37ebe49deffd517021e74f7f8751f6baf6e00c2fdc6c3022b626f3"
+}
