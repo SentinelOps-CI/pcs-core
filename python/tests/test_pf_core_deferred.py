@@ -11,7 +11,6 @@ from pcs_core.hash import canonical_hash, canonicalize_for_hash
 from pcs_core.pf_core_contract import (
     DEFAULT_TRACE_SAFE_CONTRACT_ID,
     trace_has_contract_binding,
-    validate_trace_contract_binding,
 )
 from pcs_core.pf_core_runtime import (
     DroppedDeniedEvent,
@@ -83,12 +82,10 @@ def test_dropped_denied_observation_fixture() -> None:
     assert exc.value.code == manifest["expected_error"]
 
 
-def test_lean_kernel_checked_requires_contract_binding() -> None:
-    trace = _load(INVALID / "lean_kernel_checked_without_contract" / "trace.json")
-    errors = validate_trace_contract_binding(trace)
-    assert any("ContractBindingMissing" in err for err in errors)
-    semantic = validate_semantics(trace, "PFCoreTrace.v0")
-    assert any("ContractBindingMissing" in err for err in semantic)
+def test_lean_kernel_checked_on_trace_rejected() -> None:
+    trace = _load(INVALID / "lean_kernel_checked_on_trace" / "trace.json")
+    errors = validate_semantics(trace, "PFCoreTrace.v0")
+    assert any("ClaimClassOverclaim" in err for err in errors)
 
 
 def test_default_trace_safe_contract_binding() -> None:
@@ -106,15 +103,19 @@ def test_default_trace_safe_contract_binding() -> None:
     "case_name",
     [
         "previous_event_hash_mismatch",
+        "lean_kernel_checked_on_trace",
         "lean_kernel_checked_without_proof_ref",
         "lean_kernel_checked_without_proof_term_ref",
+        "lean_kernel_checked_without_proof_term_hash",
         "lean_kernel_checked_with_skipped_build",
+        "unknown_direct_trace_effect",
+        "unknown_direct_trace_capability",
+        "capability_effect_mismatch",
         "contract_ref_missing",
         "contract_capability_missing",
         "contract_effect_missing",
         "contract_policy_ref_missing",
         "contract_evidence_ref_missing",
-        "lean_kernel_checked_without_contract",
         "dropped_denied_observation",
     ],
 )

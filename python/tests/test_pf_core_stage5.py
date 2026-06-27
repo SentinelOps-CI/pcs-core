@@ -65,10 +65,10 @@ def test_run_replay_trace_emits_certificate(tmp_path: Path) -> None:
         result_out_path=result_out,
     )
     assert code == 0
-    assert result["claim_class"] == "ReplayValidated"
+    assert result["claim_class"] == "RuntimeChecked"
     assert result["replay_match"] is True
     cert = json.loads(out.read_text(encoding="utf-8"))
-    assert cert["claim_class"] == "ReplayValidated"
+    assert cert["claim_class"] == "RuntimeChecked"
     assert cert["replay_match"] is True
     validate_file(out)
     validate_file(result_out)

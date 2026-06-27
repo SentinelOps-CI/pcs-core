@@ -1369,7 +1369,17 @@ def enforce_assumption_declared(
 
 
 
-PF_CORE_CLAIM_CLASSES = frozenset(
+PF_CORE_TRACE_CLAIM_CLASSES = frozenset(
+    {
+        "SchemaValidated",
+        "RuntimeChecked",
+        "ReplayValidated",
+        "AssumptionDeclared",
+        "OutOfScope",
+    }
+)
+
+PF_CORE_CERTIFICATE_CLAIM_CLASSES = frozenset(
     {
         "SchemaValidated",
         "RuntimeChecked",
@@ -1380,4 +1390,6 @@ PF_CORE_CLAIM_CLASSES = frozenset(
         "OutOfScope",
     }
 )
+
+PF_CORE_CLAIM_CLASSES = PF_CORE_TRACE_CLAIM_CLASSES | PF_CORE_CERTIFICATE_CLAIM_CLASSES
 

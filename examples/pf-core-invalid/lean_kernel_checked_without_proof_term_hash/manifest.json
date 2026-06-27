@@ -1,0 +1,6 @@
+{
+  "expected_error": "proof_term_hash",
+  "must_fail_at": "validate_semantics",
+  "artifact_file": "certificate.json",
+  "artifact_type": "PFCoreCertificate.v0"
+}

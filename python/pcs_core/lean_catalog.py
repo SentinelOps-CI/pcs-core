@@ -37,6 +37,23 @@ PF_CORE_OBLIGATION_KIND_THEOREM: dict[str, str] = {
     "ContractPostDeciderSound": "contractPostD_sound",
     "SatisfiesContractSpecDeciderSound": "satisfiesContractSpecD_sound",
     "TraceSatisfiesContractSpecsDeciderSound": "traceSatisfiesContractSpecsD_sound",
+    "SafeExtensionPreservesTraceSafe": "safe_extension_preserves_trace_safe",
+    "ContractInvariantPreservedBySafeExtension": "contract_invariant_preserved_by_safe_extension",
+    "HandoffCompositionDoesNotExpandAuthority": "handoff_composition_does_not_expand_authority",
+    "ComposedContractPreservesComponentInvariants": "composed_contract_preserves_component_invariants",
+    "AlignedRoleCapabilityGranted": "aligned_role_capability_granted",
+    "HandoffPreservesTraceSafe": "handoff_preserves_trace_safe",
+    "TraceSafeImpliesTraceCrossTenantSafe": "traceSafe_implies_trace_cross_tenant_safe",
+    "RuntimeRoleExpansionSubset": "runtime_role_expansion_subset",
+    "StepStateFramePreserved": "stepState_frame_preserved",
+    "TraceExtendsSafelyOfStep": "traceExtendsSafely_of_step",
+    "SafeExtensionPreservesTraceSafeStrong": "safe_extension_preserves_trace_safe_strong",
+    "EffectFramePreventsUndeclaredWrites": "effect_frame_prevents_undeclared_writes",
+    "ContractRefinementPreservesTraceSafe": "contract_refinement_preserves_trace_safe",
+    "HandoffPreservesTraceSafeStrong": "handoff_preserves_trace_safe_strong",
+    "HandoffCompositionGlobal": "handoff_composition_global",
+    "TraceSafeImpliesTenantIsolation": "traceSafe_implies_tenant_isolation",
+    "ContractPreRoleAlignedCapability": "contractPre_role_aligned_capability",
 }
 
 PF_CORE_SOUNDNESS_THEOREMS = frozenset(
@@ -62,6 +79,16 @@ PF_CORE_SOUNDNESS_THEOREMS = frozenset(
         "contractInvariantD_sound",
         "satisfiesContractSpecD_sound",
         "traceSatisfiesContractSpecsD_sound",
+        "eventCrossTenantSafeD_sound",
+        "traceCrossTenantSafeD_sound",
+        "frameValidD_sound",
+        "traceExtendsSafelyD_sound",
+        "effectAllowedInFrameD_sound",
+        "actionEffectsInFrameD_sound",
+        "effectFrameAdmissibleD_sound",
+        "tenantIsolationD_sound",
+        "eventTenantIsolatedD_sound",
+        "principalHasRoleD_sound",
     }
 )
 

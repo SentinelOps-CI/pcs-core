@@ -1,0 +1,6 @@
+{
+  "expected_error": "CapabilityEffectMismatch",
+  "must_fail_at": "validate_semantics",
+  "artifact_file": "trace.json",
+  "artifact_type": "PFCoreTrace.v0"
+}

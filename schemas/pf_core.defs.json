@@ -11,13 +11,23 @@
         "signature_or_digest": { "$ref": "common.defs.json#/$defs/hex_digest" }
       }
     },
-    "claim_class": {
+    "trace_claim_class": {
       "type": "string",
       "enum": [
-        "RuntimeChecked",
-        "LeanKernelChecked",
         "SchemaValidated",
+        "RuntimeChecked",
+        "ReplayValidated",
+        "AssumptionDeclared",
+        "OutOfScope"
+      ]
+    },
+    "certificate_claim_class": {
+      "type": "string",
+      "enum": [
+        "SchemaValidated",
+        "RuntimeChecked",
         "CertificateChecked",
+        "LeanKernelChecked",
         "ReplayValidated",
         "AssumptionDeclared",
         "OutOfScope"
@@ -65,7 +75,7 @@
       "required": ["effect_kind"],
       "additionalProperties": false,
       "properties": {
-        "effect_kind": { "type": "string", "minLength": 1 }
+        "effect_kind": { "$ref": "#/$defs/effect_kind" }
       }
     },
     "embedded_resource": {

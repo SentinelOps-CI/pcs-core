@@ -24,7 +24,7 @@
     "pfcore_certificate_id": { "type": "string", "minLength": 1 },
     "adapter": { "type": "string", "minLength": 1 },
     "adapter_version": { "type": "string", "minLength": 1 },
-    "claim_class": { "$ref": "pf_core.defs.json#/$defs/claim_class" },
+    "claim_class": { "$ref": "pf_core.defs.json#/$defs/certificate_claim_class" },
     "assumption_refs": { "$ref": "common.defs.json#/$defs/ref_list" },
     "source_repo": { "type": "string", "format": "uri" },
     "source_commit": { "type": "string", "minLength": 7 },

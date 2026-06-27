@@ -111,3 +111,136 @@ Python deciders in `lean_check.py` mirror:
 `LeanKernelChecked` is emitted only when a generated concrete proof evaluates `traceSafeD tr = true` in the Lean kernel (plus contract deciders when `contract_refs` are discharged).
 
 `CertificateChecked` is emitted only via CertifyEdge or `attach-certificate-check`; it never upgrades to `LeanKernelChecked`.
+
+## Compositional trust (`lean/PFCore/Compositional.lean`)
+
+### `safe_extension_preserves_trace_safe`
+
+Appending an `EventSafe` event to a `TraceSafe` trace yields `TraceSafe`.
+
+```lean
+theorem safe_extension_preserves_trace_safe (tr : Trace) (ev : Event) :
+    TraceSafe tr → EventSafe ev → TraceSafe (Trace.cons tr ev)
+```
+
+### `handoff_composition_does_not_expand_authority`
+
+Chained handoffs do not expand authority beyond the first source when the second hop delegates only capabilities from the first hop.
+
+```lean
+theorem handoff_composition_does_not_expand_authority (h1 h2 : Handoff) (cap : String) :
+    HandoffSafe h1 → HandoffSafe h2 → HandoffChain h1 h2 →
+    CapabilitySubset h2.delegatedCapabilities h1.delegatedCapabilities →
+    cap ∈ h2.delegatedCapabilities → HasCapability h1.fromPrincipal cap
+```
+
+### `composed_contract_preserves_component_invariants`
+
+Sequential contract invariant joins component invariants.
+
+```lean
+theorem composed_contract_preserves_component_invariants (c1 c2 : Contract) (tr : Trace) :
+    c1.invariant tr → c2.invariant tr → (Contract.seq c1 c2).invariant tr
+```
+
+## RoleMap (`lean/PFCore/RoleMap.lean`)
+
+### `aligned_role_capability_granted`
+
+Aligned principals hold capabilities contributed by mapped roles.
+
+```lean
+theorem aligned_role_capability_granted (rm : RoleMap) (p : Principal) (role cap : String) :
+    PrincipalCapabilitiesAligned rm p → role ∈ p.roles → cap ∈ rm.lookup role →
+    HasCapability p cap
+```
+
+### `runtime_role_expansion_subset`
+
+Role expansion yields only capability ids listed in the static runtime map union.
+
+```lean
+theorem runtime_role_expansion_subset (roles : List String) (cap : String) :
+    cap ∈ runtimeRoleMap.expandRoles roles → cap ∈ runtimeRoleMap.allMappedCapabilities
+```
+
+## Minimal state + handoff trace safety (`lean/PFCore/State.lean`)
+
+### `handoff_preserves_trace_safe`
+
+Conservative link: safe trace extension plus bounded delegation authority (minimal state model).
+
+```lean
+theorem handoff_preserves_trace_safe (tr : Trace) (s : State) (h : Handoff) (ev : Event) :
+    TraceSafe tr → HandoffSafe h → EventSafe ev →
+    TraceSafe (Trace.cons tr ev) ∧
+    (∀ cap ∈ h.delegatedCapabilities, HasCapability h.fromPrincipal cap) ∧
+    (∀ cap ∈ (HandoffApplies h (applyEvent s ev)).capabilities,
+      HasCapability h.fromPrincipal cap ∨ HasCapability h.toPrincipal cap)
+```
+
+## Cross-tenant safety (`lean/PFCore/NonInterference.lean`)
+
+### `traceSafe_implies_trace_cross_tenant_safe`
+
+`TraceSafe` implies conservative cross-tenant safety (not full global NI).
+
+```lean
+theorem traceSafe_implies_trace_cross_tenant_safe (tr : Trace) :
+    TraceSafe tr → TraceCrossTenantSafe tr
+```
+
+## Operational state + transitions (`lean/PFCore/Transition.lean`)
+
+### `stepState_frame_preserved`
+
+Allowed operational steps preserve resource/capability frame invariants.
+
+```lean
+theorem stepState_frame_preserved (s s' : State) (ev : Event) (hApply : Applies ev s s') :
+    FrameValid s → FrameValid s'
+```
+
+### `safe_extension_preserves_trace_safe_strong`
+
+Safe extension with operational linkage yields `TraceSafe` on `Trace.cons`.
+
+```lean
+theorem safe_extension_preserves_trace_safe_strong (tr : Trace) (ev : Event)
+    (s s' : State) (hExt : TraceExtendsSafely tr ev) (hApply : Applies ev s s')
+    (_hFrame : FrameValid s → FrameValid s') :
+    TraceSafe (Trace.cons tr ev)
+```
+
+## Effect frames (`lean/PFCore/EffectFrame.lean`)
+
+### `effect_frame_prevents_undeclared_writes`
+
+Write-free effect frame prevents writes on resource `R` when write footprint requires write effect.
+
+```lean
+theorem effect_frame_prevents_undeclared_writes (a : Action) (frame : List Effect) (r : Resource) :
+    ActionEffectsInFrame a frame → Effect.write ∉ frame → WriteFootprintRequiresWriteEffect a →
+    r ∉ a.writes
+```
+
+## Contract refinement (`lean/PFCore/Compositional.lean`)
+
+### `contract_refinement_preserves_trace_safe`
+
+```lean
+theorem contract_refinement_preserves_trace_safe (cStrong cWeak : Contract) (tr : Trace) :
+    TraceSatisfiesContract cStrong tr → ContractRefinement cStrong cWeak →
+    TraceSatisfiesContract cWeak tr
+```
+
+## Tenant isolation (`lean/PFCore/NonInterference.lean`)
+
+### `traceSafe_implies_tenant_isolation`
+
+```lean
+theorem traceSafe_implies_tenant_isolation (tr : Trace) :
+    TraceSafe tr → TenantIsolation tr
+```
+
+**Does not imply:** Covert channels, timing leaks, or deny-event tenant scope.

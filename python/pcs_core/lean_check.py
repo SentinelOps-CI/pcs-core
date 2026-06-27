@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
+import os
 import platform
 import re
 import shutil
@@ -128,16 +130,37 @@ def _lake_invocation(args: list[str], *, cwd: Path) -> tuple[list[str], Path]:
     return ["lake", *args], cwd
 
 
+def _lake_timeout_seconds() -> float | None:
+    raw = os.environ.get("PCS_LAKE_TIMEOUT_SECONDS", "600")
+    if raw.strip().lower() in {"", "none", "0"}:
+        return None
+    try:
+        return float(raw)
+    except ValueError:
+        return 600.0
+
+
 def _run_lake(args: list[str], *, cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
     directory = cwd or lean_dir()
     command, _ = _lake_invocation(args, cwd=directory)
-    return subprocess.run(
-        command,
-        cwd=directory,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
+    timeout = _lake_timeout_seconds()
+    try:
+        return subprocess.run(
+            command,
+            cwd=directory,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=timeout,
+        )
+    except subprocess.TimeoutExpired as exc:
+        detail = (exc.stderr or exc.stdout or b"").decode("utf-8", errors="replace").strip()
+        return subprocess.CompletedProcess(
+            command,
+            returncode=124,
+            stdout=detail,
+            stderr=f"lake command timed out after {timeout}s",
+        )
 
 
 def run_lean_library_build(*, target: str = "PFCore", skip_build: bool = False) -> tuple[bool, str]:
@@ -154,6 +177,8 @@ def run_lean_library_build(*, target: str = "PFCore", skip_build: bool = False) 
     proc = _run_lake(["build", target], cwd=directory)
     if proc.returncode != 0:
         detail = (proc.stderr or proc.stdout or "").strip()
+        if "HCS_E_CONNECTION_TIMEOUT" in detail or "timed out" in detail.lower():
+            return False, f"lake unavailable: {detail}"
         return False, detail or f"lake build {target} failed"
     return True, "ok"
 
@@ -340,18 +365,13 @@ def check_pfcore_trace_lean_semantics(trace: Mapping[str, Any]) -> list[PFCoreLe
     if events and not trace_safe_d(events):
         issues.append(PFCoreLeanCheckIssue("TraceUnsafe", "trace fails TraceSafe decider"))
 
-    claim_class = str(trace.get("claim_class") or "")
-    if claim_class == "LeanKernelChecked" and not trace_has_contract_binding(trace):
-        issues.append(
-            PFCoreLeanCheckIssue(
-                "ContractBindingMissing",
-                "claim_class LeanKernelChecked requires contract_refs on events or "
-                "default trace-safe contract binding",
-                "root",
-            )
-        )
-
     return issues
+
+
+def compute_proof_term_hash(proof_path: Path) -> str:
+    """Return sha256 digest of generated Lean proof file bytes."""
+    digest = hashlib.sha256(proof_path.read_bytes()).hexdigest()
+    return f"sha256:{digest}"
 
 
 def build_pfcore_certificate(
@@ -367,6 +387,7 @@ def build_pfcore_certificate(
     proof_detail: str,
     obligations: list[dict[str, Any]],
     proof_term_ref: str | None = None,
+    proof_term_hash: str | None = None,
     lean_environment_hash: str | None = None,
 ) -> dict[str, Any]:
     events = _trace_events(trace)
@@ -431,6 +452,8 @@ def build_pfcore_certificate(
     if proof_ref:
         cert["proof_ref"] = proof_ref
         cert["proof_term_ref"] = proof_ref
+    if proof_term_hash:
+        cert["proof_term_hash"] = proof_term_hash
     cert["signature_or_digest"] = canonical_hash(cert)
     return cert
 
@@ -509,6 +532,7 @@ def run_pfcore_lean_check(
     proof_ok = False
     proof_detail = "skipped" if skip_lean_proof or skip_build else "not-run"
     proof_term_ref: str | None = None
+    proof_term_hash: str | None = None
 
     if not issues and not no_sorry_errors and not skip_lean_proof:
         try:
@@ -518,6 +542,7 @@ def run_pfcore_lean_check(
                 trace_path=trace_path,
             )
             proof_term_ref = proof_term_ref_from_path(proof_path)
+            proof_term_hash = compute_proof_term_hash(proof_path)
             obligations.append(
                 {
                     "kind": "ConcreteTraceSafe",
@@ -619,11 +644,15 @@ def run_pfcore_lean_check(
         proof_detail=proof_detail,
         obligations=obligations,
         proof_term_ref=proof_term_ref,
+        proof_term_hash=proof_term_hash,
         lean_environment_hash=lean_environment_hash,
     )
-    cert_errors = validate_schema(cert, "PFCoreCertificate.v0")
-    if cert_errors:
-        for err in cert_errors:
+    from pcs_core.validate import ValidationError, validate_artifact
+
+    try:
+        validate_artifact(cert, "PFCoreCertificate.v0")
+    except ValidationError as exc:
+        for err in exc.errors or [str(exc)]:
             issues.append(PFCoreLeanCheckIssue("CertificateInvalid", err))
         result = build_lean_check_result(
             trace_path=trace_path,

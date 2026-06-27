@@ -10,6 +10,7 @@ from typing import Any
 from pcs_core.paths import examples_dir as default_examples_dir
 from pcs_core.paths import repo_root, schemas_dir
 from pcs_core.registry_data import PF_CORE_CLAIM_CLASSES
+from pcs_core.validate_pf_core import _validate_pfcore_claim_class
 from pcs_core.status import ARTIFACT_STATUSES, TRACE_CERTIFICATE_STATUSES
 
 from pcs_core.lean_validate import (
@@ -254,7 +255,9 @@ def validate_semantics(data: dict[str, Any], artifact_type: str) -> list[str]:
         "LeanCheckResult.v0",
         "ToolUseTrace.v0",
     }:
-        _validate_pfcore_claim_class(data, "root", errors)
+        _validate_pfcore_claim_class(
+            data, "root", errors, allowed=PF_CORE_CLAIM_CLASSES, artifact_kind="pf-core"
+        )
 
     return errors
 

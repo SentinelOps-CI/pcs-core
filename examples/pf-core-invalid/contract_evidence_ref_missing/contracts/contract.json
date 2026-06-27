@@ -8,8 +8,5 @@
   },
   "post": {},
   "invariant": {},
-  "semantics_layer": {
-    "require_evidence_ref": "runtime"
-  },
-  "signature_or_digest": "sha256:6e6152407e68ec76f851e8167da1f912f70499b16b4abb1e018acac50f295cb5"
+  "signature_or_digest": "sha256:d56bc2f149cd44614a84dc96372702c1f33b8121ab905e4ac2be9baeb455ce5e"
 }

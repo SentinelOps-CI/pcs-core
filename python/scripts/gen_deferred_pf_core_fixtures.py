@@ -200,10 +200,20 @@ def generate_invalid_fixtures() -> None:
     write_json(case / "trace.json", trace)
     write_manifest(case, expected_error="EventHashMismatch", must_fail_at="validate_pfcore_trace_hash_chain")
 
+    case = INVALID / "lean_kernel_checked_on_trace"
+    trace = base_trace(claim_class="LeanKernelChecked")
+    write_json(case / "trace.json", trace)
+    write_manifest(
+        case,
+        expected_error="ClaimClassOverclaim",
+        must_fail_at="validate_semantics",
+        artifact_file="trace.json",
+        artifact_type="PFCoreTrace.v0",
+    )
+
     case = INVALID / "lean_kernel_checked_without_proof_ref"
     trace = base_trace(claim_class="LeanKernelChecked")
     trace["events"][0]["contract_refs"] = ["contract-file-read-v0"]
-    trace = finalize_trace(trace)
     write_json(case / "trace.json", trace)
     write_manifest(
         case,
@@ -218,7 +228,47 @@ def generate_invalid_fixtures() -> None:
     write_json(case / "trace.json", trace)
     write_manifest(
         case,
-        expected_error="ContractBindingMissing",
+        expected_error="ClaimClassOverclaim",
+        must_fail_at="validate_semantics",
+        artifact_file="trace.json",
+        artifact_type="PFCoreTrace.v0",
+    )
+
+    case = INVALID / "unknown_direct_trace_effect"
+    trace = base_trace()
+    trace["events"][0]["action"]["effects"] = [{"effect_kind": "unknown.effect"}]
+    write_json(case / "trace.json", finalize_trace(trace))
+    write_manifest(
+        case,
+        expected_error="UnknownEffect",
+        must_fail_at="validate_semantics",
+        artifact_file="trace.json",
+        artifact_type="PFCoreTrace.v0",
+    )
+
+    case = INVALID / "unknown_direct_trace_capability"
+    trace = base_trace()
+    trace["events"][0]["action"]["capability"] = {
+        "capability_id": "cap:unknown",
+        "effect_kind": "file.read",
+        "resource_pattern": "/data/*",
+    }
+    write_json(case / "trace.json", finalize_trace(trace))
+    write_manifest(
+        case,
+        expected_error="UnknownCapability",
+        must_fail_at="validate_semantics",
+        artifact_file="trace.json",
+        artifact_type="PFCoreTrace.v0",
+    )
+
+    case = INVALID / "capability_effect_mismatch"
+    trace = base_trace()
+    trace["events"][0]["action"]["effects"] = [{"effect_kind": "file.write"}]
+    write_json(case / "trace.json", finalize_trace(trace))
+    write_manifest(
+        case,
+        expected_error="CapabilityEffectMismatch",
         must_fail_at="validate_semantics",
         artifact_file="trace.json",
         artifact_type="PFCoreTrace.v0",
@@ -255,6 +305,32 @@ def generate_invalid_fixtures() -> None:
     write_manifest(
         case,
         expected_error="proof_term_ref",
+        must_fail_at="validate_semantics",
+        artifact_file="certificate.json",
+        artifact_type="PFCoreCertificate.v0",
+    )
+
+    case = INVALID / "lean_kernel_checked_without_proof_term_hash"
+    cert = dict(cert)
+    cert["certificate_id"] = "pfcore-cert-missing-proof-term-hash"
+    cert["proof_term_ref"] = cert["proof_ref"]
+    cert["obligations"] = [
+        {"kind": "ConcreteTraceSafe", "theorem": "concrete_trace_safe", "passed": True},
+        {"kind": "ConcreteTraceSafeProp", "theorem": "concrete_trace_safe_prop", "passed": True},
+        {
+            "kind": "ConcreteAllowedEventsAllowed",
+            "theorem": "concrete_allowed_events_allowed",
+            "passed": True,
+        },
+    ]
+    cert.pop("proof_term_hash", None)
+    cert["signature_or_digest"] = canonical_hash(
+        {k: v for k, v in cert.items() if k != "signature_or_digest"}
+    )
+    write_json(case / "certificate.json", cert)
+    write_manifest(
+        case,
+        expected_error="proof_term_hash",
         must_fail_at="validate_semantics",
         artifact_file="certificate.json",
         artifact_type="PFCoreCertificate.v0",

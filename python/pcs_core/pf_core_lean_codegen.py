@@ -1,4 +1,11 @@
-"""Generate concrete Lean terms and proof obligations from PFCoreTrace.v0."""
+"""Generate concrete Lean terms and proof obligations from PFCoreTrace.v0.
+
+Role expansion alignment: runtime ``ROLE_CAPABILITY_MAP`` in ``pf_core_runtime.py``
+must stay in sync with Lean ``runtimeRoleMap`` in ``lean/PFCore/RoleMap.lean``.
+Codegen emits principals with explicit ``capabilities`` (already expanded); it does
+not reference ``runtimeRoleMap`` directly. Parity is enforced by
+``tests/test_pf_core_research.py`` and ``pcs pf-core audit-lean-catalog``.
+"""
 
 from __future__ import annotations
 
@@ -78,8 +85,10 @@ def resource_to_lean(resource: Mapping[str, Any]) -> str:
 def action_to_lean(action: Mapping[str, Any], *, name: str) -> str:
     capability = action.get("capability")
     cap_id = ""
+    cap_effect_expr = "Effect.read"
     if isinstance(capability, dict):
         cap_id = str(capability.get("capability_id") or "")
+        cap_effect_expr = effect_kind_to_lean(str(capability.get("effect_kind") or "file.read"))
     effects = action.get("effects")
     effect_exprs: list[str] = []
     if isinstance(effects, list):
@@ -108,6 +117,7 @@ def action_to_lean(action: Mapping[str, Any], *, name: str) -> str:
         f"    id := {lean_string_literal(str(action.get('action_id') or ''))},\n"
         f"    toolName := {lean_string_literal(str(action.get('tool_name') or ''))},\n"
         f"    capability := {lean_string_literal(cap_id)},\n"
+        f"    capabilityEffect := {cap_effect_expr},\n"
         f"    effects := [{', '.join(effect_exprs)}],\n"
         f"    reads := {reads_expr},\n"
         f"    writes := {writes_expr}\n"
@@ -176,6 +186,7 @@ def contract_pre_to_lean(contract: Mapping[str, Any], *, name: str) -> str:
     cap_expr = "none"
     effect_expr = "none"
     tenant_expr = "false"
+    role_expr = "none"
     if isinstance(pre, dict):
         cap = pre.get("require_capability")
         if (
@@ -196,12 +207,20 @@ def contract_pre_to_lean(contract: Mapping[str, Any], *, name: str) -> str:
             and field_semantics_layer(contract, section="pre", field="require_tenant_match") == "lean"
         ):
             tenant_expr = "true"
+        role = pre.get("require_role")
+        if (
+            isinstance(role, str)
+            and role
+            and field_semantics_layer(contract, section="pre", field="require_role") == "lean"
+        ):
+            role_expr = f"some {lean_string_literal(role)}"
     return (
         f"def {name} : ContractPreSpec :=\n"
         "  {\n"
         f"    requireCapability := {cap_expr},\n"
         f"    requireEffect := {effect_expr},\n"
-        f"    requireTenantMatch := {tenant_expr}\n"
+        f"    requireTenantMatch := {tenant_expr},\n"
+        f"    requireRole := {role_expr}\n"
         "  }"
     )
 
@@ -331,6 +350,12 @@ def _contract_has_lean_pre_fields(contract: Mapping[str, Any]) -> bool:
     if (
         pre.get("require_tenant_match") is True
         and field_semantics_layer(contract, section="pre", field="require_tenant_match") == "lean"
+    ):
+        return True
+    if (
+        isinstance(pre.get("require_role"), str)
+        and pre.get("require_role")
+        and field_semantics_layer(contract, section="pre", field="require_role") == "lean"
     ):
         return True
     return False

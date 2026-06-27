@@ -18,6 +18,7 @@ structure Action where
   id : String
   toolName : String
   capability : String
+  capabilityEffect : Effect
   effects : List Effect
   reads : List Resource
   writes : List Resource
@@ -41,15 +42,69 @@ theorem actionWithinTenantD_sound (p : Principal) (a : Action) :
     actionWithinTenantD p a = true ↔ ActionWithinTenant p a := by
   simp [actionWithinTenantD, ActionWithinTenant, resourcesSameTenantD_sound, and_left_comm]
 
-/-- Action is allowed when capability is held and resources stay in-tenant. -/
+/-- Effect is from the closed PF-Core catalog (custom only for documented labels). -/
+def EffectKnown (e : Effect) : Prop :=
+  match e with
+  | Effect.custom label => label = "lab.release"
+  | _ => True
+
+def effectKnownD : Effect → Bool
+  | Effect.custom label => decide (label = "lab.release")
+  | _ => true
+
+theorem effectKnownD_sound (e : Effect) : effectKnownD e = true ↔ EffectKnown e := by
+  cases e <;> simp [effectKnownD, EffectKnown, decide_eq_true_iff]
+
+/-- Every declared action effect is catalog-known. -/
+def ActionEffectsKnown (a : Action) : Prop :=
+  ∀ e ∈ a.effects, EffectKnown e
+
+def actionEffectsKnownD (a : Action) : Bool :=
+  a.effects.all effectKnownD
+
+theorem actionEffectsKnownD_sound (a : Action) :
+    actionEffectsKnownD a = true ↔ ActionEffectsKnown a := by
+  simp [actionEffectsKnownD, ActionEffectsKnown, List.all_eq_true, effectKnownD_sound]
+
+/-- Embedded capability effect appears in the action effect list. -/
+def CapabilityMatchesEffects (a : Action) : Prop :=
+  a.capabilityEffect ∈ a.effects
+
+def capabilityMatchesEffectsD (a : Action) : Bool :=
+  decide (a.capabilityEffect ∈ a.effects)
+
+theorem capabilityMatchesEffectsD_sound (a : Action) :
+    capabilityMatchesEffectsD a = true ↔ CapabilityMatchesEffects a := by
+  simp [capabilityMatchesEffectsD, CapabilityMatchesEffects, decide_eq_true_iff]
+
+/-- Structural action preconditions before allowance. -/
+def ActionAdmissible (p : Principal) (a : Action) : Prop :=
+  HasCapability p a.capability ∧
+    ActionWithinTenant p a ∧
+    ActionEffectsKnown a ∧
+    CapabilityMatchesEffects a
+
+def actionAdmissibleD (p : Principal) (a : Action) : Bool :=
+  hasCapabilityD p a.capability &&
+    actionWithinTenantD p a &&
+    actionEffectsKnownD a &&
+    capabilityMatchesEffectsD a
+
+theorem actionAdmissibleD_sound (p : Principal) (a : Action) :
+    actionAdmissibleD p a = true ↔ ActionAdmissible p a := by
+  unfold actionAdmissibleD ActionAdmissible
+  simp [hasCapabilityD_sound, actionWithinTenantD_sound, actionEffectsKnownD_sound,
+    capabilityMatchesEffectsD_sound, Bool.and_eq_true, and_assoc, and_left_comm, and_comm]
+
+/-- Action is allowed when capability is held and structural checks pass. -/
 def ActionAllowed (p : Principal) (a : Action) : Prop :=
-  HasCapability p a.capability ∧ ActionWithinTenant p a
+  ActionAdmissible p a
 
 def actionAllowedD (p : Principal) (a : Action) : Bool :=
-  hasCapabilityD p a.capability && actionWithinTenantD p a
+  actionAdmissibleD p a
 
 /--
-**Meaning:** The combined action decider reflects capability plus tenant-scoped resources.
+**Meaning:** The combined action decider reflects capability, tenant, effect catalog, and capability/effect alignment.
 
 **Trusted use:** Core allowance predicate for `EventSafe` and generated concrete proofs.
 
@@ -57,6 +112,6 @@ def actionAllowedD (p : Principal) (a : Action) : Bool :=
 -/
 theorem actionAllowedD_sound (p : Principal) (a : Action) :
     actionAllowedD p a = true ↔ ActionAllowed p a := by
-  simp [actionAllowedD, ActionAllowed, hasCapabilityD_sound, actionWithinTenantD_sound, and_left_comm]
+  exact actionAdmissibleD_sound p a
 
 end PFCore

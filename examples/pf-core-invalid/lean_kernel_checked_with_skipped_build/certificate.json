@@ -14,7 +14,23 @@
   "theorems_checked": [
     "traceSafeD"
   ],
-  "obligations": [],
+  "obligations": [
+    {
+      "kind": "ConcreteTraceSafe",
+      "theorem": "concrete_trace_safe",
+      "passed": true
+    },
+    {
+      "kind": "ConcreteTraceSafeProp",
+      "theorem": "concrete_trace_safe_prop",
+      "passed": true
+    },
+    {
+      "kind": "ConcreteAllowedEventsAllowed",
+      "theorem": "concrete_allowed_events_allowed",
+      "passed": true
+    }
+  ],
   "lean_build_status": {
     "ok": false,
     "target": "PFCore",
@@ -34,6 +50,6 @@
   "default_contract_ref": "trace-safe",
   "source_repo": "https://github.com/example/pcs-core",
   "source_commit": "abc1234567890abc1234567890abc1234567890",
-  "signature_or_digest": "sha256:7ba0d9f39c69f6daeaaa5ab2e60b7299393f034b3b0b2db80e36291d86546c58",
+  "signature_or_digest": "sha256:43748373bb9b08b66003ccb9fa6689edf053a9a5053677ec639f3e9fe1aad060",
   "proof_term_ref": "lean/PFCore/Generated/example.lean"
 }

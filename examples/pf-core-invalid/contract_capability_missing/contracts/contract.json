@@ -8,8 +8,5 @@
   },
   "post": {},
   "invariant": {},
-  "semantics_layer": {
-    "require_capability": "lean"
-  },
-  "signature_or_digest": "sha256:e8885483b7bad56b9854dae186f2dc9c9261895fd27329897306426cd116e085"
+  "signature_or_digest": "sha256:d56bc2f149cd44614a84dc96372702c1f33b8121ab905e4ac2be9baeb455ce5e"
 }

@@ -3,7 +3,31 @@ import { canonicalHash, canonicalJsonBytes } from "./hash.js";
 export const GENESIS_HASH =
   "sha256:0000000000000000000000000000000000000000000000000000000000000000";
 
+const TRACE_CLAIM_CLASSES = new Set([
+  "SchemaValidated",
+  "RuntimeChecked",
+  "ReplayValidated",
+  "AssumptionDeclared",
+  "OutOfScope",
+]);
+
+const CERTIFICATE_CLAIM_CLASSES = new Set([
+  "SchemaValidated",
+  "RuntimeChecked",
+  "CertificateChecked",
+  "LeanKernelChecked",
+  "ReplayValidated",
+  "AssumptionDeclared",
+  "OutOfScope",
+]);
+
 const LEAN_CLAIM_CLASSES = new Set(["LeanKernelChecked"]);
+
+const CONCRETE_PROOF_OBLIGATIONS = new Set([
+  "concrete_trace_safe",
+  "concrete_trace_safe_prop",
+  "concrete_allowed_events_allowed",
+]);
 
 function stripDigestFields(
   data: Record<string, unknown>,
@@ -41,23 +65,41 @@ function normalizeHash(value: string): string {
   return trimmed;
 }
 
-export function validateClaimClassOverclaim(
+export function validateTraceClaimClassOverclaim(claimClass: string): string | null {
+  if (!TRACE_CLAIM_CLASSES.has(claimClass)) {
+    if (claimClass === "LeanKernelChecked" || claimClass === "CertificateChecked") {
+      return `ClaimClassOverclaim: claim_class ${JSON.stringify(claimClass)} is not valid on PFCoreTrace.v0`;
+    }
+    return `ClaimClassOverclaim: invalid claim_class ${JSON.stringify(claimClass)} for trace`;
+  }
+  return null;
+}
+
+export function validateCertificateClaimClassOverclaim(
   claimClass: string,
   proofRef?: unknown,
   leanProofChecked?: unknown,
 ): string | null {
+  if (!CERTIFICATE_CLAIM_CLASSES.has(claimClass)) {
+    return `ClaimClassOverclaim: invalid claim_class ${JSON.stringify(claimClass)} for certificate`;
+  }
   const hasProof =
     typeof proofRef === "string" && proofRef.trim().length > 0;
   if (LEAN_CLAIM_CLASSES.has(claimClass) && !hasProof) {
     return `ClaimClassOverclaim: claim_class ${JSON.stringify(claimClass)} exceeds available assurance`;
   }
-  if (claimClass === "CertificateChecked") {
-    return 'ClaimClassOverclaim: claim_class "CertificateChecked" exceeds available assurance';
-  }
   if (claimClass === "LeanKernelChecked" && leanProofChecked !== true) {
     return "ClaimClassOverclaim: claim_class LeanKernelChecked requires lean_proof_checked=true";
   }
   return null;
+}
+
+export function validateClaimClassOverclaim(
+  claimClass: string,
+  proofRef?: unknown,
+  leanProofChecked?: unknown,
+): string | null {
+  return validateCertificateClaimClassOverclaim(claimClass, proofRef, leanProofChecked);
 }
 
 export function validatePfcoreTraceHashChain(trace: Record<string, unknown>): string[] {
@@ -111,11 +153,7 @@ export function validatePfcoreTraceHashChain(trace: Record<string, unknown>): st
   }
 
   if (typeof trace.claim_class === "string") {
-    const overclaim = validateClaimClassOverclaim(
-      trace.claim_class,
-      trace.proof_ref ?? trace.proof_term_ref,
-      trace.lean_proof_checked,
-    );
+    const overclaim = validateTraceClaimClassOverclaim(trace.claim_class);
     if (overclaim) {
       errors.push(overclaim);
     }
@@ -129,7 +167,7 @@ export function validatePfcoreCertificateSemantics(
 ): string[] {
   const errors: string[] = [];
   const claimClass = String(certificate.claim_class ?? "");
-  const overclaim = validateClaimClassOverclaim(
+  const overclaim = validateCertificateClaimClassOverclaim(
     claimClass,
     certificate.proof_ref ?? certificate.proof_term_ref,
     certificate.lean_proof_checked,
@@ -149,6 +187,10 @@ export function validatePfcoreCertificateSemantics(
         "root: claim_class LeanKernelChecked requires proof_term_ref (ClaimClassOverclaim)",
       );
     }
+    const proofTermHash = certificate.proof_term_hash;
+    if (typeof proofTermHash !== "string" || !proofTermHash.startsWith("sha256:")) {
+      errors.push("root: claim_class LeanKernelChecked requires proof_term_hash");
+    }
     const envHash = certificate.lean_environment_hash;
     if (typeof envHash !== "string" || !envHash.startsWith("sha256:")) {
       errors.push("root: claim_class LeanKernelChecked requires lean_environment_hash");
@@ -161,6 +203,30 @@ export function validatePfcoreCertificateSemantics(
       (build as Record<string, unknown>).ok !== true
     ) {
       errors.push("root: lean_proof_checked requires lean_build_status.ok=true");
+    }
+    if (certificate.lean_proof_checked === true) {
+      const obligations = certificate.obligations;
+      const passed = new Set<string>();
+      if (Array.isArray(obligations)) {
+        for (const item of obligations) {
+          if (
+            item &&
+            typeof item === "object" &&
+            !Array.isArray(item) &&
+            (item as Record<string, unknown>).passed === true &&
+            typeof (item as Record<string, unknown>).theorem === "string"
+          ) {
+            passed.add(String((item as Record<string, unknown>).theorem));
+          }
+        }
+      }
+      for (const theorem of CONCRETE_PROOF_OBLIGATIONS) {
+        if (!passed.has(theorem)) {
+          errors.push(
+            `root: lean_proof_checked obligations missing passed proofs for ${JSON.stringify(theorem)}`,
+          );
+        }
+      }
     }
   }
   return errors;
