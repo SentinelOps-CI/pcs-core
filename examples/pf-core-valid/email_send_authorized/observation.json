@@ -1,0 +1,54 @@
+{
+  "schema_version": "v0",
+  "artifact_type": "PFCoreRuntimeObservation.v0",
+  "observation_id": "obs-email-1",
+  "trace_id": "trace-email-1",
+  "event_id": "ev-email-1",
+  "observed_at": "2026-06-18T00:00:00Z",
+  "principal": {
+    "principal_id": "agent-1",
+    "principal_kind": "agent",
+    "tenant": "tenant-a",
+    "roles": [
+      "agent"
+    ],
+    "capabilities": [
+      "cap:email-send"
+    ]
+  },
+  "action": {
+    "action_id": "act-email-1",
+    "tool_name": "email.send",
+    "capability": {
+      "capability_id": "cap:email-send",
+      "effect_kind": "email.send",
+      "resource_pattern": "mailto:*"
+    },
+    "effects": [
+      {
+        "effect_kind": "email.send"
+      }
+    ],
+    "reads": [
+      {
+        "resource_id": "res-mail",
+        "uri": "mailto:user@example.com",
+        "tenant": "tenant-a"
+      }
+    ],
+    "writes": [],
+    "input_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "output_hash": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+  },
+  "decision": "allow",
+  "decision_reason": "authorized",
+  "policy_ref": "policy/default.v0",
+  "evidence_refs": [],
+  "runtime_ref": "agent-runtime",
+  "previous_event_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "payload_hash": "sha256:4fc498fe4c9eb01e3b869b1b3421a858f49d4637b2cd8e5f280fcc6225011691",
+  "claim_class": "RuntimeChecked",
+  "source_repo": "https://github.com/example/agent-runtime",
+  "source_commit": "abc1234567890abc1234567890abc1234567890",
+  "signature_or_digest": "sha256:4fc498fe4c9eb01e3b869b1b3421a858f49d4637b2cd8e5f280fcc6225011691"
+}
