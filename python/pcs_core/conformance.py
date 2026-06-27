@@ -543,10 +543,26 @@ def _suite_status_transition() -> tuple[list[str], list[str], int]:
 def _suite_pf_core() -> tuple[list[str], list[str], int]:
     from pcs_core.lean_check import audit_pfcore_lean_no_sorry, check_pfcore_trace_lean_semantics
     from pcs_core.pf_core_contract import load_contracts_from_dir, validate_trace_contracts
-    from pcs_core.validate import iter_pf_core_example_dirs, load_pf_core_fixture_manifest, validate_file
+    from pcs_core.validate import (
+        check_pf_core_invalid_fixtures,
+        check_pf_core_valid_fixtures,
+        iter_pf_core_example_dirs,
+        load_pf_core_fixture_manifest,
+        validate_file,
+    )
 
     errors: list[str] = []
     checks = 0
+    try:
+        check_pf_core_valid_fixtures()
+        checks += 1
+    except ValidationError as exc:
+        errors.append(f"pf-core valid fixtures: {exc}")
+    try:
+        check_pf_core_invalid_fixtures()
+        checks += 1
+    except ValidationError as exc:
+        errors.append(f"pf-core invalid fixtures: {exc}")
     for case_dir in iter_pf_core_example_dirs("valid"):
         manifest = load_pf_core_fixture_manifest(case_dir)
         trace_name = str(manifest.get("trace_file") or "trace.json")
