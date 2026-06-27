@@ -32,10 +32,59 @@ const ARTIFACT_SCHEMAS: &[(&str, &str)] = &[
         "SignedScienceClaimBundle.v0",
         "SignedScienceClaimBundle.v0.schema.json",
     ),
+    ("PFCorePrincipal.v0", "PFCorePrincipal.v0.schema.json"),
+    ("PFCoreCapability.v0", "PFCoreCapability.v0.schema.json"),
+    ("PFCoreResource.v0", "PFCoreResource.v0.schema.json"),
+    ("PFCoreAction.v0", "PFCoreAction.v0.schema.json"),
+    ("PFCoreEffect.v0", "PFCoreEffect.v0.schema.json"),
+    ("PFCoreDecision.v0", "PFCoreDecision.v0.schema.json"),
+    ("PFCoreEvent.v0", "PFCoreEvent.v0.schema.json"),
+    ("PFCoreTrace.v0", "PFCoreTrace.v0.schema.json"),
+    ("PFCoreContract.v0", "PFCoreContract.v0.schema.json"),
+    ("PFCoreHandoff.v0", "PFCoreHandoff.v0.schema.json"),
+    (
+        "PFCoreRuntimeObservation.v0",
+        "PFCoreRuntimeObservation.v0.schema.json",
+    ),
+    ("PFCoreCertificate.v0", "PFCoreCertificate.v0.schema.json"),
+    ("LeanCheckResult.v0", "LeanCheckResult.v0.schema.json"),
+    ("ToolUseTrace.v0", "ToolUseTrace.v0.schema.json"),
+    ("PCSBridgeCertificate.v0", "PCSBridgeCertificate.v0.schema.json"),
 ];
+
+const EXPLICIT_ARTIFACT_TYPES: &[&str] = &[
+    "PFCorePrincipal.v0",
+    "PFCoreCapability.v0",
+    "PFCoreResource.v0",
+    "PFCoreAction.v0",
+    "PFCoreEffect.v0",
+    "PFCoreDecision.v0",
+    "PFCoreEvent.v0",
+    "PFCoreTrace.v0",
+    "PFCoreContract.v0",
+    "PFCoreHandoff.v0",
+    "PFCoreRuntimeObservation.v0",
+    "PFCoreCertificate.v0",
+    "LeanCheckResult.v0",
+    "ToolUseTrace.v0",
+    "PCSBridgeCertificate.v0",
+    "ClaimArtifact.v0",
+];
+
+fn explicit_artifact_type(value: &str) -> Option<&'static str> {
+    EXPLICIT_ARTIFACT_TYPES
+        .iter()
+        .copied()
+        .find(|artifact_type| *artifact_type == value)
+}
 
 pub fn detect_artifact_type(value: &Value) -> Option<&'static str> {
     let obj = value.as_object()?;
+    if let Some(explicit) = obj.get("artifact_type").and_then(|v| v.as_str()) {
+        if let Some(artifact_type) = explicit_artifact_type(explicit) {
+            return Some(artifact_type);
+        }
+    }
     if obj.contains_key("signed_bundle_id") && obj.contains_key("science_claim_bundle") {
         return Some("SignedScienceClaimBundle.v0");
     }
@@ -268,6 +317,31 @@ mod tests {
 
     fn hash_vectors_dir() -> PathBuf {
         PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../python/tests/hash_vectors")
+    }
+
+    #[test]
+    fn pf_core_explicit_artifact_types_detect() {
+        let repo = examples_dir();
+        let cases = [
+            (
+                "pf-core-valid/tool_use_trace_compiled/pfcore_trace.json",
+                "PFCoreTrace.v0",
+            ),
+            (
+                "pf-core-valid/assumption_declared/certificate.json",
+                "PFCoreCertificate.v0",
+            ),
+        ];
+        for (rel, expected) in cases {
+            let path = repo.join(rel);
+            let value: Value =
+                serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
+            assert_eq!(
+                detect_artifact_type(&value),
+                Some(expected),
+                "{rel}"
+            );
+        }
     }
 
     #[test]
