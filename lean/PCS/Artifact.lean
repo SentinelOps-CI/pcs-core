@@ -11,7 +11,7 @@ structure SourceSpanV0 where
   sourceType : String
   sourceUri : String
   start : SourcePosition
-  end : SourcePosition
+  endPos : SourcePosition
   hash : String
   description : String
   deriving Repr
