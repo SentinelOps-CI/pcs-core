@@ -141,7 +141,11 @@ theorem actionAdmissible_effects_in_self (p : Principal) (a : Action) :
 theorem file_write_capability_aligns_write_footprint (p : Principal) (a : Action) (r : Resource) :
     ActionAdmissible p a → a.capability = "cap:file-write" → r ∈ a.writes →
     Effect.write ∈ a.effects := by
-  intro hAdm _ hmem
-  exact hAdm.right.right.right
+  intro hAdm hcap _
+  have hmatch := hAdm.right.right.right.left
+  have heff := knownCapabilityEffect_file_write a.capability a.capabilityEffect hcap
+    hAdm.right.right.right.right.right
+  rw [heff] at hmatch
+  exact hmatch
 
 end PFCore
