@@ -1,9 +1,9 @@
+import PCS.Hash
+import PCS.Status
+
 /-!
 # PCS bundle verification (Provability Fabric export)
 -/
-
-import PCS.Hash
-import PCS.Status
 
 namespace PCS
 

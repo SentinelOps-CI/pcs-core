@@ -1,19 +1,19 @@
-/-!
-# PCS trust-envelope predicates
--/
-
 import PCS.Bundle
 import PCS.Certificate
 import PCS.Hash
 
+/-!
+# PCS trust-envelope predicates
+-/
+
 namespace PCS
 
 def CertificateMatchesRuntime (cert : Certificate) (receipt : RuntimeReceipt) : Prop :=
-  cert.traceHash = receipt.traceHash Γêº cert.status = ArtifactStatus.CertificateChecked
+  cert.traceHash = receipt.traceHash ∧ cert.status = ArtifactStatus.CertificateChecked
 
 def VerificationAdmitsBundle (verification : VerificationResult) (bundleHash : Hash) : Prop :=
-  verification.status = ArtifactStatus.ProofChecked Γêº
-  verification.verifiedInputBundleHash = bundleHash Γêº
+  verification.status = ArtifactStatus.ProofChecked ∧
+  verification.verifiedInputBundleHash = bundleHash ∧
   verification.releaseBlockingChecksPassed = true
 
 def SignedBundleAdmissible (signedInputHash : Hash) (verifiedInputHash : Hash) : Prop :=
@@ -25,8 +25,8 @@ def ReleaseChainAdmissible
     (verification : VerificationResult)
     (bundleHash : Hash)
     (signedInputHash : Hash) : Prop :=
-  CertificateMatchesRuntime cert receipt Γêº
-  VerificationAdmitsBundle verification bundleHash Γêº
+  CertificateMatchesRuntime cert receipt ∧
+  VerificationAdmitsBundle verification bundleHash ∧
   SignedBundleAdmissible signedInputHash verification.verifiedInputBundleHash
 
 /-- Certificate status is CertificateChecked in any admissible release. -/

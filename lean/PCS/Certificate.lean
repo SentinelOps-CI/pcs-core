@@ -1,9 +1,9 @@
+import PCS.Hash
+import PCS.Status
+
 /-!
 # PCS certificate and runtime receipt (trust envelope)
 -/
-
-import PCS.Hash
-import PCS.Status
 
 namespace PCS
 

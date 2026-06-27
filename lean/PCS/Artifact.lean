@@ -1,8 +1,8 @@
+import PCS.Hash
+
 /-!
 # PCS artifact references
 -/
-
-import PCS.Hash
 
 namespace PCS
 

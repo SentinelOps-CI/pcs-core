@@ -1,8 +1,8 @@
+import PCS.ReleaseChain
+
 /-!
 # PCS trust-envelope theorems (first family)
 -/
-
-import PCS.ReleaseChain
 
 namespace PCS
 
@@ -44,7 +44,7 @@ theorem admissible_release_has_verified_input_hash_equal_to_bundle_hash
     (signedInputHash : Hash)
     (h : ReleaseChainAdmissible cert receipt verification bundleHash signedInputHash) :
     verification.verifiedInputBundleHash = bundleHash := by
-  exact h.right.left.right
+  exact h.right.left.right.left
 
 theorem admissible_release_has_signed_input_hash_equal_to_verified_input_hash
     (cert : Certificate)
@@ -63,7 +63,7 @@ theorem rejected_certificate_cannot_produce_admissible_release
     (bundleHash : Hash)
     (signedInputHash : Hash)
     (hCert : cert.status = ArtifactStatus.Rejected) :
-    ┬¼ ReleaseChainAdmissible cert receipt verification bundleHash signedInputHash := by
+    ¬ ReleaseChainAdmissible cert receipt verification bundleHash signedInputHash := by
   intro h
   have hChecked := certificateCheckedInAdmissibleRelease cert receipt verification bundleHash signedInputHash h
   rw [hCert] at hChecked
@@ -76,7 +76,7 @@ theorem stale_certificate_cannot_produce_admissible_release
     (bundleHash : Hash)
     (signedInputHash : Hash)
     (hCert : cert.status = ArtifactStatus.Stale) :
-    ┬¼ ReleaseChainAdmissible cert receipt verification bundleHash signedInputHash := by
+    ¬ ReleaseChainAdmissible cert receipt verification bundleHash signedInputHash := by
   intro h
   have hChecked := certificateCheckedInAdmissibleRelease cert receipt verification bundleHash signedInputHash h
   rw [hCert] at hChecked
@@ -89,9 +89,9 @@ theorem failed_release_blocking_check_prevents_admissible_release
     (bundleHash : Hash)
     (signedInputHash : Hash)
     (hFailed : verification.releaseBlockingChecksPassed = false) :
-    ┬¼ ReleaseChainAdmissible cert receipt verification bundleHash signedInputHash := by
+    ¬ ReleaseChainAdmissible cert receipt verification bundleHash signedInputHash := by
   intro h
-  have hAdmits := h.right.left
+  have hAdmits := h.right.left.right.right
   rw [hFailed] at hAdmits
   cases hAdmits
 
