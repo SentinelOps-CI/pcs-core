@@ -35,7 +35,7 @@
         },
         "effects": [
           {
-            "effect_kind": "file.read"
+            "effect_kind": "unknown.effect"
           }
         ],
         "reads": [
@@ -51,22 +51,20 @@
       },
       "decision": "allow",
       "decision_reason": "authorized",
-      "contract_refs": [
-        "contract-file-read-v0"
-      ],
+      "contract_refs": [],
       "evidence_refs": [],
       "previous_event_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
-      "event_hash": "sha256:4f54951a4b008bdb24f2bb88438cff876fadd84259ad6d83e8211980303a214b",
+      "event_hash": "sha256:9d71cb558626f6179bf1e4832b55b5c02e2a32906d3a5477522ee9c9a4ea232e",
       "source_repo": "https://github.com/example/agent-runtime",
       "source_commit": "abc1234567890abc1234567890abc1234567890",
-      "signature_or_digest": "sha256:4f54951a4b008bdb24f2bb88438cff876fadd84259ad6d83e8211980303a214b"
+      "signature_or_digest": "sha256:9d71cb558626f6179bf1e4832b55b5c02e2a32906d3a5477522ee9c9a4ea232e"
     }
   ],
-  "trace_hash": "sha256:f0ae031e71e7d480967bffa9c1f61736a88c574f4fc08f2a7bda8d4be22e10dc",
+  "trace_hash": "sha256:4d2190baa8af4219598ccf4e59ab2b6b6b76bfe96469403bb29f55fd1605ad61",
   "policy_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
   "contract_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
-  "claim_class": "LeanKernelChecked",
+  "claim_class": "RuntimeChecked",
   "source_repo": "https://github.com/example/agent-runtime",
   "source_commit": "abc1234567890abc1234567890abc1234567890",
-  "signature_or_digest": "sha256:f0ae031e71e7d480967bffa9c1f61736a88c574f4fc08f2a7bda8d4be22e10dc"
+  "signature_or_digest": "sha256:4d2190baa8af4219598ccf4e59ab2b6b6b76bfe96469403bb29f55fd1605ad61"
 }

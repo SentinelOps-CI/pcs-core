@@ -29,7 +29,7 @@
         "action_id": "act-1",
         "tool_name": "filesystem.read",
         "capability": {
-          "capability_id": "cap:file-read",
+          "capability_id": "cap:unknown",
           "effect_kind": "file.read",
           "resource_pattern": "/data/*"
         },
@@ -51,22 +51,20 @@
       },
       "decision": "allow",
       "decision_reason": "authorized",
-      "contract_refs": [
-        "contract-file-read-v0"
-      ],
+      "contract_refs": [],
       "evidence_refs": [],
       "previous_event_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
-      "event_hash": "sha256:4f54951a4b008bdb24f2bb88438cff876fadd84259ad6d83e8211980303a214b",
+      "event_hash": "sha256:e94015a9ff7475ba501d0877593e8a8bedbd5b7793061dc96eee6049ab9d1af7",
       "source_repo": "https://github.com/example/agent-runtime",
       "source_commit": "abc1234567890abc1234567890abc1234567890",
-      "signature_or_digest": "sha256:4f54951a4b008bdb24f2bb88438cff876fadd84259ad6d83e8211980303a214b"
+      "signature_or_digest": "sha256:e94015a9ff7475ba501d0877593e8a8bedbd5b7793061dc96eee6049ab9d1af7"
     }
   ],
-  "trace_hash": "sha256:f0ae031e71e7d480967bffa9c1f61736a88c574f4fc08f2a7bda8d4be22e10dc",
+  "trace_hash": "sha256:cb1e76857365d2e3d3dd6036c498b49df81cc74ac44891ca8d223ea1e19d5e05",
   "policy_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
   "contract_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
-  "claim_class": "LeanKernelChecked",
+  "claim_class": "RuntimeChecked",
   "source_repo": "https://github.com/example/agent-runtime",
   "source_commit": "abc1234567890abc1234567890abc1234567890",
-  "signature_or_digest": "sha256:f0ae031e71e7d480967bffa9c1f61736a88c574f4fc08f2a7bda8d4be22e10dc"
+  "signature_or_digest": "sha256:cb1e76857365d2e3d3dd6036c498b49df81cc74ac44891ca8d223ea1e19d5e05"
 }

@@ -1,7 +1,7 @@
 {
   "schema_version": "v0",
   "artifact_type": "PFCoreCertificate.v0",
-  "certificate_id": "pfcore-cert-skipped-build",
+  "certificate_id": "pfcore-cert-missing-proof-term-hash",
   "trace_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
   "contract_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
   "policy_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
@@ -32,9 +32,9 @@
     }
   ],
   "lean_build_status": {
-    "ok": false,
+    "ok": true,
     "target": "PFCore",
-    "detail": "skipped"
+    "detail": "ok"
   },
   "lean_proof_checked": true,
   "lean_environment_hash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
@@ -50,6 +50,6 @@
   "default_contract_ref": "trace-safe",
   "source_repo": "https://github.com/example/pcs-core",
   "source_commit": "abc1234567890abc1234567890abc1234567890",
-  "signature_or_digest": "sha256:43748373bb9b08b66003ccb9fa6689edf053a9a5053677ec639f3e9fe1aad060",
+  "signature_or_digest": "sha256:a8c6bf2356e3686bef3303312a84f77bfe73bb1a5c9a85001927230373e08142",
   "proof_term_ref": "lean/PFCore/Generated/example.lean"
 }
