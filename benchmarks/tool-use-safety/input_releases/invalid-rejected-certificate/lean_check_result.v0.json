@@ -1,17 +1,15 @@
 {
   "schema_version": "v0",
-  "artifact_type": "LeanCheckResult.v0",
   "check_id": "lean-check-proof-obligation-release-pcs-v0.1-tool-use-safety",
   "proof_obligation_id": "proof-obligation-release-pcs-v0.1-tool-use-safety",
   "lean_module": "PCS.Theorems",
   "lean_theorem": "ReleaseChainAdmissible",
   "status": "ProofChecked",
-  "checked_at": "2026-06-27T22:49:39Z",
+  "checked_at": "2026-05-19T13:37:27Z",
   "lean_version": "leanprover/lean4:stable",
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
   "failure_reason": "",
-  "disclaimer": "PCS release-envelope consistency check validates ProofObligation.v0 release-envelope consistency against the PCS theorem catalog. A `ProofChecked` LeanCheckResult does not imply PF-Core trace safety. Use `pcs pf-core lean-check --trace <PFCoreTrace.v0.json>` for PF-Core kernel assurance.",
   "obligation_results": [
     {
       "obligation_id": "tool_trace_hash_alignment",
@@ -42,5 +40,5 @@
       "failure_reason": ""
     }
   ],
-  "signature_or_digest": "sha256:899ba5f145d711853c94fd5990426fb3a7dc501a5926aa9731f4d1438b3c04ac"
+  "signature_or_digest": "sha256:148445e008f781bfc47593fe9fb5c8ad12abf482b22f03f7c45fe0b03149276a"
 }

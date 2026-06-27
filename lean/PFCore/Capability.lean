@@ -47,7 +47,7 @@ def knownCapabilityD (cap : String) : Bool :=
 theorem knownCapabilityD_sound (cap : String) :
     knownCapabilityD cap = true ↔ KnownCapability cap := by
   unfold knownCapabilityD KnownCapability
-  cases cap with
+  match cap with
   | "cap:file-read" => simp
   | "cap:file-write" => simp
   | "cap:network" => simp

@@ -20,7 +20,7 @@
     "sha256": "sha256:c1ecda744f3d3a7e55724d5555f8d97121fb8e46f6b6d83d871bab0b11985b15"
   },
   "canonical_claim_id": "claim-qc-release-v0.1",
-  "limitations_notice": "This artifact is a proof-carrying tool-use simulation result. It is not a guarantee that a real deployed agent is safe.",
+  "limitations_notice": "This artifact is a proof-carrying tool-use simulation result. It does not guarantee trace-level safety preservation under stated assumptions for a real deployed runtime.",
   "producer_repos": {
     "pcs_core": {
       "repo": "https://github.com/SentinelOps-CI/pcs-core",
@@ -102,5 +102,13 @@
     }
   },
   "release_status": "Validated",
-  "signature_or_digest": "sha256:8ae762b0a67360c341dbc3a6b9d68c9455abb47030586045f767efef9e079097"
+  "signature_or_digest": "sha256:53488fc4bdd078761083ae982f1b8e5a1326564fad1e3d0d40ccddebdc5ee225",
+  "proof_obligation": {
+    "path": "proof_obligation.v0.json",
+    "sha256": "sha256:850557b7f2e5c97c8c8de3ef8ff54ffad0372068705eeea5709dc545d57c1e3e"
+  },
+  "lean_check_result": {
+    "path": "lean_check_result.v0.json",
+    "sha256": "sha256:98dd9cb225939cce5a6896dc608a290f90f429ab8a67ea58ac747b5f48f81529"
+  }
 }

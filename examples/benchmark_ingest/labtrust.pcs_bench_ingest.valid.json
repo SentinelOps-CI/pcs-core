@@ -9,8 +9,8 @@
       "run_id": "bench-run-labtrust-valid-release-v0",
       "task_id": "labtrust-qc-release-v0",
       "case_id": "labtrust-valid-release-v0",
-      "started_at": "2026-05-22T11:54:35Z",
-      "completed_at": "2026-05-22T11:54:35Z",
+      "started_at": "2026-06-27T23:23:17Z",
+      "completed_at": "2026-06-27T23:23:17Z",
       "commands": [
         {
           "command": "evaluate_labtrust_gallery benchmarks/labtrust-qc-release/valid/labtrust-valid-release-v0/input_artifacts",
@@ -30,10 +30,10 @@
       "certificate_status": "CertificateChecked",
       "scientific_memory_import_status": "not_applicable",
       "scientific_memory_render_status": "not_applicable",
-      "duration_ms": 14,
+      "duration_ms": 8,
       "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
       "source_commit": "d444444444444444444444444444444444444444",
-      "signature_or_digest": "sha256:ee83b3920ea273bcc6e1d5860401e15497728638392c0af5ac242fac40919350"
+      "signature_or_digest": "sha256:aa7d97df384bbe03e43ebc1cf5e049fce41bd0c94332469a7ec906dc9863890c"
     }
   ],
   "coverage_reports": [
@@ -62,17 +62,17 @@
   "logs": [],
   "source_repo": "https://github.com/fraware/LabTrust-Gym",
   "source_commit": "5eac714fd7dc813d2523febcb85c56821558a1b7",
-  "signature_or_digest": "sha256:f4ee4fe774cf48660e0fa7b34c7a629edbe8490985dfc62d82b00cce5e5317a0",
+  "signature_or_digest": "sha256:a5ea53e039b314afa60286b377e32668fb1c14fbc6749d2e0760eae28994851b",
   "artifact_refs": [
     {
       "schema_version": "v0",
       "artifact_type": "BenchmarkRun.v0",
       "path": "valid/labtrust-valid-release-v0/benchmark_run.labtrust-valid-release-v0.v0.json",
-      "sha256": "sha256:ee83b3920ea273bcc6e1d5860401e15497728638392c0af5ac242fac40919350",
+      "sha256": "sha256:aa7d97df384bbe03e43ebc1cf5e049fce41bd0c94332469a7ec906dc9863890c",
       "role": "producer_export",
       "source_repo": "https://github.com/fraware/LabTrust-Gym",
       "source_commit": "5eac714fd7dc813d2523febcb85c56821558a1b7",
-      "signature_or_digest": "sha256:beda167d29a7114587aeebdc960d30715bf1520e8d9903bc997ac06209d07b17"
+      "signature_or_digest": "sha256:16b0a2d362a7d893dc9c18918fb19beb2e10546ad8e93be6de79344edc0ebc11"
     },
     {
       "schema_version": "v0",

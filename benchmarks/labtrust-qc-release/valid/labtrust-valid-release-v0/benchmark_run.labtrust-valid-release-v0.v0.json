@@ -3,8 +3,8 @@
   "run_id": "bench-run-labtrust-valid-release-v0",
   "task_id": "labtrust-qc-release-v0",
   "case_id": "labtrust-valid-release-v0",
-  "started_at": "2026-06-27T23:10:34Z",
-  "completed_at": "2026-06-27T23:10:34Z",
+  "started_at": "2026-06-27T23:23:34Z",
+  "completed_at": "2026-06-27T23:23:34Z",
   "commands": [
     {
       "command": "evaluate_labtrust_gallery benchmarks/labtrust-qc-release/valid/labtrust-valid-release-v0/input_artifacts",
@@ -24,8 +24,8 @@
   "certificate_status": "CertificateChecked",
   "scientific_memory_import_status": "not_applicable",
   "scientific_memory_render_status": "not_applicable",
-  "duration_ms": 9,
+  "duration_ms": 8,
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:ca88c745400663a2109972ee299bffb357bdeb9cea0254fd3b9b17c234bb89b9"
+  "signature_or_digest": "sha256:ba831fdc91b8e4658c42f8202a346ffa42e547ecd0061ad2e35c4418dfd3cf3e"
 }

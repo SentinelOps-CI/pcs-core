@@ -118,5 +118,13 @@
     }
   },
   "release_status": "Validated",
-  "signature_or_digest": "sha256:1105866df254958763ee64310e002e685d557bc53021312cddaa162e26a8d50c"
+  "signature_or_digest": "sha256:9b7baa8b06fc2bfa1c622a8d6019ba2e2c5ab99c8e0dcc729d5a40e8ecbcc10f",
+  "proof_obligation": {
+    "path": "proof_obligation.v0.json",
+    "sha256": "sha256:3a80604bd630a7fd6e6f06ed3802bca444bc09a044fa77a93ab2e4104d0cf73d"
+  },
+  "lean_check_result": {
+    "path": "lean_check_result.v0.json",
+    "sha256": "sha256:9761d9456dd24e838d94f3502a3c3d89cfcc6043993b7ce1c9688866fc9c6643"
+  }
 }
