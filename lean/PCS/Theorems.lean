@@ -63,7 +63,7 @@ theorem rejected_certificate_cannot_produce_admissible_release
     (bundleHash : Hash)
     (signedInputHash : Hash)
     (hCert : cert.status = ArtifactStatus.Rejected) :
-    ¬ ReleaseChainAdmissible cert receipt verification bundleHash signedInputHash := by
+    ┬¼ ReleaseChainAdmissible cert receipt verification bundleHash signedInputHash := by
   intro h
   have hChecked := certificateCheckedInAdmissibleRelease cert receipt verification bundleHash signedInputHash h
   rw [hCert] at hChecked
@@ -76,7 +76,7 @@ theorem stale_certificate_cannot_produce_admissible_release
     (bundleHash : Hash)
     (signedInputHash : Hash)
     (hCert : cert.status = ArtifactStatus.Stale) :
-    ¬ ReleaseChainAdmissible cert receipt verification bundleHash signedInputHash := by
+    ┬¼ ReleaseChainAdmissible cert receipt verification bundleHash signedInputHash := by
   intro h
   have hChecked := certificateCheckedInAdmissibleRelease cert receipt verification bundleHash signedInputHash h
   rw [hCert] at hChecked
@@ -89,7 +89,7 @@ theorem failed_release_blocking_check_prevents_admissible_release
     (bundleHash : Hash)
     (signedInputHash : Hash)
     (hFailed : verification.releaseBlockingChecksPassed = false) :
-    ¬ ReleaseChainAdmissible cert receipt verification bundleHash signedInputHash := by
+    ┬¼ ReleaseChainAdmissible cert receipt verification bundleHash signedInputHash := by
   intro h
   have hAdmits := h.right.left
   rw [hFailed] at hAdmits

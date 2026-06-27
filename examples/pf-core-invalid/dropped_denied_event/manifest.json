@@ -1,0 +1,4 @@
+{
+  "expected_error": "DroppedDeniedEvent",
+  "must_fail_at": "validate_denied_events_preserved"
+}

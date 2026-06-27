@@ -1,0 +1,37 @@
+{
+  "schema_version": "v0",
+  "artifact_type": "PFCoreHandoff.v0",
+  "handoff_id": "handoff-subset-1",
+  "from_principal": {
+    "principal_id": "agent-1",
+    "principal_kind": "agent",
+    "tenant": "tenant-a",
+    "roles": [
+      "agent"
+    ],
+    "capabilities": [
+      "cap:handoff"
+    ]
+  },
+  "to_principal": {
+    "principal_id": "agent-2",
+    "principal_kind": "agent",
+    "tenant": "tenant-a",
+    "roles": [
+      "handoff_delegate"
+    ],
+    "capabilities": []
+  },
+  "delegated_capabilities": [
+    {
+      "capability_id": "cap:handoff",
+      "effect_kind": "handoff.delegate",
+      "resource_pattern": "agent:*"
+    }
+  ],
+  "reason": "delegate handoff authority to agent-2",
+  "evidence_refs": [
+    "evidence/handoff.v0"
+  ],
+  "signature_or_digest": "sha256:01d19eed375587e2d9e05b412e5c347ddad004105681100a21bc5e6f10d5b726"
+}

@@ -68,7 +68,21 @@ const ARTIFACT_SCHEMAS: Record<ArtifactType, string> = {
   "ProfileCoverageReport.v0": "ProfileCoverageReport.v0.schema.json",
   "BenchmarkMetricRegistry.v0": "BenchmarkMetricRegistry.v0.schema.json",
   "ConformanceReport.v0": "ConformanceReport.v0.schema.json",
+  "PFCorePrincipal.v0": "PFCorePrincipal.v0.schema.json",
+  "PFCoreCapability.v0": "PFCoreCapability.v0.schema.json",
+  "PFCoreResource.v0": "PFCoreResource.v0.schema.json",
+  "PFCoreAction.v0": "PFCoreAction.v0.schema.json",
+  "PFCoreEffect.v0": "PFCoreEffect.v0.schema.json",
+  "PFCoreDecision.v0": "PFCoreDecision.v0.schema.json",
+  "PFCoreEvent.v0": "PFCoreEvent.v0.schema.json",
+  "PFCoreTrace.v0": "PFCoreTrace.v0.schema.json",
+  "PFCoreContract.v0": "PFCoreContract.v0.schema.json",
+  "PFCoreHandoff.v0": "PFCoreHandoff.v0.schema.json",
+  "PFCoreRuntimeObservation.v0": "PFCoreRuntimeObservation.v0.schema.json",
+  "PFCoreCertificate.v0": "PFCoreCertificate.v0.schema.json",
+  "PCSBridgeCertificate.v0": "PCSBridgeCertificate.v0.schema.json",
 };
+
 
 type Ajv = InstanceType<typeof Ajv2020>;
 

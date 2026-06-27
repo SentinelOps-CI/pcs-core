@@ -54,6 +54,19 @@ test("benchmark ingest examples include artifact refs", () => {
   }
 });
 
+test("PF-Core explicit artifact_type detection", () => {
+  const cases: Array<[string, ArtifactType]> = [
+    ["pf-core-valid/tool_use_trace_compiled/pfcore_trace.json", "PFCoreTrace.v0"],
+    ["pf-core-valid/assumption_declared/certificate.json", "PFCoreCertificate.v0"],
+  ];
+  for (const [rel, expected] of cases) {
+    const data = JSON.parse(
+      readFileSync(join(examplesDir, rel), "utf8"),
+    ) as Record<string, unknown>;
+    assert.equal(detectArtifactType(data), expected, rel);
+  }
+});
+
 test("valid examples pass schema and semantic validation", () => {
   for (const path of validExampleFiles()) {
     const data = JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;

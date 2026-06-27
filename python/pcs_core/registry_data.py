@@ -60,6 +60,126 @@ def _entry(
     }
 
 
+_PF_CORE_PRIMITIVE_CHECKS = [
+    {
+        "check_id": "explicit_artifact_type",
+        "severity": "release_blocking",
+        "responsible_component": PCS_CORE,
+        "execution_required_in_release_mode": True,
+        "allowed_to_skip": False,
+    },
+    {
+        "check_id": "schema_valid",
+        "severity": "release_blocking",
+        "responsible_component": PCS_CORE,
+        "execution_required_in_release_mode": True,
+        "allowed_to_skip": False,
+    },
+]
+
+_PF_CORE_ARTIFACT_TYPES = frozenset(
+    {
+        "PFCorePrincipal.v0",
+        "PFCoreCapability.v0",
+        "PFCoreResource.v0",
+        "PFCoreAction.v0",
+        "PFCoreEvent.v0",
+        "PFCoreTrace.v0",
+        "PFCoreContract.v0",
+        "PFCoreHandoff.v0",
+        "PFCoreCertificate.v0",
+        "PFCoreRuntimeObservation.v0",
+    }
+)
+
+
+def _pf_core_primitive_entry(
+    artifact_type: str,
+    *,
+    runtime_producer: str = PCS_CORE,
+    allowed_runtime_producers: list[str] | None = None,
+) -> dict[str, Any]:
+    producers = allowed_runtime_producers or [PCS_CORE, AGENT_RUNTIME]
+    return _entry(
+        artifact_type=artifact_type,
+        schema=f"schemas/{artifact_type}.schema.json",
+        schema_owner=PCS_CORE,
+        runtime_producer=runtime_producer,
+        allowed_runtime_producers=producers,
+        allowed_statuses=["Draft", "Validated", "Deprecated"],
+        required_release_fields=[
+            "schema_version",
+            "artifact_type",
+            "signature_or_digest",
+        ],
+        semantic_checks=list(_PF_CORE_PRIMITIVE_CHECKS),
+        consumer_repos=[PCS_CORE, AGENT_RUNTIME],
+        release_mode_required=False,
+    )
+
+
+def _pf_core_release_entry(
+    artifact_type: str,
+    *,
+    id_field: str,
+    runtime_producer: str = PCS_CORE,
+    extra_release_fields: list[str] | None = None,
+) -> dict[str, Any]:
+    required = [
+        "schema_version",
+        "artifact_type",
+        id_field,
+        "claim_class",
+        "source_repo",
+        "source_commit",
+        "signature_or_digest",
+    ]
+    if extra_release_fields:
+        required.extend(extra_release_fields)
+    return _entry(
+        artifact_type=artifact_type,
+        schema=f"schemas/{artifact_type}.schema.json",
+        schema_owner=PCS_CORE,
+        runtime_producer=runtime_producer,
+        allowed_runtime_producers=[PCS_CORE, AGENT_RUNTIME],
+        allowed_statuses=[
+            "Draft",
+            "RuntimeChecked",
+            "CertificateChecked",
+            "LeanKernelChecked",
+            "Rejected",
+            "Stale",
+        ],
+        required_release_fields=required,
+        semantic_checks=[
+            *_PF_CORE_PRIMITIVE_CHECKS,
+            {
+                "check_id": "claim_class_matches_assurance",
+                "severity": "release_blocking",
+                "responsible_component": PCS_CORE,
+                "execution_required_in_release_mode": True,
+                "allowed_to_skip": False,
+            },
+            {
+                "check_id": "lean_kernel_proof",
+                "severity": "release_blocking",
+                "responsible_component": PCS_CORE,
+                "execution_required_in_release_mode": False,
+                "allowed_to_skip": True,
+            },
+            {
+                "check_id": "lean_library_build",
+                "severity": "release_blocking",
+                "responsible_component": PCS_CORE,
+                "execution_required_in_release_mode": False,
+                "allowed_to_skip": True,
+            },
+        ],
+        consumer_repos=[PCS_CORE, AGENT_RUNTIME],
+        release_mode_required=True,
+    )
+
+
 _REGISTRY_ENTRIES: dict[str, dict[str, Any]] = {
     "AssumptionSet.v0": _entry(
         artifact_type="AssumptionSet.v0",
@@ -1082,6 +1202,34 @@ _REGISTRY_ENTRIES: dict[str, dict[str, Any]] = {
         consumer_repos=[PCS_CORE, LABTRUST, CERTIFYEDGE, PF, SM],
         release_mode_required=False,
     ),
+
+    "PFCorePrincipal.v0": _pf_core_primitive_entry("PFCorePrincipal.v0"),
+    "PFCoreCapability.v0": _pf_core_primitive_entry("PFCoreCapability.v0"),
+    "PFCoreResource.v0": _pf_core_primitive_entry("PFCoreResource.v0"),
+    "PFCoreAction.v0": _pf_core_primitive_entry("PFCoreAction.v0"),
+    "PFCoreEvent.v0": _pf_core_primitive_entry(
+        "PFCoreEvent.v0",
+        runtime_producer=AGENT_RUNTIME,
+    ),
+    "PFCoreContract.v0": _pf_core_primitive_entry("PFCoreContract.v0"),
+    "PFCoreHandoff.v0": _pf_core_primitive_entry("PFCoreHandoff.v0"),
+    "PFCoreTrace.v0": _pf_core_release_entry(
+        "PFCoreTrace.v0",
+        id_field="trace_id",
+        extra_release_fields=["trace_hash", "events"],
+    ),
+    "PFCoreCertificate.v0": _pf_core_release_entry(
+        "PFCoreCertificate.v0",
+        id_field="certificate_id",
+        extra_release_fields=["trace_hash", "claim_class"],
+    ),
+    "PFCoreRuntimeObservation.v0": _pf_core_release_entry(
+        "PFCoreRuntimeObservation.v0",
+        id_field="observation_id",
+        runtime_producer=AGENT_RUNTIME,
+        extra_release_fields=["observed_at", "payload_hash"],
+    ),
+
 }
 
 
@@ -1100,3 +1248,136 @@ def all_registry_semantic_check_refs() -> set[str]:
             if isinstance(check, dict) and check.get("check_id"):
                 refs.add(registry_semantic_check_ref(artifact_type, str(check["check_id"])))
     return refs
+
+def pf_core_artifact_types() -> frozenset[str]:
+    return _PF_CORE_ARTIFACT_TYPES
+
+
+_PROOF_OVERCLAIM_CLASSES = frozenset({"LeanKernelChecked", "ProofChecked"})
+
+_ASSUMPTION_REF_PREFIXES = (
+    "docs/",
+    "examples/",
+    "as-",
+    "AssumptionSet",
+)
+
+
+
+def deferred_registry_obligations(artifact_type: str) -> list[dict[str, Any]]:
+    """Return registry semantic checks marked allowed_to_skip for an artifact type."""
+    entry = _REGISTRY_ENTRIES.get(artifact_type)
+    if not entry:
+        return []
+    checks = entry.get("semantic_checks")
+    if not isinstance(checks, list):
+        return []
+    return [check for check in checks if isinstance(check, dict) and check.get("allowed_to_skip")]
+
+
+
+def infer_skipped_registry_checks(
+    certificate: dict[str, Any],
+    *,
+    deferred_checks: list[dict[str, Any]] | None = None,
+) -> list[str]:
+    """Infer which deferrable registry checks were not satisfied by the certificate."""
+    artifact_type = str(certificate.get("artifact_type") or "PFCoreCertificate.v0")
+    deferred = deferred_checks or deferred_registry_obligations(artifact_type)
+    skipped: list[str] = []
+    for check in deferred:
+        check_id = str(check.get("check_id") or "")
+        if check_id == "lean_kernel_proof" and not certificate.get("lean_proof_checked"):
+            skipped.append(check_id)
+        elif check_id == "lean_library_build":
+            build = certificate.get("lean_build_status")
+            if not isinstance(build, dict) or not build.get("ok"):
+                skipped.append(check_id)
+    return skipped
+
+
+
+def _assumption_ref_valid(ref: str) -> bool:
+    text = ref.strip()
+    if not text:
+        return False
+    if text.endswith(".md") or text.endswith(".json"):
+        return True
+    if text.startswith(_ASSUMPTION_REF_PREFIXES):
+        return True
+    return False
+
+
+
+def enforce_assumption_declared(
+    certificate: dict[str, Any],
+    registry_context: dict[str, Any] | None = None,
+) -> list[str]:
+    """
+    Enforce AssumptionDeclared rules when deferrable registry checks were skipped.
+
+    Certificates must not claim LeanKernelChecked or ProofChecked when deferred
+    obligations were not executed. Skipped checks require non-empty assumption_refs
+    pointing at AssumptionSet.v0 artifacts or documented assumption paths.
+    """
+    artifact_type = str(certificate.get("artifact_type") or "PFCoreCertificate.v0")
+    context = registry_context or _REGISTRY_ENTRIES.get(artifact_type, {})
+    explicit_skipped = context.get("skipped_checks")
+    if isinstance(explicit_skipped, list):
+        skipped = [str(item) for item in explicit_skipped]
+    else:
+        deferred = context.get("semantic_checks")
+        deferred_checks = (
+            [check for check in deferred if isinstance(check, dict) and check.get("allowed_to_skip")]
+            if isinstance(deferred, list)
+            else deferred_registry_obligations(artifact_type)
+        )
+        skipped = infer_skipped_registry_checks(certificate, deferred_checks=deferred_checks)
+
+    if not skipped:
+        return []
+
+    issues: list[str] = []
+    claim_class = str(certificate.get("claim_class") or "")
+    if claim_class in _PROOF_OVERCLAIM_CLASSES:
+        issues.append(
+            f"root: claim_class {claim_class!r} forbidden when deferred registry checks "
+            f"were skipped: {', '.join(skipped)}"
+        )
+
+    refs = certificate.get("assumption_refs")
+    if not isinstance(refs, list) or not refs:
+        issues.append(
+            "root: deferred registry checks require non-empty assumption_refs "
+            "(AssumptionSet.v0 id or docs/pf-core/*.md)"
+        )
+    elif not any(_assumption_ref_valid(str(ref)) for ref in refs):
+        issues.append(
+            "root: assumption_refs must reference AssumptionSet.v0 ids or documented "
+            "assumption paths when registry checks are deferred"
+        )
+    elif claim_class not in {"AssumptionDeclared", "RuntimeChecked", "CertificateChecked", "ReplayValidated", "SchemaValidated", "OutOfScope"}:
+        if claim_class in _PROOF_OVERCLAIM_CLASSES or claim_class == "LeanKernelChecked":
+            pass  # already reported
+        elif skipped:
+            issues.append(
+                f"root: deferred registry checks require claim_class AssumptionDeclared "
+                f"(got {claim_class!r})"
+            )
+
+    return issues
+
+
+
+PF_CORE_CLAIM_CLASSES = frozenset(
+    {
+        "SchemaValidated",
+        "RuntimeChecked",
+        "CertificateChecked",
+        "LeanKernelChecked",
+        "ReplayValidated",
+        "AssumptionDeclared",
+        "OutOfScope",
+    }
+)
+

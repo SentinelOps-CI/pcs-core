@@ -17,9 +17,15 @@ jobs:
         run: |
           cd python
           pip install -e ".[dev]"
+          pytest -q tests/test_pf_core_stage1.py tests/test_pf_core_stage2.py tests/test_pf_core_stage3.py
+          pytest -q tests/test_pf_core_phase_f.py
           pytest -q
           pytest -q tests/test_protocol_conformance.py
           pcs schema check
+          pcs pf-core audit-claims
+          pcs pf-core audit-boundary
+          pcs pf-core audit-lean-catalog
+          pcs pf-core audit-lean-no-sorry
           pcs examples check
           pcs validate-release-chain ../examples/labtrust-release/
           pcs validate-release-chain ../examples/labtrust-release/ --json > /dev/null
@@ -69,12 +75,49 @@ jobs:
           pytest -q tests/test_multidomain_workflows.py
           ruff check pcs_core tests
           ruff format --check pcs_core tests
+      - name: PF-Core fixture validation
+        run: |
+          cd python
+          pip install -e .
+          pcs validate ../examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json
+          pcs pf-core validate-trace ../examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json
+      - name: PF-Core CertifyEdge mock check (Phase F3)
+        run: |
+          cd python
+          PCS_CERTIFYEDGE_MOCK=1 pcs pf-core certifyedge-check \
+            --trace ../examples/pf-core-valid/labtrust_replay/trace.json \
+            --property qc_release.temporal.safety \
+            --out /tmp/PFCoreCertificate.certifyedge.json
       - name: Schema drift check (reference)
         run: bash scripts/pcs-schema-diff.sh schemas
+      - name: PF-Core hash vector parity (Phase 7)
+        run: bash scripts/verify-pf-core-hash-vectors.sh python/tests/hash_vectors
       - name: LabTrust release fixtures
         run: |
           cd python
           pcs validate-release-chain ../examples/labtrust-release/
+
+  lean:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install elan
+        run: curl -sSfL https://github.com/leanprover/elan/releases/download/v4.0.0/elan-x86_64-unknown-linux-gnu.tar.gz | tar xz && ./elan-init -y --default-toolchain none
+      - name: Build Lean libraries and PF-Core lean-check
+        run: |
+          cd lean
+          elan default leanprover/lean4:v4.14.0
+          lake build PCS
+          lake build PFCore
+          cd ../python
+          pip install -e .
+          pcs pf-core lean-check --trace ../examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json
+          pcs pf-core validate-contracts \
+            ../examples/pf-core-valid/contract_checked/trace.json \
+            --contracts-dir ../examples/pf-core-valid/contract_checked
 
   rust:
     runs-on: ubuntu-latest
@@ -105,17 +148,6 @@ jobs:
           npm test
           npm run test:hash-vectors -w @pcs/core
           npm run lint
-
-  lean:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install Lean
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain stable
-          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
-      - name: Build Lean trust-boundary skeleton
-        run: cd lean && lake build
 
   validate-cli-contract:
     runs-on: ubuntu-latest

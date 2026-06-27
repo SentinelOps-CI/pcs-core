@@ -1,0 +1,798 @@
+"""Deterministic PF-Core runtime observation compiler."""
+
+from __future__ import annotations
+
+import fnmatch
+from dataclasses import dataclass
+from typing import Any, Mapping
+
+from pcs_core.hash import SIGNATURE_FIELD, canonical_hash
+from pcs_core.validate import ValidationError, validate_schema
+
+GENESIS_HASH = "sha256:" + "0" * 64
+
+EFFECT_KINDS = frozenset(
+    {
+        "file.read",
+        "file.write",
+        "network.egress",
+        "email.send",
+        "handoff.delegate",
+        "mcp.invoke",
+        "lab.release",
+    }
+)
+
+CAPABILITY_CATALOG: dict[str, dict[str, str]] = {
+    "cap:file-read": {
+        "capability_id": "cap:file-read",
+        "effect_kind": "file.read",
+        "resource_pattern": "/data/*",
+    },
+    "cap:file-write": {
+        "capability_id": "cap:file-write",
+        "effect_kind": "file.write",
+        "resource_pattern": "/data/*",
+    },
+    "cap:network": {
+        "capability_id": "cap:network",
+        "effect_kind": "network.egress",
+        "resource_pattern": "*",
+    },
+    "cap:email-send": {
+        "capability_id": "cap:email-send",
+        "effect_kind": "email.send",
+        "resource_pattern": "mailto:*",
+    },
+    "cap:handoff": {
+        "capability_id": "cap:handoff",
+        "effect_kind": "handoff.delegate",
+        "resource_pattern": "agent:*",
+    },
+    "cap:mcp-invoke": {
+        "capability_id": "cap:mcp-invoke",
+        "effect_kind": "mcp.invoke",
+        "resource_pattern": "mcp:*",
+    },
+    "cap:lab-release": {
+        "capability_id": "cap:lab-release",
+        "effect_kind": "lab.release",
+        "resource_pattern": "lab:*",
+    },
+}
+
+ROLE_CAPABILITY_MAP: dict[str, list[str]] = {
+    "file_reader": ["cap:file-read"],
+    "file_admin": ["cap:file-read", "cap:file-write"],
+    "network_user": ["cap:network"],
+    "email_user": ["cap:email-send"],
+    "handoff_delegate": ["cap:handoff"],
+    "mcp_user": ["cap:mcp-invoke"],
+    "lab_operator": ["cap:lab-release"],
+    "agent": ["cap:file-read", "cap:email-send", "cap:handoff", "cap:mcp-invoke"],
+}
+
+TOOL_NAME_MAP: dict[tuple[str, str], tuple[str, str, str]] = {
+    ("filesystem.read", "filesystem"): ("cap:file-read", "file.read", "/data/*"),
+    ("filesystem.write", "filesystem"): ("cap:file-write", "file.write", "/data/*"),
+    ("network.request", "network"): ("cap:network", "network.egress", "*"),
+    ("email.send", "email"): ("cap:email-send", "email.send", "mailto:*"),
+    ("handoff.delegate", "handoff"): ("cap:handoff", "handoff.delegate", "agent:*"),
+    ("mcp.invoke", "mcp"): ("cap:mcp-invoke", "mcp.invoke", "mcp:*"),
+    ("lab.release", "lab"): ("cap:lab-release", "lab.release", "lab:*"),
+}
+
+AUTHORIZATION_TO_DECISION = {
+    "authorized": "allow",
+    "rejected": "deny",
+    "unknown": "deny",
+    "policy_missing": "deny",
+}
+
+RUNTIME_CHECKED_CLAIM_CLASSES = frozenset({"SchemaValidated", "RuntimeChecked", "OutOfScope"})
+LEAN_CLAIM_CLASSES = frozenset({"LeanKernelChecked"})
+
+
+@dataclass(frozen=True)
+class PFCoreRuntimeError(Exception):
+    code: str
+    message: str
+    path: str | None = None
+
+    def __str__(self) -> str:
+        if self.path:
+            return f"{self.code}: {self.message} (at {self.path})"
+        return f"{self.code}: {self.message}"
+
+
+class UnknownCapability(PFCoreRuntimeError):
+    def __init__(self, capability: str, path: str | None = None):
+        super().__init__("UnknownCapability", f"unknown capability: {capability}", path)
+
+
+class UnknownEffect(PFCoreRuntimeError):
+    def __init__(self, effect: str, path: str | None = None):
+        super().__init__("UnknownEffect", f"unknown effect: {effect}", path)
+
+
+class MissingPrincipal(PFCoreRuntimeError):
+    def __init__(self, message: str = "principal required", path: str | None = None):
+        super().__init__("MissingPrincipal", message, path)
+
+
+class AmbiguousMapping(PFCoreRuntimeError):
+    def __init__(self, message: str, path: str | None = None):
+        super().__init__("AmbiguousMapping", message, path)
+
+
+class HandoffAuthorityExpansion(PFCoreRuntimeError):
+    def __init__(self, capability: str, path: str | None = None):
+        super().__init__(
+            "HandoffAuthorityExpansion",
+            f"delegated capability exceeds source authority: {capability}",
+            path,
+        )
+
+
+class ClaimClassOverclaim(PFCoreRuntimeError):
+    def __init__(self, claim_class: str, path: str | None = None):
+        super().__init__(
+            "ClaimClassOverclaim",
+            f"claim_class {claim_class!r} exceeds available assurance",
+            path,
+        )
+
+
+class DroppedDeniedEvent(PFCoreRuntimeError):
+    def __init__(self, event_id: str, path: str | None = None):
+        super().__init__(
+            "DroppedDeniedEvent",
+            f"denied event {event_id!r} missing from compiled trace",
+            path,
+        )
+
+
+class ResourceScopeViolation(PFCoreRuntimeError):
+    def __init__(self, uri: str, pattern: str, path: str | None = None):
+        super().__init__(
+            "ResourceScopeViolation",
+            f"resource {uri!r} outside declared pattern {pattern!r}",
+            path,
+        )
+
+
+def validate_denied_events_preserved(
+    tool_use_trace: Mapping[str, Any],
+    pfcore_trace: Mapping[str, Any],
+) -> None:
+    tool_calls = tool_use_trace.get("tool_calls")
+    if not isinstance(tool_calls, list):
+        return
+    events = pfcore_trace.get("events")
+    if not isinstance(events, list):
+        raise DroppedDeniedEvent("<missing-events>", "events")
+    compiled_ids = {str(event.get("event_id")) for event in events if isinstance(event, dict)}
+    for tool_call in tool_calls:
+        if not isinstance(tool_call, dict):
+            continue
+        auth = str(tool_call.get("authorization_status") or "")
+        if AUTHORIZATION_TO_DECISION.get(auth, "deny") != "deny":
+            continue
+        event_id = str(tool_call.get("event_id") or "")
+        if event_id and event_id not in compiled_ids:
+            raise DroppedDeniedEvent(event_id, "events")
+
+
+def _require_schema_valid(data: Mapping[str, Any], artifact_type: str) -> None:
+    errors = validate_schema(dict(data), artifact_type)
+    if errors:
+        raise ValidationError(f"Schema validation failed for {artifact_type}", errors=errors)
+
+
+def normalize_hash(value: str) -> str:
+    if value.startswith("sha256:") and len(value) == 71:
+        return value
+    if len(value) == 64 and all(c in "0123456789abcdef" for c in value):
+        return f"sha256:{value}"
+    raise PFCoreRuntimeError("InvalidHash", f"invalid hash value: {value!r}")
+
+
+def compute_event_hash(event: Mapping[str, Any]) -> str:
+    payload = {key: value for key, value in event.items() if key not in ("event_hash", SIGNATURE_FIELD)}
+    return canonical_hash(payload)
+
+
+def compute_trace_hash(trace: Mapping[str, Any]) -> str:
+    payload = {
+        key: value for key, value in trace.items() if key not in ("trace_hash", SIGNATURE_FIELD)
+    }
+    return canonical_hash(payload)
+
+
+def expand_principal_capabilities(principal: Mapping[str, Any]) -> list[str]:
+    """Expand roles and direct capabilities into an explicit capability id list."""
+    ids: list[str] = []
+    for role in principal.get("roles", []):
+        role = str(role)
+        if role in ROLE_CAPABILITY_MAP:
+            for cap_id in ROLE_CAPABILITY_MAP[role]:
+                if cap_id not in ids:
+                    ids.append(cap_id)
+        elif role.startswith("cap:") and role not in ids:
+            ids.append(role)
+    for cap_id in principal.get("capabilities", []):
+        cap_id = str(cap_id)
+        if cap_id not in ids:
+            ids.append(cap_id)
+    return ids
+
+
+def principal_capabilities_explicit(principal: Mapping[str, Any]) -> bool:
+    """True when principal.capabilities matches role expansion (Lean HasCapability alignment)."""
+    explicit = {str(cap) for cap in principal.get("capabilities", [])}
+    return explicit == set(expand_principal_capabilities(principal))
+
+
+_allowed_capability_ids = expand_principal_capabilities
+
+
+def _validate_capability(capability: Mapping[str, Any], *, path: str) -> dict[str, str]:
+    cap_id = str(capability.get("capability_id") or "")
+    if cap_id not in CAPABILITY_CATALOG:
+        raise UnknownCapability(cap_id or "<missing>", path)
+    catalog = CAPABILITY_CATALOG[cap_id]
+    effect_kind = str(capability.get("effect_kind") or "")
+    if effect_kind not in EFFECT_KINDS:
+        raise UnknownEffect(effect_kind or "<missing>", f"{path}.effect_kind")
+    if catalog["effect_kind"] != effect_kind:
+        raise AmbiguousMapping(
+            f"capability {cap_id} maps to {catalog['effect_kind']}, not {effect_kind}",
+            f"{path}.effect_kind",
+        )
+    return dict(catalog)
+
+
+def _validate_effects(effects: list[Any], *, path: str) -> list[dict[str, str]]:
+    if not effects:
+        raise UnknownEffect("<missing>", path)
+    validated: list[dict[str, str]] = []
+    for index, effect in enumerate(effects):
+        if not isinstance(effect, dict):
+            raise UnknownEffect("<invalid>", f"{path}[{index}]")
+        kind = str(effect.get("effect_kind") or "")
+        if kind not in EFFECT_KINDS:
+            raise UnknownEffect(kind or "<missing>", f"{path}[{index}].effect_kind")
+        validated.append({"effect_kind": kind})
+    return validated
+
+
+def _validate_action(action: Mapping[str, Any], *, path: str = "action") -> dict[str, Any]:
+    capability = action.get("capability")
+    if not isinstance(capability, dict):
+        raise UnknownCapability("<missing>", f"{path}.capability")
+    cap = _validate_capability(capability, path=f"{path}.capability")
+    effects = action.get("effects")
+    if not isinstance(effects, list):
+        raise UnknownEffect("<missing>", f"{path}.effects")
+    validated_effects = _validate_effects(effects, path=f"{path}.effects")
+    reads = action.get("reads")
+    writes = action.get("writes")
+    if not isinstance(reads, list) or not isinstance(writes, list):
+        raise PFCoreRuntimeError("InvalidAction", "reads and writes must be arrays", path)
+    normalized = {
+        "action_id": str(action.get("action_id") or ""),
+        "tool_name": str(action.get("tool_name") or ""),
+        "capability": {
+            "capability_id": cap["capability_id"],
+            "effect_kind": cap["effect_kind"],
+            "resource_pattern": cap["resource_pattern"],
+        },
+        "effects": validated_effects,
+        "reads": [dict(item) for item in reads if isinstance(item, dict)],
+        "writes": [dict(item) for item in writes if isinstance(item, dict)],
+        "input_hash": str(action.get("input_hash") or GENESIS_HASH),
+        "output_hash": str(action.get("output_hash") or GENESIS_HASH),
+    }
+    validate_resource_scope(normalized, path=path)
+    return normalized
+
+
+def _validate_principal(principal: Any, *, path: str = "principal") -> dict[str, Any]:
+    if not isinstance(principal, dict):
+        raise MissingPrincipal(path=path)
+    principal_id = principal.get("principal_id")
+    if not isinstance(principal_id, str) or not principal_id.strip():
+        raise MissingPrincipal("principal_id required", path)
+    normalized = {
+        "principal_id": principal_id,
+        "principal_kind": str(principal.get("principal_kind") or "agent"),
+        "tenant": str(principal.get("tenant") or ""),
+        "roles": [str(role) for role in principal.get("roles", [])],
+        "capabilities": [str(cap) for cap in principal.get("capabilities", [])],
+    }
+    normalized["capabilities"] = expand_principal_capabilities(normalized)
+    return normalized
+
+
+def _assert_claim_class_allowed(claim_class: str, *, proof_ref: str | None = None) -> None:
+    proof_term_ref = proof_ref
+    if claim_class in LEAN_CLAIM_CLASSES and not proof_term_ref:
+        raise ClaimClassOverclaim(claim_class, "claim_class")
+    if claim_class == "CertificateChecked":
+        raise ClaimClassOverclaim(claim_class, "claim_class")
+
+
+def _finalize_event(
+    *,
+    trace_id: str,
+    event_id: str,
+    sequence: int,
+    timestamp: str,
+    principal: dict[str, Any],
+    action: dict[str, Any],
+    decision: str,
+    decision_reason: str,
+    contract_refs: list[str],
+    evidence_refs: list[str],
+    previous_event_hash: str,
+    source_repo: str,
+    source_commit: str,
+) -> dict[str, Any]:
+    if decision not in {"allow", "deny"}:
+        raise PFCoreRuntimeError("InvalidDecision", f"unknown decision {decision!r}", "decision")
+    event: dict[str, Any] = {
+        "schema_version": "v0",
+        "artifact_type": "PFCoreEvent.v0",
+        "event_id": event_id,
+        "trace_id": trace_id,
+        "sequence": sequence,
+        "timestamp": timestamp,
+        "principal": principal,
+        "action": action,
+        "decision": decision,
+        "decision_reason": decision_reason,
+        "contract_refs": list(contract_refs),
+        "evidence_refs": list(evidence_refs),
+        "previous_event_hash": normalize_hash(previous_event_hash),
+        "event_hash": GENESIS_HASH,
+        "source_repo": source_repo,
+        "source_commit": source_commit,
+        "signature_or_digest": GENESIS_HASH,
+    }
+    event["event_hash"] = compute_event_hash(event)
+    event["signature_or_digest"] = event["event_hash"]
+    return event
+
+
+def resource_matches_pattern(uri: str, pattern: str) -> bool:
+    """Return True when ``uri`` matches capability ``resource_pattern``."""
+    if pattern == "*":
+        return True
+    return fnmatch.fnmatch(uri, pattern)
+
+
+def validate_resource_scope(action: Mapping[str, Any], *, path: str = "action") -> None:
+    capability = action.get("capability")
+    if not isinstance(capability, dict):
+        return
+    pattern = str(capability.get("resource_pattern") or "")
+    if not pattern:
+        return
+    for key in ("reads", "writes"):
+        resources = action.get(key)
+        if not isinstance(resources, list):
+            continue
+        for index, resource in enumerate(resources):
+            if not isinstance(resource, dict):
+                continue
+            uri = str(resource.get("uri") or "")
+            if uri and not resource_matches_pattern(uri, pattern):
+                raise ResourceScopeViolation(uri, pattern, f"{path}.{key}[{index}].uri")
+
+
+def _same_tenant(principal: Mapping[str, Any], action: Mapping[str, Any]) -> bool:
+    tenant = str(principal.get("tenant") or "")
+    for key in ("reads", "writes"):
+        resources = action.get(key)
+        if not isinstance(resources, list):
+            continue
+        for resource in resources:
+            if isinstance(resource, dict) and str(resource.get("tenant") or "") != tenant:
+                return False
+    return True
+
+
+def validate_tenant_isolation(trace: Mapping[str, Any]) -> list[str]:
+    """Return tenant isolation violations for a PFCoreTrace.v0 (empty if scoped).
+
+    Checks that every event's principal tenant matches all read/write resource
+    tenants. This is a conservative runtime mirror of ``TraceTenantScoped`` /
+    ``EventTenantScoped`` in Lean; it does not claim full cross-tenant
+    non-interference.
+    """
+    errors: list[str] = []
+    events = trace.get("events")
+    if not isinstance(events, list):
+        return ["TraceInvalid: events must be an array"]
+
+    for index, event in enumerate(events):
+        if not isinstance(event, dict):
+            continue
+        base = f"events[{index}]"
+        principal = event.get("principal")
+        action = event.get("action")
+        if not isinstance(principal, dict) or not isinstance(action, dict):
+            errors.append(f"TenantIsolation: {base} missing principal or action")
+            continue
+        tenant = str(principal.get("tenant") or "")
+        if not tenant:
+            errors.append(f"TenantIsolation: {base}.principal.tenant is empty")
+            continue
+        if not _same_tenant(principal, action):
+            errors.append(
+                f"TenantIsolation: cross-tenant resource access at {base} "
+                f"(principal tenant {tenant!r})"
+            )
+    return errors
+
+
+def compile_runtime_observation_to_event(observation: dict) -> dict:
+    """Compile a schema-valid runtime observation into a PFCoreEvent.v0."""
+    _require_schema_valid(observation, "PFCoreRuntimeObservation.v0")
+
+    principal = _validate_principal(observation.get("principal"), path="principal")
+    action = _validate_action(observation.get("action", {}), path="action")
+
+    decision = str(observation.get("decision") or "")
+    if decision == "allow":
+        cap_id = action["capability"]["capability_id"]
+        if cap_id not in _allowed_capability_ids(principal):
+            decision = "deny"
+        elif not _same_tenant(principal, action):
+            decision = "deny"
+
+    event = _finalize_event(
+        trace_id=str(observation["trace_id"]),
+        event_id=str(observation["event_id"]),
+        sequence=0,
+        timestamp=str(observation["observed_at"]),
+        principal=principal,
+        action=action,
+        decision=decision,
+        decision_reason=str(observation.get("decision_reason") or ""),
+        contract_refs=[],
+        evidence_refs=[str(ref) for ref in observation.get("evidence_refs", []) if ref],
+        previous_event_hash=str(observation.get("previous_event_hash") or GENESIS_HASH),
+        source_repo=str(observation["source_repo"]),
+        source_commit=str(observation["source_commit"]),
+    )
+    return event
+
+
+def _resolve_tool_mapping(tool_name: str, tool_category: str) -> tuple[str, str, str]:
+    key = (tool_name, tool_category)
+    if key not in TOOL_NAME_MAP:
+        raise UnknownCapability(f"{tool_name}/{tool_category}", "tool_calls.tool_name")
+    return TOOL_NAME_MAP[key]
+
+
+def _tool_call_to_action(
+    tool_call: Mapping[str, Any],
+    *,
+    agent_id: str,
+    tenant: str,
+    capabilities: list[str],
+) -> tuple[dict[str, Any], dict[str, Any], str]:
+    cap_id, effect_kind, resource_pattern = _resolve_tool_mapping(
+        str(tool_call["tool_name"]),
+        str(tool_call["tool_category"]),
+    )
+    _validate_capability(
+        {
+            "capability_id": cap_id,
+            "effect_kind": effect_kind,
+            "resource_pattern": resource_pattern,
+        },
+        path="tool_calls.capability",
+    )
+    resource_uri = str(tool_call.get("resource_uri") or resource_pattern.replace("*", "default"))
+    principal = {
+        "principal_id": agent_id,
+        "principal_kind": "agent",
+        "tenant": tenant,
+        "roles": ["agent"],
+        "capabilities": list(capabilities),
+    }
+    action = {
+        "action_id": f"act-{tool_call['event_id']}",
+        "tool_name": str(tool_call["tool_name"]),
+        "capability": {
+            "capability_id": cap_id,
+            "effect_kind": effect_kind,
+            "resource_pattern": resource_pattern,
+        },
+        "effects": [{"effect_kind": effect_kind}],
+        "reads": [
+            {
+                "resource_id": f"res-{tool_call['event_id']}",
+                "uri": resource_uri,
+                "tenant": tenant,
+            }
+        ],
+        "writes": [],
+        "input_hash": str(tool_call["input_hash"]),
+        "output_hash": str(tool_call["output_hash"]),
+    }
+    auth = str(tool_call.get("authorization_status") or "")
+    if auth not in AUTHORIZATION_TO_DECISION:
+        raise PFCoreRuntimeError(
+            "InvalidDecision",
+            f"unknown authorization_status {auth!r}",
+            "tool_calls.authorization_status",
+        )
+    decision = AUTHORIZATION_TO_DECISION[auth]
+    if decision == "allow" and cap_id not in _allowed_capability_ids(principal):
+        decision = "deny"
+    elif decision == "allow" and not _same_tenant(principal, action):
+        decision = "deny"
+    return principal, _validate_action(action), decision
+
+
+def _handoff_to_event(
+    handoff: Mapping[str, Any],
+    *,
+    trace_id: str,
+    sequence: int,
+    timestamp: str,
+    previous_event_hash: str,
+    source_repo: str,
+    source_commit: str,
+    contract_refs: list[str],
+) -> dict[str, Any]:
+    _require_schema_valid(dict(handoff), "PFCoreHandoff.v0")
+    validate_handoff_authority(handoff)
+    from_principal = _validate_principal(handoff.get("from_principal"), path="from_principal")
+    delegated = handoff.get("delegated_capabilities")
+    if not isinstance(delegated, list) or not delegated:
+        raise HandoffAuthorityExpansion("<missing>", "delegated_capabilities")
+    first = delegated[0] if isinstance(delegated[0], dict) else {}
+    cap_id = str(first.get("capability_id") or "cap:handoff")
+    effect_kind = str(first.get("effect_kind") or "handoff.delegate")
+    resource_pattern = str(first.get("resource_pattern") or "agent:*")
+    to_principal = handoff.get("to_principal")
+    target_id = (
+        str(to_principal.get("principal_id") or "agent-unknown")
+        if isinstance(to_principal, dict)
+        else "agent-unknown"
+    )
+    action = _validate_action(
+        {
+            "action_id": f"act-{handoff.get('handoff_id', sequence)}",
+            "tool_name": "handoff.delegate",
+            "capability": {
+                "capability_id": cap_id,
+                "effect_kind": effect_kind,
+                "resource_pattern": resource_pattern,
+            },
+            "effects": [{"effect_kind": effect_kind}],
+            "reads": [
+                {
+                    "resource_id": f"res-handoff-{sequence}",
+                    "uri": f"agent:{target_id}",
+                    "tenant": from_principal["tenant"],
+                }
+            ],
+            "writes": [],
+            "input_hash": GENESIS_HASH,
+            "output_hash": GENESIS_HASH,
+        },
+        path="handoffs.action",
+    )
+    return _finalize_event(
+        trace_id=trace_id,
+        event_id=str(handoff.get("handoff_id") or f"handoff-{sequence}"),
+        sequence=sequence,
+        timestamp=timestamp,
+        principal=from_principal,
+        action=action,
+        decision="allow",
+        decision_reason=str(handoff.get("reason") or "handoff"),
+        contract_refs=list(contract_refs),
+        evidence_refs=[str(ref) for ref in handoff.get("evidence_refs", []) if ref],
+        previous_event_hash=previous_event_hash,
+        source_repo=source_repo,
+        source_commit=source_commit,
+    )
+
+
+def compile_tool_use_trace_to_pfcore_trace(tool_use_trace: dict) -> dict:
+    """Compile a schema-valid ToolUseTrace.v0 into PFCoreTrace.v0."""
+    _require_schema_valid(tool_use_trace, "ToolUseTrace.v0")
+
+    claim_class = "RuntimeChecked"
+    _assert_claim_class_allowed(claim_class)
+
+    tool_calls = tool_use_trace.get("tool_calls")
+    if not isinstance(tool_calls, list) or not tool_calls:
+        raise PFCoreRuntimeError("InvalidTrace", "tool_calls must be non-empty", "tool_calls")
+
+    handoffs = tool_use_trace.get("handoffs")
+    if handoffs is not None and not isinstance(handoffs, list):
+        raise PFCoreRuntimeError("InvalidTrace", "handoffs must be an array", "handoffs")
+
+    events: list[dict[str, Any]] = []
+    previous_hash = GENESIS_HASH
+    tenant = str(tool_calls[0].get("tenant") or "default")
+    agent_id = str(tool_use_trace["agent_id"])
+    policy_id = str(tool_use_trace["policy_id"])
+    contract_refs = [policy_id]
+
+    for index, tool_call in enumerate(tool_calls):
+        if not isinstance(tool_call, dict):
+            continue
+        principal, action, decision = _tool_call_to_action(
+            tool_call,
+            agent_id=agent_id,
+            tenant=tenant,
+            capabilities=list(_allowed_capability_ids({"roles": ["agent"], "capabilities": []})),
+        )
+        event = _finalize_event(
+            trace_id=str(tool_use_trace["trace_id"]),
+            event_id=str(tool_call["event_id"]),
+            sequence=index,
+            timestamp=str(tool_call["timestamp"]),
+            principal=principal,
+            action=action,
+            decision=decision,
+            decision_reason=str(tool_call.get("authorization_status") or ""),
+            contract_refs=list(contract_refs),
+            evidence_refs=[str(ref) for ref in tool_call.get("policy_refs", []) if ref],
+            previous_event_hash=previous_hash,
+            source_repo=str(tool_use_trace["source_repo"]),
+            source_commit=str(tool_use_trace["source_commit"]),
+        )
+        events.append(event)
+        previous_hash = event["event_hash"]
+
+    if isinstance(handoffs, list):
+        for offset, handoff in enumerate(handoffs):
+            if not isinstance(handoff, dict):
+                continue
+            sequence = len(events) + offset
+            timestamp = str(handoff.get("timestamp") or tool_use_trace.get("completed_at") or "")
+            event = _handoff_to_event(
+                handoff,
+                trace_id=str(tool_use_trace["trace_id"]),
+                sequence=sequence,
+                timestamp=timestamp,
+                previous_event_hash=previous_hash,
+                source_repo=str(tool_use_trace["source_repo"]),
+                source_commit=str(tool_use_trace["source_commit"]),
+                contract_refs=contract_refs,
+            )
+            events.append(event)
+            previous_hash = event["event_hash"]
+
+    denied_source = [
+        str(item.get("event_id"))
+        for item in tool_calls
+        if isinstance(item, dict)
+        and AUTHORIZATION_TO_DECISION.get(str(item.get("authorization_status")), "deny") == "deny"
+    ]
+    denied_compiled = [event["event_id"] for event in events if event["decision"] == "deny"]
+    for event_id in denied_source:
+        if event_id not in denied_compiled:
+            raise DroppedDeniedEvent(event_id, "events")
+
+    trace: dict[str, Any] = {
+        "schema_version": "v0",
+        "artifact_type": "PFCoreTrace.v0",
+        "trace_id": str(tool_use_trace["trace_id"]),
+        "workflow_id": str(tool_use_trace["workflow_id"]),
+        "events": events,
+        "trace_hash": GENESIS_HASH,
+        "policy_hash": str(tool_use_trace["policy_hash"]),
+        "contract_hash": GENESIS_HASH,
+        "claim_class": claim_class,
+        "source_repo": str(tool_use_trace["source_repo"]),
+        "source_commit": str(tool_use_trace["source_commit"]),
+        "signature_or_digest": GENESIS_HASH,
+    }
+    trace["trace_hash"] = compute_trace_hash(trace)
+    trace["signature_or_digest"] = trace["trace_hash"]
+    return trace
+
+
+def validate_handoff_authority(handoff: Mapping[str, Any]) -> None:
+    src = handoff.get("from_principal")
+    if not isinstance(src, dict):
+        raise MissingPrincipal(path="from_principal")
+    allowed = set(_allowed_capability_ids(src))
+    delegated = handoff.get("delegated_capabilities")
+    if not isinstance(delegated, list):
+        raise HandoffAuthorityExpansion("<missing>", "delegated_capabilities")
+    for index, cap in enumerate(delegated):
+        if not isinstance(cap, dict):
+            continue
+        cap_id = str(cap.get("capability_id") or "")
+        if cap_id and cap_id not in allowed:
+            raise HandoffAuthorityExpansion(cap_id, f"delegated_capabilities[{index}]")
+
+
+def validate_pfcore_trace_hash_chain(trace: dict) -> list[str]:
+    """Return semantic hash-chain errors for a PFCoreTrace.v0 (empty if valid)."""
+    errors: list[str] = []
+    events = trace.get("events")
+    if not isinstance(events, list):
+        return ["TraceInvalid: events must be an array"]
+
+    previous = normalize_hash(GENESIS_HASH)
+    for index, event in enumerate(events):
+        if not isinstance(event, dict):
+            errors.append(f"EventInvalid: events[{index}] must be an object")
+            continue
+        base = f"events[{index}]"
+        try:
+            prev_field = normalize_hash(str(event.get("previous_event_hash") or ""))
+        except PFCoreRuntimeError:
+            errors.append(f"EventHashMismatch: invalid previous_event_hash at {base}")
+            continue
+        if prev_field != previous:
+            errors.append(
+                "EventHashMismatch: "
+                f"previous_event_hash mismatch at {base} "
+                f"(expected {previous}, got {prev_field})"
+            )
+        try:
+            actual_hash = normalize_hash(str(event.get("event_hash") or ""))
+        except PFCoreRuntimeError:
+            errors.append(f"EventHashMismatch: invalid event_hash at {base}")
+            continue
+        expected_hash = compute_event_hash(event)
+        if actual_hash != expected_hash:
+            errors.append(
+                "EventHashMismatch: "
+                f"event_hash mismatch at {base} (expected {expected_hash}, got {actual_hash})"
+            )
+        previous = actual_hash
+
+    trace_hash = trace.get("trace_hash")
+    if trace_hash is None:
+        return errors
+    if not isinstance(trace_hash, str):
+        errors.append("TraceHashMismatch: missing trace_hash")
+    else:
+        try:
+            actual_trace_hash = normalize_hash(trace_hash)
+        except PFCoreRuntimeError:
+            errors.append("TraceHashMismatch: invalid trace_hash")
+        else:
+            expected_trace_hash = compute_trace_hash(trace)
+            if actual_trace_hash != expected_trace_hash:
+                errors.append(
+                    "TraceHashMismatch: "
+                    f"trace_hash mismatch (expected {expected_trace_hash}, got {actual_trace_hash})"
+                )
+
+    claim_class = trace.get("claim_class")
+    if isinstance(claim_class, str):
+        try:
+            _assert_claim_class_allowed(
+                claim_class,
+                proof_ref=trace.get("proof_ref") or trace.get("proof_term_ref"),
+            )
+        except ClaimClassOverclaim as exc:
+            errors.append(f"{exc.code}: {exc.message}")
+
+    for index, event in enumerate(events):
+        if not isinstance(event, dict):
+            continue
+        action = event.get("action")
+        if not isinstance(action, dict):
+            continue
+        try:
+            validate_resource_scope(action, path=f"events[{index}].action")
+        except ResourceScopeViolation as exc:
+            errors.append(f"{exc.code}: {exc.message} (at {exc.path})")
+
+    return errors

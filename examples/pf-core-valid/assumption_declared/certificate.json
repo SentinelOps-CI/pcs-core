@@ -1,0 +1,26 @@
+{
+  "schema_version": "v0",
+  "artifact_type": "PFCoreCertificate.v0",
+  "certificate_id": "pfcore-cert-assumption-declared-demo",
+  "trace_hash": "sha256:716cbed45d37ebe49deffd517021e74f7f8751f6baf6e00c2fdc6c3022b626f3",
+  "contract_hash": "sha256:76d4443f09c6fb0d6cc7bebc5c80eae53bd008e4a212ab61d0d1844ac773b5cd",
+  "policy_hash": "sha256:76d4443f09c6fb0d6cc7bebc5c80eae53bd008e4a212ab61d0d1844ac773b5cd",
+  "claim_class": "AssumptionDeclared",
+  "checker": "pcs-core",
+  "checker_version": "0.1.0",
+  "assumption_refs": [
+    "as-pfcore-demo-v0.1",
+    "docs/pf-core/assumptions.md"
+  ],
+  "lean_proof_checked": false,
+  "lean_build_status": {
+    "ok": false,
+    "target": "PFCore",
+    "detail": "skipped for AssumptionDeclared demo fixture"
+  },
+  "disclaimer": "AssumptionDeclared: deferred lean_kernel_proof and lean_library_build registry checks.",
+  "event_count": 2,
+  "source_repo": "https://github.com/example/pcs-core",
+  "source_commit": "a111111111111111111111111111111111111111",
+  "signature_or_digest": "sha256:c67acd6c4dcad6280c3ca868d5d4339036de4e4582ec150d7b2451369bafed6b"
+}

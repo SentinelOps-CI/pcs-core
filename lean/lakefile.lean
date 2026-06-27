@@ -6,3 +6,6 @@ package «pcs-core» where
 
 lean_lib PCS where
   roots := #[`PCS]
+
+lean_lib PFCore where
+  roots := #[`PFCore]

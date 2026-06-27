@@ -1,0 +1,18 @@
+{
+  "description": "LabTrust PCS release adapted to PFCoreTrace.v0 per docs/pf-core-trace-mapping.md",
+  "adapter": "python/pcs_core/pf_core_labtrust_adapter.py::normalize_labtrust_release",
+  "replay_required": true,
+  "trace_file": "trace.json",
+  "source_artifacts": {
+    "trace_certificate": "../../labtrust/trace_certificate.valid.json",
+    "runtime_receipt": "../../labtrust/science_claim_bundle.certified.valid.json#runtime_receipts[0]"
+  },
+  "pcs_binding": {
+    "trace_hash": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+    "spec_hash": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+    "maps_to": {
+      "certificate.contract_hash": "spec_hash",
+      "receipt.policy_hash": "policy_hash"
+    }
+  }
+}

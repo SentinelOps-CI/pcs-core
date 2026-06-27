@@ -1,0 +1,1 @@
+{"expected_error": "ResourceScopeViolation", "must_fail_at": "validate_pfcore_trace_hash_chain"}
