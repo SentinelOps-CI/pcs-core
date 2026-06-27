@@ -1,0 +1,38 @@
+{
+  "schema_version": "v0",
+  "artifact_type": "PFCoreCertificate.v0",
+  "certificate_id": "pfcore-cert-missing-proof-term",
+  "trace_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "contract_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "policy_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "claim_class": "LeanKernelChecked",
+  "checker": "pcs-core",
+  "checker_version": "0.1.0",
+  "assumption_refs": [
+    "docs/pf-core/assumptions.md"
+  ],
+  "theorems_checked": [
+    "traceSafeD"
+  ],
+  "obligations": [],
+  "lean_build_status": {
+    "ok": true,
+    "target": "PFCore",
+    "detail": "ok"
+  },
+  "lean_proof_checked": true,
+  "lean_environment_hash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "proof_ref": "lean/PFCore/Generated/example.lean",
+  "disclaimer": "test fixture",
+  "event_count": 1,
+  "contract_semantics_checked": {
+    "lean": [
+      "trace-safe.invariant.require_trace_safe"
+    ],
+    "runtime": []
+  },
+  "default_contract_ref": "trace-safe",
+  "source_repo": "https://github.com/example/pcs-core",
+  "source_commit": "abc1234567890abc1234567890abc1234567890",
+  "signature_or_digest": "sha256:0b7dddae67cc091a82383db93faf26d620e41b28d37e68ec7081a15e6cce91c5"
+}
