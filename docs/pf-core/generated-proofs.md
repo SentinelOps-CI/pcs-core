@@ -16,7 +16,13 @@ Each file contains:
 - Optional `ContractPreSpec` / `PostSpec` / `Inv` defs when event `contract_refs` bind contracts
 - `decide`-based theorems (`concrete_trace_safe`, per-event `eventSafeD`, contract discharge)
 
-The certificate records `proof_term_ref` pointing at the generated module path.
+The certificate records `proof_term_ref` pointing at the generated module path and `proof_term_hash` as the sha256 digest of that file's bytes (computed before `lake env lean`).
+
+## Trust binding chain
+
+1. **Lean** proves properties of the generated model in `lean/PFCore/Generated/Trace_*.lean`.
+2. **Python** validates JSON traces/certificates (`validate_artifact`) and generates the model from `PFCoreTrace.v0`.
+3. **Certificate** binds assurance via matching `trace_hash`, `proof_term_hash`, and `lean_environment_hash` on `LeanKernelChecked` outputs.
 
 ## Regeneration
 

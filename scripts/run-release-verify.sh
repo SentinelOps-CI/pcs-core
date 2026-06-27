@@ -6,6 +6,20 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PY="${ROOT}/python"
 FAILED=()
 
+to_wsl_path() {
+  local path="$1"
+  if command -v wslpath >/dev/null 2>&1; then
+    wslpath -u "${path}"
+    return
+  fi
+  local drive letter rest
+  drive="$(echo "${path}" | cut -c1 | tr 'A-Z' 'a-z')"
+  rest="$(echo "${path}" | cut -c3- | tr '\\' '/')"
+  printf '/mnt/%s%s' "${drive}" "${rest}"
+}
+
+WSL_ROOT="$(to_wsl_path "${ROOT}")"
+
 step() {
   local name="$1"
   shift
@@ -49,17 +63,33 @@ step "pf-core valid fixtures" pcs pf-core validate-trace ../examples/pf-core-val
 step "pf-core lean no-sorry audit" pcs pf-core audit-lean-no-sorry
 step "pf-core pytest" pytest -q tests/test_pf_core_*.py
 
+PF_CORE_TRACE="${ROOT}/examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json"
+PF_CORE_CERT="/tmp/pfcore-lean-check-cert.json"
+step "pf-core lean-check canonical trace" pcs pf-core lean-check --trace "${PF_CORE_TRACE}" --out "${PF_CORE_CERT}" --skip-build
+if [[ -f "${PF_CORE_CERT}" ]]; then
+  step "pf-core lean-check certificate validate" pcs validate "${PF_CORE_CERT}"
+else
+  echo "SKIP pf-core lean-check certificate validate (certificate not emitted with --skip-build)"
+fi
+
 if command -v wsl >/dev/null 2>&1; then
-  step "lake build PCS" wsl bash -lc "cd /mnt/c/Users/mateo/pcs-core/lean && lake build PCS"
-  step "lake build PFCore" wsl bash -lc "cd /mnt/c/Users/mateo/pcs-core/lean && lake build PFCore"
+  step "lake build PCS" wsl bash -lc "cd '${WSL_ROOT}/lean' && lake build PCS"
+  step "lake build PFCore" wsl bash -lc "cd '${WSL_ROOT}/lean' && lake build PFCore"
+  step "pf-core lean-check full" wsl bash -lc "cd '${WSL_ROOT}/python' && pcs pf-core lean-check --trace '${WSL_ROOT}/examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json' --out /tmp/pfcore-full-cert.json"
+  step "pf-core lean-check full certificate validate" wsl bash -lc "test -f /tmp/pfcore-full-cert.json && cd '${WSL_ROOT}/python' && pcs validate /tmp/pfcore-full-cert.json"
 elif command -v lake >/dev/null 2>&1; then
   step "lake build PCS" bash -lc "cd ../lean && lake build PCS"
   step "lake build PFCore" bash -lc "cd ../lean && lake build PFCore"
+  step "pf-core lean-check full" pcs pf-core lean-check --trace "${PF_CORE_TRACE}" --out /tmp/pfcore-full-cert.json
+  if [[ -f /tmp/pfcore-full-cert.json ]]; then
+    step "pf-core lean-check full certificate validate" pcs validate /tmp/pfcore-full-cert.json
+  fi
 else
   echo "SKIP lake build (lake and wsl unavailable)"
 fi
 
 step "pf-core conformance" pcs conformance run --suite pf-core
+step "pf-core cross-language conformance" pcs conformance run --suite pf-core-cross-language
 
 for suite in \
   labtrust-qc-release-v0 \

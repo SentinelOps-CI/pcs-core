@@ -2,17 +2,35 @@
 
 PF-Core separates **lifecycle status** (PCS `status` field) from **claim class** (what assurance was obtained). A certificate may carry `status: CertificateChecked` while `claim_class: RuntimeChecked` if only runtime predicates were evaluated.
 
-## Allowed claim classes
+## PFCoreTraceClaimClass vs PFCoreCertificateClaimClass
+
+Traces and certificates use **different closed claim-class enums**. Traces record compiler/runtime assurance only; kernel and external-checker claims belong on certificates.
+
+### PFCoreTrace.v0 (`PFCoreTraceClaimClass`)
 
 | Claim class | Meaning |
 |-------------|---------|
 | `SchemaValidated` | JSON Schema and PF-Core semantic checks passed |
 | `RuntimeChecked` | Runtime observation compiled and hash chain validated |
+| `ReplayValidated` | Trace replayed and hashes reproduced |
+| `AssumptionDeclared` | Claim rests on documented assumptions only |
+| `OutOfScope` | Explicitly outside PF-Core trusted kernel |
+
+**Forbidden on traces:** `LeanKernelChecked`, `CertificateChecked` (schema + semantic rejection).
+
+### PFCoreCertificate.v0 (`PFCoreCertificateClaimClass`)
+
+| Claim class | Meaning |
+|-------------|---------|
+| `SchemaValidated` | JSON Schema and PF-Core semantic checks passed |
+| `RuntimeChecked` | Runtime/decider checks without Lean kernel proof |
 | `CertificateChecked` | External checker attestation (e.g. CertifyEdge) |
 | `LeanKernelChecked` | Concrete trace obligation proved in the Lean kernel (`traceSafeD tr = true`) |
-| `ReplayValidated` | Trace replayed and hashes reproduced |
-| `AssumptionDeclared` | Claim rests on documented assumptions only (required when registry checks are deferred) |
-| `OutOfScope` | Explicitly outside PF-Core trusted kernel |
+| `ReplayValidated` | Deterministic replay certificate |
+| `AssumptionDeclared` | Documented assumptions only |
+| `OutOfScope` | Outside PF-Core trusted kernel |
+
+`LeanKernelChecked` certificates require `proof_term_ref`, `proof_term_hash` (sha256 of generated `.lean` bytes), `lean_environment_hash`, `lean_proof_checked: true`, passed concrete obligations, and contract grounding.
 
 Do **not** use PCS `ProofChecked` alone as a PF-Core formal claim.
 
@@ -61,7 +79,7 @@ Do **not** treat PCS lifecycle `ProofChecked` as a PF-Core formal claim. PF-Core
 
 Successful lean-check writes a certificate with matching `claim_class`, `assumption_refs`, `theorems_checked`, `obligations`, `lean_build_status`, `lean_proof_checked`, and `disclaimer`.
 
-- `LeanKernelChecked` requires `proof_term_ref`, `proof_ref`, `lean_proof_checked: true`, successful concrete Lean proof, and **contract grounding** (non-empty event `contract_refs` or `default_contract_ref: "trace-safe"` aligned with `PFCore.traceSafeContract`).
+- `LeanKernelChecked` requires `proof_term_ref`, `proof_ref`, `proof_term_hash`, `lean_environment_hash`, `lean_proof_checked: true`, successful concrete Lean proof, and **contract grounding** (non-empty event `contract_refs` or `default_contract_ref: "trace-safe"` aligned with `PFCore.traceSafeContract`).
 - `--skip-build` or `--skip-lean-proof` yields `RuntimeChecked` only (no `proof_term_ref`).
 
 ### Mapping guidance for PF-Core certificates
@@ -104,7 +122,7 @@ When such checks are deferred:
 | Aspect | `CertificateChecked` | `LeanKernelChecked` |
 |--------|---------------------|---------------------|
 | Checker | External (e.g. CertifyEdge) | PF-Core Lean kernel (`traceSafeD`) |
-| Proof artifact | External attestation ref | Generated `proof_term_ref` |
+| Proof artifact | External attestation ref | Generated `proof_term_ref` + `proof_term_hash` |
 | Lean build | Not required | Required (`lake build PFCore`) |
 | Typical source | PCS `TraceCertificate.v0` bridge | `pcs pf-core lean-check` full pipeline |
 

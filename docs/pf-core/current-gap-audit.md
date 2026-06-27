@@ -10,7 +10,12 @@ Summary of gaps between the PF-Core vision and the current `pcs-core` repository
 |------|--------|-------|
 | `semantics_layer` on `PFCoreContract.v0` | Done | Flat field map: `lean` / `runtime` / `out_of_scope`; validator defaults |
 | `contract_semantics_checked` on certificates | Done | Derived from semantics layers + checks |
-| Cross-language semantic parity | Done | Rust `pf_core.rs`, TS `pfCore.ts`, shared invalid vectors |
+| Cross-language semantic parity | Done | Rust `pf_core.rs`, TS `pfCore.ts`, `conformance run --suite pf-core-cross-language` |
+| Trace vs certificate claim classes | Done | Separate enums; traces reject `LeanKernelChecked` / `CertificateChecked` |
+| Direct-trace effect catalog | Done | Closed `effect_kind` enum + semantic validators |
+| `proof_term_hash` on certificates | Done | sha256 of generated `.lean` bytes before `lake env lean` |
+| Full semantic validation in lean-check | Done | `validate_artifact` on emitted certificates |
+| Generated-lean-proof conformance | Done | Subcheck in `conformance run --suite pf-core` |
 | `pcs pcs-envelope check` | Done | Alias; `pcs lean-check` deprecated with notice |
 | PCS envelope-only framing (choice B) | Done | No `LeanKernelChecked` on PCS path; docs + tests |
 | CertifyEdge live-then-mock CI | Done | `pf_core_certifyedge.py`; CI mock fallback |
@@ -67,9 +72,10 @@ Summary of gaps between the PF-Core vision and the current `pcs-core` repository
 
 ## Remaining research (deferred)
 
-1. **Full provability-fabric-core live adapter orchestration** — hash parity covered natively via adapter CI script; full cross-repo orchestration remains optional.
-2. **Full agent runtime, MCP, NL policy, model safety** — out of scope.
-3. **Global non-interference** — see `non-interference.md`.
+1. **Compositional trust theorems** — see [compositional-trust-roadmap.md](compositional-trust-roadmap.md).
+2. **Full provability-fabric-core live adapter orchestration** — hash parity covered natively via adapter CI script; full cross-repo orchestration remains optional.
+3. **Full agent runtime, MCP, NL policy, model safety** — out of scope.
+4. **Global non-interference** — see `non-interference.md`.
 
 ## Phase F (research-grade extensions)
 

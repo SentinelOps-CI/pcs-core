@@ -12,6 +12,8 @@ This checklist covers the **production trusted kernel** only: contract semantics
 |-------|---------|----------|
 | Tier 1 semantics + envelope | `cd python && pytest -q tests/test_pf_core_tier1.py` | All pass |
 | Cross-language parity | `cd python && pytest -q tests/test_pf_core_cross_language.py` | All pass (TS may skip if `node` absent) |
+| Cross-language conformance | `pcs conformance run --suite pf-core-cross-language` | Python vectors + Rust/TS tests pass |
+| Generated lean proof | `pcs conformance run --suite pf-core` | Includes `pf-core.generated-lean-proof` when `lake` available |
 | Full PF-Core suite | `cd python && pytest -q tests/ -k test_pf_core` | All pass |
 | Rust PF-Core vectors | `cd rust && cargo test pf_core` | All pass |
 | TypeScript hash vectors | `cd typescript/packages/core && npx tsc && node --test dist/tests/examples.test.js` | All pass |
