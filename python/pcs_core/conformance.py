@@ -589,6 +589,110 @@ def _suite_pf_core() -> tuple[list[str], list[str], int]:
             errors.append(f"{trace_path}: {exc}")
     checks += 1
     errors.extend(audit_pfcore_lean_no_sorry())
+    checks = _check_pf_core_generated_lean_proof(errors, checks)
+    return errors, [], checks
+
+
+def _check_pf_core_generated_lean_proof(errors: list[str], checks: int) -> int:
+    import platform
+    import shutil
+
+    from pcs_core.lean_check import run_pfcore_lean_check
+
+    trace_path = repo_root() / "examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json"
+    if not trace_path.is_file():
+        errors.append("pf-core.generated-lean-proof: missing canonical trace fixture")
+        return checks + 1
+    if not shutil.which("lake") and not (
+        platform.system() == "Windows" and shutil.which("wsl")
+    ):
+        return checks
+    checks += 1
+    code, result = run_pfcore_lean_check(trace_path, skip_build=False, skip_lean_proof=False)
+    certificate = result.get("certificate")
+    if code != 0:
+        errors.append(
+            "pf-core.generated-lean-proof: lean-check failed "
+            f"({[issue.get('code') for issue in result.get('issues', [])]})"
+        )
+        return checks
+    if not isinstance(certificate, dict) or certificate.get("claim_class") != "LeanKernelChecked":
+        errors.append("pf-core.generated-lean-proof: expected claim_class LeanKernelChecked")
+        return checks
+    try:
+        validate_artifact(certificate, "PFCoreCertificate.v0")
+    except ValidationError as exc:
+        errors.append(f"pf-core.generated-lean-proof: certificate validation failed: {exc}")
+    return checks
+
+
+@_record("pf-core-cross-language")
+def _suite_pf_core_cross_language() -> tuple[list[str], list[str], int]:
+    import subprocess
+
+    from pcs_core.pf_core_contract import validate_trace_contracts
+    from pcs_core.pf_core_runtime import (
+        validate_denied_events_preserved,
+        validate_pfcore_trace_hash_chain,
+    )
+
+    errors: list[str] = []
+    checks = 0
+    vector_root = repo_root() / "python" / "tests" / "hash_vectors" / "pf_core"
+    cases: tuple[tuple[str, str], ...] = (
+        ("invalid/trace_hash_chain_break.json", "EventHashMismatch"),
+        ("invalid/claim_class_overclaim_trace.json", "ClaimClassOverclaim"),
+    )
+    for relative, needle in cases:
+        checks += 1
+        trace = json.loads((vector_root / relative).read_text(encoding="utf-8"))
+        py_errors = validate_pfcore_trace_hash_chain(trace)
+        if not any(needle in err for err in py_errors):
+            errors.append(f"python vector {relative}: expected {needle!r}, got {py_errors!r}")
+
+    contract_dir = vector_root / "invalid" / "contract_capability_missing"
+    if contract_dir.is_dir():
+        checks += 1
+        trace = json.loads((contract_dir / "trace.json").read_text(encoding="utf-8"))
+        contract = json.loads((contract_dir / "contract.json").read_text(encoding="utf-8"))
+        issues = validate_trace_contracts(trace, {contract["contract_id"]: contract})
+        if not any(issue.code == "ContractCapabilityRequired" for issue in issues):
+            errors.append("python contract_capability_missing vector failed")
+
+    denied_dir = vector_root / "invalid" / "denied_event_dropped"
+    if denied_dir.is_dir():
+        checks += 1
+        tool_use = json.loads((denied_dir / "tool_use_trace.json").read_text(encoding="utf-8"))
+        pfcore = json.loads((denied_dir / "pfcore_trace.json").read_text(encoding="utf-8"))
+        try:
+            validate_denied_events_preserved(tool_use, pfcore)
+            errors.append("python denied_event_dropped vector should fail")
+        except Exception:
+            pass
+
+    rust = repo_root() / "rust"
+    proc = subprocess.run(
+        ["cargo", "test", "pf_core_", "--", "--nocapture"],
+        cwd=rust,
+        capture_output=True,
+        text=True,
+    )
+    checks += 1
+    if proc.returncode != 0:
+        errors.append(f"rust pf_core tests failed: {proc.stderr or proc.stdout}")
+
+    ts_root = repo_root() / "typescript"
+    if (ts_root / "package.json").is_file():
+        proc = subprocess.run(
+            ["npm", "test", "--silent"],
+            cwd=ts_root,
+            capture_output=True,
+            text=True,
+        )
+        checks += 1
+        if proc.returncode != 0:
+            errors.append(f"typescript pf_core tests failed: {proc.stderr or proc.stdout}")
+
     return errors, [], checks
 
 

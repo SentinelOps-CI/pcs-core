@@ -108,12 +108,25 @@ def audit_boundary() -> list[BoundaryIssue]:
         issues.append(BoundaryIssue("missing_claim_boundary_doc", str(claim_boundary)))
     else:
         text = claim_boundary.read_text(encoding="utf-8")
-        for claim_class in sorted(PF_CORE_CLAIM_CLASSES):
-            if claim_class not in text:
+        from pcs_core.registry_data import (
+            PF_CORE_CERTIFICATE_CLAIM_CLASSES,
+            PF_CORE_TRACE_CLAIM_CLASSES,
+        )
+
+        for claim_class in sorted(PF_CORE_TRACE_CLAIM_CLASSES):
+            if f"`{claim_class}`" not in text and claim_class not in text:
                 issues.append(
                     BoundaryIssue(
-                        "claim_class_undocumented",
-                        f"claim_class {claim_class!r} missing from claim-boundary.md",
+                        "trace_claim_class_undocumented",
+                        f"PFCoreTraceClaimClass {claim_class!r} missing from claim-boundary.md",
+                    )
+                )
+        for claim_class in sorted(PF_CORE_CERTIFICATE_CLAIM_CLASSES):
+            if f"`{claim_class}`" not in text and claim_class not in text:
+                issues.append(
+                    BoundaryIssue(
+                        "certificate_claim_class_undocumented",
+                        f"PFCoreCertificateClaimClass {claim_class!r} missing from claim-boundary.md",
                     )
                 )
 
