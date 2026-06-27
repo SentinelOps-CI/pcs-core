@@ -1,0 +1,19 @@
+{
+  "schema_version": "v0",
+  "artifact_type": "PFCoreContract.v0",
+  "contract_id": "contract-file-read-v0",
+  "name": "File read within tenant",
+  "pre": {
+    "require_capability": "cap:file-read",
+    "require_effect": "file.read",
+    "require_tenant_match": true
+  },
+  "post": {
+    "require_decision": "allow",
+    "require_event_safe": true
+  },
+  "invariant": {
+    "require_trace_safe": true
+  },
+  "signature_or_digest": "sha256:ab672cb206542354c10afdbc0e739fe018acee2d4d7db40a7486bcf3071846b3"
+}
