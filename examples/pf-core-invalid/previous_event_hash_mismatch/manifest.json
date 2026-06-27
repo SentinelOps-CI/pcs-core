@@ -1,0 +1,4 @@
+{
+  "expected_error": "EventHashMismatch",
+  "must_fail_at": "validate_pfcore_trace_hash_chain"
+}
