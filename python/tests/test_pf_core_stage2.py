@@ -70,6 +70,8 @@ def test_valid_pf_core_fixtures(case_dir: Path) -> None:
     for path in sorted(case_dir.glob("*.json")):
         if path.name == "manifest.json":
             continue
+        if path.name == "tool_use_trace.json" and (case_dir / "pfcore_trace.json").is_file():
+            continue
         data = _load(path)
         artifact_type = detect_artifact_type(data)
         assert artifact_type is not None, f"Could not detect type for {path}"

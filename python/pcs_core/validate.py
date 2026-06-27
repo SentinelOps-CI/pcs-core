@@ -123,22 +123,6 @@ _PF_CORE_ARTIFACT_TYPES = frozenset(
     key for key in ARTIFACT_SCHEMAS if key.startswith("PFCore") or key == "ToolUseTrace.v0"
 )
 
-CERTIFIED_CLAIM_STATUSES = frozenset(
-    {
-        "CertificateChecked",
-        "ProofChecked",
-        "RuntimeChecked",
-    }
-)
-
-IMPORT_READY_VERIFICATION_STATUSES = frozenset(
-    {
-        "ProofChecked",
-        "CertificateChecked",
-        "RuntimeChecked",
-    }
-)
-
 LEAN_CHECK_RESULT_STATUSES = frozenset(
     {
         "DecidersPassed",
@@ -150,14 +134,6 @@ LEAN_CHECK_RESULT_STATUSES = frozenset(
 )
 
 _ZERO_COMMIT_RE = re.compile(r"^0+$")
-
-
-class ValidationError(Exception):
-    """Raised when artifact validation fails."""
-
-    def __init__(self, message: str, errors: list[str] | None = None):
-        super().__init__(message)
-        self.errors = errors or []
 
 
 def _resolve_schema_ref(schema: dict[str, Any], ref: str) -> dict[str, Any]:
@@ -198,6 +174,9 @@ def detect_artifact_type(data: dict[str, Any]) -> str | None:
     if isinstance(explicit, str) and explicit in ARTIFACT_SCHEMAS:
         if _schema_requires_artifact_type(explicit):
             return explicit
+        if explicit == "LeanCheckResult.v0" and data.get("schema_version") == "v0":
+            if "trace_path" in data or "check_id" in data:
+                return explicit
     if (
         "trace_id" in data
         and "tool_calls" in data
@@ -673,38 +652,6 @@ def _validate_signed_bundle(data: dict[str, Any]) -> list[str]:
     return errors
 
 
-def _resolve_schema_ref(schema: dict[str, Any], ref: str) -> dict[str, Any]:
-    if ref.startswith("pf_core.defs.json#/$defs/"):
-        defs_path = schemas_dir() / "pf_core.defs.json"
-        defs_schema = _load_schema(defs_path)
-        def_name = ref.split("/")[-1]
-        target = defs_schema.get("$defs", {}).get(def_name)
-        if isinstance(target, dict):
-            return target
-    return {}
-
-
-def _schema_requires_artifact_type(artifact_type: str) -> bool:
-    schema_name = ARTIFACT_SCHEMAS.get(artifact_type)
-    if not schema_name:
-        return False
-    schema = _load_schema(schemas_dir() / schema_name)
-    if "$ref" in schema:
-        ref = str(schema["$ref"])
-        if ref.endswith("embedded_event") and artifact_type == "PFCoreEvent.v0":
-            return True
-        resolved = _resolve_schema_ref(schema, ref)
-        if resolved:
-            schema = resolved
-    props = schema.get("properties")
-    if not isinstance(props, dict):
-        return False
-    artifact_type_schema = props.get("artifact_type")
-    if not isinstance(artifact_type_schema, dict):
-        return False
-    return artifact_type_schema.get("const") == artifact_type
-
-
 def _validate_pfcore_claim_class(data: dict[str, Any], path: str, errors: list[str]) -> None:
     claim_class = data.get("claim_class")
     if not isinstance(claim_class, str):
@@ -736,12 +683,52 @@ def _validate_pfcore_trace(data: dict[str, Any]) -> list[str]:
 
 
 def _validate_pfcore_certificate(data: dict[str, Any]) -> list[str]:
+    from pcs_core.lean_catalog import PF_CORE_CONCRETE_PROOF_THEOREMS
     from pcs_core.registry_data import enforce_assumption_declared, registry_entries
 
     errors: list[str] = []
     _validate_pfcore_claim_class(data, "root", errors)
-    if data.get("lean_proof_checked") and not data.get("proof_term_ref"):
+    claim_class = data.get("claim_class")
+    lean_proof_checked = data.get("lean_proof_checked") is True
+    if lean_proof_checked and not data.get("proof_term_ref"):
         errors.append("root: lean_proof_checked requires proof_term_ref")
+    if lean_proof_checked:
+        build = data.get("lean_build_status")
+        if not isinstance(build, dict) or build.get("ok") is not True:
+            errors.append("root: lean_proof_checked requires lean_build_status.ok=true")
+        theorems = data.get("theorems_checked")
+        if isinstance(theorems, list):
+            theorem_set = {str(item) for item in theorems}
+            missing = PF_CORE_CONCRETE_PROOF_THEOREMS - theorem_set
+            if missing:
+                errors.append(
+                    "root: lean_proof_checked theorems_checked missing "
+                    f"{sorted(missing)!r}"
+                )
+        obligations = data.get("obligations")
+        if isinstance(obligations, list):
+            required = {
+                "concrete_trace_safe",
+                "concrete_trace_safe_prop",
+                "concrete_allowed_events_allowed",
+            }
+            passed = {
+                str(item.get("theorem"))
+                for item in obligations
+                if isinstance(item, dict) and item.get("passed") is True
+            }
+            missing_obligations = required - passed
+            if missing_obligations:
+                errors.append(
+                    "root: lean_proof_checked obligations missing passed proofs for "
+                    f"{sorted(missing_obligations)!r}"
+                )
+    if claim_class == "LeanKernelChecked" and not lean_proof_checked:
+        errors.append("root: claim_class LeanKernelChecked requires lean_proof_checked=true")
+    if claim_class == "LeanKernelChecked":
+        env_hash = data.get("lean_environment_hash")
+        if not isinstance(env_hash, str) or not env_hash.startswith("sha256:"):
+            errors.append("root: claim_class LeanKernelChecked requires lean_environment_hash")
     errors.extend(enforce_assumption_declared(data, registry_entries().get("PFCoreCertificate.v0")))
     return errors
 
@@ -947,7 +934,8 @@ def validate_semantics(data: dict[str, Any], artifact_type: str) -> list[str]:
         _validate_pfcore_claim_class(data, "root", errors)
 
     return errors
-    return errors
+
+
 def validate_artifact(data: dict[str, Any], artifact_type: str | None = None) -> None:
     artifact_type = artifact_type or detect_artifact_type(data)
     if not artifact_type:
@@ -1040,6 +1028,8 @@ def check_valid_examples(examples_dir: Path | None = None) -> None:
         for path in sorted(ingest_examples.glob("*.pcs_bench_ingest.valid.json")):
             validate_file(path)
 
+    check_pf_core_valid_fixtures()
+
 
 def iter_pf_core_example_dirs(kind: str) -> list[Path]:
     root = repo_root() / "examples" / f"pf-core-{kind}"
@@ -1058,58 +1048,6 @@ def load_pf_core_fixture_manifest(case_dir: Path) -> dict[str, Any]:
     return manifest
 
 
-def validate_artifact(data: dict[str, Any], artifact_type: str | None = None) -> None:
-    artifact_type = artifact_type or detect_artifact_type(data)
-    if not artifact_type:
-        raise ValidationError("Could not detect artifact type from JSON content")
-
-    schema_errors = validate_schema(data, artifact_type)
-    semantic_errors = validate_semantics(data, artifact_type)
-    all_errors = schema_errors + semantic_errors
-    if all_errors:
-        raise ValidationError(
-            f"Validation failed for {artifact_type}",
-            errors=all_errors,
-        )
-
-
-def validate_file(path: Path | str) -> str:
-    path = Path(path)
-    with path.open(encoding="utf-8") as f:
-        data = json.load(f)
-    if not isinstance(data, dict):
-        raise ValidationError("Artifact root must be a JSON object")
-    artifact_type = detect_artifact_type(data)
-    if not artifact_type:
-        raise ValidationError(f"Could not detect artifact type in {path}")
-    validate_artifact(data, artifact_type)
-    return artifact_type
-
-
-def _is_valid_example(path: Path) -> bool:
-    return path.suffix == ".json" and ".valid." in path.name
-
-
-def iter_example_json_files(examples_dir: Path) -> list[Path]:
-    return sorted(p for p in examples_dir.rglob("*.json") if p.is_file())
-
-
-def check_all_schemas() -> None:
-    for artifact_type, schema_name in ARTIFACT_SCHEMAS.items():
-        schema_path = schemas_dir() / schema_name
-        schema = _load_schema(schema_path)
-        Draft202012Validator.check_schema(schema)
-        get_validator(artifact_type)
-
-
-def check_valid_examples(examples_dir: Path | None = None) -> None:
-    examples_dir = examples_dir or default_examples_dir()
-    for path in iter_example_json_files(examples_dir):
-        if _is_valid_example(path):
-            validate_file(path)
-    check_pf_core_valid_fixtures()
-
-
 def check_pf_core_valid_fixtures() -> None:
     from pcs_core.pf_core_replay import replay_trace
 
@@ -1120,6 +1058,8 @@ def check_pf_core_valid_fixtures() -> None:
             manifest = load_pf_core_fixture_manifest(case_dir)
         for path in sorted(case_dir.glob("*.json")):
             if path.name == "manifest.json":
+                continue
+            if path.name == "tool_use_trace.json" and (case_dir / "pfcore_trace.json").is_file():
                 continue
             validate_file(path)
         if manifest and manifest.get("replay_required"):

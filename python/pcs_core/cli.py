@@ -727,7 +727,7 @@ def main(argv: list[str] | None = None) -> int:
 
     p_lean_check = sub.add_parser(
         "lean-check",
-        help="Check ProofObligation.v0 against the PCS Lean trust kernel catalog",
+        help="PCS release-envelope consistency check (ProofObligation.v0; not PF-Core LeanKernelChecked)",
     )
     p_lean_check.add_argument(
         "--obligations",
@@ -1075,7 +1075,10 @@ def cmd_extract_proof_obligations(release: Path, out_path: Path) -> int:
 
 
 def cmd_lean_check(obligations_path: Path, out_path: Path, *, skip_lean_build: bool = False) -> int:
+    from pcs_core.lean_check import PCS_LEAN_CHECK_DISCLAIMER
     from pcs_core.lean_trust import run_lean_check
+
+    print(PCS_LEAN_CHECK_DISCLAIMER, file=sys.stderr)
 
     try:
         obligations_doc = _load_json(obligations_path)
