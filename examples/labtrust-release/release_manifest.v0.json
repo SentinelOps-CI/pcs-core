@@ -13,11 +13,11 @@
   },
   "release_chain_validation_result": {
     "path": "release_chain_validation_result.v0.json",
-    "sha256": "sha256:2fac46ed0a92ce95505662fef25bdc09ebca1af7ad8fdfc8c3153936b8a46a37"
+    "sha256": "sha256:a8818725a80639b24f2fe0da9c33cbe714ec2b3d370ac231f8b776e7f2240e92"
   },
   "canonical_signed_bundle": {
     "path": "signed_science_claim_bundle.json",
-    "sha256": "sha256:308ef2f751e2fb3159c4b88cc294bed2e94944e97e268268c7c46a7f489019f6"
+    "sha256": "sha256:68e6752de71212161bb6bf7ce1ecfa91532b03315896a6f89ecdd61fd81d6fe1"
   },
   "canonical_claim_id": "claim-pcs-qc-release-v0.1",
   "limitations_notice": "PCS v0.1 demonstrates a proof-carrying simulated lab workflow; it does not claim clinical validity or production certification.",
@@ -113,10 +113,10 @@
   "signature_or_digest": "sha256:a6f51c871eb7e8462d7e7edb6862a22f1aa7546d561dd6478cceecb8cbd24b05",
   "proof_obligation": {
     "path": "proof_obligation.v0.json",
-    "sha256": "sha256:de6c1071065220ba134757eefc88d99dd4fc1e60df1e5f74ade12c5b6be2f348"
+    "sha256": "sha256:f7c8ce2220446e4289d67cfd31e14e7b762f7cade039fd54b5e58a22e1712a8c"
   },
   "lean_check_result": {
     "path": "lean_check_result.v0.json",
-    "sha256": "sha256:7d63fb9226f64fa235b67666146aff7e6396b82bd9059afce5ce9d29b4d368b8"
+    "sha256": "sha256:412c16034d78706bf0d008ce3a47356f65f9dc8bcca229828b4269f3242d7584"
   }
 }

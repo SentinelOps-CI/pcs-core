@@ -7,7 +7,7 @@
   "generated_at": "2026-05-18T23:17:38Z",
   "upstream_release_manifest": {
     "path": "release_manifest.v0.json",
-    "sha256": "sha256:565e63be650694f0aa5d6225e80317c67b25c80f136acecb1781a6008121c50f"
+    "sha256": "sha256:f2baf7ca1d8ef6428a4ad516072a51313e0249a25f36969f1ea7f5f9a65cba27"
   },
   "handoff_artifacts": [
     "handoff_manifest.runtime_to_certificate.v0.json"

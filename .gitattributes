@@ -1,0 +1,2 @@
+﻿# LF line endings for release fixtures (CI runs on Linux; CRLF breaks manifest digests).
+examples/labtrust-release/** text eol=lf
