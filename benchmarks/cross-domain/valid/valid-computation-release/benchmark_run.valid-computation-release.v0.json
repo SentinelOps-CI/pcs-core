@@ -3,8 +3,8 @@
   "run_id": "bench-run-valid-computation-release",
   "task_id": "cross-domain-release-chain-v0",
   "case_id": "valid-computation-release",
-  "started_at": "2026-06-28T00:48:34Z",
-  "completed_at": "2026-06-28T00:48:34Z",
+  "started_at": "2026-06-28T07:05:52Z",
+  "completed_at": "2026-06-28T07:05:52Z",
   "commands": [
     {
       "command": "validate_release_chain examples/computation-release",
@@ -21,8 +21,8 @@
   "certificate_status": "not_applicable",
   "scientific_memory_import_status": "not_applicable",
   "scientific_memory_render_status": "not_applicable",
-  "duration_ms": 75,
+  "duration_ms": 76,
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:e1b8b64edf16b121c563a736003e17387a3f76960b599bad997d64927e7bbc4c"
+  "signature_or_digest": "sha256:71242fb2f3d2653da0bf75ecd77639deb7b2b91b9749b1429deae830903a53d5"
 }
