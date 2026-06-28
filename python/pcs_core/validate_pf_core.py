@@ -211,14 +211,8 @@ def _validate_pfcore_certificate(data: dict[str, Any]) -> list[str]:
             else:
                 runtime = semantics_obj.get("runtime")
                 lean = semantics_obj.get("lean")
-                runtime_items = (
-                    [str(item) for item in runtime]
-                    if isinstance(runtime, list)
-                    else []
-                )
-                lean_items = (
-                    [str(item) for item in lean] if isinstance(lean, list) else []
-                )
+                runtime_items = [str(item) for item in runtime] if isinstance(runtime, list) else []
+                lean_items = [str(item) for item in lean] if isinstance(lean, list) else []
                 if "resource_pattern_scope" not in runtime_items:
                     errors.append(
                         "root: lean_proof_checked contract_semantics_checked.runtime "

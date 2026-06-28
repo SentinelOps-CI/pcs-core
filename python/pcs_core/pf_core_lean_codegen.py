@@ -687,8 +687,7 @@ def generate_trust_boundary_theorems(
     ):
         theorems.extend(
             [
-                f"theorem concrete_trace_safe_r : traceSafeRD {trace_var} = true := by\n"
-                "  decide",
+                f"theorem concrete_trace_safe_r : traceSafeRD {trace_var} = true := by\n  decide",
                 f"theorem concrete_trace_safe_r_prop : TraceSafeR {trace_var} :=\n"
                 f"  (traceSafeRD_sound {trace_var}).mp concrete_trace_safe_r",
                 f"theorem concrete_trace_safe_r_implies_trace_safe :\n"

@@ -12,8 +12,8 @@ from pcs_core.lean_check import run_pfcore_lean_check
 from pcs_core.pf_core_certifyedge import (
     CERTIFYEDGE_INSTALL_DOC,
     certifyedge_cli_available,
-    certifyedge_mode,
     certifyedge_mock_enabled,
+    certifyedge_mode,
     certifyedge_status,
     run_certifyedge_check,
     write_certifyedge_certificate,
@@ -175,7 +175,10 @@ def test_certifyedge_live_mock_separation(monkeypatch: pytest.MonkeyPatch) -> No
         live_result = run_certifyedge_check(LABTRUST_TRACE, "qc_release.temporal.safety")
         assert live_result.mock is False
         assert not live_result.ok
-        assert "live" in live_result.message.lower() or "PF_CORE_CERTIFYEDGE_MODE=live" in live_result.message
+        assert (
+            "live" in live_result.message.lower()
+            or "PF_CORE_CERTIFYEDGE_MODE=live" in live_result.message
+        )
 
 
 def test_certifyedge_require_live_fails_without_cli(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -184,11 +187,12 @@ def test_certifyedge_require_live_fails_without_cli(monkeypatch: pytest.MonkeyPa
     monkeypatch.delenv("PF_CORE_CERTIFYEDGE_MOCK", raising=False)
     if shutil.which("certifyedge") is not None:
         pytest.skip("real certifyedge on PATH")
-    result = run_certifyedge_check(
-        LABTRUST_TRACE, "qc_release.temporal.safety", require_live=True
-    )
+    result = run_certifyedge_check(LABTRUST_TRACE, "qc_release.temporal.safety", require_live=True)
     assert not result.ok
-    assert "require-live" in result.message.lower() or "PF_CORE_CERTIFYEDGE_MODE=live" in result.message
+    assert (
+        "require-live" in result.message.lower()
+        or "PF_CORE_CERTIFYEDGE_MODE=live" in result.message
+    )
 
 
 def test_certifyedge_stub_cli_format(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

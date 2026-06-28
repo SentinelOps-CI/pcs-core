@@ -18,10 +18,10 @@ from pcs_core.pf_core_runtime import (
     resource_matches_pattern,
     validate_cross_tenant_safety,
     validate_denied_events_preserved,
-    validate_pfcore_trace_hash_chain,
-    validate_tenant_isolation,
     validate_observational_non_interference,
     validate_observational_non_interference_all_pairs,
+    validate_pfcore_trace_hash_chain,
+    validate_tenant_isolation,
 )
 from pcs_core.validate import ARTIFACT_SCHEMAS, detect_artifact_type, validate_semantics
 
@@ -307,7 +307,7 @@ def test_shared_negative_vectors_python() -> None:
         "EventHashMismatch" in err for err in validate_pfcore_trace_hash_chain(prev_mismatch)
     )
 
-    from pcs_core.pf_core_runtime import validate_cross_tenant_safety, validate_tenant_isolation
+    from pcs_core.pf_core_runtime import validate_tenant_isolation
 
     cross_tenant = _load_json(INVALID_VECTORS / "cross_tenant_leak.json")
     assert any("TenantIsolation" in err for err in validate_tenant_isolation(cross_tenant))
@@ -429,6 +429,7 @@ def test_contract_semantics_checked_resource_obligations_parity() -> None:
     ]
     assert resource_errors == []
 
+
 def test_trace_safe_rd_decider_parity() -> None:
     """Python lean_check TraceSafeR decider matches TraceSafe on catalog-valid traces."""
     from pcs_core.lean_check import trace_safe_d, trace_safe_rd
@@ -439,7 +440,8 @@ def test_trace_safe_rd_decider_parity() -> None:
     assert trace_safe_rd(events)
     assert trace_safe_rd(events) == trace_safe_d(events)
 
-    bad = _load_json(REPO / "examples" / "pf-core-invalid" / "resource_scope_violation" / "trace.json")
+    bad_path = REPO / "examples" / "pf-core-invalid" / "resource_scope_violation" / "trace.json"
+    bad = _load_json(bad_path)
     bad_events = bad["events"]
     assert not trace_safe_rd(bad_events)
 
@@ -452,4 +454,3 @@ def test_codegen_emits_trace_safe_r_obligations_on_valid_trace(tmp_path: Path) -
     text = proof_path.read_text(encoding="utf-8")
     assert "theorem concrete_trace_safe_r" in text
     assert "traceSafeRD" in text
-
