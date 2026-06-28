@@ -49,3 +49,4 @@ See [non-interference.md](non-interference.md) and [assumptions.md](assumptions.
 | `handoff_preserves_trace_safe_strong` | Handoff + frames + trace safety | **Proved** (`State.lean`) |
 | `handoff_composition_global` | Multi-hop handoff authority bounded by first source | **Proved** (`Compositional.lean`) |
 | `traceSafe_implies_tenant_isolation` | Allowed events in safe traces stay tenant-scoped | **Proved** (`NonInterference.lean`) |
+| `traceSafe_implies_low_events_tenant_scoped` | Low-projected events in safe traces are tenant-scoped | **Proved** (`Observational.lean`; not full global NI) |
