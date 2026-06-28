@@ -6,20 +6,15 @@ from dataclasses import dataclass
 from typing import Any, Mapping
 
 from pcs_core.hash import SIGNATURE_FIELD, canonical_hash
-from pcs_core.pf_core_catalog import CAPABILITY_CATALOG, EFFECT_KINDS, ROLE_CAPABILITY_MAP
+from pcs_core.pf_core_catalog import (
+    CAPABILITY_CATALOG,
+    EFFECT_KINDS,
+    ROLE_CAPABILITY_MAP,
+    TOOL_NAME_MAP,
+)
 from pcs_core.validate import ValidationError, validate_schema
 
 GENESIS_HASH = "sha256:" + "0" * 64
-
-TOOL_NAME_MAP: dict[tuple[str, str], tuple[str, str, str]] = {
-    ("filesystem.read", "filesystem"): ("cap:file-read", "file.read", "/data/*"),
-    ("filesystem.write", "filesystem"): ("cap:file-write", "file.write", "/data/*"),
-    ("network.request", "network"): ("cap:network", "network.egress", "*"),
-    ("email.send", "email"): ("cap:email-send", "email.send", "mailto:*"),
-    ("handoff.delegate", "handoff"): ("cap:handoff", "handoff.delegate", "agent:*"),
-    ("mcp.invoke", "mcp"): ("cap:mcp-invoke", "mcp.invoke", "mcp:*"),
-    ("lab.release", "lab"): ("cap:lab-release", "lab.release", "lab:*"),
-}
 
 AUTHORIZATION_TO_DECISION = {
     "authorized": "allow",

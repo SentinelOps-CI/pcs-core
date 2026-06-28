@@ -25,3 +25,13 @@ export const ROLE_CAPABILITY_MAP: Record<string, string[]> = {
   'lab_operator': ['cap:lab-release'],
   'agent': ['cap:file-read', 'cap:email-send', 'cap:handoff', 'cap:mcp-invoke'],
 };
+
+export const TOOL_NAME_MAP: Record<string, [string, string, string]> = {
+  'filesystem.read|filesystem': ['cap:file-read', 'file.read', '/data/*'],
+  'filesystem.write|filesystem': ['cap:file-write', 'file.write', '/data/*'],
+  'network.request|network': ['cap:network', 'network.egress', '*'],
+  'email.send|email': ['cap:email-send', 'email.send', 'mailto:*'],
+  'handoff.delegate|handoff': ['cap:handoff', 'handoff.delegate', 'agent:*'],
+  'mcp.invoke|mcp': ['cap:mcp-invoke', 'mcp.invoke', 'mcp:*'],
+  'lab.release|lab': ['cap:lab-release', 'lab.release', 'lab:*'],
+};

@@ -56,5 +56,42 @@
     "mcp_user": ["cap:mcp-invoke"],
     "lab_operator": ["cap:lab-release"],
     "agent": ["cap:file-read", "cap:email-send", "cap:handoff", "cap:mcp-invoke"]
-  }
+  },
+  "tool_map": [
+    {
+      "tool_name": "filesystem.read",
+      "tool_category": "filesystem",
+      "capability_id": "cap:file-read"
+    },
+    {
+      "tool_name": "filesystem.write",
+      "tool_category": "filesystem",
+      "capability_id": "cap:file-write"
+    },
+    {
+      "tool_name": "network.request",
+      "tool_category": "network",
+      "capability_id": "cap:network"
+    },
+    {
+      "tool_name": "email.send",
+      "tool_category": "email",
+      "capability_id": "cap:email-send"
+    },
+    {
+      "tool_name": "handoff.delegate",
+      "tool_category": "handoff",
+      "capability_id": "cap:handoff"
+    },
+    {
+      "tool_name": "mcp.invoke",
+      "tool_category": "mcp",
+      "capability_id": "cap:mcp-invoke"
+    },
+    {
+      "tool_name": "lab.release",
+      "tool_category": "lab",
+      "capability_id": "cap:lab-release"
+    }
+  ]
 }
