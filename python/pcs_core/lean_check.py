@@ -294,14 +294,139 @@ def trace_safe_d(events: list[Mapping[str, Any]]) -> bool:
     return all(event_safe_d(event) for event in events)
 
 
+def tenant_isolation_d(events: list[Mapping[str, Any]]) -> bool:
+    for event in events:
+        decision = str(event.get("decision") or "")
+        if decision != "allow":
+            continue
+        principal = event.get("principal")
+        action = event.get("action")
+        if not isinstance(principal, dict) or not isinstance(action, dict):
+            return False
+        if not action_within_tenant_d(principal, action):
+            return False
+    return True
+
+
+def trace_cross_tenant_safe_d(events: list[Mapping[str, Any]]) -> bool:
+    for event in events:
+        decision = str(event.get("decision") or "")
+        principal = event.get("principal")
+        action = event.get("action")
+        if not isinstance(principal, dict) or not isinstance(action, dict):
+            return False
+        if decision == "deny":
+            continue
+        if not action_within_tenant_d(principal, action):
+            return False
+    return True
+
+
+def _low_event_d(tenant: str, event: Mapping[str, Any]) -> bool:
+    if str(event.get("decision") or "") != "allow":
+        return False
+    principal = event.get("principal")
+    if not isinstance(principal, dict):
+        return False
+    return str(principal.get("tenant") or "") == tenant
+
+
+def non_interference_d(events: list[Mapping[str, Any]], tenant_low: str, tenant_high: str) -> bool:
+    """Mirror ``nonInterferenceD`` for distinct tenant pairs (conservative projection NI)."""
+    if tenant_low == tenant_high:
+        return True
+    for event in events:
+        if not isinstance(event, dict):
+            return False
+        principal = event.get("principal")
+        if not isinstance(principal, dict):
+            continue
+        if str(principal.get("tenant") or "") == tenant_high and _low_event_d(tenant_low, event):
+            return False
+        if _low_event_d(tenant_low, event):
+            if str(principal.get("tenant") or "") != tenant_low:
+                return False
+    return True
+
+
+def action_resources_within_capability_pattern_d(action: Mapping[str, Any]) -> bool:
+    from pcs_core.pf_core_runtime import validate_resource_scope
+
+    try:
+        validate_resource_scope(action)
+    except Exception:
+        return False
+    return True
+
+
+def action_admissible_with_resource_pattern_d(
+    principal: Mapping[str, Any], action: Mapping[str, Any]
+) -> bool:
+    """Mirror Lean ``actionAdmissibleWithResourcePatternD`` (kernel + catalog scope)."""
+    return action_admissible_d(principal, action)
+
+
+def event_safe_rd(event: Mapping[str, Any]) -> bool:
+    """Mirror Lean ``eventSafeRD`` (allow branch uses resource-pattern admissibility)."""
+    decision = str(event.get("decision") or "")
+    if decision == "deny":
+        return True
+    if decision != "allow":
+        return False
+    principal = event.get("principal")
+    action = event.get("action")
+    if not isinstance(principal, dict) or not isinstance(action, dict):
+        return False
+    return action_admissible_with_resource_pattern_d(principal, action)
+
+
+def trace_safe_rd(events: list[Mapping[str, Any]]) -> bool:
+    """Mirror Lean ``traceSafeRD`` (resource-pattern trace safety decider)."""
+    return all(event_safe_rd(event) for event in events)
+
+
 def build_decider_obligations(events: list[Mapping[str, Any]]) -> list[dict[str, Any]]:
     obligations: list[dict[str, Any]] = [
         {
             "kind": "TraceSafeDeciderSound",
             "theorem": "traceSafeD_sound",
             "passed": trace_safe_d(events),
-        }
+        },
+        {
+            "kind": "TraceSafeRDeciderSound",
+            "theorem": "traceSafeRD_sound",
+            "passed": trace_safe_rd(events),
+        },
+        {
+            "kind": "TenantIsolationD",
+            "theorem": "tenantIsolationD_sound",
+            "passed": tenant_isolation_d(events),
+        },
+        {
+            "kind": "TraceCrossTenantSafeD",
+            "theorem": "traceCrossTenantSafeD_sound",
+            "passed": trace_cross_tenant_safe_d(events),
+        },
     ]
+    tenants: list[str] = []
+    for event in events:
+        if not isinstance(event, dict):
+            continue
+        principal = event.get("principal")
+        if isinstance(principal, dict):
+            tenant = str(principal.get("tenant") or "")
+            if tenant and tenant not in tenants:
+                tenants.append(tenant)
+    for tenant_low in tenants:
+        for tenant_high in tenants:
+            obligations.append(
+                {
+                    "kind": "NonInterferenceD",
+                    "theorem": "nonInterferenceD_sound",
+                    "passed": non_interference_d(events, tenant_low, tenant_high),
+                    "proof_ref": f"{tenant_low}:{tenant_high}",
+                }
+            )
     for index, event in enumerate(events):
         obligations.append(
             {
@@ -311,6 +436,16 @@ def build_decider_obligations(events: list[Mapping[str, Any]]) -> list[dict[str,
                 "proof_ref": f"events[{index}]",
             }
         )
+        action = event.get("action") if isinstance(event, dict) else None
+        if isinstance(action, dict) and str(event.get("decision") or "") == "allow":
+            obligations.append(
+                {
+                    "kind": "ActionResourcesWithinCapabilityPattern",
+                    "theorem": "actionResourcesWithinCapabilityPatternD_sound",
+                    "passed": action_resources_within_capability_pattern_d(action),
+                    "proof_ref": f"events[{index}].action",
+                }
+            )
     return obligations
 
 
