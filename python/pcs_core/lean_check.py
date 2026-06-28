@@ -185,13 +185,31 @@ def run_lean_concrete_proof(
     *,
     skip_build: bool = False,
 ) -> tuple[bool, str]:
-    """Compile a generated proof file with `lake env lean`."""
+    """Compile a generated PF-Core proof file with `lake env lean`."""
+    return _run_lean_env_on_proof(proof_path, target="PFCore", skip_build=skip_build)
+
+
+def run_pcs_lean_concrete_proof(
+    proof_path: Path,
+    *,
+    skip_build: bool = False,
+) -> tuple[bool, str]:
+    """Compile a generated PCS release-chain proof file with `lake env lean`."""
+    return _run_lean_env_on_proof(proof_path, target="PCS", skip_build=skip_build)
+
+
+def _run_lean_env_on_proof(
+    proof_path: Path,
+    *,
+    target: str,
+    skip_build: bool = False,
+) -> tuple[bool, str]:
     if skip_build:
         return False, "skipped"
     directory = lean_dir()
     if not proof_path.is_file():
         return False, f"generated proof file missing: {proof_path}"
-    build_ok, build_detail = run_lean_library_build(target="PFCore", skip_build=False)
+    build_ok, build_detail = run_lean_library_build(target=target, skip_build=False)
     if not build_ok:
         return False, build_detail
     try:
