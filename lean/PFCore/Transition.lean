@@ -72,7 +72,8 @@ private theorem insertResource_mem (frame : List Resource) (r res : Resource) :
     apply Iff.intro
     · intro h; exact Or.inl h
     · intro h; rcases h with hfr | heq; exact hfr; exact heq ▸ hin
-  · simp [insertResource, hin, List.mem_cons, eq_comm]
+  · rw [insertResource, hin]
+    simp [List.mem_cons, eq_comm]
 
 private theorem insertResource_preserves_tenant (t : String) (frame : List Resource) (r : Resource)
     (hframe : frameTenantScoped t frame) (hr : r.tenant = t) :
@@ -179,20 +180,22 @@ theorem stepState_frame_preserved (s s' : State) (ev : Event) (hApply : Applies 
   | allow =>
     by_cases hallowed : actionAllowedD ev.principal ev.action = true
     · by_cases ht : (s.tenant == ev.principal.tenant) = true
-      · simp [stepState, hdec, hallowed, ht, beq_iff_eq] at hApply
-        cases hApply
-        rcases hValid with ⟨htenant, hframe, _⟩
+      · rcases hValid with ⟨htenant, hframe, _⟩
+        have hstate :
+            s' =
+              { tenant := ev.principal.tenant
+                activePrincipal := ev.principal
+                resourceFrame := expandResourceFrame s.resourceFrame ev.action
+                capabilityFrame := ev.principal.capabilities } := by
+          simp [stepState, hdec, hallowed, ht, beq_iff_eq] at hApply
+          exact Option.some_inj.mp hApply
+        subst hstate
         have hAct : ActionAllowed ev.principal ev.action :=
           (actionAllowedD_sound ev.principal ev.action).mp hallowed
         have hwithin : ActionWithinTenant ev.principal ev.action := hAct.right.left
-        have ht' : s.tenant = ev.principal.tenant := by
-          simpa [htenant] using (beq_iff_eq.mp ht)
-        constructor
-        · exact ht'
-        · exact expandResourceFrame_tenant s.resourceFrame ev.action ev.principal hframe hwithin
-        · unfold capabilityFrameSubset CapabilitySubset
-          intro cap hmem
-          exact hmem
+        refine ⟨rfl, expandResourceFrame_tenant s.resourceFrame ev.action ev.principal hframe hwithin, ?_⟩
+        intro cap hmem
+        exact hmem
       · simp [stepState, hdec, hallowed, ht] at hApply
     · simp [stepState, hdec, hallowed] at hApply
 
