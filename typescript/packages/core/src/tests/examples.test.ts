@@ -12,6 +12,8 @@ import {
   computeTraceHash,
   validateClaimClassOverclaim,
   validateDeniedEventsPreserved,
+  validateDirectTraceActionSemantics,
+  validatePfcoreCertificateSemantics,
   validatePfcoreTraceHashChain,
   validateTenantIsolation,
   validateTraceContracts,
@@ -28,6 +30,7 @@ const pfCoreVectorsDir = join(
   "../../../../../python/tests/hash_vectors/pf_core",
 );
 const pfCoreInvalidVectorsDir = join(pfCoreVectorsDir, "invalid");
+const pfCoreInvalidExamplesDir = join(examplesDir, "pf-core-invalid");
 const sharedVectorsDir = join(
   dirname(fileURLToPath(import.meta.url)),
   "../../../../../test_vectors/hash",
@@ -282,6 +285,59 @@ test("pf-core negative hash vectors parity", () => {
       "ClaimClassOverclaim",
     ),
   );
+});
+
+test("pf-core direct-trace semantics invalid vectors", () => {
+  const cases: Array<[string, string]> = [
+    ["unknown_direct_trace_effect/trace.json", "UnknownEffect"],
+    ["capability_effect_mismatch/trace.json", "CapabilityEffectMismatch"],
+    ["unknown_direct_trace_capability/trace.json", "UnknownCapability"],
+  ];
+  for (const [relative, needle] of cases) {
+    const trace = JSON.parse(
+      readFileSync(join(pfCoreInvalidExamplesDir, relative), "utf8"),
+    ) as Record<string, unknown>;
+    const errors = validateDirectTraceActionSemantics(trace);
+    assert.ok(
+      errors.some((err) => err.includes(needle)),
+      `${relative}: expected ${needle} in ${errors.join("; ")}`,
+    );
+  }
+});
+
+test("pf-core resource scope violation vector", () => {
+  const trace = JSON.parse(
+    readFileSync(join(pfCoreInvalidExamplesDir, "resource_scope_violation/trace.json"), "utf8"),
+  ) as Record<string, unknown>;
+  const errors = validatePfcoreTraceHashChain(trace);
+  assert.ok(errors.some((err) => err.includes("ResourceScopeViolation")));
+});
+
+test("pf-core audit invalid vectors parity", () => {
+  const traceCases: Array<[string, string]> = [
+    ["lean_kernel_checked_on_trace/trace.json", "ClaimClassOverclaim"],
+    ["lean_kernel_checked_without_proof_ref/trace.json", "ClaimClassOverclaim"],
+  ];
+  for (const [relative, needle] of traceCases) {
+    const trace = JSON.parse(
+      readFileSync(join(pfCoreInvalidExamplesDir, relative), "utf8"),
+    ) as Record<string, unknown>;
+    const errors = validatePfcoreTraceHashChain(trace);
+    assert.ok(errors.some((err) => err.includes(needle)), `${relative}: ${errors.join("; ")}`);
+  }
+
+  const certificateCases: Array<[string, string]> = [
+    ["lean_kernel_checked_without_proof_term_hash/certificate.json", "proof_term_hash"],
+    ["lean_kernel_checked_without_proof_term_ref/certificate.json", "proof_term_ref"],
+    ["lean_kernel_checked_with_skipped_build/certificate.json", "lean_build_status"],
+  ];
+  for (const [relative, needle] of certificateCases) {
+    const certificate = JSON.parse(
+      readFileSync(join(pfCoreInvalidExamplesDir, relative), "utf8"),
+    ) as Record<string, unknown>;
+    const errors = validatePfcoreCertificateSemantics(certificate);
+    assert.ok(errors.some((err) => err.includes(needle)), `${relative}: ${errors.join("; ")}`);
+  }
 });
 
 test("shared hash vectors match test_vectors/hash fixtures", () => {
