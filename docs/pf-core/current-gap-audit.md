@@ -136,11 +136,10 @@ Summary of gaps between the PF-Core vision and the current `pcs-core` repository
 ### Remaining gaps (post Phase I)
 
 - Full global cross-tenant non-interference (covert channels / timing / scheduler adversaries).
-- Live CertifyEdge on all developer machines (release gate requires live CLI; see `docs/pf-core/certifyedge.md`; local mock via `scripts/pf-core-certifyedge-dry-run.ps1`).
-- Rust/TS catalog consumers wired to generated `pf_core_catalog.rs` / `pfCoreCatalog.ts` (uncommitted); drift still gated by `gen_pf_core_catalog.py` + CI.
-- Rust/TS `validate_cross_tenant_safety` parity — done (uncommitted); mirrors Python `TraceCrossTenantSafe`.
+- Live CertifyEdge on all developer machines (release gate requires live CLI; see `docs/pf-core/certifyedge.md`; local mock via `scripts/pf-core-certifyedge-dry-run.ps1`, stub via `scripts/pf-core-certifyedge-stub-dry-run.ps1`).
 - Lean `ActionAdmissible` does not include `ResourceWithinCapabilityPattern`; scope discharged via runtime + generated `actionResourcesWithinCapabilityPatternD` obligations.
-- Rust/TS `contract_semantics_checked` validation — done (uncommitted); reads metadata only; does not substitute for Python lean-check emission.
+- Rust/TS certificate validation records contract-semantics metadata but does **not** emit or imply `LeanKernelChecked` (Python lean-check only).
+- PCS per-obligation Lean term generation beyond release-chain triple (see `docs/pf-core/pcs-envelope-lean-roadmap.md`; incremental: component `*_prop` theorems for all three release-chain obligations; tool-use/computation deferred).
 
 ### Incremental improvements (2026-06-28)
 
@@ -154,7 +153,9 @@ Summary of gaps between the PF-Core vision and the current `pcs-core` repository
 | `contract_semantics_checked` Rust/TS parity | Done | `parse_contract_semantics_checked` / `validateContractSemanticsChecked`; wired into certificate semantic validation; cross-language tests |
 | Resource scope certificate obligations | Done | `lean_proof_checked` requires `resource_pattern_scope` (runtime) + `resource_within_capability_pattern` (lean) in Python/Rust/TS |
 | CertifyEdge release-gate dry-run | Done | `scripts/pf-core-certifyedge-dry-run.{ps1,sh}`; integrated into release-grade local scripts (`PF_CORE_CERTIFYEDGE_MODE=mock`) |
-| Python glob matcher parity (`globMatchCharsFuel`) | Done | `pf_core_runtime.py` aligned with Rust/TS/Lean; no `fnmatch` |
+| Rust/TS `TOOL_NAME_MAP` + tool-use mode default parity | Done | `resolve_tool_mapping` / `resolveCertificateModeDefault`; bundle manifest uses `TraceSafeRCertificate` for tool-use traces |
+| Release-grade local script (full matrix) | Done | `scripts/pf-core-release-grade-local.{ps1,sh}`: all pf_core pytest, catalog drift, audit-lean-no-sorry, PFCore+PCS lake, bundle kernel manifest, CertifyEdge mock+stub |
+| PCS component prop theorems (Lean codegen) | Done | `pcs_lean_codegen.py`: `*_prop` for `CertificateMatchesRuntime`, `VerificationAdmitsBundle`, `SignedBundleAdmissible`; `PCS.lean` imports `ReleaseChainCheck`; `hash_beq_iff_eq` in `Hash.lean` |
 
 ### Incremental improvements (2026-06-28 session — deferral research push)
 
