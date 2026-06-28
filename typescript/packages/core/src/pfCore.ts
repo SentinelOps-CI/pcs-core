@@ -1,60 +1,18 @@
 import { canonicalHash, canonicalJsonBytes } from "./hash.js";
+import {
+  CAPABILITY_CATALOG,
+  EFFECT_KINDS,
+} from "./pfCoreCatalog.js";
+
+export { CAPABILITY_CATALOG, EFFECT_KINDS, ROLE_CAPABILITY_MAP } from "./pfCoreCatalog.js";
 
 export const GENESIS_HASH =
   "sha256:0000000000000000000000000000000000000000000000000000000000000000";
-
-export const EFFECT_KINDS = new Set([
-  "file.read",
-  "file.write",
-  "network.egress",
-  "email.send",
-  "handoff.delegate",
-  "mcp.invoke",
-  "lab.release",
-]);
 
 export type CapabilityEntry = {
   capability_id: string;
   effect_kind: string;
   resource_pattern: string;
-};
-
-export const CAPABILITY_CATALOG: Record<string, CapabilityEntry> = {
-  "cap:file-read": {
-    capability_id: "cap:file-read",
-    effect_kind: "file.read",
-    resource_pattern: "/data/*",
-  },
-  "cap:file-write": {
-    capability_id: "cap:file-write",
-    effect_kind: "file.write",
-    resource_pattern: "/data/*",
-  },
-  "cap:network": {
-    capability_id: "cap:network",
-    effect_kind: "network.egress",
-    resource_pattern: "*",
-  },
-  "cap:email-send": {
-    capability_id: "cap:email-send",
-    effect_kind: "email.send",
-    resource_pattern: "mailto:*",
-  },
-  "cap:handoff": {
-    capability_id: "cap:handoff",
-    effect_kind: "handoff.delegate",
-    resource_pattern: "agent:*",
-  },
-  "cap:mcp-invoke": {
-    capability_id: "cap:mcp-invoke",
-    effect_kind: "mcp.invoke",
-    resource_pattern: "mcp:*",
-  },
-  "cap:lab-release": {
-    capability_id: "cap:lab-release",
-    effect_kind: "lab.release",
-    resource_pattern: "lab:*",
-  },
 };
 
 function runtimeError(code: string, message: string, path: string): string {
@@ -284,6 +242,162 @@ const CONCRETE_PROOF_OBLIGATIONS = new Set([
   "concrete_allowed_events_allowed",
 ]);
 
+const DEFAULT_TRACE_SAFE_CONTRACT_ID = "trace-safe";
+const RUNTIME_RESOURCE_PATTERN_SCOPE = "resource_pattern_scope";
+const LEAN_RESOURCE_WITHIN_CAPABILITY_PATTERN = "resource_within_capability_pattern";
+
+export type ContractSemanticsChecked = {
+  lean: string[];
+  runtime: string[];
+};
+
+function contractSemanticsStringList(value: unknown): string[] | null {
+  if (value === undefined || value === null) {
+    return [];
+  }
+  if (!Array.isArray(value)) {
+    return null;
+  }
+  const out: string[] = [];
+  for (const item of value) {
+    if (typeof item !== "string") {
+      return null;
+    }
+    out.push(item);
+  }
+  return out;
+}
+
+/** Parse `contract_semantics_checked` when present and well-formed. */
+export function parseContractSemanticsChecked(
+  certificate: Record<string, unknown>,
+): ContractSemanticsChecked | null {
+  const semantics = certificate.contract_semantics_checked;
+  if (!semantics || typeof semantics !== "object" || Array.isArray(semantics)) {
+    return null;
+  }
+  const obj = semantics as Record<string, unknown>;
+  const lean = contractSemanticsStringList(obj.lean);
+  const runtime = contractSemanticsStringList(obj.runtime);
+  if (lean === null || runtime === null) {
+    return null;
+  }
+  return { lean, runtime };
+}
+
+/** Validate certificate contract-semantics metadata (does not imply LeanKernelChecked). */
+export function validateContractSemanticsChecked(
+  certificate: Record<string, unknown>,
+): string[] {
+  const errors: string[] = [];
+  const claimClass = String(certificate.claim_class ?? "");
+  const leanProofChecked = certificate.lean_proof_checked === true;
+  const semantics = certificate.contract_semantics_checked;
+
+  if (semantics !== undefined && semantics !== null) {
+    if (typeof semantics !== "object" || Array.isArray(semantics)) {
+      errors.push("root: contract_semantics_checked must be an object");
+      return errors;
+    }
+    const obj = semantics as Record<string, unknown>;
+    for (const key of ["lean", "runtime"] as const) {
+      if (obj[key] === undefined) {
+        continue;
+      }
+      const list = contractSemanticsStringList(obj[key]);
+      if (list === null) {
+        errors.push(`root: contract_semantics_checked.${key} must be a string array`);
+      }
+    }
+  }
+
+  if (claimClass === "LeanKernelChecked") {
+    const defaultRef = String(certificate.default_contract_ref ?? "");
+    const parsed = parseContractSemanticsChecked(certificate);
+    const hasSemantics =
+      parsed !== null && (parsed.lean.length > 0 || parsed.runtime.length > 0);
+    if (defaultRef !== DEFAULT_TRACE_SAFE_CONTRACT_ID && !hasSemantics) {
+      errors.push(
+        `root: claim_class LeanKernelChecked requires contract_refs or default_contract_ref ${JSON.stringify(DEFAULT_TRACE_SAFE_CONTRACT_ID)}`,
+      );
+    }
+  }
+
+  if (leanProofChecked) {
+    const parsed = parseContractSemanticsChecked(certificate);
+    if (parsed === null) {
+      if (semantics !== undefined && semantics !== null) {
+        errors.push("root: contract_semantics_checked has invalid shape");
+      } else {
+        errors.push("root: lean_proof_checked requires contract_semantics_checked");
+      }
+    } else {
+      if (!parsed.runtime.includes(RUNTIME_RESOURCE_PATTERN_SCOPE)) {
+        errors.push(
+          `root: lean_proof_checked contract_semantics_checked.runtime missing ${JSON.stringify(RUNTIME_RESOURCE_PATTERN_SCOPE)}`,
+        );
+      }
+      if (!parsed.lean.includes(LEAN_RESOURCE_WITHIN_CAPABILITY_PATTERN)) {
+        errors.push(
+          `root: lean_proof_checked contract_semantics_checked.lean missing ${JSON.stringify(LEAN_RESOURCE_WITHIN_CAPABILITY_PATTERN)}`,
+        );
+      }
+    }
+  }
+
+  return errors;
+}
+
+const DEFAULT_CERTIFICATE_MODE = "TraceSafeCertificate";
+
+const CERTIFICATE_MODES = new Set([
+  "TraceSafeCertificate",
+  "FramePreservedCertificate",
+  "EffectFrameCertificate",
+  "HandoffSafeCertificate",
+  "CompositionalExtensionCertificate",
+  "ContractCheckedCertificate",
+]);
+
+const MODE_OBLIGATION_THEOREMS: Record<string, readonly string[]> = {
+  TraceSafeCertificate: [
+    "concrete_trace_safe",
+    "concrete_trace_safe_prop",
+    "concrete_allowed_events_allowed",
+  ],
+  FramePreservedCertificate: [
+    "concrete_trace_safe",
+    "concrete_trace_safe_prop",
+    "concrete_allowed_events_allowed",
+    "frame_valid_initial",
+    "frame_preserved_steps",
+  ],
+  EffectFrameCertificate: [
+    "concrete_trace_safe",
+    "concrete_trace_safe_prop",
+    "concrete_allowed_events_allowed",
+    "concrete_action_effects_in_frame",
+  ],
+  HandoffSafeCertificate: [
+    "concrete_trace_safe",
+    "concrete_trace_safe_prop",
+    "concrete_allowed_events_allowed",
+    "concrete_handoff_safe",
+  ],
+  CompositionalExtensionCertificate: [
+    "concrete_trace_safe",
+    "concrete_trace_safe_prop",
+    "concrete_allowed_events_allowed",
+    "concrete_compositional_extension",
+  ],
+  ContractCheckedCertificate: [
+    "concrete_trace_safe",
+    "concrete_trace_safe_prop",
+    "concrete_allowed_events_allowed",
+    "concrete_contract_checked",
+  ],
+};
+
 function stripDigestFields(
   data: Record<string, unknown>,
   extraKeys: string[],
@@ -501,8 +615,26 @@ export function validatePfcoreCertificateSemantics(
           );
         }
       }
+      const certMode = String(certificate.certificate_mode ?? DEFAULT_CERTIFICATE_MODE);
+      if (!CERTIFICATE_MODES.has(certMode)) {
+        errors.push(`root: invalid certificate_mode ${JSON.stringify(certMode)}`);
+      } else {
+        const modeRequired = MODE_OBLIGATION_THEOREMS[certMode] ?? [];
+        const missingMode = modeRequired.filter((theorem) => !passed.has(theorem));
+        if (missingMode.length > 0) {
+          errors.push(
+            `root: certificate_mode obligations missing passed proofs for ${JSON.stringify(missingMode)}`,
+          );
+        }
+      }
+    } else {
+      const certMode = String(certificate.certificate_mode ?? DEFAULT_CERTIFICATE_MODE);
+      if (!CERTIFICATE_MODES.has(certMode)) {
+        errors.push(`root: invalid certificate_mode ${JSON.stringify(certMode)}`);
+      }
     }
   }
+  errors.push(...validateContractSemanticsChecked(certificate));
   return errors;
 }
 
@@ -582,6 +714,107 @@ function tenantMatches(principal: Record<string, unknown>, action: Record<string
   }
   return true;
 }
+
+function actionWithinTenantD(principal: Record<string, unknown>, action: Record<string, unknown>): boolean {
+  const tenant = String(principal.tenant ?? "");
+  for (const key of ["reads", "writes"]) {
+    const resources = action[key];
+    if (!Array.isArray(resources)) {
+      return false;
+    }
+    for (const resource of resources) {
+      if (
+        resource &&
+        typeof resource === "object" &&
+        !Array.isArray(resource) &&
+        String((resource as Record<string, unknown>).tenant ?? "") !== tenant
+      ) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+function actionAdmissibleD(principal: Record<string, unknown>, action: Record<string, unknown>): boolean {
+  const capability = action.capability;
+  if (!capability || typeof capability !== "object" || Array.isArray(capability)) {
+    return false;
+  }
+  const capId = String((capability as Record<string, unknown>).capability_id ?? "");
+  const path = "action";
+  if (
+    validateActionCapabilitiesKnown(action, path) ||
+    validateActionEffectsKnown(action, path) ||
+    validateActionCapabilityEffects(action, path) ||
+    validateResourceScope(action, path)
+  ) {
+    return false;
+  }
+  return principalHasCapability(principal, capId) && actionWithinTenantD(principal, action);
+}
+
+/** Mirror Lean `actionAdmissibleWithResourcePatternD` (kernel + catalog resource scope). */
+export function actionAdmissibleWithResourcePatternD(
+  principal: Record<string, unknown>,
+  action: Record<string, unknown>,
+): boolean {
+  return actionAdmissibleD(principal, action);
+}
+
+/** Mirror Lean `eventSafeD` on allow events (deny is vacuously safe). */
+export function eventSafeD(event: Record<string, unknown>): boolean {
+  const decision = String(event.decision ?? "");
+  if (decision === "deny") {
+    return true;
+  }
+  if (decision !== "allow") {
+    return false;
+  }
+  const principal = event.principal;
+  const action = event.action;
+  if (!principal || typeof principal !== "object" || Array.isArray(principal)) {
+    return false;
+  }
+  if (!action || typeof action !== "object" || Array.isArray(action)) {
+    return false;
+  }
+  return actionAdmissibleD(principal as Record<string, unknown>, action as Record<string, unknown>);
+}
+
+/** Mirror Lean `eventSafeRD` (allow branch uses resource-pattern admissibility). */
+export function eventSafeRD(event: Record<string, unknown>): boolean {
+  const decision = String(event.decision ?? "");
+  if (decision === "deny") {
+    return true;
+  }
+  if (decision !== "allow") {
+    return false;
+  }
+  const principal = event.principal;
+  const action = event.action;
+  if (!principal || typeof principal !== "object" || Array.isArray(principal)) {
+    return false;
+  }
+  if (!action || typeof action !== "object" || Array.isArray(action)) {
+    return false;
+  }
+  return actionAdmissibleWithResourcePatternD(
+    principal as Record<string, unknown>,
+    action as Record<string, unknown>,
+  );
+}
+
+/** Mirror Lean `traceSafeD` decider. */
+export function traceSafeD(events: Record<string, unknown>[]): boolean {
+  return events.every((event) => eventSafeD(event));
+}
+
+/** Mirror Lean `traceSafeRD` (resource-pattern trace safety decider). */
+export function traceSafeRD(events: Record<string, unknown>[]): boolean {
+  return events.every((event) => eventSafeRD(event));
+}
+
 
 export function validateEventAgainstContract(
   event: Record<string, unknown>,
@@ -763,6 +996,110 @@ export function validateTraceContracts(
   return errors;
 }
 
+
+function lowEventForTenant(tenant: string, event: Record<string, unknown>): boolean {
+  if (String(event.decision ?? "") !== "allow") {
+    return false;
+  }
+  const principal = event.principal;
+  if (!principal || typeof principal !== "object" || Array.isArray(principal)) {
+    return false;
+  }
+  return String((principal as Record<string, unknown>).tenant ?? "") === tenant;
+}
+
+function traceProjectionForTenant(
+  trace: Record<string, unknown>,
+  tenant: string,
+): Record<string, unknown>[] {
+  const projection: Record<string, unknown>[] = [];
+  const events = trace.events;
+  if (!Array.isArray(events)) {
+    return projection;
+  }
+  for (const event of events) {
+    if (event && typeof event === "object" && !Array.isArray(event)) {
+      const eventObj = event as Record<string, unknown>;
+      if (lowEventForTenant(tenant, eventObj)) {
+        projection.push(eventObj);
+      }
+    }
+  }
+  return projection;
+}
+
+export function validateObservationalNonInterference(
+  trace: Record<string, unknown>,
+  tenantLow: string,
+  tenantHigh: string,
+): string[] {
+  if (tenantLow === tenantHigh) {
+    return [];
+  }
+  const errors: string[] = [];
+  const events = trace.events;
+  if (!Array.isArray(events)) {
+    return ["TraceInvalid: events must be an array"];
+  }
+  const projection = traceProjectionForTenant(trace, tenantLow);
+  for (let index = 0; index < projection.length; index += 1) {
+    if (!lowEventForTenant(tenantLow, projection[index]!)) {
+      errors.push(
+        `NonInterference: projected event at projection[${index}] is not LowEvent for tenant ${JSON.stringify(tenantLow)}`,
+      );
+    }
+  }
+  for (let index = 0; index < events.length; index += 1) {
+    const event = events[index];
+    if (!event || typeof event !== "object" || Array.isArray(event)) {
+      continue;
+    }
+    const eventObj = event as Record<string, unknown>;
+    const principal = eventObj.principal;
+    if (!principal || typeof principal !== "object" || Array.isArray(principal)) {
+      continue;
+    }
+    if (String((principal as Record<string, unknown>).tenant ?? "") !== tenantHigh) {
+      continue;
+    }
+    if (lowEventForTenant(tenantLow, eventObj)) {
+      errors.push(
+        `NonInterference: high-tenant event at events[${index}] is low-visible to tenant ${JSON.stringify(tenantLow)}`,
+      );
+    }
+  }
+  return errors;
+}
+
+export function validateObservationalNonInterferenceAllPairs(trace: Record<string, unknown>): string[] {
+  const tenants: string[] = [];
+  const events = trace.events;
+  if (Array.isArray(events)) {
+    for (const event of events) {
+      if (!event || typeof event !== "object" || Array.isArray(event)) {
+        continue;
+      }
+      const principal = (event as Record<string, unknown>).principal;
+      if (principal && typeof principal === "object" && !Array.isArray(principal)) {
+        const tenant = String((principal as Record<string, unknown>).tenant ?? "");
+        if (tenant && !tenants.includes(tenant)) {
+          tenants.push(tenant);
+        }
+      }
+    }
+  }
+  const errors: string[] = [];
+  for (const tenantLow of tenants) {
+    for (const tenantHigh of tenants) {
+      if (tenantLow === tenantHigh) {
+        continue;
+      }
+      errors.push(...validateObservationalNonInterference(trace, tenantLow, tenantHigh));
+    }
+  }
+  return errors;
+}
+
 export function validateDeniedEventsPreserved(
   toolUseTrace: Record<string, unknown>,
   pfcoreTrace: Record<string, unknown>,
@@ -796,6 +1133,60 @@ export function validateDeniedEventsPreserved(
     if (eventId && !compiledIds.has(eventId)) {
       errors.push(
         `DroppedDeniedEvent: denied event ${JSON.stringify(eventId)} missing from compiled trace (at events)`,
+      );
+    }
+  }
+  return errors;
+}
+
+function eventCrossTenantSafe(
+  principal: Record<string, unknown>,
+  action: Record<string, unknown>,
+  decision: string,
+): boolean {
+  if (decision === "deny") {
+    return true;
+  }
+  return tenantMatches(principal, action);
+}
+
+export function validateCrossTenantSafety(trace: Record<string, unknown>): string[] {
+  const errors: string[] = [];
+  const events = trace.events;
+  if (!Array.isArray(events)) {
+    return ["TraceInvalid: events must be an array"];
+  }
+  for (let index = 0; index < events.length; index += 1) {
+    const base = `events[${index}]`;
+    const event = events[index];
+    if (!event || typeof event !== "object" || Array.isArray(event)) {
+      continue;
+    }
+    const eventObj = event as Record<string, unknown>;
+    const principal = eventObj.principal;
+    const action = eventObj.action;
+    if (
+      !principal ||
+      typeof principal !== "object" ||
+      Array.isArray(principal) ||
+      !action ||
+      typeof action !== "object" ||
+      Array.isArray(action)
+    ) {
+      errors.push(`CrossTenantSafe: ${base} missing principal or action`);
+      continue;
+    }
+    const decision = String(eventObj.decision ?? "");
+    if (
+      !eventCrossTenantSafe(
+        principal as Record<string, unknown>,
+        action as Record<string, unknown>,
+        decision,
+      )
+    ) {
+      const tenant = String((principal as Record<string, unknown>).tenant ?? "");
+      errors.push(
+        `CrossTenantSafe: cross-tenant allow at ${base} (principal tenant ${JSON.stringify(tenant)})`,
       );
     }
   }
