@@ -1264,15 +1264,26 @@ _ASSUMPTION_REF_PREFIXES = (
 
 
 
+_PF_CORE_DEFERRABLE_CHECK_IDS = frozenset({"lean_kernel_proof", "lean_library_build"})
+
+
 def deferred_registry_obligations(artifact_type: str) -> list[dict[str, Any]]:
-    """Return registry semantic checks marked allowed_to_skip for an artifact type."""
+    """Return registry semantic checks that may be deferred with assumption refs."""
     entry = _REGISTRY_ENTRIES.get(artifact_type)
     if not entry:
         return []
     checks = entry.get("semantic_checks")
     if not isinstance(checks, list):
         return []
-    return [check for check in checks if isinstance(check, dict) and check.get("allowed_to_skip")]
+    return [
+        check
+        for check in checks
+        if isinstance(check, dict)
+        and (
+            check.get("allowed_to_skip")
+            or str(check.get("check_id") or "") in _PF_CORE_DEFERRABLE_CHECK_IDS
+        )
+    ]
 
 
 

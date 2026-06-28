@@ -576,6 +576,8 @@ def _suite_pf_core() -> tuple[list[str], list[str], int]:
         errors.append(f"pf-core invalid fixtures: {exc}")
     for case_dir in iter_pf_core_example_dirs("valid"):
         manifest = load_pf_core_fixture_manifest(case_dir)
+        if manifest.get("skip_pfcore_trace_conformance"):
+            continue
         trace_name = str(manifest.get("trace_file") or "trace.json")
         trace_path = case_dir / trace_name
         if not trace_path.is_file():

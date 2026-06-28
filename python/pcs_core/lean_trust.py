@@ -449,7 +449,6 @@ def run_lean_check(
 
     body: dict[str, Any] = {
         "schema_version": "v0",
-        "artifact_type": "LeanCheckResult.v0",
         "check_id": check_id or f"lean-check-{proof_obligation_id}",
         "proof_obligation_id": proof_obligation_id,
         "lean_module": str(obligations_doc.get("lean_module", LEAN_MODULE)),
@@ -461,7 +460,6 @@ def run_lean_check(
         "source_commit": source_commit
         or str(obligations_doc.get("source_commit", PCS_CORE_COMMIT_PLACEHOLDER)),
         "failure_reason": "; ".join(failures),
-        "disclaimer": PCS_LEAN_CHECK_DISCLAIMER,
         "obligation_results": obligation_results,
         "signature_or_digest": PLACEHOLDER_DIGEST,
     }

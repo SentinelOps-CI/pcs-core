@@ -67,6 +67,7 @@ from pcs_core.validate_pf_core import (
     _validate_pfcore_certificate,
     _validate_pfcore_claim_class,
     _validate_pfcore_trace,
+    check_pf_core_valid_fixtures,
 )
 
 def validate_semantics(data: dict[str, Any], artifact_type: str) -> list[str]:
