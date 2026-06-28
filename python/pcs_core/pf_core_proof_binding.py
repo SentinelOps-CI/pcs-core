@@ -103,9 +103,7 @@ def verify_proof_binding(
         )
     if not cert_kernel_hash.startswith("sha256:"):
         result.issues.append(
-            ProofBindingIssue(
-                "MissingPfcoreKernelHash", "certificate missing pfcore_kernel_hash"
-            )
+            ProofBindingIssue("MissingPfcoreKernelHash", "certificate missing pfcore_kernel_hash")
         )
     if not proof_ref:
         result.issues.append(

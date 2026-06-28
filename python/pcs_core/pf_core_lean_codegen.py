@@ -584,9 +584,7 @@ def generate_mode_proof_theorems(
                 "  decide"
             )
             state_expr = next_state
-        theorems.append(
-            "theorem frame_preserved_steps : True := trivial"
-        )
+        theorems.append("theorem frame_preserved_steps : True := trivial")
 
     if mode == "EffectFrameCertificate":
         for index, event in enumerate(events):
