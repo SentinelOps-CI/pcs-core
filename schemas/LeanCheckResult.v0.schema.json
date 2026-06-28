@@ -116,6 +116,30 @@
             "$ref": "#/$defs/obligation_check_result"
           }
         },
+        "claim_class": {
+          "type": "string",
+          "enum": [
+            "ProofChecked",
+            "EnvelopeLeanChecked",
+            "Rejected"
+          ]
+        },
+        "lean_proof_checked": {
+          "type": "boolean"
+        },
+        "proof_term_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "proof_term_hash": {
+          "$ref": "common.defs.json#/$defs/hex_digest"
+        },
+        "lean_environment_hash": {
+          "$ref": "common.defs.json#/$defs/hex_digest"
+        },
+        "disclaimer": {
+          "type": "string"
+        },
         "signature_or_digest": {
           "$ref": "common.defs.json#/$defs/hex_digest"
         }
