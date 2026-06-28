@@ -3,73 +3,21 @@ use std::collections::HashSet;
 use serde_json::{Map, Value};
 
 use crate::hash::canonical_hash;
+use crate::pf_core_catalog::{CAPABILITY_CATALOG, EFFECT_KINDS};
 
 pub const GENESIS_HASH: &str =
     "sha256:0000000000000000000000000000000000000000000000000000000000000000";
-
-pub const EFFECT_KINDS: &[&str] = &[
-    "file.read",
-    "file.write",
-    "network.egress",
-    "email.send",
-    "handoff.delegate",
-    "mcp.invoke",
-    "lab.release",
-];
-
-#[derive(Clone, Copy)]
-pub struct CapabilityEntry {
-    pub capability_id: &'static str,
-    pub effect_kind: &'static str,
-    pub resource_pattern: &'static str,
-}
-
-pub const CAPABILITY_CATALOG: &[CapabilityEntry] = &[
-    CapabilityEntry {
-        capability_id: "cap:file-read",
-        effect_kind: "file.read",
-        resource_pattern: "/data/*",
-    },
-    CapabilityEntry {
-        capability_id: "cap:file-write",
-        effect_kind: "file.write",
-        resource_pattern: "/data/*",
-    },
-    CapabilityEntry {
-        capability_id: "cap:network",
-        effect_kind: "network.egress",
-        resource_pattern: "*",
-    },
-    CapabilityEntry {
-        capability_id: "cap:email-send",
-        effect_kind: "email.send",
-        resource_pattern: "mailto:*",
-    },
-    CapabilityEntry {
-        capability_id: "cap:handoff",
-        effect_kind: "handoff.delegate",
-        resource_pattern: "agent:*",
-    },
-    CapabilityEntry {
-        capability_id: "cap:mcp-invoke",
-        effect_kind: "mcp.invoke",
-        resource_pattern: "mcp:*",
-    },
-    CapabilityEntry {
-        capability_id: "cap:lab-release",
-        effect_kind: "lab.release",
-        resource_pattern: "lab:*",
-    },
-];
 
 fn known_effect_kinds() -> HashSet<&'static str> {
     EFFECT_KINDS.iter().copied().collect()
 }
 
-fn lookup_capability(capability_id: &str) -> Option<&'static CapabilityEntry> {
+fn lookup_capability(
+    capability_id: &str,
+) -> Option<&'static (&'static str, &'static str, &'static str)> {
     CAPABILITY_CATALOG
         .iter()
-        .find(|entry| entry.capability_id == capability_id)
+        .find(|(id, _, _)| *id == capability_id)
 }
 
 fn runtime_error(code: &str, message: &str, path: &str) -> String {
@@ -231,13 +179,13 @@ fn validate_action_capability_effects(action: &Value, path: &str) -> Option<Stri
     if validate_action_effects_known(action, path).is_some() {
         return validate_action_effects_known(action, path);
     }
-    let cap_effect = catalog.effect_kind;
+    let (cap_id, cap_effect, _) = catalog;
     if !action_has_effect(action, cap_effect) {
         return Some(runtime_error(
             "CapabilityEffectMismatch",
             &format!(
                 "capability {:?} effect_kind {:?} not listed in action effects",
-                catalog.capability_id, cap_effect
+                cap_id, cap_effect
             ),
             &format!("{path}.effects"),
         ));
@@ -327,6 +275,63 @@ const CONCRETE_PROOF_OBLIGATIONS: &[&str] = &[
     "concrete_trace_safe_prop",
     "concrete_allowed_events_allowed",
 ];
+
+const DEFAULT_TRACE_SAFE_CONTRACT_ID: &str = "trace-safe";
+const RUNTIME_RESOURCE_PATTERN_SCOPE: &str = "resource_pattern_scope";
+const LEAN_RESOURCE_WITHIN_CAPABILITY_PATTERN: &str = "resource_within_capability_pattern";
+
+const DEFAULT_CERTIFICATE_MODE: &str = "TraceSafeCertificate";
+
+const CERTIFICATE_MODES: &[&str] = &[
+    "TraceSafeCertificate",
+    "FramePreservedCertificate",
+    "EffectFrameCertificate",
+    "HandoffSafeCertificate",
+    "CompositionalExtensionCertificate",
+    "ContractCheckedCertificate",
+];
+
+fn mode_obligation_theorems(mode: &str) -> &'static [&'static str] {
+    match mode {
+        "TraceSafeCertificate" => CONCRETE_PROOF_OBLIGATIONS,
+        "FramePreservedCertificate" => &[
+            "concrete_trace_safe",
+            "concrete_trace_safe_prop",
+            "concrete_allowed_events_allowed",
+            "frame_valid_initial",
+            "frame_preserved_steps",
+        ],
+        "EffectFrameCertificate" => &[
+            "concrete_trace_safe",
+            "concrete_trace_safe_prop",
+            "concrete_allowed_events_allowed",
+            "concrete_action_effects_in_frame",
+        ],
+        "HandoffSafeCertificate" => &[
+            "concrete_trace_safe",
+            "concrete_trace_safe_prop",
+            "concrete_allowed_events_allowed",
+            "concrete_handoff_safe",
+        ],
+        "CompositionalExtensionCertificate" => &[
+            "concrete_trace_safe",
+            "concrete_trace_safe_prop",
+            "concrete_allowed_events_allowed",
+            "concrete_compositional_extension",
+        ],
+        "ContractCheckedCertificate" => &[
+            "concrete_trace_safe",
+            "concrete_trace_safe_prop",
+            "concrete_allowed_events_allowed",
+            "concrete_contract_checked",
+        ],
+        _ => &[],
+    }
+}
+
+fn certificate_mode_is_valid(mode: &str) -> bool {
+    CERTIFICATE_MODES.contains(&mode)
+}
 
 const AUTHORIZATION_TO_DECISION: &[(&str, &str)] = &[
     ("authorized", "allow"),
@@ -508,6 +513,115 @@ pub fn validate_pfcore_trace_hash_chain(trace: &Value) -> Vec<String> {
     errors
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ContractSemanticsChecked {
+    pub lean: Vec<String>,
+    pub runtime: Vec<String>,
+}
+
+fn contract_semantics_string_list(value: Option<&Value>) -> Option<Vec<String>> {
+    match value {
+        None => Some(Vec::new()),
+        Some(Value::Array(items)) => {
+            let mut out = Vec::with_capacity(items.len());
+            for item in items {
+                out.push(item.as_str()?.to_string());
+            }
+            Some(out)
+        }
+        Some(_) => None,
+    }
+}
+
+/// Parse `contract_semantics_checked` metadata when present and well-formed.
+pub fn parse_contract_semantics_checked(certificate: &Value) -> Option<ContractSemanticsChecked> {
+    let semantics = certificate.get("contract_semantics_checked")?;
+    let obj = semantics.as_object()?;
+    let lean = contract_semantics_string_list(obj.get("lean"))?;
+    let runtime = contract_semantics_string_list(obj.get("runtime"))?;
+    Some(ContractSemanticsChecked { lean, runtime })
+}
+
+/// Validate certificate contract-semantics metadata (does not imply LeanKernelChecked).
+pub fn validate_contract_semantics_checked(certificate: &Value) -> Vec<String> {
+    let mut errors = Vec::new();
+    let claim_class = certificate
+        .get("claim_class")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let lean_proof_checked = certificate.get("lean_proof_checked") == Some(&Value::Bool(true));
+
+    if let Some(semantics) = certificate.get("contract_semantics_checked") {
+        let Some(obj) = semantics.as_object() else {
+            errors.push("root: contract_semantics_checked must be an object".into());
+            return errors;
+        };
+        for key in ["lean", "runtime"] {
+            if let Some(value) = obj.get(key) {
+                let valid = value.as_array().is_some_and(|items| {
+                    items.iter().all(|item| item.as_str().is_some())
+                });
+                if !valid {
+                    errors.push(format!(
+                        "root: contract_semantics_checked.{key} must be a string array"
+                    ));
+                }
+            }
+        }
+    }
+
+    if claim_class == "LeanKernelChecked" {
+        let default_ref = certificate
+            .get("default_contract_ref")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        let has_semantics = parse_contract_semantics_checked(certificate)
+            .is_some_and(|semantics| !semantics.lean.is_empty() || !semantics.runtime.is_empty());
+        if default_ref != DEFAULT_TRACE_SAFE_CONTRACT_ID && !has_semantics {
+            errors.push(format!(
+                "root: claim_class LeanKernelChecked requires contract_refs or \
+                 default_contract_ref {DEFAULT_TRACE_SAFE_CONTRACT_ID:?}"
+            ));
+        }
+    }
+
+    if lean_proof_checked {
+        match parse_contract_semantics_checked(certificate) {
+            Some(semantics) => {
+                if !semantics
+                    .runtime
+                    .iter()
+                    .any(|item| item == RUNTIME_RESOURCE_PATTERN_SCOPE)
+                {
+                    errors.push(format!(
+                        "root: lean_proof_checked contract_semantics_checked.runtime missing \
+                         {RUNTIME_RESOURCE_PATTERN_SCOPE:?}"
+                    ));
+                }
+                if !semantics
+                    .lean
+                    .iter()
+                    .any(|item| item == LEAN_RESOURCE_WITHIN_CAPABILITY_PATTERN)
+                {
+                    errors.push(format!(
+                        "root: lean_proof_checked contract_semantics_checked.lean missing \
+                         {LEAN_RESOURCE_WITHIN_CAPABILITY_PATTERN:?}"
+                    ));
+                }
+            }
+            None => {
+                if certificate.get("contract_semantics_checked").is_some() {
+                    errors.push("root: contract_semantics_checked has invalid shape".into());
+                } else {
+                    errors.push("root: lean_proof_checked requires contract_semantics_checked".into());
+                }
+            }
+        }
+    }
+
+    errors
+}
+
 pub fn validate_pfcore_certificate_semantics(certificate: &Value) -> Vec<String> {
     let mut errors = Vec::new();
     let claim_class = certificate
@@ -570,33 +684,51 @@ pub fn validate_pfcore_certificate_semantics(certificate: &Value) -> Vec<String>
         if !build_ok {
             errors.push("root: lean_proof_checked requires lean_build_status.ok=true".into());
         }
-        if certificate.get("lean_proof_checked") == Some(&Value::Bool(true)) {
-            if let Some(obligations) = certificate.get("obligations").and_then(|v| v.as_array()) {
-                let passed: std::collections::HashSet<String> = obligations
-                    .iter()
-                    .filter(|item| item.get("passed").and_then(|v| v.as_bool()) == Some(true))
-                    .filter_map(|item| {
-                        item.get("theorem")
-                            .and_then(|v| v.as_str())
-                            .map(str::to_string)
-                    })
-                    .collect();
-                for theorem in CONCRETE_PROOF_OBLIGATIONS {
-                    if !passed.contains(*theorem) {
-                        errors.push(format!(
-                            "root: lean_proof_checked obligations missing passed proofs for {theorem:?}"
-                        ));
-                    }
-                }
-            } else {
-                for theorem in CONCRETE_PROOF_OBLIGATIONS {
+        let cert_mode = certificate
+            .get("certificate_mode")
+            .and_then(|v| v.as_str())
+            .unwrap_or(DEFAULT_CERTIFICATE_MODE);
+        if !certificate_mode_is_valid(cert_mode) {
+            errors.push(format!("root: invalid certificate_mode {cert_mode:?}"));
+        } else if certificate.get("lean_proof_checked") == Some(&Value::Bool(true)) {
+            let mode_required = mode_obligation_theorems(cert_mode);
+            let passed: std::collections::HashSet<String> = certificate
+                .get("obligations")
+                .and_then(|v| v.as_array())
+                .map(|obligations| {
+                    obligations
+                        .iter()
+                        .filter(|item| item.get("passed").and_then(|v| v.as_bool()) == Some(true))
+                        .filter_map(|item| {
+                            item.get("theorem")
+                                .and_then(|v| v.as_str())
+                                .map(str::to_string)
+                        })
+                        .collect()
+                })
+                .unwrap_or_default();
+            for theorem in CONCRETE_PROOF_OBLIGATIONS {
+                if !passed.contains(*theorem) {
                     errors.push(format!(
                         "root: lean_proof_checked obligations missing passed proofs for {theorem:?}"
                     ));
                 }
             }
+            if !mode_required.is_empty() {
+                let missing_mode: Vec<&str> = mode_required
+                    .iter()
+                    .copied()
+                    .filter(|theorem| !passed.contains(*theorem))
+                    .collect();
+                if !missing_mode.is_empty() {
+                    errors.push(format!(
+                        "root: certificate_mode obligations missing passed proofs for {missing_mode:?}"
+                    ));
+                }
+            }
         }
     }
+    errors.extend(validate_contract_semantics_checked(certificate));
     errors
 }
 
@@ -667,6 +799,105 @@ fn tenant_matches(principal: &Value, action: &Value) -> bool {
     }
     true
 }
+
+fn action_within_tenant_d(principal: &Value, action: &Value) -> bool {
+    let tenant = principal
+        .get("tenant")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    for key in ["reads", "writes"] {
+        let Some(resources) = action.get(key).and_then(|v| v.as_array()) else {
+            return false;
+        };
+        for resource in resources {
+            let Some(resource_obj) = object_mut(resource) else {
+                return false;
+            };
+            if resource_obj
+                .get("tenant")
+                .and_then(|v| v.as_str())
+                .is_some_and(|value| value != tenant)
+            {
+                return false;
+            }
+        }
+    }
+    true
+}
+
+fn action_admissible_d(principal: &Value, action: &Value) -> bool {
+    let Some(capability) = action.get("capability") else {
+        return false;
+    };
+    let Some(cap_obj) = object_mut(capability) else {
+        return false;
+    };
+    let cap_id = cap_obj
+        .get("capability_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    const PATH: &str = "action";
+    if validate_action_capabilities_known(action, PATH).is_some()
+        || validate_action_effects_known(action, PATH).is_some()
+        || validate_action_capability_effects(action, PATH).is_some()
+        || validate_resource_scope(action, PATH).is_some()
+    {
+        return false;
+    }
+    principal_has_capability(principal, cap_id) && action_within_tenant_d(principal, action)
+}
+
+/// Mirror Lean ``actionAdmissibleWithResourcePatternD`` (kernel + catalog resource scope).
+pub fn action_admissible_with_resource_pattern_d(principal: &Value, action: &Value) -> bool {
+    action_admissible_d(principal, action)
+}
+
+/// Mirror Lean ``eventSafeD`` on allow events (deny is vacuously safe).
+pub fn event_safe_d(event: &Value) -> bool {
+    let decision = event.get("decision").and_then(|v| v.as_str()).unwrap_or("");
+    if decision == "deny" {
+        return true;
+    }
+    if decision != "allow" {
+        return false;
+    }
+    let Some(principal) = event.get("principal") else {
+        return false;
+    };
+    let Some(action) = event.get("action") else {
+        return false;
+    };
+    action_admissible_d(principal, action)
+}
+
+/// Mirror Lean ``eventSafeRD`` (allow branch uses resource-pattern admissibility).
+pub fn event_safe_rd(event: &Value) -> bool {
+    let decision = event.get("decision").and_then(|v| v.as_str()).unwrap_or("");
+    if decision == "deny" {
+        return true;
+    }
+    if decision != "allow" {
+        return false;
+    }
+    let Some(principal) = event.get("principal") else {
+        return false;
+    };
+    let Some(action) = event.get("action") else {
+        return false;
+    };
+    action_admissible_with_resource_pattern_d(principal, action)
+}
+
+/// Mirror Lean ``traceSafeD`` decider.
+pub fn trace_safe_d(events: &[Value]) -> bool {
+    events.iter().all(event_safe_d)
+}
+
+/// Mirror Lean ``traceSafeRD`` (resource-pattern trace safety decider).
+pub fn trace_safe_rd(events: &[Value]) -> bool {
+    events.iter().all(event_safe_rd)
+}
+
 
 pub fn validate_event_against_contract(event: &Value, contract: &Value, path: &str) -> Vec<String> {
     let mut errors = Vec::new();
@@ -848,6 +1079,46 @@ fn authorization_decision(status: &str) -> &'static str {
         .unwrap_or("deny")
 }
 
+fn event_cross_tenant_safe(principal: &Value, action: &Value, decision: &str) -> bool {
+    if decision == "deny" {
+        return true;
+    }
+    tenant_matches(principal, action)
+}
+
+pub fn validate_cross_tenant_safety(trace: &Value) -> Vec<String> {
+    let mut errors = Vec::new();
+    let events = match trace.get("events").and_then(|v| v.as_array()) {
+        Some(items) => items,
+        None => return vec!["TraceInvalid: events must be an array".into()],
+    };
+    for (index, event) in events.iter().enumerate() {
+        let base = format!("events[{index}]");
+        let Some(principal) = event.get("principal") else {
+            errors.push(format!("CrossTenantSafe: {base} missing principal or action"));
+            continue;
+        };
+        let Some(action) = event.get("action") else {
+            errors.push(format!("CrossTenantSafe: {base} missing principal or action"));
+            continue;
+        };
+        let decision = event
+            .get("decision")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        if !event_cross_tenant_safe(principal, action, decision) {
+            let tenant = principal
+                .get("tenant")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
+            errors.push(format!(
+                "CrossTenantSafe: cross-tenant allow at {base} (principal tenant {tenant:?})"
+            ));
+        }
+    }
+    errors
+}
+
 pub fn validate_tenant_isolation(trace: &Value) -> Vec<String> {
     let mut errors = Vec::new();
     let events = match trace.get("events").and_then(|v| v.as_array()) {
@@ -879,6 +1150,108 @@ pub fn validate_tenant_isolation(trace: &Value) -> Vec<String> {
         if !tenant_matches(principal, action) {
             errors.push(format!(
                 "TenantIsolation: cross-tenant resource access at {base} (principal tenant {tenant:?})"
+            ));
+        }
+    }
+    errors
+}
+
+
+fn low_event_for_tenant(tenant: &str, event: &Value) -> bool {
+    let decision = event.get("decision").and_then(|v| v.as_str()).unwrap_or("");
+    if decision != "allow" {
+        return false;
+    }
+    let Some(principal) = event.get("principal") else {
+        return false;
+    };
+    principal
+        .get("tenant")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        == tenant
+}
+
+fn trace_projection_for_tenant<'a>(trace: &'a Value, tenant: &str) -> Vec<&'a Value> {
+    let mut projection = Vec::new();
+    let Some(events) = trace.get("events").and_then(|v| v.as_array()) else {
+        return projection;
+    };
+    for event in events {
+        if low_event_for_tenant(tenant, event) {
+            projection.push(event);
+        }
+    }
+    projection
+}
+
+pub fn validate_observational_non_interference(
+    trace: &Value,
+    tenant_low: &str,
+    tenant_high: &str,
+) -> Vec<String> {
+    if tenant_low == tenant_high {
+        return Vec::new();
+    }
+    let mut errors = Vec::new();
+    let events = match trace.get("events").and_then(|v| v.as_array()) {
+        Some(items) => items,
+        None => return vec!["TraceInvalid: events must be an array".into()],
+    };
+    let projection = trace_projection_for_tenant(trace, tenant_low);
+    for (index, event) in projection.iter().enumerate() {
+        if !low_event_for_tenant(tenant_low, event) {
+            errors.push(format!(
+                "NonInterference: projected event at projection[{index}] is not LowEvent for tenant {tenant_low:?}"
+            ));
+        }
+    }
+    for (index, event) in events.iter().enumerate() {
+        let Some(principal) = event.get("principal") else {
+            continue;
+        };
+        if principal
+            .get("tenant")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            != tenant_high
+        {
+            continue;
+        }
+        if low_event_for_tenant(tenant_low, event) {
+            errors.push(format!(
+                "NonInterference: high-tenant event at events[{index}] is low-visible to tenant {tenant_low:?}"
+            ));
+        }
+    }
+    errors
+}
+
+pub fn validate_observational_non_interference_all_pairs(trace: &Value) -> Vec<String> {
+    let mut tenants: Vec<String> = Vec::new();
+    if let Some(events) = trace.get("events").and_then(|v| v.as_array()) {
+        for event in events {
+            if let Some(principal) = event.get("principal") {
+                let tenant = principal
+                    .get("tenant")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                if !tenant.is_empty() && !tenants.iter().any(|t| t == tenant) {
+                    tenants.push(tenant.to_string());
+                }
+            }
+        }
+    }
+    let mut errors = Vec::new();
+    for tenant_low in &tenants {
+        for tenant_high in &tenants {
+            if tenant_low == tenant_high {
+                continue;
+            }
+            errors.extend(validate_observational_non_interference(
+                trace,
+                tenant_low,
+                tenant_high,
             ));
         }
     }
@@ -1035,8 +1408,22 @@ mod tests {
         let path =
             repo_root().join("python/tests/hash_vectors/pf_core/invalid/cross_tenant_leak.json");
         let trace = load_json(path);
-        let errors = validate_tenant_isolation(&trace);
-        assert!(errors.iter().any(|err| err.contains("TenantIsolation")));
+        let tenant_errors = validate_tenant_isolation(&trace);
+        assert!(tenant_errors.iter().any(|err| err.contains("TenantIsolation")));
+        let cross_tenant_errors = validate_cross_tenant_safety(&trace);
+        assert!(cross_tenant_errors
+            .iter()
+            .any(|err| err.contains("CrossTenantSafe")));
+    }
+
+    #[test]
+    fn pf_core_cross_tenant_safety_ok_on_allowed_fixture() {
+        let path = repo_root().join("examples/pf-core-valid/file_read_allowed/trace.json");
+        let trace = load_json(path);
+        assert!(validate_cross_tenant_safety(&trace).is_empty());
+        assert!(validate_tenant_isolation(&trace).is_empty());
+        assert!(validate_observational_non_interference(&trace, "tenant-a", "other-tenant").is_empty());
+        assert!(validate_observational_non_interference_all_pairs(&trace).is_empty());
     }
 
     #[test]
@@ -1075,6 +1462,27 @@ mod tests {
     }
 
     #[test]
+    fn pf_core_trace_safe_r_decider_parity() {
+        let trace = load_json(
+            repo_root().join("examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json"),
+        );
+        let events = trace
+            .get("events")
+            .and_then(|v| v.as_array())
+            .expect("events array");
+        assert!(trace_safe_d(events));
+        assert!(trace_safe_rd(events));
+        let bad = load_json(
+            repo_root().join("examples/pf-core-invalid/resource_scope_violation/trace.json"),
+        );
+        let bad_events = bad
+            .get("events")
+            .and_then(|v| v.as_array())
+            .expect("events array");
+        assert!(!trace_safe_rd(bad_events));
+    }
+
+    #[test]
     fn pf_core_resource_scope_violation_vector() {
         let path = repo_root().join("examples/pf-core-invalid/resource_scope_violation/trace.json");
         let trace = load_json(path);
@@ -1100,8 +1508,8 @@ mod tests {
             ),
             ("lab:*", &[("lab:run-1", true), ("/data/x", false)]),
         ];
-        for entry in CAPABILITY_CATALOG {
-            let pattern = entry.resource_pattern;
+        for (_, _, pattern) in CAPABILITY_CATALOG {
+            let pattern = *pattern;
             let Some((_, cases)) = samples.iter().find(|(pat, _)| *pat == pattern) else {
                 panic!("missing parity samples for pattern {pattern:?}");
             };
@@ -1113,6 +1521,34 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn pf_core_contract_semantics_checked_resource_obligations() {
+        use serde_json::json;
+
+        let missing = json!({
+            "claim_class": "LeanKernelChecked",
+            "lean_proof_checked": true,
+            "default_contract_ref": "trace-safe",
+            "contract_semantics_checked": {
+                "lean": [],
+                "runtime": ["resource_pattern_scope"]
+            }
+        });
+        let errors = validate_contract_semantics_checked(&missing);
+        assert!(errors.iter().any(|err| err.contains("resource_within_capability_pattern")));
+
+        let ok = json!({
+            "claim_class": "LeanKernelChecked",
+            "lean_proof_checked": true,
+            "default_contract_ref": "trace-safe",
+            "contract_semantics_checked": {
+                "lean": ["resource_within_capability_pattern"],
+                "runtime": ["resource_pattern_scope"]
+            }
+        });
+        assert!(validate_contract_semantics_checked(&ok).is_empty());
     }
 
     #[test]
@@ -1142,6 +1578,11 @@ mod tests {
                 "examples/pf-core-invalid/lean_kernel_checked_with_skipped_build/certificate.json",
                 "PFCoreCertificate.v0",
                 "lean_build_status",
+            ),
+            (
+                "examples/pf-core-invalid/certificate_mode_effectframecertificate_missing_obligations/certificate.json",
+                "PFCoreCertificate.v0",
+                "certificate_mode obligations",
             ),
         ];
         for (relative, artifact_type, needle) in cases {
