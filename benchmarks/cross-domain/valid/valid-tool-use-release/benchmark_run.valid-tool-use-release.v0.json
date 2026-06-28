@@ -3,8 +3,8 @@
   "run_id": "bench-run-valid-tool-use-release",
   "task_id": "cross-domain-release-chain-v0",
   "case_id": "valid-tool-use-release",
-  "started_at": "2026-06-28T00:48:34Z",
-  "completed_at": "2026-06-28T00:48:34Z",
+  "started_at": "2026-06-28T07:05:52Z",
+  "completed_at": "2026-06-28T07:05:52Z",
   "commands": [
     {
       "command": "validate_release_chain examples/tool-use-release",
@@ -21,8 +21,8 @@
   "certificate_status": "not_applicable",
   "scientific_memory_import_status": "not_applicable",
   "scientific_memory_render_status": "not_applicable",
-  "duration_ms": 68,
+  "duration_ms": 58,
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:70ff207828caf26a17acebda1205f4503ad169a10cbc3e07b815131c8b3aa084"
+  "signature_or_digest": "sha256:3c4fdab3701584cfaaf1a234c5b12cf70972ceb0bc6a585d9ed76cfc2729b06a"
 }
