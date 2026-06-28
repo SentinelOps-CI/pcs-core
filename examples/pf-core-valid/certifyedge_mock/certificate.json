@@ -1,0 +1,35 @@
+{
+  "schema_version": "v0",
+  "artifact_type": "PFCoreCertificate.v0",
+  "certificate_id": "pfcore-ext-runs-qc-release",
+  "trace_hash": "sha256:b7466cd65c822b9f14d7e8590d128a4aafd21114b1a43e302cdf0abbaf33ae43",
+  "contract_hash": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+  "policy_hash": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+  "claim_class": "CertificateChecked",
+  "checker": "certifyedge",
+  "checker_version": "0.1.0",
+  "assumption_refs": [
+    "docs/pf-core/assumptions.md",
+    "docs/pf-core/trusted-boundary.md",
+    "mock://certifyedge/qc_release.temporal.safety"
+  ],
+  "obligations": [
+    {
+      "kind": "ExternalCheckerAttestation",
+      "theorem": "external_checker_attestation",
+      "passed": true,
+      "proof_ref": "mock://certifyedge/qc_release.temporal.safety"
+    },
+    {
+      "kind": "CertifyEdgePropertyCheck",
+      "theorem": "certifyedge_property_check",
+      "passed": true,
+      "proof_ref": "qc_release.temporal.safety"
+    }
+  ],
+  "disclaimer": "CertificateChecked attests that an external checker (e.g. CertifyEdge) evaluated the trace against a declared property. This claim class does not imply LeanKernelChecked or ReplayValidated assurance.",
+  "event_count": 1,
+  "source_repo": "https://github.com/fraware/CertifyEdge",
+  "source_commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "signature_or_digest": "sha256:f30ca400e60a3463cf123e9c10cebcb910daf73ee278dcfa8773897dbfc35366"
+}

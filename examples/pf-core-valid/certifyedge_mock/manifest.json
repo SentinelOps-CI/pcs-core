@@ -1,0 +1,4 @@
+{
+  "description": "CertifyEdge mock attestation for local dev (PF_CORE_CERTIFYEDGE_MODE=mock)",
+  "regenerate": "PF_CORE_CERTIFYEDGE_MODE=mock pcs pf-core certifyedge-check --trace trace.json --property qc_release.temporal.safety --out certificate.json"
+}
