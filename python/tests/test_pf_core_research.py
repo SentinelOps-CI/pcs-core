@@ -122,9 +122,9 @@ def test_cataloged_research_theorem_in_lean_sources(theorem: str) -> None:
 
 
 def test_python_role_capability_map_is_static_dict() -> None:
-    """ROLE_CAPABILITY_MAP must remain a module-level dict for parity audits."""
-    runtime_path = REPO / "python" / "pcs_core" / "pf_core_runtime.py"
-    tree = ast.parse(runtime_path.read_text(encoding="utf-8"))
+    """ROLE_CAPABILITY_MAP must remain a generated catalog dict for parity audits."""
+    catalog_path = REPO / "python" / "pcs_core" / "pf_core_catalog.py"
+    tree = ast.parse(catalog_path.read_text(encoding="utf-8"))
     found = False
     for node in tree.body:
         if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
@@ -133,6 +133,7 @@ def test_python_role_capability_map_is_static_dict() -> None:
                 break
         if isinstance(node, ast.Assign):
             if any(isinstance(t, ast.Name) and t.id == "ROLE_CAPABILITY_MAP" for t in node.targets):
-                found = True
+                if isinstance(node.value, ast.Dict):
+                    found = True
                 break
     assert found

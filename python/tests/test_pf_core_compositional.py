@@ -12,7 +12,10 @@ import pytest
 from pcs_core.lean_catalog import PF_CORE_THEOREM_CATALOG
 from pcs_core.lean_check import compute_proof_term_hash
 from pcs_core.pf_core_claims import audit_lean_catalog
-from pcs_core.pf_core_lean_codegen import compute_lean_environment_hash
+from pcs_core.pf_core_lean_codegen import (
+    compute_lean_environment_hash,
+    compute_pfcore_kernel_hash,
+)
 from pcs_core.pf_core_proof_binding import verify_proof_binding
 from pcs_core.pf_core_runtime import compute_trace_hash
 from pcs_core.validate import check_pf_core_invalid_fixtures
@@ -100,6 +103,7 @@ def test_verify_proof_binding_detects_trace_hash_mismatch(tmp_path: Path) -> Non
         "proof_term_ref": str(GENERATED_PROOF.relative_to(REPO)).replace("\\", "/"),
         "proof_term_hash": compute_proof_term_hash(GENERATED_PROOF),
         "lean_environment_hash": compute_lean_environment_hash(),
+        "pfcore_kernel_hash": compute_pfcore_kernel_hash(),
     }
     cert_path = tmp_path / "cert.json"
     cert_path.write_text(json.dumps(cert), encoding="utf-8")
@@ -122,6 +126,7 @@ def test_verify_proof_binding_ok_when_bound(tmp_path: Path) -> None:
         "proof_term_ref": str(GENERATED_PROOF.relative_to(REPO)).replace("\\", "/"),
         "proof_term_hash": compute_proof_term_hash(GENERATED_PROOF),
         "lean_environment_hash": compute_lean_environment_hash(),
+        "pfcore_kernel_hash": compute_pfcore_kernel_hash(),
     }
     cert_path = tmp_path / "cert.json"
     cert_path.write_text(json.dumps(cert), encoding="utf-8")
@@ -143,6 +148,7 @@ def test_verify_proof_binding_cli(tmp_path: Path) -> None:
         "proof_term_ref": str(GENERATED_PROOF.relative_to(REPO)).replace("\\", "/"),
         "proof_term_hash": compute_proof_term_hash(GENERATED_PROOF),
         "lean_environment_hash": compute_lean_environment_hash(),
+        "pfcore_kernel_hash": compute_pfcore_kernel_hash(),
     }
     cert_path = tmp_path / "cert.json"
     cert_path.write_text(json.dumps(cert), encoding="utf-8")

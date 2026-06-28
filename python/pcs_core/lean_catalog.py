@@ -88,6 +88,7 @@ PF_CORE_SOUNDNESS_THEOREMS = frozenset(
         "tenantIsolationD_sound",
         "eventTenantIsolatedD_sound",
         "principalHasRoleD_sound",
+        "resourceWithinCapabilityPatternD_sound",
     }
 )
 

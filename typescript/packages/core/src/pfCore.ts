@@ -465,6 +465,10 @@ export function validatePfcoreCertificateSemantics(
     if (typeof envHash !== "string" || !envHash.startsWith("sha256:")) {
       errors.push("root: claim_class LeanKernelChecked requires lean_environment_hash");
     }
+    const kernelHash = certificate.pfcore_kernel_hash;
+    if (typeof kernelHash !== "string" || !kernelHash.startsWith("sha256:")) {
+      errors.push("root: claim_class LeanKernelChecked requires pfcore_kernel_hash");
+    }
     const build = certificate.lean_build_status;
     if (
       !build ||
