@@ -33,7 +33,7 @@
   "default_contract_ref": "trace-safe",
   "contract_semantics_checked": {
     "lean": [
-      "trace-safe"
+      "resource_within_capability_pattern"
     ],
     "runtime": [
       "resource_pattern_scope"
