@@ -52,6 +52,16 @@ PF_CORE_OBLIGATION_KIND_THEOREM: dict[str, str] = {
     "HandoffPreservesTraceSafeStrong": "handoff_preserves_trace_safe_strong",
     "HandoffCompositionGlobal": "handoff_composition_global",
     "TraceSafeImpliesTenantIsolation": "traceSafe_implies_tenant_isolation",
+    "TraceSafeDImpliesTenantIsolationD": "traceSafeD_implies_tenantIsolationD",
+    "TraceSafeDImpliesTraceCrossTenantSafeD": "traceSafeD_implies_traceCrossTenantSafeD",
+    "TraceSafeDImpliesNonInterferenceD": "traceSafeD_implies_nonInterferenceD",
+    "ActionResourcesWithinCapabilityPattern": "actionResourcesWithinCapabilityPatternD_sound",
+    "ActionAdmissibleWithResourcePattern": "actionAdmissibleWithResourcePatternD_sound",
+    "TraceSafeR": "traceSafeRD_sound",
+    "EventSafeR": "eventSafeRD_sound",
+    "TraceSafeRImpliesTraceSafe": "traceSafeR_implies_traceSafe",
+    "TraceSafeAppend": "traceSafe_append",
+    "TraceAppendPreservesNonInterference": "trace_append_preserves_non_interference",
     "ContractPreRoleAlignedCapability": "contractPre_role_aligned_capability",
 }
 
@@ -89,6 +99,31 @@ PF_CORE_SOUNDNESS_THEOREMS = frozenset(
         "eventTenantIsolatedD_sound",
         "principalHasRoleD_sound",
         "resourceWithinCapabilityPatternD_sound",
+        "resourcesWithinCapabilityPatternD_sound",
+        "actionResourcesWithinCapabilityPatternD_sound",
+        "actionAdmissibleWithResourcePatternD_sound",
+        "actionAdmissibleWithResourcePattern_implies_actionAdmissible",
+        "actionAdmissibleRD_sound",
+        "eventSafeRD_sound",
+        "traceSafeRD_sound",
+        "traceSafeR_implies_traceSafe",
+        "eventSafeR_allow_implies_resource_pattern",
+        "traceSafeRD_implies_traceSafeD",
+        "traceSafe_append",
+        "traceSafeR_append",
+        "trace_append_preserves_non_interference",
+        "traceProjection_append",
+        "handoffSafe_traceSafe_non_interference",
+        "handoffSafe_excludes_cross_tenant_handoff",
+        "traceSafeD_implies_tenantIsolationD",
+        "traceSafeD_implies_traceCrossTenantSafeD",
+        "nonInterferenceD_sound",
+        "traceSafeD_implies_nonInterferenceD",
+        "deny_event_not_low",
+        "deny_event_is_high",
+        "handoffSafe_requires_same_tenant",
+        "handoffSafe_forbids_distinct_tenant",
+        "event_deny_implies_crossTenantDenied",
     }
 )
 
@@ -102,6 +137,9 @@ PF_CORE_CONCRETE_PROOF_THEOREMS = frozenset(
         "concrete_trace_safe",
         "concrete_trace_safe_prop",
         "concrete_allowed_events_allowed",
+        "concrete_tenant_isolation_prop",
+        "concrete_trace_cross_tenant_safe_prop",
+        "concrete_non_interference_prop",
     }
 )
 
