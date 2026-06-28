@@ -34,6 +34,26 @@ def validate_lean_check_result_semantics(data: dict[str, Any]) -> list[str]:
     status = data.get("status")
     if status not in {"ProofChecked", "Rejected", "Stale"}:
         errors.append(f"LeanCheckResult.v0 invalid status {status!r}")
+    claim_class = data.get("claim_class")
+    if claim_class is not None and claim_class not in {
+        "ProofChecked",
+        "EnvelopeLeanChecked",
+        "Rejected",
+    }:
+        errors.append(f"LeanCheckResult.v0 invalid claim_class {claim_class!r}")
+    if claim_class == "LeanKernelChecked":
+        errors.append(
+            "LeanCheckResult.v0 PCS variant must not use claim_class LeanKernelChecked",
+        )
+    if claim_class == "EnvelopeLeanChecked":
+        if data.get("lean_proof_checked") is not True:
+            errors.append(
+                "LeanCheckResult.v0 EnvelopeLeanChecked requires lean_proof_checked=true",
+            )
+        if not data.get("proof_term_ref"):
+            errors.append(
+                "LeanCheckResult.v0 EnvelopeLeanChecked requires proof_term_ref",
+            )
     results = data.get("obligation_results")
     if not isinstance(results, list):
         errors.append("LeanCheckResult.v0 obligation_results must be an array")
