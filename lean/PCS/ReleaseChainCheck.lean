@@ -21,7 +21,8 @@ theorem certificateMatchesRuntimeD_sound (cert : Certificate) (receipt : Runtime
   | mk _ traceHash status =>
     cases receipt with
     | mk receiptHash _ =>
-      cases status <;> simp [certificateMatchesRuntimeD, CertificateMatchesRuntime, decide_eq_true_iff]
+      cases status <;>
+        simp [certificateMatchesRuntimeD, CertificateMatchesRuntime, decide_eq_true_iff, hash_beq_iff_eq]
 
 def verificationAdmitsBundleD
     (verification : VerificationResult) (bundleHash : Hash) : Bool :=
@@ -37,7 +38,8 @@ theorem verificationAdmitsBundleD_sound
       VerificationAdmitsBundle verification bundleHash := by
   cases verification with
   | mk status verifiedHash blocking =>
-    cases status <;> simp [verificationAdmitsBundleD, VerificationAdmitsBundle, decide_eq_true_iff]
+    cases status <;>
+      simp [verificationAdmitsBundleD, VerificationAdmitsBundle, decide_eq_true_iff, hash_beq_iff_eq]
 
 def signedBundleAdmissibleD (signedInputHash : Hash) (verifiedInputHash : Hash) : Bool :=
   decide (signedInputHash == verifiedInputHash)
@@ -45,7 +47,7 @@ def signedBundleAdmissibleD (signedInputHash : Hash) (verifiedInputHash : Hash) 
 theorem signedBundleAdmissibleD_sound (signedInputHash : Hash) (verifiedInputHash : Hash) :
     signedBundleAdmissibleD signedInputHash verifiedInputHash = true ↔
       SignedBundleAdmissible signedInputHash verifiedInputHash := by
-  simp [signedBundleAdmissibleD, SignedBundleAdmissible, decide_eq_true_iff]
+  simp [signedBundleAdmissibleD, SignedBundleAdmissible, decide_eq_true_iff, hash_beq_iff_eq]
 
 def releaseChainAdmissibleD
     (cert : Certificate)
@@ -65,13 +67,8 @@ theorem releaseChainAdmissibleD_sound
     (signedInputHash : Hash) :
     releaseChainAdmissibleD cert receipt verification bundleHash signedInputHash = true ↔
       ReleaseChainAdmissible cert receipt verification bundleHash signedInputHash := by
-  constructor
-  · intro h
-    simp [releaseChainAdmissibleD, certificateMatchesRuntimeD_sound,
-      verificationAdmitsBundleD_sound, signedBundleAdmissibleD_sound] at h
-    exact h
-  · intro h
-    simp [releaseChainAdmissibleD, certificateMatchesRuntimeD_sound,
-      verificationAdmitsBundleD_sound, signedBundleAdmissibleD_sound, h]
+  simp [releaseChainAdmissibleD, ReleaseChainAdmissible,
+    certificateMatchesRuntimeD_sound, verificationAdmitsBundleD_sound, signedBundleAdmissibleD_sound,
+    and_assoc, and_left_comm, and_comm]
 
 end PCS
