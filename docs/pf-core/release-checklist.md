@@ -19,7 +19,37 @@ Pre-release verification for PF-Core in `pcs-core`. Run from repository root unl
 | `pcs pf-core bundle-release` / `validate-bundle` | Release bundle manifest with trace, certificate, proof, kernel hashes |
 | `.github/workflows/pf-core-release-gate.yml` | Live CertifyEdge required (no mock fallback) on main/tags |
 | `python scripts/gen_pf_core_catalog.py` in CI | Generated catalog artifacts match `schemas/pf_core.catalog.json` |
+| `scripts/pf-core-release-grade-local.{ps1,sh}` | Full local release-grade matrix: pytest sweep, catalog drift, audit-lean-no-sorry, PFCore+PCS lake, lean-check (`TraceSafeRCertificate`), bundle kernel manifest, CertifyEdge mock+stub |
 | `pf-core-adapter` job on `main` | `continue-on-error: false` — adapter parity blocks main |
+
+## Local verification matrix
+
+Run from repository root unless noted. Each row maps a release-checklist gate to a local command.
+
+| Gate | Local command | Evidence |
+|------|---------------|----------|
+| Tier 1 semantics + negative vectors | `cd python && pytest -q tests/test_pf_core_tier1.py` | pytest pass |
+| Cross-language parity | `cd python && pytest -q tests/test_pf_core_cross_language.py` | pytest pass |
+| Cross-language conformance | `pcs conformance run --suite pf-core-cross-language` | suite pass |
+| Claims audit | `pcs pf-core audit-claims` | exit 0 |
+| Boundary audit | `pcs pf-core audit-boundary` | exit 0 |
+| Lean catalog audit | `pcs pf-core audit-lean-catalog` | exit 0 |
+| No sorry/axiom | `pcs pf-core audit-lean-no-sorry` | exit 0 |
+| Example fixtures | `pcs examples check` | exit 0 |
+| PF-Core conformance | `pcs conformance run --suite pf-core --release-grade` | suite pass (requires lake/WSL) |
+| Lean kernel build | `cd lean && lake build PFCore` | exit 0 |
+| PCS envelope kernel | `cd lean && lake build PCS` | exit 0 |
+| Concrete trace proof | `pcs pf-core lean-check --trace examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json` | `LeanKernelChecked` certificate |
+| Contract runtime checker | `pcs pf-core validate-contracts examples/pf-core-valid/contract_checked/trace.json --contracts-dir examples/pf-core-valid/contract_checked` | exit 0 |
+| Release bundle | `pcs pf-core bundle-release --trace ... --cert ... --out /tmp/bundle` then `pcs pf-core validate-bundle /tmp/bundle` | manifest + kernel hashes |
+| Catalog drift | `python scripts/gen_pf_core_catalog.py && git diff --exit-code python/pcs_core/pf_core_catalog.py lean/PFCore/Catalog.lean rust/crates/pcs-core/src/pf_core_catalog.rs typescript/packages/core/src/pfCoreCatalog.ts` | no diff |
+| Rust PF-Core | `cd rust && cargo test pf_core -q` | all pass |
+| TypeScript PF-Core | `cd typescript/packages/core && npm test` | all pass |
+| PCS Lean codegen | `cd python && pytest -q tests/test_pcs_lean_codegen.py` | pass; prop theorems in `lean/PCS/Generated/` |
+| Compositional trust | `cd python && pytest -q tests/test_pf_core_compositional.py tests/test_pf_core_research.py` | pass |
+| CertifyEdge mock | `scripts/pf-core-certifyedge-dry-run.ps1` (or `.sh`) | mock attestation |
+| CertifyEdge stub | `scripts/pf-core-certifyedge-stub-dry-run.ps1` (or `.sh`) | `stub://` + `checker_version` |
+| Full matrix | `scripts/pf-core-release-grade-local.ps1` (or `.sh`) | all steps green |
 
 ## Local full demo
 
