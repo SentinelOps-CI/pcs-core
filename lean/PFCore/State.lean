@@ -98,8 +98,8 @@ private theorem applyEvent_preserves_frame_valid (s : State) (ev : Event) (hVali
 
 private theorem handoff_frame_valid (h : Handoff) (s : State) (_hSafe : HandoffSafe h) (hValid : FrameValid s) :
     FrameValid (HandoffApplies h s) := by
-  rcases hValid with ⟨htenant, hframe, _⟩
-  constructor
+  rcases hValid with ⟨_, hframe, _⟩
+  refine ⟨?_, ?_, ?_⟩
   · unfold HandoffApplies
     rfl
   · intro r hr
