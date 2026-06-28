@@ -1,0 +1,56 @@
+# PCS envelope Lean path roadmap
+
+This document records the PCS `pcs pcs-envelope check` Lean path and its trust boundary relative to PF-Core kernel proofs.
+
+## Current scope (v0.1 — Stage PCS-Lean partial)
+
+| Path | Emits | Lean work |
+|------|-------|-----------|
+| `pcs pcs-envelope check` | `LeanCheckResult.v0` with `claim_class: ProofChecked` | Obligations vs Python deciders + `lean/PCS/Theorems.lean` catalog |
+| `pcs pcs-envelope check --lean-proof` | `LeanCheckResult.v0` with `claim_class: EnvelopeLeanChecked` when proof compiles | Generated module in `lean/PCS/Generated/` + `lake env lean` |
+| `pcs pf-core lean-check --trace` | `PFCoreCertificate.v0` with `LeanKernelChecked` | Generated concrete trace proof in `lean/PFCore/Generated/` |
+
+There is **no silent upgrade** from envelope consistency to per-trace PF-Core kernel proofs. See `docs/pf-core/trusted-boundary.md`.
+
+## Stage PCS-Lean (partial implementation)
+
+Implemented:
+
+- `python/pcs_core/pcs_lean_codegen.py` — generates `Certificate`, `RuntimeReceipt`, `VerificationResult`, and bundle hashes from `ProofObligation.v0`.
+- `lean/PCS/ReleaseChainCheck.lean` — decidable mirrors of `ReleaseChainAdmissible` predicates.
+- `lean/PCS/Generated/Obligation_*.lean` — concrete fixture proofs (LabTrust release example).
+- `--lean-proof` on `pcs pcs-envelope check` — emits `EnvelopeLeanChecked` with `proof_term_ref`, `proof_term_hash`, and disclaimer.
+
+Not implemented (deferred):
+
+- Full schema revision for all PCS benchmark ingest paths.
+- Conformance suite `pcs-envelope-lean-proof` with mandatory `--release-grade` gate in all CI jobs.
+- Unified codegen for tool-use and computation obligation shapes beyond release-chain triple.
+
+## Claim classes (honest)
+
+| Class | Meaning |
+|-------|---------|
+| `ProofChecked` | Python obligation deciders passed; optional `lake build PCS` succeeded |
+| `EnvelopeLeanChecked` | Above plus generated PCS module compiled; **not** PF-Core `LeanKernelChecked` |
+| `Rejected` | Obligation or Lean proof path failed |
+
+## Regeneration policy
+
+Regenerate PCS generated modules when `ProofObligation.v0` fixtures change:
+
+```bash
+python -c "
+from pathlib import Path
+from pcs_core.pcs_lean_codegen import generate_from_release_dir
+generate_from_release_dir(Path('examples/labtrust-release'), Path('lean/PCS/Generated'))
+"
+```
+
+Run `pcs pf-core audit-lean-no-sorry` after regeneration (scope includes `lean/PCS/` when present).
+
+## Related documents
+
+- `docs/pf-core/trusted-boundary.md` — trusted vs untrusted components
+- `docs/pf-core/generated-proofs.md` — PF-Core regeneration policy
+- `docs/pf-core/claim-boundary.md` — PCS `ProofChecked` vs PF-Core `LeanKernelChecked`
