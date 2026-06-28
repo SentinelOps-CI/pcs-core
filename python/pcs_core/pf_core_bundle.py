@@ -14,7 +14,6 @@ from pcs_core.paths import repo_root
 from pcs_core.pf_core_lean_codegen import (
     compute_lean_environment_hash,
     compute_pfcore_kernel_hash,
-    proof_term_ref_from_path,
 )
 from pcs_core.pf_core_runtime import compute_trace_hash
 from pcs_core.validate import ValidationError, validate_artifact

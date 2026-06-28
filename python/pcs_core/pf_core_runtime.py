@@ -822,7 +822,9 @@ def validate_handoff_authority(handoff: Mapping[str, Any]) -> None:
             raise HandoffAuthorityExpansion(cap_id, f"delegated_capabilities[{index}]")
 
 
-def validate_event_sequence_order(trace: Mapping[str, Any], *, strict_gaps: bool = True) -> list[str]:
+def validate_event_sequence_order(
+    trace: Mapping[str, Any], *, strict_gaps: bool = True
+) -> list[str]:
     """Reject duplicate sequences, unsorted event arrays, and optional sequence gaps."""
     errors: list[str] = []
     events = trace.get("events")
@@ -840,9 +842,7 @@ def validate_event_sequence_order(trace: Mapping[str, Any], *, strict_gaps: bool
             errors.append(f"EventSequenceInvalid: missing or invalid sequence at {base}")
             continue
         if sequence in seen:
-            errors.append(
-                f"EventSequenceDuplicate: duplicate sequence {sequence} at {base}"
-            )
+            errors.append(f"EventSequenceDuplicate: duplicate sequence {sequence} at {base}")
         seen.add(sequence)
         if prev_seq is not None and sequence < prev_seq:
             errors.append(

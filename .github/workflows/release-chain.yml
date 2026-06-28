@@ -39,6 +39,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - uses: dtolnay/rust-toolchain@1.86
+        with:
+          components: rustfmt
       - name: Install pcs-core
         run: cd python && pip install -e ".[dev]"
       - name: Validate canonical RC fixture chain

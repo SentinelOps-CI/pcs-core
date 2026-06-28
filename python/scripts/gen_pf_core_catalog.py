@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
 from pathlib import Path
 
 from pcs_core.paths import repo_root
@@ -24,20 +26,25 @@ def generate_python(catalog: dict, out_path: Path) -> str:
     effect_kinds = catalog["effect_kinds"]
     cap_lines = []
     for cap in caps:
+        cap_id = _py_repr(cap["capability_id"])
         cap_lines.append(
-            f"    {_py_repr(cap['capability_id'])}: {{"
-            f"\"capability_id\": {_py_repr(cap['capability_id'])}, "
-            f"\"effect_kind\": {_py_repr(cap['effect_kind'])}, "
-            f"\"resource_pattern\": {_py_repr(cap['resource_pattern'])}}},"
+            f"    {cap_id}: {{\n"
+            f'        "capability_id": {_py_repr(cap["capability_id"])},\n'
+            f'        "effect_kind": {_py_repr(cap["effect_kind"])},\n'
+            f'        "resource_pattern": {_py_repr(cap["resource_pattern"])},\n'
+            f"    }},"
         )
     role_lines = []
     for role, caps_list in role_map.items():
         role_lines.append(f"    {_py_repr(role)}: {_py_repr(caps_list)},")
+    effect_lines = ",\n    ".join(_py_repr(e) for e in effect_kinds)
     source = f'''"""Generated PF-Core catalog (do not edit by hand)."""
 
 from __future__ import annotations
 
-EFFECT_KINDS = frozenset({_py_repr(effect_kinds)})
+EFFECT_KINDS = frozenset([
+    {effect_lines},
+])
 
 CAPABILITY_CATALOG: dict[str, dict[str, str]] = {{
 {chr(10).join(cap_lines)}
@@ -161,7 +168,12 @@ export const ROLE_CAPABILITY_MAP: Record<string, string[]> = {{
 def main() -> None:
     catalog = load_catalog()
     root = repo_root()
-    generate_python(catalog, root / "python" / "pcs_core" / "pf_core_catalog.py")
+    py_catalog = root / "python" / "pcs_core" / "pf_core_catalog.py"
+    generate_python(catalog, py_catalog)
+    subprocess.run(
+        [sys.executable, "-m", "ruff", "format", str(py_catalog)],
+        check=True,
+    )
     generate_lean(catalog, root / "lean" / "PFCore" / "Catalog.lean")
     generate_rust(catalog, root / "rust" / "crates" / "pcs-core" / "src" / "pf_core_catalog.rs")
     generate_typescript(

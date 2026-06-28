@@ -29,11 +29,11 @@ from pcs_core.pf_core_contract import (
 )
 from pcs_core.pf_core_contract_semantics import build_contract_semantics_checked
 from pcs_core.pf_core_lean_codegen import (
+    DEFAULT_CERTIFICATE_MODE,
+    MODE_OBLIGATION_THEOREMS,
     collect_contracts_for_trace,
     compute_lean_environment_hash,
     compute_pfcore_kernel_hash,
-    DEFAULT_CERTIFICATE_MODE,
-    MODE_OBLIGATION_THEOREMS,
     generate_proof_obligation_file,
     proof_term_ref_from_path,
     validate_contracts_before_codegen,
