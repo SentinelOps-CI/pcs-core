@@ -2,3 +2,4 @@
 examples/** text eol=lf
 benchmarks/** text eol=lf
 test_vectors/** text eol=lf
+lean/** text eol=lf

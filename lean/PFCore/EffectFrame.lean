@@ -145,7 +145,6 @@ theorem file_write_capability_aligns_write_footprint (p : Principal) (a : Action
   have hmatch := hAdm.right.right.right.left
   have heff := knownCapabilityEffect_file_write a.capability a.capabilityEffect hcap
     hAdm.right.right.right.right.right
-  rw [heff] at hmatch
-  exact hmatch
+  exact heff ▸ hmatch
 
 end PFCore
