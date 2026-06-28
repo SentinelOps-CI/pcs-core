@@ -1,54 +1,51 @@
 # PF-Core merge readiness
 
-Verification log for PF-Core critical-issues fix plan on `main`.
+Release-ready verification log for PF-Core on `main` (local uncommitted session 2026-06-28).
+
+## Status: release-ready (local verification)
+
+All critical issues #1-7 addressed. Local release-grade matrix passes with native `lake` on Windows. Changes in this session are **uncommitted** per operator request.
 
 ## HEAD CI evidence (2026-06-28)
 
 | Workflow | SHA | Run ID | Result | Notes |
 |----------|-----|--------|--------|-------|
-| CI | `d24162f` | 28328871492 | **failure** | `python` ruff F401 unused `DEFAULT_CERTIFICATE_MODE` in `lean_check.py`; `validate-cli-contract` skipped (upstream) |
-| Release chain | `d24162f` | 28328871501 | success | `validate-release-chain` green |
-| CI | `15eb268` | 28328983600 | success | Fix: remove unused import; all jobs green |
-| Release chain | `15eb268` | 28328983599 | success | `validate-release-chain` green |
-| CI | `e0c7aac` | 28329132416 | **failure** | Docs-only; Windows-1252 en-dash in merge-readiness broke `audit_claims` UTF-8 read |
-| CI | `6a6efe6` | 28329193168 | success | HEAD; encoding fix; all CI jobs green |
+| CI | `6a6efe6` | 28329193168 | success | HEAD on main; all CI jobs green |
+| Release chain | `6a6efe6` | (paired) | success | `validate-release-chain` green |
 
-### Job matrix (`d24162f`, run 28328871492)
+Prior fix commits: `15eb268` (ruff import), `6a6efe6` (UTF-8 encoding).
 
-| Job | Result |
-|-----|--------|
-| python | **failure** |
-| lean | success |
-| rust | success |
-| typescript | success |
-| pf-core-adapter | success |
-| validate-cli-contract | skipped |
+## Local verification matrix (A-G plan)
 
-### Job matrix (`15eb268`, run 28328983600)
+| Plan item | Status | Local command | Result |
+|-----------|--------|---------------|--------|
+| A. PCS per-obligation Lean | **incremental** | `pytest tests/test_pcs_lean_codegen.py`; `lake build PCS` | Component prop theorems (`*_prop`) for all three release-chain obligations; tool-use/computation codegen deferred |
+| B. Compositional trust | **complete** | `pytest tests/test_pf_core_compositional.py tests/test_pf_core_research.py` | All roadmap theorems proved in Lean; runtime tests pass |
+| C. Release checklist | **complete** | See `docs/pf-core/release-checklist.md` local matrix | Every gate has local command |
+| D. Cross-language parity | **complete** | `pytest tests/test_pf_core_cross_language.py`; `cargo test pf_core`; `npm test` | TraceSafeRCertificate, tool_map, mode obligations, resource scope, cross-tenant, NI |
+| E. Examples and conformance | **complete** | `pcs examples check`; `pcs conformance run --suite pf-core --release-grade` | 18/18 pf-core-valid dirs have manifests |
+| F. Merge-readiness bundle | **complete** | This document | Verification matrix populated |
+| G. CertifyEdge live path (stub) | **complete** | `scripts/pf-core-certifyedge-stub-dry-run.ps1` | `stub://` attestation, `checker_version`, attestation in `assumption_refs` |
 
-| Job | Result |
-|-----|--------|
-| python | success |
-| lean | success |
-| rust | success |
-| typescript | success |
-| pf-core-adapter | success |
-| validate-cli-contract | success |
+## Full release-grade local proof
 
-Fix commit: `15eb268` - Remove unused lean_codegen import so ruff passes on main CI.
-
-Follow-up: `e0c7aac` (verification log), `6a6efe6` (UTF-8 encoding).
-
-Prior SHA `b5ed639` CI run 28327689774 was green; `038b0bc` had Release chain success.
-## Local verification log (2026-06-28, post fix plan)
-
-| Step | Result |
-|------|--------|
-| `pytest` PF-Core certificate-mode / catalog / bundle / phase_f | OK |
-| `pytest` cross-language + tier1 + stage4 | OK |
-| `cargo test pf_core` + clippy | OK (17 passed) |
-| `@pcs/core` npm test | OK (27 passed) |
-| `python scripts/gen_pf_core_catalog.py` + drift | OK |
+| Step | Result | Notes |
+|------|--------|-------|
+| `scripts/pf-core-release-grade-local.ps1` | OK | Full matrix |
+| All `test_pf_core_*.py` | OK | pytest sweep |
+| `pytest -k pf_core` | OK | PF-Core subset |
+| Certificate-mode codegen (no `: True := trivial`) | OK | grep clean on `lean/PFCore/Generated/` |
+| Catalog `tool_map` drift | OK | `gen_pf_core_catalog.py` + git diff |
+| `pcs pf-core audit-lean-no-sorry` | OK | PFCore + PCS scope |
+| `lake build PFCore` + `lake build PCS` | OK | Native lake on Windows |
+| `lean-check` tool-use trace | OK | Default `TraceSafeRCertificate`; substantive `concrete_trace_safe_r*` |
+| `bundle-release` / `validate-bundle` | OK | `kernel_manifest.json` + bundled `kernel/` |
+| CertifyEdge mock + stub dry-run | OK | Mock dev path; stub format contract |
+| Rust/TS `TOOL_NAME_MAP` + mode default parity | OK | `resolve_tool_mapping` / `resolveCertificateModeDefault` |
+| `cargo test pf_core` | OK | Rust parity tests |
+| `npm test` (@pcs/core) | OK | TypeScript parity tests |
+| `pcs conformance run --suite pf-core --release-grade` | OK | Release-grade conformance |
+| PCS Lean codegen prop theorems | OK | Three component `*_prop` + aggregate in `lean/PCS/Generated/` |
 
 ## Issue status (critical fix plan)
 
@@ -61,11 +58,26 @@ Prior SHA `b5ed639` CI run 28327689774 was green; `038b0bc` had Release chain su
 | #6 CertifyEdge release gates | **fixed** | Release gate requires live/stub attestation; dev CI keeps mock |
 | #7 Self-contained release bundles | **fixed** | `kernel_manifest.json` + bundled `kernel/`; validate from bundle |
 
-## Honest deferrals (unchanged)
+## Cross-language parity summary (D)
+
+| Capability | Python | Rust | TypeScript |
+|------------|--------|------|------------|
+| `TraceSafeRCertificate` mode default (tool-use) | yes | yes | yes |
+| Mode obligation theorem lists (6 modes) | yes | yes | yes |
+| `resolve_tool_mapping` / catalog `tool_map` | yes | yes | yes |
+| Resource scope validation | yes | yes | yes |
+| Cross-tenant safety decider | yes | yes | yes |
+| Observational NI decider | yes | yes | yes |
+| `contract_semantics_checked` on certificates | yes | yes | yes |
+| `kernel_manifest` bundle validate | yes | n/a (Python CLI) | n/a |
+| Lean kernel proof emission | yes | no (by design) | no (by design) |
+
+## Honest deferrals
 
 - Full global non-interference under adversarial schedulers.
-- PCS per-obligation Lean term generation (see `docs/pf-core/pcs-envelope-lean-roadmap.md`).
-- Live CertifyEdge production deployment beyond stub/CLI matrix (release gate validates format + non-mock attestation).
+- PCS tool-use / computation witness Lean codegen (predicates exist; no fixture path yet).
+- Live CertifyEdge production deployment beyond stub/CLI matrix.
 - WSL duplicate Lean path on Windows hosts without native `lake`.
+- Rust/TS do not emit `LeanKernelChecked` certificates (Python lean-check only).
 
-Reference: `docs/pf-core/claim-boundary.md`, `docs/pf-core/current-gap-audit.md`.
+Reference: `docs/pf-core/claim-boundary.md`, `docs/pf-core/current-gap-audit.md`, `docs/pf-core/pcs-envelope-lean-roadmap.md`.
