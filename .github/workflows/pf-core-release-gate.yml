@@ -17,25 +17,13 @@ jobs:
         run: |
           cd python
           pip install -e .
-      - name: CertifyEdge mock path (always)
-        run: |
-          cd python
-          export PF_CORE_CERTIFYEDGE_MODE=mock
-          pcs pf-core certifyedge-check \
-            --trace ../examples/pf-core-valid/certifyedge_mock/trace.json \
-            --property qc_release.temporal.safety \
-            --out /tmp/PFCoreCertificate.certifyedge.mock.json
-          test -f /tmp/PFCoreCertificate.certifyedge.mock.json
-          pcs validate /tmp/PFCoreCertificate.certifyedge.mock.json
-          echo "OK CertifyEdge mock path validated (not a live release attestation)"
-      - name: CertifyEdge live path (when CLI available)
+      - name: CertifyEdge live attestation (required on release)
         env:
           PF_CORE_CERTIFYEDGE_CLI: ${{ secrets.PF_CORE_CERTIFYEDGE_CLI }}
-          PF_CORE_CERTIFYEDGE_REQUIRE_LIVE: ${{ vars.PF_CORE_CERTIFYEDGE_REQUIRE_LIVE || '0' }}
+          PF_CORE_CERTIFYEDGE_REQUIRE_LIVE: "1"
         run: |
           cd python
           CLI="${PF_CORE_CERTIFYEDGE_CLI:-}"
-          REQUIRE_LIVE="${PF_CORE_CERTIFYEDGE_REQUIRE_LIVE:-0}"
           if [ -n "${CLI}" ] && [ -f "${CLI}" ]; then
             echo "Using PF_CORE_CERTIFYEDGE_CLI=${CLI}"
           elif command -v certifyedge >/dev/null 2>&1; then
@@ -46,15 +34,8 @@ jobs:
             chmod +x "${CLI}" || true
             echo "Using CertifyEdge format stub: ${CLI}"
           else
-            if [ "${REQUIRE_LIVE}" = "1" ] || [ "${REQUIRE_LIVE}" = "true" ]; then
-              echo "FAIL: PF_CORE_CERTIFYEDGE_REQUIRE_LIVE=1 but no CertifyEdge CLI or stub."
-              echo "  Set repository secret PF_CORE_CERTIFYEDGE_CLI or install certifyedge."
-              exit 1
-            fi
-            echo "SKIP: CertifyEdge live attestation unavailable."
-            echo "  Set PF_CORE_CERTIFYEDGE_REQUIRE_LIVE=1 to fail closed on missing CLI."
-            echo "  Mock path validated above; release attestation not claimed live."
-            exit 0
+            echo "FAIL: release gate requires live CertifyEdge CLI or stub (mock attestation rejected)."
+            exit 1
           fi
           export PF_CORE_CERTIFYEDGE_CLI="${CLI}"
           export PF_CORE_CERTIFYEDGE_MODE=live
@@ -66,4 +47,39 @@ jobs:
             --out /tmp/PFCoreCertificate.certifyedge.release.json
           test -f /tmp/PFCoreCertificate.certifyedge.release.json
           pcs validate /tmp/PFCoreCertificate.certifyedge.release.json
-          echo "OK CertifyEdge live attestation succeeded"
+          python3 - <<'PY'
+          import json
+          import sys
+
+          cert = json.load(open("/tmp/PFCoreCertificate.certifyedge.release.json", encoding="utf-8"))
+          attestation = None
+          for item in cert.get("obligations") or []:
+              if isinstance(item, dict) and item.get("proof_ref"):
+                  attestation = str(item["proof_ref"])
+                  break
+          if not attestation:
+              print("FAIL: release certificate missing attestation_ref/proof_ref")
+              sys.exit(1)
+          if attestation.startswith("mock://"):
+              print(f"FAIL: mock attestation rejected on release path: {attestation}")
+              sys.exit(1)
+          if not cert.get("checker") or not cert.get("checker_version"):
+              print("FAIL: release certificate missing checker metadata")
+              sys.exit(1)
+          print(f"OK CertifyEdge live attestation: {attestation}")
+          PY
+      - name: Reject mock-only CertifyEdge on release tags
+        run: |
+          cd python
+          export PF_CORE_CERTIFYEDGE_MODE=mock
+          if pcs pf-core certifyedge-check \
+            --trace ../examples/pf-core-valid/certifyedge_mock/trace.json \
+            --property qc_release.temporal.safety \
+            --out /tmp/PFCoreCertificate.certifyedge.mock.json; then
+            attestation="$(python3 -c 'import json; c=json.load(open("/tmp/PFCoreCertificate.certifyedge.mock.json")); print(next((str(i.get("proof_ref") or "") for i in c.get("obligations") or [] if isinstance(i, dict)), ""))')"
+            if echo "${attestation}" | grep -q '^mock://'; then
+              echo "OK mock path remains available for dev but is not accepted as release attestation"
+              exit 0
+            fi
+          fi
+          echo "WARN: mock CertifyEdge path did not produce expected mock:// attestation"

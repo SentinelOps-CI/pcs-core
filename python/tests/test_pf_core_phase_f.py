@@ -195,6 +195,15 @@ def test_certifyedge_require_live_fails_without_cli(monkeypatch: pytest.MonkeyPa
     )
 
 
+def test_certifyedge_mock_attestation_not_release_grade(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("PF_CORE_CERTIFYEDGE_MODE", "mock")
+    result = run_certifyedge_check(LABTRUST_TRACE, "qc_release.temporal.safety")
+    assert result.ok
+    assert result.mock is True
+    assert result.attestation_ref is not None
+    assert result.attestation_ref.startswith("mock://")
+
+
 def test_certifyedge_stub_cli_format(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     stub = REPO / "scripts" / "certifyedge-stub.py"
     if not stub.is_file():
