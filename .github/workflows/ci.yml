@@ -168,13 +168,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.86
         with:
           components: rustfmt, clippy
       - name: Test Rust
         run: |
           cd rust
           cargo fmt --check
+          rustup component add clippy
           cargo clippy --all-targets -- -D warnings
           cargo test
           cargo test hash_vectors
