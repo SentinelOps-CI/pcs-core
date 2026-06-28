@@ -220,7 +220,7 @@ theorem traceExtendsSafely_of_step (tr : Trace) (s s' : State) (ev : Event)
 **Does not imply:** Operational replay, hash chains, or automatic contract discharge.
 -/
 theorem safe_extension_preserves_trace_safe_strong (tr : Trace) (ev : Event)
-    (s s' : State) (hExt : TraceExtendsSafely tr ev) (hApply : Applies ev s s')
+    (s s' : State) (hExt : TraceExtendsSafely tr ev) (_hApply : Applies ev s s')
     (_hFrame : FrameValid s → FrameValid s') :
     TraceSafe (Trace.cons tr ev) := by
   rcases hExt with ⟨hTr, hEv⟩

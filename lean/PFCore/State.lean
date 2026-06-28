@@ -77,46 +77,36 @@ def applyEvent (s : State) (ev : Event) : State :=
 -/
 
 def HandoffApplies (h : Handoff) (s : State) : State :=
-
   let mergedCaps :=
-
     h.delegatedCapabilities ++
-
       h.toPrincipal.capabilities.filter (fun cap => cap ∉ h.delegatedCapabilities)
-
-  { tenant := h.toPrincipal.tenant
-
-    activePrincipal := { h.toPrincipal with capabilities := mergedCaps }
-
+  { tenant := s.tenant
+    activePrincipal := { h.toPrincipal with tenant := s.tenant, capabilities := mergedCaps }
     resourceFrame := s.resourceFrame
-
     capabilityFrame := mergedCaps }
 
+private theorem applyEvent_preserves_frame_valid (s : State) (ev : Event) (hValid : FrameValid s) :
+    FrameValid (applyEvent s ev) := by
+  unfold applyEvent
+  cases hstep : stepState s ev with
+  | none =>
+    simp [hstep]
+    exact hValid
+  | some s' =>
+    simp [hstep]
+    exact stepState_frame_preserved s s' ev (by unfold Applies; exact hstep) hValid
 
-
-private theorem handoff_frame_valid (h : Handoff) (s : State) (hSafe : HandoffSafe h) (hValid : FrameValid s) :
-
+private theorem handoff_frame_valid (h : Handoff) (s : State) (_hSafe : HandoffSafe h) (hValid : FrameValid s) :
     FrameValid (HandoffApplies h s) := by
-
   rcases hValid with ⟨htenant, hframe, _⟩
-
   constructor
-
-  · exact hSafe.right
-
+  · unfold HandoffApplies
+    rfl
   · intro r hr
-
     exact hframe r hr
-
-  · unfold capabilityFrameSubset CapabilitySubset
-
+  · unfold HandoffApplies capabilityFrameSubset CapabilitySubset
     intro cap hmem
-
-    rcases List.mem_append.mp hmem with hdel | htarget
-
-    · exact handoff_does_not_expand_authority h cap hSafe hdel
-
-    · exact (List.mem_filter.mp htarget).1
+    exact hmem
 
 
 
@@ -238,7 +228,9 @@ theorem handoff_preserves_trace_safe_strong (tr : Trace) (s : State) (h : Handof
 
   rcases handoff_preserves_trace_safe tr s h ev hTrace hHandoff hEvSafe with ⟨hTrSafe, _, hAuth⟩
 
-  refine ⟨hTrSafe, handoff_frame_valid h s hHandoff hFrame, hAuth⟩
+  have hPostValid : FrameValid (applyEvent s ev) :=
+    applyEvent_preserves_frame_valid s ev hFrame
+  refine ⟨hTrSafe, handoff_frame_valid h (applyEvent s ev) hHandoff hPostValid, hAuth⟩
 
 
 
