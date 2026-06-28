@@ -12,8 +12,8 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "npm run build && node --test dist/tests/*.test.js",
-    "test:hash-vectors": "npm run build && node --test --test-name-pattern=hash dist/tests/*.test.js",
+    "test": "npm run build && node --test dist/tests/",
+    "test:hash-vectors": "npm run build && node --test --test-name-pattern=hash dist/tests/",
     "lint": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
