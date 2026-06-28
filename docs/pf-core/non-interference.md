@@ -4,9 +4,33 @@ This document states what PF-Core **proves** about tenant isolation versus what 
 
 ## Scope (conservative subset)
 
-PF-Core does **not** claim global non-interference across tenants, covert channels, or arbitrary compositional invariants. The Lean module `lean/PFCore/NonInterference.lean` formalizes a **tenant-scoped trace property** aligned with runtime checks.
+PF-Core does **not** claim global non-interference across tenants, covert channels, or arbitrary compositional invariants. The Lean modules `lean/PFCore/NonInterference.lean` and `lean/PFCore/Observational.lean` formalize **conservative tenant isolation and observational projection** aligned with runtime checks.
 
-### Definitions
+**Observational equivalence does not imply covert channels are absent.** Two traces may agree on low projections while differing on denied events, cross-tenant attempts, timing, or side channels not recorded in PF-Core events.
+
+### Observational vocabulary (`Observational.lean`)
+
+| Lean | Meaning |
+|------|---------|
+| `LowEvent tenant ev` | Allowed event whose principal tenant equals `tenant` |
+| `HighEvent tenant ev` | Not low-visible to observer `tenant` (denied, other tenant, etc.) |
+| `HighTenantEvent tenantHigh ev` | Event whose principal tenant equals `tenantHigh` |
+| `TraceProjection tenant tr` | Oldest-first list of low events in `tr` |
+| `ObservationallyEquivalentForTenant t tr1 tr2` | Equal low projections: `TraceProjection t tr1 = TraceProjection t tr2` |
+| `NonInterference tenantLow tenantHigh tr` | Conservative trace-level NI: low projection contains only `LowEvent tenantLow`; high-tenant events are `HighEvent tenantLow` (vacuous when tenants equal) |
+
+| Theorem | Statement |
+|---------|-----------|
+| `traceSafe_implies_low_events_tenant_scoped` | Every low-projected event in a `TraceSafe` trace is `EventTenantScoped tenant` |
+| `non_interference_definitional` | Distinct tenants: high-tenant events never appear in low projection |
+| `traceSafe_implies_non_interference` | `TraceSafe tr → NonInterference tenantLow tenantHigh tr` |
+| `tenantIsolation_implies_non_interference` | `TenantIsolation tr` yields NI for distinct tenants |
+| `traceCrossTenantSafe_implies_high_tenant_not_low` | High-tenant events are high-sensitive for a distinct low observer |
+| `non_interference_observational_equivalence` | Matching low projections imply observational equivalence |
+
+This is **not** full non-interference: high events, deny-side leaks, scheduler-level indistinguishability, **covert channels**, **timing leaks**, and **handoff across tenants** remain open.
+
+### Tenant isolation vocabulary (`NonInterference.lean`)
 
 | Lean | Meaning |
 |------|---------|
@@ -60,9 +84,12 @@ Lean `HasCapability` inspects `principal.capabilities` only; **roles are not exp
 
 ## Open (not claimed — full global NI deferred)
 
-1. **Full global cross-tenant non-interference** (information-flow between tenants under arbitrary schedulers and adversaries). `traceSafe_implies_trace_cross_tenant_safe` covers in-tenant allows and explicit denies only.
-2. Non-interference under handoff across tenants (handoffs require matching tenants in `HandoffSafe`).
-3. Deny-event side channels or resource existence leaks.
-4. Compositional preservation of arbitrary user-defined contract invariants beyond the discharged JSON subset.
+1. **Full global cross-tenant non-interference** (information-flow between tenants under arbitrary schedulers and adversaries). `traceSafe_implies_trace_cross_tenant_safe` and `NonInterference` cover projection-based low/high separation only.
+2. **Covert channels** not recorded as PF-Core events (timing, resource existence, side channels on deny paths).
+3. **Timing leaks** and scheduler-level indistinguishability.
+4. Non-interference under **handoff across tenants** (handoffs require matching tenants in `HandoffSafe`).
+5. Deny-event side channels or resource existence leaks.
+6. Compositional preservation of arbitrary user-defined contract invariants beyond the discharged JSON subset.
+7. Cross-trace NI: replacing high-tenant events in a trace while preserving low projection (system-level property, not proved for arbitrary schedulers).
 
 See also `docs/pf-core/contract-semantics.md` and `docs/pf-core/claim-boundary.md`.

@@ -7,7 +7,12 @@ import json
 import sys
 from pathlib import Path
 
-from pcs_core.conformance import build_conformance_report_data, list_suites, run_conformance
+from pcs_core.conformance import (
+    build_conformance_report_data,
+    list_suites,
+    run_conformance,
+    set_conformance_release_grade,
+)
 from pcs_core.hash import canonical_hash
 from pcs_core.hash_vectors import verify_vectors, write_vectors
 from pcs_core.migrate import migrate_file
@@ -183,15 +188,20 @@ def cmd_shared_hash_vectors_verify() -> int:
 
 
 def cmd_conformance_run(
-    suite: str, *, json_output: bool = False, out_path: Path | None = None
+    suite: str,
+    *,
+    json_output: bool = False,
+    out_path: Path | None = None,
+    release_grade: bool = False,
 ) -> int:
+    set_conformance_release_grade(release_grade)
     report = build_conformance_report_data(suite)
     if out_path is not None:
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     if json_output:
         print(json.dumps(report, indent=2))
-    code, errors = run_conformance(suite)
+    code, errors = run_conformance(suite, release_grade=release_grade)
     if code == 0:
         if not json_output:
             print(f"OK conformance suite {suite}")
@@ -223,6 +233,7 @@ def cmd_examples_check() -> int:
         for err in exc.errors:
             print(f"  - {err}", file=sys.stderr)
         return 1
+
 
 def cmd_pf_core_audit_claims() -> int:
     from pcs_core.pf_core_claims import audit_claims
@@ -268,7 +279,9 @@ def cmd_pf_core_validate_trace(
     if contracts_dir is not None:
         contracts = load_contracts_from_dir(contracts_dir)
         for issue in validate_trace_contracts(data, contracts):
-            errors.append(f"{issue.code}: {issue.message}" + (f" (at {issue.path})" if issue.path else ""))
+            errors.append(
+                f"{issue.code}: {issue.message}" + (f" (at {issue.path})" if issue.path else "")
+            )
     if errors:
         for err in errors:
             print(f"FAIL {err}", file=sys.stderr)
@@ -681,7 +694,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     pf_core_verify_binding = pf_core_sub.add_parser(
         "verify-proof-binding",
-        help="Verify certificate trace_hash, proof_term_hash, lean_environment_hash, and proof file",
+        help=(
+            "Verify certificate trace_hash, proof_term_hash, lean_environment_hash, and proof file"
+        ),
     )
     pf_core_verify_binding.add_argument(
         "--certificate",
@@ -719,7 +734,6 @@ def main(argv: list[str] | None = None) -> int:
     pf_core_certifyedge.add_argument("--checker-version", type=str, default="0.1.0")
     pf_core_certifyedge.add_argument("--attestation-ref", type=str, default=None)
 
-
     shared_hash_parser = sub.add_parser("shared-hash-vectors", help="Cross-language hash vectors")
     shared_hash_sub = shared_hash_parser.add_subparsers(dest="shared_hash_cmd", required=True)
     shared_hash_sub.add_parser("verify", help="Verify test_vectors/hash parity")
@@ -739,6 +753,11 @@ def main(argv: list[str] | None = None) -> int:
     )
     p_conformance_run.add_argument(
         "--out", type=Path, default=None, help="Write report JSON to path"
+    )
+    p_conformance_run.add_argument(
+        "--release-grade",
+        action="store_true",
+        help="Require release-grade adequacy (fail closed when Lean proof path unavailable)",
     )
 
     p_extract_obligations = sub.add_parser(
@@ -805,6 +824,11 @@ def main(argv: list[str] | None = None) -> int:
         "--skip-lean-build",
         action="store_true",
         help="Skip lake build (for tests only)",
+    )
+    p_envelope_check.add_argument(
+        "--lean-proof",
+        action="store_true",
+        help="Generate PCS obligation Lean module and run lake env lean (EnvelopeLeanChecked)",
     )
 
     benchmark_parser = sub.add_parser("benchmark", help="PCS benchmark evaluation protocol")
@@ -950,7 +974,12 @@ def main(argv: list[str] | None = None) -> int:
         print("Wrote shared hash vectors")
         return 0
     if args.command == "conformance" and args.conformance_cmd == "run":
-        return cmd_conformance_run(args.suite, json_output=args.json, out_path=args.out)
+        return cmd_conformance_run(
+            args.suite,
+            json_output=args.json,
+            out_path=args.out,
+            release_grade=args.release_grade,
+        )
     if args.command == "extract-proof-obligations":
         return cmd_extract_proof_obligations(args.release, args.out)
     if args.command == "lean-check":
@@ -965,6 +994,7 @@ def main(argv: list[str] | None = None) -> int:
             args.obligations,
             args.out,
             skip_lean_build=args.skip_lean_build,
+            lean_proof=args.lean_proof,
             deprecated=False,
         )
     if args.command == "benchmark" and args.benchmark_cmd == "list":
@@ -1153,6 +1183,7 @@ def cmd_pcs_envelope_check(
     out_path: Path,
     *,
     skip_lean_build: bool = False,
+    lean_proof: bool = False,
     deprecated: bool = False,
 ) -> int:
     from pcs_core.lean_check import PCS_LEAN_CHECK_DEPRECATION
@@ -1168,11 +1199,15 @@ def cmd_pcs_envelope_check(
         result = run_lean_check(
             obligations_doc,
             require_lean_build=not skip_lean_build,
+            lean_proof=lean_proof,
         )
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
         validate_file(out_path)
-        print(f"OK PCS release-envelope check {out_path} status={result.get('status')}")
+        print(
+            f"OK PCS release-envelope check {out_path} "
+            f"status={result.get('status')} claim_class={result.get('claim_class')}",
+        )
         return 0 if result.get("status") == "ProofChecked" else 1
     except (ValidationError, ValueError) as exc:
         print(f"FAIL pcs-envelope check: {exc}", file=sys.stderr)

@@ -26,7 +26,10 @@ from pcs_core.pf_core_contract_semantics import (
     default_semantics_layer_for_contract,
     validate_semantics_layer,
 )
-from pcs_core.pf_core_runtime import validate_denied_events_preserved, validate_pfcore_trace_hash_chain
+from pcs_core.pf_core_runtime import (
+    validate_denied_events_preserved,
+    validate_pfcore_trace_hash_chain,
+)
 
 REPO = Path(__file__).resolve().parents[2]
 CONTRACT_VALID = REPO / "examples" / "pf-core-valid" / "contract_checked"

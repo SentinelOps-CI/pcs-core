@@ -213,7 +213,7 @@ def workflow_profile_tool_use() -> dict[str, Any]:
         ],
         "limitations_notice": (
             "This artifact is a proof-carrying tool-use simulation result. "
-            "It is not a guarantee that a real deployed agent is safe."
+            "It is not a guarantee of operational safety for a deployed agent."
         ),
         "signature_or_digest": PLACEHOLDER_DIGEST,
     }
@@ -283,7 +283,7 @@ def _adapt_science_bundle(cert_id: str, *, trace_hash: str) -> dict[str, Any]:
 
 def _write_json(path: Path, data: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8", newline="\n")
 
 
 def main() -> int:

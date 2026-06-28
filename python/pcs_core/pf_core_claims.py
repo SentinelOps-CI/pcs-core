@@ -12,7 +12,7 @@ from pcs_core.lean_catalog import (
     PF_CORE_TRUSTED_LEAN_DIR,
 )
 from pcs_core.paths import examples_dir, repo_root
-from pcs_core.registry_data import PF_CORE_CLAIM_CLASSES, pf_core_artifact_types
+from pcs_core.registry_data import pf_core_artifact_types
 
 FORBIDDEN_PHRASES: tuple[tuple[str, str], ...] = (
     ("verified agent", "trace-level safety preservation under stated assumptions"),

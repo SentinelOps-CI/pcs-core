@@ -617,6 +617,9 @@ pub fn validate_semantics(value: &Value, artifact_type: &str) -> Result<(), Vali
             }
         }
         if artifact_type == "PFCoreTrace.v0" {
+            errors.extend(crate::pf_core::validate_direct_trace_action_semantics(
+                value,
+            ));
             errors.extend(crate::pf_core::validate_pfcore_trace_hash_chain(value));
         }
         if artifact_type == "PFCoreCertificate.v0" {
@@ -687,17 +690,11 @@ mod tests {
         ];
         for (rel, expected) in cases {
             let path = repo.join(rel);
-            let value: Value =
-                serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
-            assert_eq!(
-                detect_artifact_type(&value),
-                Some(expected),
-                "{rel}"
-            );
+            let value: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
+            assert_eq!(detect_artifact_type(&value), Some(expected), "{rel}");
         }
     }
 
-    #[test]
     #[test]
     fn valid_examples_pass_jsonschema_and_semantics() {
         for entry in WalkDir::new(examples_dir())

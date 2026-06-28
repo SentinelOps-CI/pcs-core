@@ -61,9 +61,7 @@ def compare_hash_vector_trees(local: Path, upstream: Path) -> list[str]:
     """Return drift messages; empty when every upstream vector matches locally."""
     errors: list[str] = []
     upstream_files = sorted(
-        path
-        for path in upstream.rglob("*")
-        if path.is_file() and path.name != ".gitkeep"
+        path for path in upstream.rglob("*") if path.is_file() and path.name != ".gitkeep"
     )
     for upstream_file in upstream_files:
         rel = upstream_file.relative_to(upstream)

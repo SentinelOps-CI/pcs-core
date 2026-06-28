@@ -3,6 +3,261 @@ import { canonicalHash, canonicalJsonBytes } from "./hash.js";
 export const GENESIS_HASH =
   "sha256:0000000000000000000000000000000000000000000000000000000000000000";
 
+export const EFFECT_KINDS = new Set([
+  "file.read",
+  "file.write",
+  "network.egress",
+  "email.send",
+  "handoff.delegate",
+  "mcp.invoke",
+  "lab.release",
+]);
+
+export type CapabilityEntry = {
+  capability_id: string;
+  effect_kind: string;
+  resource_pattern: string;
+};
+
+export const CAPABILITY_CATALOG: Record<string, CapabilityEntry> = {
+  "cap:file-read": {
+    capability_id: "cap:file-read",
+    effect_kind: "file.read",
+    resource_pattern: "/data/*",
+  },
+  "cap:file-write": {
+    capability_id: "cap:file-write",
+    effect_kind: "file.write",
+    resource_pattern: "/data/*",
+  },
+  "cap:network": {
+    capability_id: "cap:network",
+    effect_kind: "network.egress",
+    resource_pattern: "*",
+  },
+  "cap:email-send": {
+    capability_id: "cap:email-send",
+    effect_kind: "email.send",
+    resource_pattern: "mailto:*",
+  },
+  "cap:handoff": {
+    capability_id: "cap:handoff",
+    effect_kind: "handoff.delegate",
+    resource_pattern: "agent:*",
+  },
+  "cap:mcp-invoke": {
+    capability_id: "cap:mcp-invoke",
+    effect_kind: "mcp.invoke",
+    resource_pattern: "mcp:*",
+  },
+  "cap:lab-release": {
+    capability_id: "cap:lab-release",
+    effect_kind: "lab.release",
+    resource_pattern: "lab:*",
+  },
+};
+
+function runtimeError(code: string, message: string, path: string): string {
+  return `${code}: ${message} (at ${path})`;
+}
+
+function globMatch(pattern: string, text: string): boolean {
+  const patternChars = [...pattern];
+  const textChars = [...text];
+  function rec(pi: number, ti: number): boolean {
+    if (pi === patternChars.length) {
+      return ti === textChars.length;
+    }
+    if (patternChars[pi] === "*") {
+      if (pi + 1 === patternChars.length) {
+        return true;
+      }
+      for (let j = ti; j <= textChars.length; j += 1) {
+        if (rec(pi + 1, j)) {
+          return true;
+        }
+      }
+      return false;
+    }
+    if (ti >= textChars.length || patternChars[pi] !== textChars[ti]) {
+      return false;
+    }
+    return rec(pi + 1, ti + 1);
+  }
+  return rec(0, 0);
+}
+
+export function resourceMatchesPattern(uri: string, pattern: string): boolean {
+  if (pattern === "*") {
+    return true;
+  }
+  return globMatch(pattern, uri);
+}
+
+function validateActionEffectsKnown(
+  action: Record<string, unknown>,
+  path: string,
+): string | null {
+  const effects = action.effects;
+  if (!Array.isArray(effects)) {
+    return runtimeError("UnknownEffect", "unknown effect: <missing>", `${path}.effects`);
+  }
+  if (effects.length === 0) {
+    return runtimeError("UnknownEffect", "unknown effect: <missing>", path);
+  }
+  for (let index = 0; index < effects.length; index += 1) {
+    const effect = effects[index];
+    if (!effect || typeof effect !== "object" || Array.isArray(effect)) {
+      return runtimeError(
+        "UnknownEffect",
+        "unknown effect: <invalid>",
+        `${path}.effects[${index}]`,
+      );
+    }
+    const kind = String((effect as Record<string, unknown>).effect_kind ?? "");
+    if (!kind || !EFFECT_KINDS.has(kind)) {
+      return runtimeError(
+        "UnknownEffect",
+        `unknown effect: ${kind || "<missing>"}`,
+        `${path}.effects[${index}].effect_kind`,
+      );
+    }
+  }
+  return null;
+}
+
+function validateActionCapabilitiesKnown(
+  action: Record<string, unknown>,
+  path: string,
+): string | null {
+  const capability = action.capability;
+  if (!capability || typeof capability !== "object" || Array.isArray(capability)) {
+    return runtimeError(
+      "UnknownCapability",
+      "unknown capability: <missing>",
+      `${path}.capability`,
+    );
+  }
+  const capObj = capability as Record<string, unknown>;
+  const capId = String(capObj.capability_id ?? "");
+  if (!capId || !CAPABILITY_CATALOG[capId]) {
+    return runtimeError(
+      "UnknownCapability",
+      `unknown capability: ${capId || "<missing>"}`,
+      `${path}.capability`,
+    );
+  }
+  const effectKind = String(capObj.effect_kind ?? "");
+  if (!effectKind || !EFFECT_KINDS.has(effectKind)) {
+    return runtimeError(
+      "UnknownEffect",
+      `unknown effect: ${effectKind || "<missing>"}`,
+      `${path}.capability.effect_kind`,
+    );
+  }
+  return null;
+}
+
+function validateActionCapabilityEffects(
+  action: Record<string, unknown>,
+  path: string,
+): string | null {
+  const capability = action.capability;
+  if (!capability || typeof capability !== "object" || Array.isArray(capability)) {
+    return runtimeError(
+      "UnknownCapability",
+      "unknown capability: <missing>",
+      `${path}.capability`,
+    );
+  }
+  const capId = String((capability as Record<string, unknown>).capability_id ?? "");
+  const catalog = CAPABILITY_CATALOG[capId];
+  if (!catalog) {
+    return runtimeError(
+      "UnknownCapability",
+      `unknown capability: ${capId || "<missing>"}`,
+      `${path}.capability`,
+    );
+  }
+  const effectsError = validateActionEffectsKnown(action, path);
+  if (effectsError) {
+    return effectsError;
+  }
+  if (!actionHasEffect(action, catalog.effect_kind)) {
+    return runtimeError(
+      "CapabilityEffectMismatch",
+      `capability ${JSON.stringify(catalog.capability_id)} effect_kind ${JSON.stringify(catalog.effect_kind)} not listed in action effects`,
+      `${path}.effects`,
+    );
+  }
+  return null;
+}
+
+function validateResourceScope(action: Record<string, unknown>, path: string): string | null {
+  const capability = action.capability;
+  if (!capability || typeof capability !== "object" || Array.isArray(capability)) {
+    return null;
+  }
+  const pattern = String((capability as Record<string, unknown>).resource_pattern ?? "");
+  if (!pattern) {
+    return null;
+  }
+  for (const key of ["reads", "writes"]) {
+    const resources = action[key];
+    if (!Array.isArray(resources)) {
+      continue;
+    }
+    for (let index = 0; index < resources.length; index += 1) {
+      const resource = resources[index];
+      if (!resource || typeof resource !== "object" || Array.isArray(resource)) {
+        continue;
+      }
+      const uri = String((resource as Record<string, unknown>).uri ?? "");
+      if (uri && !resourceMatchesPattern(uri, pattern)) {
+        return runtimeError(
+          "ResourceScopeViolation",
+          `resource ${JSON.stringify(uri)} outside declared pattern ${JSON.stringify(pattern)}`,
+          `${path}.${key}[${index}].uri`,
+        );
+      }
+    }
+  }
+  return null;
+}
+
+export function validateDirectTraceActionSemantics(trace: Record<string, unknown>): string[] {
+  const errors: string[] = [];
+  const events = trace.events;
+  if (!Array.isArray(events)) {
+    return errors;
+  }
+  for (let index = 0; index < events.length; index += 1) {
+    const event = events[index];
+    if (!event || typeof event !== "object" || Array.isArray(event)) {
+      continue;
+    }
+    const action = (event as Record<string, unknown>).action;
+    if (!action || typeof action !== "object" || Array.isArray(action)) {
+      continue;
+    }
+    const actionObj = action as Record<string, unknown>;
+    const base = `events[${index}].action`;
+    const effectError = validateActionEffectsKnown(actionObj, base);
+    if (effectError) {
+      errors.push(effectError);
+    }
+    const capabilityError = validateActionCapabilitiesKnown(actionObj, base);
+    if (capabilityError) {
+      errors.push(capabilityError);
+    }
+    const mismatchError = validateActionCapabilityEffects(actionObj, base);
+    if (mismatchError) {
+      errors.push(mismatchError);
+    }
+  }
+  return errors;
+}
+
 const TRACE_CLAIM_CLASSES = new Set([
   "SchemaValidated",
   "RuntimeChecked",
@@ -156,6 +411,21 @@ export function validatePfcoreTraceHashChain(trace: Record<string, unknown>): st
     const overclaim = validateTraceClaimClassOverclaim(trace.claim_class);
     if (overclaim) {
       errors.push(overclaim);
+    }
+  }
+
+  for (let index = 0; index < events.length; index += 1) {
+    const event = events[index];
+    if (!event || typeof event !== "object" || Array.isArray(event)) {
+      continue;
+    }
+    const action = (event as Record<string, unknown>).action;
+    if (!action || typeof action !== "object" || Array.isArray(action)) {
+      continue;
+    }
+    const scopeError = validateResourceScope(action as Record<string, unknown>, `events[${index}].action`);
+    if (scopeError) {
+      errors.push(scopeError);
     }
   }
 
@@ -522,6 +792,46 @@ export function validateDeniedEventsPreserved(
     if (eventId && !compiledIds.has(eventId)) {
       errors.push(
         `DroppedDeniedEvent: denied event ${JSON.stringify(eventId)} missing from compiled trace (at events)`,
+      );
+    }
+  }
+  return errors;
+}
+
+export function validateTenantIsolation(trace: Record<string, unknown>): string[] {
+  const errors: string[] = [];
+  const events = trace.events;
+  if (!Array.isArray(events)) {
+    return ["TraceInvalid: events must be an array"];
+  }
+  for (let index = 0; index < events.length; index += 1) {
+    const base = `events[${index}]`;
+    const event = events[index];
+    if (!event || typeof event !== "object" || Array.isArray(event)) {
+      continue;
+    }
+    const eventObj = event as Record<string, unknown>;
+    const principal = eventObj.principal;
+    const action = eventObj.action;
+    if (
+      !principal ||
+      typeof principal !== "object" ||
+      Array.isArray(principal) ||
+      !action ||
+      typeof action !== "object" ||
+      Array.isArray(action)
+    ) {
+      errors.push(`TenantIsolation: ${base} missing principal or action`);
+      continue;
+    }
+    const tenant = String((principal as Record<string, unknown>).tenant ?? "");
+    if (!tenant) {
+      errors.push(`TenantIsolation: ${base}.principal.tenant is empty`);
+      continue;
+    }
+    if (!tenantMatches(principal as Record<string, unknown>, action as Record<string, unknown>)) {
+      errors.push(
+        `TenantIsolation: cross-tenant resource access at ${base} (principal tenant ${JSON.stringify(tenant)})`,
       );
     }
   }

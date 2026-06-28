@@ -3,40 +3,9 @@
 from __future__ import annotations
 
 import json
-import re
 from pathlib import Path
 from typing import Any
 
-from pcs_core.paths import examples_dir as default_examples_dir
-from pcs_core.paths import repo_root, schemas_dir
-from pcs_core.registry_data import PF_CORE_CLAIM_CLASSES
-from pcs_core.validate_pf_core import _validate_pfcore_claim_class
-from pcs_core.status import ARTIFACT_STATUSES, TRACE_CERTIFICATE_STATUSES
-
-from pcs_core.lean_validate import (
-    validate_lean_check_result_semantics,
-    validate_proof_obligation_semantics,
-)
-from pcs_core.protocol_validate import (
-    validate_artifact_registry_semantics,
-    validate_conformance_report_semantics,
-    validate_handoff_manifest_semantics,
-    validate_release_chain_validation_result_semantics,
-    validate_release_manifest_fixture_refs,
-    validate_release_manifest_semantics,
-)
-from pcs_core.tool_use_validate import (
-    validate_tool_use_certificate_semantics,
-    validate_tool_use_trace_semantics,
-    validate_workflow_profile_semantics,
-)
-from pcs_core.computation_validate import (
-    validate_computation_run_receipt_semantics,
-    validate_computation_witness_semantics,
-    validate_dataset_receipt_semantics,
-    validate_environment_receipt_semantics,
-    validate_result_artifact_semantics,
-)
 from pcs_core.benchmark_validate import (
     validate_benchmark_case_semantics,
     validate_benchmark_metric_registry_semantics,
@@ -46,13 +15,41 @@ from pcs_core.benchmark_validate import (
     validate_benchmark_suite_manifest_semantics,
     validate_benchmark_task_semantics,
 )
+from pcs_core.computation_validate import (
+    validate_computation_run_receipt_semantics,
+    validate_computation_witness_semantics,
+    validate_dataset_receipt_semantics,
+    validate_environment_receipt_semantics,
+    validate_result_artifact_semantics,
+)
+from pcs_core.lean_validate import (
+    validate_lean_check_result_semantics,
+    validate_proof_obligation_semantics,
+)
+from pcs_core.paths import examples_dir as default_examples_dir
+from pcs_core.paths import schemas_dir
+from pcs_core.protocol_validate import (
+    validate_artifact_registry_semantics,
+    validate_conformance_report_semantics,
+    validate_handoff_manifest_semantics,
+    validate_release_chain_validation_result_semantics,
+    validate_release_manifest_fixture_refs,
+    validate_release_manifest_semantics,
+)
+from pcs_core.registry_data import PF_CORE_CLAIM_CLASSES
+from pcs_core.status import TRACE_CERTIFICATE_STATUSES
+from pcs_core.tool_use_validate import (
+    validate_tool_use_certificate_semantics,
+    validate_tool_use_trace_semantics,
+    validate_workflow_profile_semantics,
+)
 from pcs_core.validate_detect import (
     ARTIFACT_SCHEMAS,
     ValidationError,
+    _load_schema,
     detect_artifact_type,
     get_validator,
     validate_schema,
-    _load_schema,
 )
 from pcs_core.validate_pcs_core import (
     _check_source_commits,
@@ -67,7 +64,10 @@ from pcs_core.validate_pf_core import (
     _validate_pfcore_certificate,
     _validate_pfcore_claim_class,
     _validate_pfcore_trace,
+    check_pf_core_invalid_fixtures,
+    check_pf_core_valid_fixtures,
 )
+
 
 def validate_semantics(data: dict[str, Any], artifact_type: str) -> list[str]:
     errors: list[str] = []
@@ -142,7 +142,6 @@ def validate_semantics(data: dict[str, Any], artifact_type: str) -> list[str]:
             )
         return errors
 
-
     if artifact_type == "BenchmarkMetricRegistry.v0":
         errors.extend(validate_benchmark_metric_registry_semantics(data))
         return errors
@@ -181,7 +180,7 @@ def validate_semantics(data: dict[str, Any], artifact_type: str) -> list[str]:
         return errors
 
     if artifact_type == "PcsBenchIngest.v0":
-        from pcs_core.benchmark_ingest import validate_pcs_bench_ingest_semantics
+        from pcs_core.benchmark_validate import validate_pcs_bench_ingest_semantics
 
         errors.extend(validate_pcs_bench_ingest_semantics(data))
         return errors
@@ -310,9 +309,6 @@ def iter_example_json_files(examples_dir: Path) -> list[Path]:
 def check_all_schemas() -> None:
     from jsonschema import Draft202012Validator
 
-    from pcs_core.validate_detect import ARTIFACT_SCHEMAS, get_validator, _load_schema
-    from pcs_core.paths import schemas_dir
-
     for artifact_type, schema_name in ARTIFACT_SCHEMAS.items():
         schema_path = schemas_dir() / schema_name
         schema = _load_schema(schema_path)
@@ -360,6 +356,7 @@ def check_valid_examples(examples_dir: Path | None = None) -> None:
             validate_file(path)
 
     check_pf_core_valid_fixtures()
+
 
 def check_invalid_examples(examples_dir: Path | None = None) -> None:
     examples_dir = examples_dir or default_examples_dir()

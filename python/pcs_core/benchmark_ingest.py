@@ -327,6 +327,8 @@ def build_provenance_manifest() -> dict[str, Any]:
                 entry["materialized_from"] = live.relative_to(producer_repos_root()).as_posix()
             except ValueError:
                 entry["materialized_from"] = str(live)
+        else:
+            entry["materialized_from"] = meta["producer_ingest_path"]
         if path.is_file():
             ingest = json.loads(path.read_text(encoding="utf-8"))
             tier, findings = assess_ingest_adequacy_tier(ingest)

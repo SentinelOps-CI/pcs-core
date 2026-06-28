@@ -1,0 +1,4 @@
+{
+  "description": "Cross-tenant file read denied",
+  "skip_pfcore_trace_conformance": true
+}

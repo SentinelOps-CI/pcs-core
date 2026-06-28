@@ -12,10 +12,14 @@ to_wsl_path() {
     wslpath -u "${path}"
     return
   fi
-  local drive letter rest
-  drive="$(echo "${path}" | cut -c1 | tr 'A-Z' 'a-z')"
-  rest="$(echo "${path}" | cut -c3- | tr '\\' '/')"
-  printf '/mnt/%s%s' "${drive}" "${rest}"
+  if [[ "${path}" =~ ^[A-Za-z]: ]]; then
+    local drive letter rest
+    drive="$(echo "${path}" | cut -c1 | tr 'A-Z' 'a-z')"
+    rest="$(echo "${path}" | cut -c3- | tr '\\' '/')"
+    printf '/mnt/%s%s' "${drive}" "${rest}"
+    return
+  fi
+  printf '%s' "${path}"
 }
 
 WSL_ROOT="$(to_wsl_path "${ROOT}")"
@@ -31,6 +35,16 @@ step() {
     echo "FAIL ${name}"
     FAILED+=("${name}")
   fi
+}
+
+lean_path_available() {
+  if command -v lake >/dev/null 2>&1; then
+    return 0
+  fi
+  if command -v wsl >/dev/null 2>&1; then
+    return 0
+  fi
+  return 1
 }
 
 cd "${PY}"
@@ -64,31 +78,48 @@ step "pf-core lean no-sorry audit" pcs pf-core audit-lean-no-sorry
 step "pf-core pytest" pytest -q tests/test_pf_core_*.py
 
 PF_CORE_TRACE="${ROOT}/examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json"
-PF_CORE_CERT="/tmp/pfcore-lean-check-cert.json"
-step "pf-core lean-check canonical trace" pcs pf-core lean-check --trace "${PF_CORE_TRACE}" --out "${PF_CORE_CERT}" --skip-build
-if [[ -f "${PF_CORE_CERT}" ]]; then
-  step "pf-core lean-check certificate validate" pcs validate "${PF_CORE_CERT}"
+
+echo ""
+echo "=== PF-Core RuntimeChecked smoke (skip-build) ==="
+PF_CORE_RUNTIME_CERT="$(mktemp /tmp/pfcore-runtime-cert.XXXXXX.json)"
+step "pf-core lean-check runtime smoke" pcs pf-core lean-check --trace "${PF_CORE_TRACE}" --out "${PF_CORE_RUNTIME_CERT}" --skip-build
+if [[ -f "${PF_CORE_RUNTIME_CERT}" ]]; then
+  step "pf-core runtime certificate validate" pcs validate "${PF_CORE_RUNTIME_CERT}"
 else
-  echo "SKIP pf-core lean-check certificate validate (certificate not emitted with --skip-build)"
+  echo "SKIP pf-core runtime certificate validate (certificate not emitted with --skip-build)"
 fi
 
-if command -v wsl >/dev/null 2>&1; then
-  step "lake build PCS" wsl bash -lc "cd '${WSL_ROOT}/lean' && lake build PCS"
-  step "lake build PFCore" wsl bash -lc "cd '${WSL_ROOT}/lean' && lake build PFCore"
-  step "pf-core lean-check full" wsl bash -lc "cd '${WSL_ROOT}/python' && pcs pf-core lean-check --trace '${WSL_ROOT}/examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json' --out /tmp/pfcore-full-cert.json"
-  step "pf-core lean-check full certificate validate" wsl bash -lc "test -f /tmp/pfcore-full-cert.json && cd '${WSL_ROOT}/python' && pcs validate /tmp/pfcore-full-cert.json"
-elif command -v lake >/dev/null 2>&1; then
-  step "lake build PCS" bash -lc "cd ../lean && lake build PCS"
-  step "lake build PFCore" bash -lc "cd ../lean && lake build PFCore"
-  step "pf-core lean-check full" pcs pf-core lean-check --trace "${PF_CORE_TRACE}" --out /tmp/pfcore-full-cert.json
-  if [[ -f /tmp/pfcore-full-cert.json ]]; then
-    step "pf-core lean-check full certificate validate" pcs validate /tmp/pfcore-full-cert.json
+echo ""
+echo "=== PF-Core LeanKernelChecked release candidate (full lean-check) ==="
+if lean_path_available; then
+  PF_CORE_RELEASE_CERT="/tmp/pfcore-release-cert.json"
+  if command -v wsl >/dev/null 2>&1 && ! command -v lake >/dev/null 2>&1; then
+    step "lake build PCS" wsl bash -lc "export PATH=\"\$HOME/.elan/bin:\$PATH\"; cd '${WSL_ROOT}/lean' && lake build PCS"
+    step "lake build PFCore" wsl bash -lc "export PATH=\"\$HOME/.elan/bin:\$PATH\"; cd '${WSL_ROOT}/lean' && lake build PFCore"
+    step "pf-core lean-check full" wsl bash -lc "cd '${WSL_ROOT}/python' && pcs pf-core lean-check --trace '${WSL_ROOT}/examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json' --out /tmp/pfcore-release-cert.json"
+    step "pf-core lean-check certificate validate" wsl bash -lc "test -f /tmp/pfcore-release-cert.json && cd '${WSL_ROOT}/python' && pcs validate /tmp/pfcore-release-cert.json"
+    step "pf-core verify-proof-binding" wsl bash -lc "cd '${WSL_ROOT}/python' && pcs pf-core verify-proof-binding --certificate /tmp/pfcore-release-cert.json --trace '${WSL_ROOT}/examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json'"
+  else
+    step "lake build PCS" bash -lc "cd ../lean && lake build PCS"
+    step "lake build PFCore" bash -lc "cd ../lean && lake build PFCore"
+    step "pf-core lean-check full" pcs pf-core lean-check --trace "${PF_CORE_TRACE}" --out "${PF_CORE_RELEASE_CERT}"
+    if [[ -f "${PF_CORE_RELEASE_CERT}" ]]; then
+      step "pf-core lean-check certificate validate" pcs validate "${PF_CORE_RELEASE_CERT}"
+      step "pf-core verify-proof-binding" pcs pf-core verify-proof-binding --certificate "${PF_CORE_RELEASE_CERT}" --trace "${PF_CORE_TRACE}"
+    else
+      echo "FAIL pf-core lean-check certificate validate (certificate missing)"
+      FAILED+=("pf-core lean-check certificate validate")
+      echo "FAIL pf-core verify-proof-binding (certificate missing)"
+      FAILED+=("pf-core verify-proof-binding")
+    fi
   fi
 else
-  echo "SKIP lake build (lake and wsl unavailable)"
+  echo "FAIL PF-Core release candidate: lake and wsl unavailable"
+  FAILED+=("PF-Core release candidate")
 fi
 
 step "pf-core conformance" pcs conformance run --suite pf-core
+step "pf-core conformance release-grade" pcs conformance run --suite pf-core --release-grade
 step "pf-core cross-language conformance" pcs conformance run --suite pf-core-cross-language
 
 for suite in \

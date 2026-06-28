@@ -25,6 +25,8 @@ LEAN_CHECK_RESULT_STATUSES = frozenset(
         "Stale",
     }
 )
+
+
 def _validate_pfcore_claim_class(
     data: dict[str, Any],
     path: str,
@@ -54,15 +56,13 @@ def _validate_pfcore_claim_class(
             f"{path}: claim_class LeanKernelChecked requires proof_term_ref (ClaimClassOverclaim)"
         )
     if claim_class == "LeanKernelChecked" and data.get("lean_proof_checked") is not True:
-        errors.append(
-            f"{path}: claim_class LeanKernelChecked requires lean_proof_checked=true"
-        )
+        errors.append(f"{path}: claim_class LeanKernelChecked requires lean_proof_checked=true")
 
 
 def _validate_direct_trace_action_semantics(trace: dict[str, Any]) -> list[str]:
     from pcs_core.pf_core_runtime import (
-        validate_action_capability_effects,
         validate_action_capabilities_known,
+        validate_action_capability_effects,
         validate_action_effects_known,
     )
 
@@ -142,8 +142,7 @@ def _validate_pfcore_certificate(data: dict[str, Any]) -> list[str]:
             missing = PF_CORE_CONCRETE_PROOF_THEOREMS - theorem_set
             if missing:
                 errors.append(
-                    "root: lean_proof_checked theorems_checked missing "
-                    f"{sorted(missing)!r}"
+                    f"root: lean_proof_checked theorems_checked missing {sorted(missing)!r}"
                 )
         obligations = data.get("obligations")
         if isinstance(obligations, list):
@@ -252,9 +251,7 @@ def check_pf_core_valid_fixtures() -> None:
             if trace_path.is_file():
                 result = replay_trace(trace_path)
                 if not result.match:
-                    raise ValidationError(
-                        f"Replay failed for {case_dir}: {result.diffs!r}"
-                    )
+                    raise ValidationError(f"Replay failed for {case_dir}: {result.diffs!r}")
 
 
 def check_pf_core_invalid_fixtures() -> None:
@@ -457,6 +454,3 @@ def check_pf_core_invalid_fixtures() -> None:
             continue
 
         raise ValidationError(f"Unknown must_fail_at {must_fail_at!r} in {case_dir}")
-
-
-

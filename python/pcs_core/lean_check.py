@@ -22,6 +22,11 @@ from pcs_core.lean_catalog import (
     PF_CORE_THEOREM_CATALOG,
 )
 from pcs_core.paths import repo_root
+from pcs_core.pf_core_contract import (
+    DEFAULT_TRACE_SAFE_CONTRACT_ID,
+    default_trace_safe_contract_hash,
+    trace_has_contract_binding,
+)
 from pcs_core.pf_core_contract_semantics import build_contract_semantics_checked
 from pcs_core.pf_core_lean_codegen import (
     collect_contracts_for_trace,
@@ -30,17 +35,11 @@ from pcs_core.pf_core_lean_codegen import (
     proof_term_ref_from_path,
     validate_contracts_before_codegen,
 )
-from pcs_core.pf_core_contract import (
-    DEFAULT_TRACE_SAFE_CONTRACT_ID,
-    default_trace_safe_contract_hash,
-    trace_has_contract_binding,
-)
 from pcs_core.pf_core_runtime import (
     compute_trace_hash,
     expand_principal_capabilities,
     principal_capabilities_explicit,
     validate_pfcore_trace_hash_chain,
-    validate_resource_scope,
 )
 from pcs_core.validate import validate_schema
 
@@ -170,9 +169,7 @@ def run_lean_library_build(*, target: str = "PFCore", skip_build: bool = False) 
     directory = lean_dir()
     if not (directory / "lakefile.lean").is_file():
         return False, f"Lean project not found at {directory}"
-    if not shutil.which("lake") and not (
-        platform.system() == "Windows" and shutil.which("wsl")
-    ):
+    if not shutil.which("lake") and not (platform.system() == "Windows" and shutil.which("wsl")):
         return False, "lake executable not found (install Lean 4 toolchain or WSL)"
     proc = _run_lake(["build", target], cwd=directory)
     if proc.returncode != 0:
@@ -188,13 +185,31 @@ def run_lean_concrete_proof(
     *,
     skip_build: bool = False,
 ) -> tuple[bool, str]:
-    """Compile a generated proof file with `lake env lean`."""
+    """Compile a generated PF-Core proof file with `lake env lean`."""
+    return _run_lean_env_on_proof(proof_path, target="PFCore", skip_build=skip_build)
+
+
+def run_pcs_lean_concrete_proof(
+    proof_path: Path,
+    *,
+    skip_build: bool = False,
+) -> tuple[bool, str]:
+    """Compile a generated PCS release-chain proof file with `lake env lean`."""
+    return _run_lean_env_on_proof(proof_path, target="PCS", skip_build=skip_build)
+
+
+def _run_lean_env_on_proof(
+    proof_path: Path,
+    *,
+    target: str,
+    skip_build: bool = False,
+) -> tuple[bool, str]:
     if skip_build:
         return False, "skipped"
     directory = lean_dir()
     if not proof_path.is_file():
         return False, f"generated proof file missing: {proof_path}"
-    build_ok, build_detail = run_lean_library_build(target="PFCore", skip_build=False)
+    build_ok, build_detail = run_lean_library_build(target=target, skip_build=False)
     if not build_ok:
         return False, build_detail
     try:
@@ -232,18 +247,30 @@ def action_within_tenant_d(principal: Mapping[str, Any], action: Mapping[str, An
     return _same_tenant(principal, action)
 
 
-def action_allowed_d(principal: Mapping[str, Any], action: Mapping[str, Any]) -> bool:
+def action_admissible_d(principal: Mapping[str, Any], action: Mapping[str, Any]) -> bool:
+    from pcs_core.pf_core_runtime import (
+        validate_action_capabilities_known,
+        validate_action_capability_effects,
+        validate_action_effects_known,
+        validate_resource_scope,
+    )
+
     capability = action.get("capability")
     if not isinstance(capability, dict):
         return False
     cap_id = str(capability.get("capability_id") or "")
-    if not (has_capability_d(principal, cap_id) and action_within_tenant_d(principal, action)):
-        return False
     try:
+        validate_action_capabilities_known(action)
+        validate_action_effects_known(action)
+        validate_action_capability_effects(action)
         validate_resource_scope(action)
     except Exception:
         return False
-    return True
+    return has_capability_d(principal, cap_id) and action_within_tenant_d(principal, action)
+
+
+def action_allowed_d(principal: Mapping[str, Any], action: Mapping[str, Any]) -> bool:
+    return action_admissible_d(principal, action)
 
 
 def event_safe_d(event: Mapping[str, Any]) -> bool:
@@ -405,6 +432,9 @@ def build_pfcore_certificate(
 
     contracts = collect_contracts_for_trace(trace)
     contract_semantics = build_contract_semantics_checked(trace, contracts)
+    runtime_checks = list(contract_semantics.get("runtime", []))
+    runtime_checks.append("resource_pattern_scope")
+    contract_semantics["runtime"] = sorted(set(runtime_checks))
 
     default_contract_ref: str | None = None
     if lean_proof_checked:

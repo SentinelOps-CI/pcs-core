@@ -294,7 +294,11 @@
       "status": "passed",
       "details": {},
       "registry_check_refs": [
-        "ArtifactRegistry.v0.entries_cover_required_artifact_types"
+        "ArtifactRegistry.v0.entries_cover_required_artifact_types",
+        "ComputationWitness.v0.computation_status_checked_for_release",
+        "ComputationWitness.v0.source_commit_matches_release_manifest",
+        "ToolUseCertificate.v0.certificate_status_checked_for_release",
+        "ToolUseCertificate.v0.source_commit_matches_release_manifest"
       ],
       "responsible_component": "pcs-core"
     }
@@ -312,7 +316,7 @@
   "failure_codes": [],
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
-  "signature_or_digest": "sha256:3000ec6b27f2fc65be0c647a2e8c68ee528babe9779c8fa1d411053d13f904dd",
+  "signature_or_digest": "sha256:4dc0df6f86acbf51f06d15fdb847865460dd29f022925103aed3c128e225aa2e",
   "formal_checks": [
     {
       "check_id": "lean.admissible_release_has_matching_trace_hash",

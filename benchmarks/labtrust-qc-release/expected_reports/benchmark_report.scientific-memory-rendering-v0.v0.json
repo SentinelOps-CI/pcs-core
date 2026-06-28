@@ -42,11 +42,11 @@
       "denominator": 1.0,
       "coverage_ratio": 0.0,
       "details": {
-        "registry_entry_count": 38
+        "registry_entry_count": 49
       },
       "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
       "source_commit": "d444444444444444444444444444444444444444",
-      "signature_or_digest": "sha256:16bd5e384b7f7838c2774d30f9503fef25a177900c04f812b0311b5d8aea4df5"
+      "signature_or_digest": "sha256:7277fad6e6f4cfea207d254884808a798a896758e97b12cfe5e2e75bd3afa7ad"
     },
     "formal_checks": {
       "schema_version": "v0",
@@ -130,5 +130,5 @@
   "failures": [],
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:abdd9b84b4ed55ce67b9d5adf1184111e10f92730c3d5704491889206bcb9eae"
+  "signature_or_digest": "sha256:58e2ca0c0f74fa193f1608cd1fe7033d4fb543cc7bb262fc623040a327f12070"
 }

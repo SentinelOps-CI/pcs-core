@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import re
 from pathlib import Path
 from typing import Any
 
@@ -11,7 +10,8 @@ from jsonschema import Draft202012Validator
 from referencing import Registry, Resource
 from referencing.jsonschema import DRAFT202012
 
-from pcs_core.paths import repo_root, schemas_dir
+from pcs_core.paths import schemas_dir
+
 ARTIFACT_SCHEMAS: dict[str, str] = {
     "AssumptionSet.v0": "AssumptionSet.v0.schema.json",
     "SourceSpan.v0": "SourceSpan.v0.schema.json",
@@ -70,12 +70,16 @@ ARTIFACT_SCHEMAS: dict[str, str] = {
     "PFCoreCertificate.v0": "PFCoreCertificate.v0.schema.json",
     "PCSBridgeCertificate.v0": "PCSBridgeCertificate.v0.schema.json",
 }
+
+
 class ValidationError(Exception):
     """Raised when artifact validation fails."""
 
     def __init__(self, message: str, errors: list[str] | None = None):
         super().__init__(message)
         self.errors = errors or []
+
+
 def _resolve_schema_ref(schema: dict[str, Any], ref: str) -> dict[str, Any]:
     if ref.startswith("pf_core.defs.json#/$defs/"):
         defs_path = schemas_dir() / "pf_core.defs.json"
@@ -108,7 +112,6 @@ def _schema_requires_artifact_type(artifact_type: str) -> bool:
     return artifact_type_schema.get("const") == artifact_type
 
 
-
 def detect_artifact_type(data: dict[str, Any]) -> str | None:
     explicit = data.get("artifact_type")
     if isinstance(explicit, str) and explicit in ARTIFACT_SCHEMAS:
@@ -134,6 +137,14 @@ def detect_artifact_type(data: dict[str, Any]) -> str | None:
         return "VerificationResult.v0"
     if "receipt_id" in data:
         return "RuntimeReceipt.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and isinstance(data.get("certificate_id"), str)
+        and "policy_hash" in data
+        and isinstance(data.get("violations"), list)
+        and "spec_hash" not in data
+    ):
+        return "ToolUseCertificate.v0"
     if "certificate_id" in data:
         return "TraceCertificate.v0"
     if "assumption_set_id" in data:
@@ -395,7 +406,6 @@ def detect_artifact_type(data: dict[str, Any]) -> str | None:
     if "bundle_id" in data and "claim_refs" in data:
         return "EvidenceBundle.v0"
     return None
-
 
 
 def _load_schema(path: Path) -> dict[str, Any]:

@@ -164,15 +164,15 @@ def _pf_core_release_entry(
                 "check_id": "lean_kernel_proof",
                 "severity": "release_blocking",
                 "responsible_component": PCS_CORE,
-                "execution_required_in_release_mode": False,
-                "allowed_to_skip": True,
+                "execution_required_in_release_mode": True,
+                "allowed_to_skip": False,
             },
             {
                 "check_id": "lean_library_build",
                 "severity": "release_blocking",
                 "responsible_component": PCS_CORE,
-                "execution_required_in_release_mode": False,
-                "allowed_to_skip": True,
+                "execution_required_in_release_mode": True,
+                "allowed_to_skip": False,
             },
         ],
         consumer_repos=[PCS_CORE, AGENT_RUNTIME],
@@ -1202,7 +1202,6 @@ _REGISTRY_ENTRIES: dict[str, dict[str, Any]] = {
         consumer_repos=[PCS_CORE, LABTRUST, CERTIFYEDGE, PF, SM],
         release_mode_required=False,
     ),
-
     "PFCorePrincipal.v0": _pf_core_primitive_entry("PFCorePrincipal.v0"),
     "PFCoreCapability.v0": _pf_core_primitive_entry("PFCoreCapability.v0"),
     "PFCoreResource.v0": _pf_core_primitive_entry("PFCoreResource.v0"),
@@ -1229,7 +1228,6 @@ _REGISTRY_ENTRIES: dict[str, dict[str, Any]] = {
         runtime_producer=AGENT_RUNTIME,
         extra_release_fields=["observed_at", "payload_hash"],
     ),
-
 }
 
 
@@ -1249,6 +1247,7 @@ def all_registry_semantic_check_refs() -> set[str]:
                 refs.add(registry_semantic_check_ref(artifact_type, str(check["check_id"])))
     return refs
 
+
 def pf_core_artifact_types() -> frozenset[str]:
     return _PF_CORE_ARTIFACT_TYPES
 
@@ -1263,17 +1262,26 @@ _ASSUMPTION_REF_PREFIXES = (
 )
 
 
+_PF_CORE_DEFERRABLE_CHECK_IDS = frozenset({"lean_kernel_proof", "lean_library_build"})
+
 
 def deferred_registry_obligations(artifact_type: str) -> list[dict[str, Any]]:
-    """Return registry semantic checks marked allowed_to_skip for an artifact type."""
+    """Return registry semantic checks that may be deferred with assumption refs."""
     entry = _REGISTRY_ENTRIES.get(artifact_type)
     if not entry:
         return []
     checks = entry.get("semantic_checks")
     if not isinstance(checks, list):
         return []
-    return [check for check in checks if isinstance(check, dict) and check.get("allowed_to_skip")]
-
+    return [
+        check
+        for check in checks
+        if isinstance(check, dict)
+        and (
+            check.get("allowed_to_skip")
+            or str(check.get("check_id") or "") in _PF_CORE_DEFERRABLE_CHECK_IDS
+        )
+    ]
 
 
 def infer_skipped_registry_checks(
@@ -1296,7 +1304,6 @@ def infer_skipped_registry_checks(
     return skipped
 
 
-
 def _assumption_ref_valid(ref: str) -> bool:
     text = ref.strip()
     if not text:
@@ -1306,7 +1313,6 @@ def _assumption_ref_valid(ref: str) -> bool:
     if text.startswith(_ASSUMPTION_REF_PREFIXES):
         return True
     return False
-
 
 
 def enforce_assumption_declared(
@@ -1328,7 +1334,11 @@ def enforce_assumption_declared(
     else:
         deferred = context.get("semantic_checks")
         deferred_checks = (
-            [check for check in deferred if isinstance(check, dict) and check.get("allowed_to_skip")]
+            [
+                check
+                for check in deferred
+                if isinstance(check, dict) and check.get("allowed_to_skip")
+            ]
             if isinstance(deferred, list)
             else deferred_registry_obligations(artifact_type)
         )
@@ -1356,7 +1366,14 @@ def enforce_assumption_declared(
             "root: assumption_refs must reference AssumptionSet.v0 ids or documented "
             "assumption paths when registry checks are deferred"
         )
-    elif claim_class not in {"AssumptionDeclared", "RuntimeChecked", "CertificateChecked", "ReplayValidated", "SchemaValidated", "OutOfScope"}:
+    elif claim_class not in {
+        "AssumptionDeclared",
+        "RuntimeChecked",
+        "CertificateChecked",
+        "ReplayValidated",
+        "SchemaValidated",
+        "OutOfScope",
+    }:
         if claim_class in _PROOF_OVERCLAIM_CLASSES or claim_class == "LeanKernelChecked":
             pass  # already reported
         elif skipped:
@@ -1366,7 +1383,6 @@ def enforce_assumption_declared(
             )
 
     return issues
-
 
 
 PF_CORE_TRACE_CLAIM_CLASSES = frozenset(
@@ -1392,4 +1408,3 @@ PF_CORE_CERTIFICATE_CLAIM_CLASSES = frozenset(
 )
 
 PF_CORE_CLAIM_CLASSES = PF_CORE_TRACE_CLAIM_CLASSES | PF_CORE_CERTIFICATE_CLAIM_CLASSES
-

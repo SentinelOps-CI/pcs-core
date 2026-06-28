@@ -10,11 +10,6 @@ import pytest
 from pcs_core.pf_core_claims import audit_boundary
 from pcs_core.pf_core_runtime import (
     ClaimClassOverclaim,
-    DroppedDeniedEvent,
-    HandoffAuthorityExpansion,
-    MissingPrincipal,
-    UnknownCapability,
-    UnknownEffect,
     compile_runtime_observation_to_event,
     compile_tool_use_trace_to_pfcore_trace,
     validate_denied_events_preserved,
@@ -27,9 +22,7 @@ from pcs_core.validate import (
     ValidationError,
     check_all_schemas,
     detect_artifact_type,
-    load_pf_core_fixture_manifest,
     validate_artifact,
-    validate_file,
 )
 
 REPO = Path(__file__).resolve().parents[2]

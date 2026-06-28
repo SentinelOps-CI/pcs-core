@@ -11,9 +11,9 @@ import pytest
 from pcs_core.lean_check import (
     LEAN_CHECK_DISCLAIMER,
     check_pfcore_trace_lean_semantics,
-    run_pfcore_lean_check,
     run_lean_concrete_proof,
     run_lean_library_build,
+    run_pfcore_lean_check,
 )
 from pcs_core.pf_core_lean_codegen import (
     generate_proof_obligation_file,
@@ -119,7 +119,9 @@ def test_skip_lean_proof_emits_runtime_checked(tmp_path: Path, skip_lean_proof: 
     assert code == 0, result
     assert result["claim_class"] == "RuntimeChecked"
     assert result["status"] == "DecidersPassed"
-    assert not any(item.get("kind") == "ConcreteTraceSafe" for item in result.get("obligations", []))
+    assert not any(
+        item.get("kind") == "ConcreteTraceSafe" for item in result.get("obligations", [])
+    )
 
 
 @pytest.mark.skipif(not LAKE_AVAILABLE, reason="lake or WSL not available")

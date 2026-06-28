@@ -3,6 +3,7 @@ import {
   validatePcsBenchIngestSemantics,
 } from "./benchmarkIngest.js";
 import {
+  validateDirectTraceActionSemantics,
   validatePfcoreCertificateSemantics,
   validatePfcoreTraceHashChain,
 } from "./pfCore.js";
@@ -538,6 +539,7 @@ export function validateArtifact(
     }
   }
   if (type === "PFCoreTrace.v0") {
+    errors.push(...validateDirectTraceActionSemantics(data));
     errors.push(...validatePfcoreTraceHashChain(data));
   }
   if (type === "PFCoreCertificate.v0") {

@@ -1,0 +1,4 @@
+{
+  "description": "Handoff with subset authority",
+  "skip_pfcore_trace_conformance": true
+}

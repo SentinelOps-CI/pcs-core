@@ -218,6 +218,25 @@ def _write_case_bundle(
         _write_json(case_dir / "expected_repair_hint.json", repair_hint)
 
 
+def _refresh_gallery_manifest_digests(fixture_root: Path) -> int:
+    """Refresh gallery manifest.json digests; preserve intentional stale trace digests."""
+    from pcs_core.benchmark_labtrust_gallery import sync_gallery_manifest_artifact_hashes
+
+    refreshed = 0
+    for sub in ("valid", "invalid"):
+        base = fixture_root / sub
+        if not base.is_dir():
+            continue
+        for case_dir in sorted(p for p in base.iterdir() if p.is_dir()):
+            input_dir = case_dir / "input_artifacts"
+            if not input_dir.is_dir():
+                continue
+            stale = frozenset({"trace.json"}) if case_dir.name == "labtrust-trace-hash-tamper-v0" else frozenset()
+            if sync_gallery_manifest_artifact_hashes(input_dir, stale_artifacts=stale):
+                refreshed += 1
+    return refreshed
+
+
 def _refresh_gallery_case_runs(fixture_root: Path, *, allowed_ids: set[str] | None = None) -> int:
     """Re-execute on-disk benchmark cases and write benchmark_run.<case-id>.v0.json."""
     from pcs_core.benchmark_runner import execute_benchmark_case, load_benchmark_case
@@ -258,6 +277,7 @@ def _materialize_labtrust() -> None:
             case_count=case_count,
         ),
     )
+    _refresh_gallery_manifest_digests(root)
     _refresh_gallery_case_runs(root, allowed_ids=allowed_ids)
 
 

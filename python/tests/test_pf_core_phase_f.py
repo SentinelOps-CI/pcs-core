@@ -104,7 +104,9 @@ def test_certifyedge_mock_mode(monkeypatch: pytest.MonkeyPatch) -> None:
     validate_artifact(result.certificate, "PFCoreCertificate.v0")
 
 
-def test_certifyedge_mock_writes_certificate(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_certifyedge_mock_writes_certificate(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setenv("PCS_CERTIFYEDGE_MOCK", "1")
     out = tmp_path / "cert.json"
     write_certifyedge_certificate(LABTRUST_TRACE, "qc_release.temporal.safety", out)

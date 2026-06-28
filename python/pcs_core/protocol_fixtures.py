@@ -110,6 +110,7 @@ def _with_digest(doc: dict[str, Any]) -> dict[str, Any]:
 def labtrust_release_manifest_body(
     *,
     validation_artifact_path: str = "release_chain_validation_result.v0.json",
+    validation_file_dir: Path | None = None,
     lean_digests: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """ReleaseManifest.v0 derived from RELEASE_FIXTURE_MANIFEST.json on disk."""
@@ -133,13 +134,13 @@ def labtrust_release_manifest_body(
     pcs_commit = str(legacy.get("pcs_core_commit", PCS_CORE_COMMIT))
     str(legacy_artifacts["science_claim_bundle.certified.json"])
     signed_hash = str(legacy_artifacts["signed_science_claim_bundle.json"])
-    validation_path = "release_chain_validation_result.v0.json"
     from pcs_core.paths import examples_dir
     from pcs_core.release_fixtures import file_digest
 
-    validation_file = examples_dir() / "labtrust-release" / validation_path
+    validation_base = validation_file_dir or (examples_dir() / "labtrust-release")
+    validation_file = validation_base / validation_artifact_path
     if validation_file.is_file():
-        validation_digest = file_digest(validation_file.read_bytes())
+        validation_digest = file_digest(validation_file.read_bytes().replace(b"\r\n", b"\n"))
     else:
         validation_digest = PLACEHOLDER_DIGEST
     body: dict[str, Any] = {
@@ -203,14 +204,18 @@ def release_manifest_valid(
     for_examples_tree: bool = False,
     lean_digests: dict[str, str] | None = None,
 ) -> dict[str, Any]:
-    validation_path = (
-        "release_chain_validation_result.valid.json"
-        if for_examples_tree
-        else "release_chain_validation_result.v0.json"
-    )
+    from pcs_core.paths import examples_dir
+
+    if for_examples_tree:
+        validation_path = "release_chain_validation_result.valid.json"
+        validation_dir = examples_dir()
+    else:
+        validation_path = "release_chain_validation_result.v0.json"
+        validation_dir = examples_dir() / "labtrust-release"
     return _with_digest(
         labtrust_release_manifest_body(
             validation_artifact_path=validation_path,
+            validation_file_dir=validation_dir,
             lean_digests=lean_digests,
         ),
     )
@@ -469,24 +474,16 @@ def write_labtrust_protocol_artifacts(
         checked_at=checked_at,
         source_commit=pcs_commit,
     )
-    (directory / "release_chain_validation_result.v0.json").write_text(
-        json.dumps(validation, indent=2) + "\n",
-        encoding="utf-8",
-    )
+    from pcs_core.release_fixtures import write_json
+
+    write_json(directory / "release_chain_validation_result.v0.json", validation)
     manifest_body = release_manifest_valid(lean_digests=lean_digests)
-    (directory / "release_manifest.v0.json").write_text(
-        json.dumps(manifest_body, indent=2) + "\n",
-        encoding="utf-8",
-    )
+    write_json(directory / "release_manifest.v0.json", manifest_body)
     for filename, builder in LABTRUST_HANDOFF_ARTIFACTS.items():
-        path = directory / filename
-        path.write_text(json.dumps(builder(), indent=2) + "\n", encoding="utf-8")
+        write_json(directory / filename, builder())
     # PF CLI alias (HandoffManifest.v0); same payload as bundle_to_verifier stage handoff.
-    (directory / "handoff_to_pf.json").write_text(
-        json.dumps(handoff_bundle_to_verifier(), indent=2) + "\n",
-        encoding="utf-8",
-    )
-    (directory / "labtrust_release_fragment.json").write_text(
-        json.dumps(labtrust_release_fragment_valid(directory), indent=2) + "\n",
-        encoding="utf-8",
+    write_json(directory / "handoff_to_pf.json", handoff_bundle_to_verifier())
+    write_json(
+        directory / "labtrust_release_fragment.json",
+        labtrust_release_fragment_valid(directory),
     )

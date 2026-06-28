@@ -5,7 +5,7 @@
   "lean_module": "PCS.Theorems",
   "lean_theorem": "ReleaseChainAdmissible",
   "status": "ProofChecked",
-  "checked_at": "2026-05-19T13:37:27Z",
+  "checked_at": "2026-06-28T00:47:54Z",
   "lean_version": "leanprover/lean4:stable",
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
@@ -40,5 +40,5 @@
       "failure_reason": ""
     }
   ],
-  "signature_or_digest": "sha256:148445e008f781bfc47593fe9fb5c8ad12abf482b22f03f7c45fe0b03149276a"
+  "signature_or_digest": "sha256:0cc08d09b3087e02e200bdfbeae35085f524af17695ccc0c4b69ce0d121bab25"
 }

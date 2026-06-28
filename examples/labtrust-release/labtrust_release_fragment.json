@@ -7,7 +7,7 @@
   "generated_at": "2026-05-18T23:17:38Z",
   "upstream_release_manifest": {
     "path": "release_manifest.v0.json",
-    "sha256": "sha256:565e63be650694f0aa5d6225e80317c67b25c80f136acecb1781a6008121c50f"
+    "sha256": "sha256:3aa9fc0b7b921b08a557ceb025ad903f61f91251964f2adcee2be3707e0b90d6"
   },
   "handoff_artifacts": [
     "handoff_manifest.runtime_to_certificate.v0.json"
@@ -20,20 +20,20 @@
   "artifacts": {
     "trace.json": {
       "artifact_type": "LabTrust.Trace.v0",
-      "sha256": "sha256:f99eb0a90cd2b9819816a25ec4e938663d26ae8d40868cd8188665e940f7ad5c"
+      "sha256": "sha256:0b356b952c0eb5c033e4e7166113f5e34aa76af7f473362bcbc0d2b337dabb04"
     },
     "runtime_receipt.json": {
       "artifact_type": "RuntimeReceipt.v0",
-      "sha256": "sha256:3ad5c55458a79ef502508f86cd215c746d42b4f0cc5c9aa4feeba9c03b4e1d60"
+      "sha256": "sha256:0a421a44a1d003d4e39bee298edc329995165878bee27f5d28a9529ae8b6c027"
     },
     "science_claim_bundle.pending.json": {
       "artifact_type": "ScienceClaimBundle.v0",
-      "sha256": "sha256:f71e6d92c910f6db94661c712e06cf04c946bf560ede48346dd15e88cc54c6c8"
+      "sha256": "sha256:9f46da17526707af10a1893a236886c2cb5b5b42b6c5a79903a0cf48298694b0"
     },
     "science_claim_bundle.certified.json": {
       "artifact_type": "ScienceClaimBundle.v0",
-      "sha256": "sha256:b8af33a7b24abf12fd938a59af6be91ac5e761365d8ecf3639fd0f196969de36"
+      "sha256": "sha256:b2868d2c4d75ca91e034a05516813f75edc3b8f610d9b77388eb12d4c89f7567"
     }
   },
-  "signature_or_digest": "sha256:3ed3c3f45e72180725d666334a106900278665d5177e01e1b80e217606e39a0d"
+  "signature_or_digest": "sha256:13687f8896a2708392a009b601b7aaf21bdf210e7de2f3aecb1d57e3458c8526"
 }

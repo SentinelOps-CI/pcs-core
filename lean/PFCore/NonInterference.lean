@@ -315,7 +315,7 @@ theorem traceSafe_implies_tenant_isolation (tr : Trace) :
     rcases h with ⟨hTrSafe, hEvSafe⟩
     refine ⟨ih hTrSafe, ?_⟩
     intro hallow
-    exact eventSafe_allow_implies_tenant_isolated ev hEvSafe hallow
+    exact (eventSafe_allow_implies_tenant_scoped ev hEvSafe hallow).right
 
 /--
 **Meaning:** Under explicit admissibility on every allowed event, trace safety yields tenant isolation.

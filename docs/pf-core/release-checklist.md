@@ -40,6 +40,12 @@ Optional Lean build (requires Lean 4 + `lake`):
 cd lean && lake build PFCore
 ```
 
+Release-grade local path (conformance + proof binding + full lean-check when lake/WSL available):
+
+```bash
+bash scripts/pf-core-release-grade-local.sh
+```
+
 On Windows without native `lake`, use WSL for Lean steps.
 
 ## Claim boundaries for external release

@@ -77,24 +77,71 @@ theorem capabilityMatchesEffectsD_sound (a : Action) :
     capabilityMatchesEffectsD a = true ↔ CapabilityMatchesEffects a := by
   simp [capabilityMatchesEffectsD, CapabilityMatchesEffects, decide_eq_true_iff]
 
+/-- Catalog pairs mapping capability ids to canonical embedded effects. -/
+def knownCapabilityEffectCatalog : List (String × Effect) :=
+  [("cap:file-read", Effect.read),
+    ("cap:file-write", Effect.write),
+    ("cap:network", Effect.network),
+    ("cap:email-send", Effect.externalMessage),
+    ("cap:handoff", Effect.stateChange),
+    ("cap:mcp-invoke", Effect.codeExecution),
+    ("cap:lab-release", Effect.custom "lab.release")]
+
+/-- Catalog capability id maps to its canonical embedded effect label. -/
+def KnownCapabilityEffect (cap : String) (eff : Effect) : Prop :=
+  (cap, eff) ∈ knownCapabilityEffectCatalog
+
+/-- Boolean decider for ``KnownCapabilityEffect``. -/
+def knownCapabilityEffectD (cap : String) (eff : Effect) : Bool :=
+  decide ((cap, eff) ∈ knownCapabilityEffectCatalog)
+
+/--
+**Meaning:** The capability-effect decider reflects ``KnownCapabilityEffect``.
+
+**Trusted use:** Linking embedded ``capabilityEffect`` to catalog effect labels in admissibility.
+
+**Does not imply:** Runtime effect execution or resource-pattern enforcement.
+-/
+theorem knownCapabilityEffectD_sound (cap : String) (eff : Effect) :
+    knownCapabilityEffectD cap eff = true ↔ KnownCapabilityEffect cap eff := by
+  simp [knownCapabilityEffectD, KnownCapabilityEffect, decide_eq_true_iff]
+
+/--
+**Meaning:** File-write catalog capability embeds ``Effect.write``.
+
+**Trusted use:** Discharging write-effect membership from admissibility for file-write actions.
+
+**Does not imply:** Write footprint alignment or runtime write suppression.
+-/
+theorem knownCapabilityEffect_file_write (cap : String) (eff : Effect) :
+    cap = "cap:file-write" → KnownCapabilityEffect cap eff → eff = Effect.write := by
+  intro hcap h
+  simp [KnownCapabilityEffect, knownCapabilityEffectCatalog, hcap] at h
+  exact h
+
 /-- Structural action preconditions before allowance. -/
 def ActionAdmissible (p : Principal) (a : Action) : Prop :=
   HasCapability p a.capability ∧
     ActionWithinTenant p a ∧
     ActionEffectsKnown a ∧
-    CapabilityMatchesEffects a
+    CapabilityMatchesEffects a ∧
+    KnownCapability a.capability ∧
+    KnownCapabilityEffect a.capability a.capabilityEffect
 
 def actionAdmissibleD (p : Principal) (a : Action) : Bool :=
   hasCapabilityD p a.capability &&
     actionWithinTenantD p a &&
     actionEffectsKnownD a &&
-    capabilityMatchesEffectsD a
+    capabilityMatchesEffectsD a &&
+    knownCapabilityD a.capability &&
+    knownCapabilityEffectD a.capability a.capabilityEffect
 
 theorem actionAdmissibleD_sound (p : Principal) (a : Action) :
     actionAdmissibleD p a = true ↔ ActionAdmissible p a := by
   unfold actionAdmissibleD ActionAdmissible
   simp [hasCapabilityD_sound, actionWithinTenantD_sound, actionEffectsKnownD_sound,
-    capabilityMatchesEffectsD_sound, Bool.and_eq_true, and_assoc, and_left_comm, and_comm]
+    capabilityMatchesEffectsD_sound, knownCapabilityD_sound, knownCapabilityEffectD_sound,
+    Bool.and_eq_true, and_assoc, and_left_comm, and_comm]
 
 /-- Action is allowed when capability is held and structural checks pass. -/
 def ActionAllowed (p : Principal) (a : Action) : Prop :=

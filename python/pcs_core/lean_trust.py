@@ -21,9 +21,15 @@ PCS_CORE_COMMIT_PLACEHOLDER = "d444444444444444444444444444444444444444"
 
 PCS_LEAN_CHECK_DISCLAIMER = (
     "PCS release-envelope consistency check validates ProofObligation.v0 release-envelope "
-    "consistency against the PCS theorem catalog. A `ProofChecked` LeanCheckResult does "
-    "not imply PF-Core trace safety. Use "
+    "consistency against the PCS theorem catalog. A `ProofChecked` or `EnvelopeLeanChecked` "
+    "LeanCheckResult does not imply PF-Core trace safety. Use "
     "`pcs pf-core lean-check --trace <PFCoreTrace.v0.json>` for PF-Core kernel assurance."
+)
+
+PCS_ENVELOPE_LEAN_PROOF_DISCLAIMER = (
+    "EnvelopeLeanChecked means a generated PCS release-chain module compiled with `lake env lean` "
+    "and discharged `ReleaseChainAdmissible` deciders for the concrete obligation bundle. "
+    "This is not LeanKernelChecked PF-Core trace safety."
 )
 
 
@@ -408,11 +414,22 @@ def run_lean_check(
     check_id: str | None = None,
     source_commit: str | None = None,
     require_lean_build: bool = True,
+    lean_proof: bool = False,
 ) -> dict[str, Any]:
     """Evaluate obligations against the fixed PCS theorem set; emit LeanCheckResult.v0."""
     import sys
 
+    from pcs_core.pcs_lean_codegen import (
+        compute_lean_environment_hash,
+        generate_proof_obligation_file,
+        generated_module_name,
+        proof_term_ref_from_path,
+    )
+
     print(PCS_LEAN_CHECK_DISCLAIMER, file=sys.stderr)
+    if lean_proof:
+        print(PCS_ENVELOPE_LEAN_PROOF_DISCLAIMER, file=sys.stderr)
+
     build_ok, build_reason = run_lean_build() if require_lean_build else (True, "")
     obligation_results: list[dict[str, Any]] = []
     failures: list[str] = []
@@ -439,6 +456,42 @@ def run_lean_check(
         if not passed:
             failures.append(f"{obligation_id}: {reason}")
 
+    lean_proof_checked = False
+    proof_term_ref: str | None = None
+    proof_term_hash: str | None = None
+    lean_environment_hash: str | None = None
+    claim_class = "ProofChecked"
+
+    if lean_proof and not failures:
+        from pcs_core.lean_check import run_pcs_lean_concrete_proof
+
+        lean_environment_hash = compute_lean_environment_hash()
+        generated_dir = repo_root() / "lean" / "PCS" / "Generated"
+        module = generated_module_name(obligations_doc)
+        proof_path = generate_proof_obligation_file(obligations_doc, generated_dir)
+        proof_term_ref = proof_term_ref_from_path(proof_path)
+        proof_ok, proof_detail = run_pcs_lean_concrete_proof(
+            proof_path,
+            skip_build=not require_lean_build,
+        )
+        if proof_ok:
+            lean_proof_checked = True
+            claim_class = "EnvelopeLeanChecked"
+            from pcs_core.lean_check import compute_proof_term_hash
+
+            proof_term_hash = compute_proof_term_hash(proof_path)
+            obligation_results.append(
+                {
+                    "obligation_id": f"generated_{module}",
+                    "kind": "ReleaseChainAdmissible",
+                    "status": "passed",
+                    "lean_theorem": "concrete_release_chain_admissible_prop",
+                    "failure_reason": "",
+                },
+            )
+        else:
+            failures.append(f"lean_proof: {proof_detail}")
+
     if require_lean_build and not build_ok:
         failures.insert(0, f"lean_build: {build_reason}")
 
@@ -447,24 +500,35 @@ def run_lean_check(
     checked_at = datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
     proof_obligation_id = str(obligations_doc.get("obligation_id", "proof-obligation-unknown"))
 
+    disclaimer = PCS_LEAN_CHECK_DISCLAIMER
+    if lean_proof:
+        disclaimer = f"{PCS_LEAN_CHECK_DISCLAIMER} {PCS_ENVELOPE_LEAN_PROOF_DISCLAIMER}"
+
     body: dict[str, Any] = {
         "schema_version": "v0",
-        "artifact_type": "LeanCheckResult.v0",
         "check_id": check_id or f"lean-check-{proof_obligation_id}",
         "proof_obligation_id": proof_obligation_id,
         "lean_module": str(obligations_doc.get("lean_module", LEAN_MODULE)),
         "lean_theorem": "ReleaseChainAdmissible",
         "status": status,
+        "claim_class": claim_class if all_passed else "Rejected",
         "checked_at": checked_at,
         "lean_version": LEAN_VERSION,
         "source_repo": PCS_CORE_REPO,
         "source_commit": source_commit
         or str(obligations_doc.get("source_commit", PCS_CORE_COMMIT_PLACEHOLDER)),
         "failure_reason": "; ".join(failures),
-        "disclaimer": PCS_LEAN_CHECK_DISCLAIMER,
         "obligation_results": obligation_results,
+        "lean_proof_checked": lean_proof_checked,
+        "disclaimer": disclaimer,
         "signature_or_digest": PLACEHOLDER_DIGEST,
     }
+    if proof_term_ref:
+        body["proof_term_ref"] = proof_term_ref
+    if proof_term_hash:
+        body["proof_term_hash"] = proof_term_hash
+    if lean_environment_hash:
+        body["lean_environment_hash"] = lean_environment_hash
     body["signature_or_digest"] = canonical_hash(body)
     return body
 

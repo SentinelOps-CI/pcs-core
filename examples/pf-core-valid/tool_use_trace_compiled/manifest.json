@@ -1,0 +1,5 @@
+{
+  "description": "Tool-use trace compiled to PF-Core",
+  "trace_file": "pfcore_trace.json",
+  "replay_required": true
+}

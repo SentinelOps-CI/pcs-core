@@ -11,7 +11,6 @@ import pytest
 from pcs_core.pf_core_lean_codegen import (
     generate_proof_obligation_file,
     trace_has_contract_refs,
-    trace_to_lean,
 )
 from pcs_core.validate import validate_file
 
@@ -75,7 +74,9 @@ def test_generated_proof_compiles_with_lake() -> None:
     from pcs_core.lean_check import pfcore_generated_dir, run_lean_concrete_proof
 
     trace = _load(VALID_TRACE)
-    proof_path = generate_proof_obligation_file(trace, pfcore_generated_dir(), trace_path=VALID_TRACE)
+    proof_path = generate_proof_obligation_file(
+        trace, pfcore_generated_dir(), trace_path=VALID_TRACE
+    )
     ok, detail = run_lean_concrete_proof(proof_path, skip_build=False)
     if not ok and ("lake unavailable" in detail or "timed out" in detail.lower()):
         pytest.skip(detail)

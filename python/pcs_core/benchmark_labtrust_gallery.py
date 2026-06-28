@@ -29,6 +29,14 @@ _LABTRUST_TASK_IDS = frozenset(
     },
 )
 
+GALLERY_MANIFEST_ARTIFACTS = (
+    "runtime_receipt.json",
+    "science_claim_bundle.certified.json",
+    "science_claim_bundle.pending.json",
+    "trace.json",
+    "trace_certificate.json",
+)
+
 _GALLERY_CASE_FAILURE: dict[str, tuple[str, str]] = {
     "stale_trace_after_certificate": ("stale_trace_after_certificate", "runtime_producer"),
     "scientific_memory_import_failure": (
@@ -161,6 +169,36 @@ def _gallery_extension_failure(release_dir: Path) -> tuple[str | None, str | Non
     if mapped is None:
         return None, None
     return mapped
+
+
+def sync_gallery_manifest_artifact_hashes(
+    release_dir: Path,
+    *,
+    stale_artifacts: frozenset[str] = frozenset(),
+) -> dict[str, str]:
+    """Align gallery ``manifest.json`` artifact digests with on-disk bytes."""
+    from pcs_core.release_fixtures import write_json
+
+    manifest_path = release_dir / "manifest.json"
+    if not manifest_path.is_file():
+        return {}
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    artifacts = manifest.get("artifacts")
+    if not isinstance(artifacts, dict):
+        return {}
+    updated: dict[str, str] = {}
+    for name in GALLERY_MANIFEST_ARTIFACTS:
+        if name in stale_artifacts:
+            continue
+        path = release_dir / name
+        if not path.is_file():
+            continue
+        digest = file_digest(path.read_bytes())
+        artifacts[str(name)] = digest
+        updated[str(name)] = digest
+    manifest["artifacts"] = artifacts
+    write_json(manifest_path, manifest)
+    return updated
 
 
 def detect_gallery_failure(release_dir: Path) -> tuple[str | None, str | None]:

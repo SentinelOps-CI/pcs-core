@@ -3,8 +3,8 @@
   "run_id": "bench-run-labtrust-stale-trace-after-certificate-v0",
   "task_id": "labtrust-qc-release-v0",
   "case_id": "labtrust-stale-trace-after-certificate-v0",
-  "started_at": "2026-05-22T11:54:13Z",
-  "completed_at": "2026-05-22T11:54:13Z",
+  "started_at": "2026-06-28T07:05:52Z",
+  "completed_at": "2026-06-28T07:05:52Z",
   "commands": [
     {
       "command": "evaluate_labtrust_gallery benchmarks/labtrust-qc-release/invalid/labtrust-stale-trace-after-certificate-v0/input_artifacts",
@@ -24,8 +24,8 @@
   "certificate_status": "CertificateChecked",
   "scientific_memory_import_status": "not_applicable",
   "scientific_memory_render_status": "not_applicable",
-  "duration_ms": 10,
+  "duration_ms": 11,
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:dcb61cc996450c728c44b42b45bda540832ff86a2ade8a5b264d068fb4384020"
+  "signature_or_digest": "sha256:c2b5929cc02f3430a3ae7742b811c8f8f02ad0af7900742d732417ecbc067b20"
 }

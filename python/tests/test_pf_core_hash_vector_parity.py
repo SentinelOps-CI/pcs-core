@@ -5,8 +5,6 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-import pytest
-
 from pcs_core.pf_core_hash_vector_parity import verify_pf_core_hash_vectors
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -27,7 +25,7 @@ def test_hash_vectors_match_pf_core_adapter_native() -> None:
 
 
 def test_trace_certificate_vector_has_sha256_prefix_digest() -> None:
-    digest = (LOCAL_VECTORS / "TraceCertificate.v0" / "digest.txt").read_text(
-        encoding="utf-8"
-    ).strip()
+    digest = (
+        (LOCAL_VECTORS / "TraceCertificate.v0" / "digest.txt").read_text(encoding="utf-8").strip()
+    )
     assert digest.startswith("sha256:"), "PCS digest must retain sha256: prefix form"

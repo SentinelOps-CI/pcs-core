@@ -21,7 +21,6 @@ from pcs_core.pf_core_runtime import (
     validate_denied_observations_preserved,
 )
 from pcs_core.validate import (
-    ValidationError,
     check_pf_core_invalid_fixtures,
     load_pf_core_fixture_manifest,
     validate_semantics,
@@ -145,6 +144,10 @@ def test_pf_core_hash_vectors(artifact: str) -> None:
     else:
         assert canonical_hash(payload) == digest
     stripped = canonicalize_for_hash(
-        {k: v for k, v in payload.items() if k not in ("event_hash", "trace_hash", "signature_or_digest")}
+        {
+            k: v
+            for k, v in payload.items()
+            if k not in ("event_hash", "trace_hash", "signature_or_digest")
+        }
     )
     assert json.dumps(stripped, separators=(",", ":"), ensure_ascii=False) == canonical.rstrip("\n")

@@ -12,20 +12,110 @@ import pytest
 
 from pcs_core.pf_core_contract import validate_trace_contracts
 from pcs_core.pf_core_runtime import (
+    CAPABILITY_CATALOG,
     compute_event_hash,
     compute_trace_hash,
+    resource_matches_pattern,
     validate_denied_events_preserved,
     validate_pfcore_trace_hash_chain,
+    validate_tenant_isolation,
 )
-from pcs_core.validate import ARTIFACT_SCHEMAS, detect_artifact_type, validate_schema
+from pcs_core.validate import ARTIFACT_SCHEMAS, detect_artifact_type, validate_semantics
 
 REPO = Path(__file__).resolve().parents[2]
 INVALID_VECTORS = REPO / "python" / "tests" / "hash_vectors" / "pf_core" / "invalid"
+INVALID_EXAMPLES = REPO / "examples" / "pf-core-invalid"
 
 PF_CORE_TYPES = sorted(
     key
     for key in ARTIFACT_SCHEMAS
-    if key.startswith("PFCore") or key in {"ToolUseTrace.v0", "LeanCheckResult.v0", "PCSBridgeCertificate.v0"}
+    if key.startswith("PFCore")
+    or key in {"ToolUseTrace.v0", "LeanCheckResult.v0", "PCSBridgeCertificate.v0"}
+)
+
+# Audit-list invalid vectors: Python/Rust/TS must reject the same error class.
+INVALID_AUDIT_CASES: tuple[tuple[str, str, str, str], ...] = (
+    ("hash_vectors", "invalid/trace_hash_chain_break.json", "PFCoreTrace.v0", "EventHashMismatch"),
+    (
+        "hash_vectors",
+        "invalid/claim_class_overclaim_trace.json",
+        "PFCoreTrace.v0",
+        "ClaimClassOverclaim",
+    ),
+    ("hash_vectors", "invalid/trace_hash_mismatch.json", "PFCoreTrace.v0", "TraceHashMismatch"),
+    (
+        "hash_vectors",
+        "invalid/previous_event_hash_mismatch.json",
+        "PFCoreTrace.v0",
+        "EventHashMismatch",
+    ),
+    ("hash_vectors", "invalid/cross_tenant_leak.json", "PFCoreTrace.v0", "TenantIsolation"),
+    (
+        "examples",
+        "lean_kernel_checked_on_trace/trace.json",
+        "PFCoreTrace.v0",
+        "ClaimClassOverclaim",
+    ),
+    (
+        "examples",
+        "lean_kernel_checked_without_proof_ref/trace.json",
+        "PFCoreTrace.v0",
+        "ClaimClassOverclaim",
+    ),
+    (
+        "examples",
+        "lean_kernel_checked_without_proof_term_hash/certificate.json",
+        "PFCoreCertificate.v0",
+        "proof_term_hash",
+    ),
+    (
+        "examples",
+        "lean_kernel_checked_without_proof_term_ref/certificate.json",
+        "PFCoreCertificate.v0",
+        "proof_term_ref",
+    ),
+    (
+        "examples",
+        "lean_kernel_checked_with_skipped_build/certificate.json",
+        "PFCoreCertificate.v0",
+        "lean_build_status",
+    ),
+    (
+        "examples",
+        "unknown_direct_trace_effect/trace.json",
+        "PFCoreTrace.v0",
+        "UnknownEffect",
+    ),
+    (
+        "examples",
+        "capability_effect_mismatch/trace.json",
+        "PFCoreTrace.v0",
+        "CapabilityEffectMismatch",
+    ),
+    (
+        "examples",
+        "unknown_direct_trace_capability/trace.json",
+        "PFCoreTrace.v0",
+        "UnknownCapability",
+    ),
+    (
+        "hash_vectors",
+        "invalid/unknown_direct_trace_effect.json",
+        "PFCoreTrace.v0",
+        "UnknownEffect",
+    ),
+    (
+        "hash_vectors",
+        "invalid/capability_effect_mismatch.json",
+        "PFCoreTrace.v0",
+        "CapabilityEffectMismatch",
+    ),
+    (
+        "hash_vectors",
+        "invalid/unknown_direct_trace_capability.json",
+        "PFCoreTrace.v0",
+        "UnknownCapability",
+    ),
 )
 
 TS_SCHEMAS = REPO / "typescript" / "packages" / "core" / "src" / "schema.ts"
@@ -37,10 +127,29 @@ def _load_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _audit_fixture_path(source: str, relative: str) -> Path:
+    if source == "hash_vectors":
+        return REPO / "python" / "tests" / "hash_vectors" / "pf_core" / relative
+    if source == "examples":
+        return INVALID_EXAMPLES / relative
+    raise ValueError(f"unknown source {source!r}")
+
+
+def _python_semantic_errors(source: str, relative: str, artifact_type: str) -> list[str]:
+    payload = _load_json(_audit_fixture_path(source, relative))
+    if artifact_type == "PFCoreTrace.v0" and relative.endswith("cross_tenant_leak.json"):
+        return validate_tenant_isolation(payload)
+    if artifact_type == "PFCoreTrace.v0":
+        return validate_semantics(payload, artifact_type)
+    return validate_semantics(payload, artifact_type)
+
+
 def _extract_quoted_types(path: Path, marker: str) -> set[str]:
     text = path.read_text(encoding="utf-8")
     block = text.split(marker, 1)[-1]
-    return set(re.findall(r'"((?:PFCore|ToolUseTrace|LeanCheckResult|PCSBridgeCertificate)[^"]+)"', block))
+    return set(
+        re.findall(r'"((?:PFCore|ToolUseTrace|LeanCheckResult|PCSBridgeCertificate)[^"]+)"', block)
+    )
 
 
 def test_python_pf_core_schemas_registered() -> None:
@@ -126,6 +235,8 @@ def test_python_pf_core_shared_hash_vectors() -> None:
     [
         ("invalid/trace_hash_chain_break.json", "EventHashMismatch"),
         ("invalid/claim_class_overclaim_trace.json", "ClaimClassOverclaim"),
+        ("invalid/trace_hash_mismatch.json", "TraceHashMismatch"),
+        ("invalid/previous_event_hash_mismatch.json", "EventHashMismatch"),
     ],
 )
 def test_python_invalid_pf_core_vectors(relative: str, needle: str) -> None:
@@ -137,7 +248,9 @@ def test_python_invalid_pf_core_vectors(relative: str, needle: str) -> None:
 def test_python_denied_event_preserved_invalid_vector() -> None:
     from pcs_core.pf_core_runtime import DroppedDeniedEvent, validate_denied_events_preserved
 
-    root = REPO / "python" / "tests" / "hash_vectors" / "pf_core" / "invalid" / "denied_event_dropped"
+    root = (
+        REPO / "python" / "tests" / "hash_vectors" / "pf_core" / "invalid" / "denied_event_dropped"
+    )
     tool_use = _load_json(root / "tool_use_trace.json")
     pfcore = _load_json(root / "pfcore_trace.json")
     with pytest.raises(DroppedDeniedEvent):
@@ -157,9 +270,17 @@ def test_rust_pf_core_detection_tests_pass() -> None:
 def test_typescript_pf_core_detection_tests_pass() -> None:
     if sys.platform == "win32":
         pytest.skip("typescript workspace test runner uses shell globs unavailable on Windows")
+    ts_root = REPO / "typescript"
+    install = subprocess.run(
+        ["npm", "install", "--silent"],
+        cwd=ts_root,
+        capture_output=True,
+        text=True,
+    )
+    assert install.returncode == 0, install.stdout + install.stderr
     result = subprocess.run(
         ["npm", "test"],
-        cwd=REPO / "typescript",
+        cwd=ts_root,
         capture_output=True,
         text=True,
     )
@@ -172,6 +293,21 @@ def test_shared_negative_vectors_python() -> None:
 
     overclaim = _load_json(INVALID_VECTORS / "claim_class_overclaim_trace.json")
     assert any("ClaimClassOverclaim" in err for err in validate_pfcore_trace_hash_chain(overclaim))
+
+    trace_mismatch = _load_json(INVALID_VECTORS / "trace_hash_mismatch.json")
+    assert any(
+        "TraceHashMismatch" in err for err in validate_pfcore_trace_hash_chain(trace_mismatch)
+    )
+
+    prev_mismatch = _load_json(INVALID_VECTORS / "previous_event_hash_mismatch.json")
+    assert any(
+        "EventHashMismatch" in err for err in validate_pfcore_trace_hash_chain(prev_mismatch)
+    )
+
+    from pcs_core.pf_core_runtime import validate_tenant_isolation
+
+    cross_tenant = _load_json(INVALID_VECTORS / "cross_tenant_leak.json")
+    assert any("TenantIsolation" in err for err in validate_tenant_isolation(cross_tenant))
 
     contract_dir = INVALID_VECTORS / "contract_capability_missing"
     contract_trace = _load_json(contract_dir / "trace.json")
@@ -195,3 +331,36 @@ def test_rust_negative_vector_tests_in_pf_core_suite() -> None:
         text=True,
     )
     assert result.returncode == 0, result.stdout + result.stderr
+
+
+@pytest.mark.parametrize("source,relative,artifact_type,needle", INVALID_AUDIT_CASES)
+def test_python_invalid_audit_vectors(
+    source: str, relative: str, artifact_type: str, needle: str
+) -> None:
+    errors = _python_semantic_errors(source, relative, artifact_type)
+    assert any(needle in err for err in errors), errors
+
+
+def test_resource_pattern_catalog_python_fnmatch() -> None:
+    """Parity anchor for Lean ResourcePattern.lean / runtime validate_resource_scope."""
+    samples = {
+        "*": [("/any/uri", True), ("mailto:x@y", True)],
+        "/data/*": [("/data/report.txt", True), ("/etc/passwd", False)],
+        "mailto:*": [("mailto:a@b.c", True), ("http://x", False)],
+        "agent:*": [("agent:worker-1", True), ("mcp:tool", False)],
+        "mcp:*": [("mcp:filesystem.read", True), ("agent:x", False)],
+        "lab:*": [("lab:run-1", True), ("/data/x", False)],
+    }
+    for cap in CAPABILITY_CATALOG.values():
+        pattern = str(cap["resource_pattern"])
+        assert pattern in samples, f"add parity samples for catalog pattern {pattern!r}"
+        for uri, expected in samples[pattern]:
+            assert resource_matches_pattern(uri, pattern) is expected, (pattern, uri)
+
+
+def test_observational_and_resource_pattern_lean_modules_exist() -> None:
+    for module in ("Observational.lean", "ResourcePattern.lean"):
+        path = REPO / "lean" / "PFCore" / module
+        text = path.read_text(encoding="utf-8")
+        assert "sorry" not in text, module
+        assert "theorem" in text, module

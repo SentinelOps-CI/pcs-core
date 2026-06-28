@@ -171,6 +171,6 @@
   "signed_at": "2026-05-16T12:25:00Z",
   "source_repo": "https://github.com/SentinelOps-CI/provability-fabric",
   "source_commit": "c333333333333333333333333333333333333333",
-  "signature_or_digest": "sha256:6bd6088e18a82f3eef22adaba8db91d0f2942142af35b2a698d5d87b92f1331a",
-  "signed_input_bundle_hash": "sha256:21adad1e4817811766d484422d68ac13a056849b04e9143dcb583a87b70a9e30"
+  "signature_or_digest": "sha256:5d0e48c2457e9fb7cd262674d157a838c5ec8f707ac92f38f583eaf4a66f89b0",
+  "signed_input_bundle_hash": "sha256:8ec0f90d0af828db78c5ada9299daea96128c4737328d40d6d6c473046d4780d"
 }

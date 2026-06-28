@@ -1,8 +1,306 @@
+use std::collections::HashSet;
+
 use serde_json::{Map, Value};
 
 use crate::hash::canonical_hash;
 
-pub const GENESIS_HASH: &str = "sha256:0000000000000000000000000000000000000000000000000000000000000000";
+pub const GENESIS_HASH: &str =
+    "sha256:0000000000000000000000000000000000000000000000000000000000000000";
+
+pub const EFFECT_KINDS: &[&str] = &[
+    "file.read",
+    "file.write",
+    "network.egress",
+    "email.send",
+    "handoff.delegate",
+    "mcp.invoke",
+    "lab.release",
+];
+
+#[derive(Clone, Copy)]
+pub struct CapabilityEntry {
+    pub capability_id: &'static str,
+    pub effect_kind: &'static str,
+    pub resource_pattern: &'static str,
+}
+
+pub const CAPABILITY_CATALOG: &[CapabilityEntry] = &[
+    CapabilityEntry {
+        capability_id: "cap:file-read",
+        effect_kind: "file.read",
+        resource_pattern: "/data/*",
+    },
+    CapabilityEntry {
+        capability_id: "cap:file-write",
+        effect_kind: "file.write",
+        resource_pattern: "/data/*",
+    },
+    CapabilityEntry {
+        capability_id: "cap:network",
+        effect_kind: "network.egress",
+        resource_pattern: "*",
+    },
+    CapabilityEntry {
+        capability_id: "cap:email-send",
+        effect_kind: "email.send",
+        resource_pattern: "mailto:*",
+    },
+    CapabilityEntry {
+        capability_id: "cap:handoff",
+        effect_kind: "handoff.delegate",
+        resource_pattern: "agent:*",
+    },
+    CapabilityEntry {
+        capability_id: "cap:mcp-invoke",
+        effect_kind: "mcp.invoke",
+        resource_pattern: "mcp:*",
+    },
+    CapabilityEntry {
+        capability_id: "cap:lab-release",
+        effect_kind: "lab.release",
+        resource_pattern: "lab:*",
+    },
+];
+
+fn known_effect_kinds() -> HashSet<&'static str> {
+    EFFECT_KINDS.iter().copied().collect()
+}
+
+fn lookup_capability(capability_id: &str) -> Option<&'static CapabilityEntry> {
+    CAPABILITY_CATALOG
+        .iter()
+        .find(|entry| entry.capability_id == capability_id)
+}
+
+fn runtime_error(code: &str, message: &str, path: &str) -> String {
+    format!("{code}: {message} (at {path})")
+}
+
+fn glob_match(pattern: &str, text: &str) -> bool {
+    let pattern_chars: Vec<char> = pattern.chars().collect();
+    let text_chars: Vec<char> = text.chars().collect();
+    fn rec(pattern: &[char], pi: usize, text: &[char], ti: usize) -> bool {
+        if pi == pattern.len() {
+            return ti == text.len();
+        }
+        if pattern[pi] == '*' {
+            if pi + 1 == pattern.len() {
+                return true;
+            }
+            for j in ti..=text.len() {
+                if rec(pattern, pi + 1, text, j) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        if ti >= text.len() || pattern[pi] != text[ti] {
+            return false;
+        }
+        rec(pattern, pi + 1, text, ti + 1)
+    }
+    rec(&pattern_chars, 0, &text_chars, 0)
+}
+
+pub fn resource_matches_pattern(uri: &str, pattern: &str) -> bool {
+    if pattern == "*" {
+        return true;
+    }
+    glob_match(pattern, uri)
+}
+
+fn validate_action_effects_known(action: &Value, path: &str) -> Option<String> {
+    let effects = action.get("effects")?;
+    let Some(items) = effects.as_array() else {
+        return Some(runtime_error(
+            "UnknownEffect",
+            "unknown effect: <missing>",
+            &format!("{path}.effects"),
+        ));
+    };
+    if items.is_empty() {
+        return Some(runtime_error(
+            "UnknownEffect",
+            "unknown effect: <missing>",
+            path,
+        ));
+    };
+    let known = known_effect_kinds();
+    for (index, effect) in items.iter().enumerate() {
+        let Some(effect_obj) = object_mut(effect) else {
+            return Some(runtime_error(
+                "UnknownEffect",
+                "unknown effect: <invalid>",
+                &format!("{path}.effects[{index}]"),
+            ));
+        };
+        let kind = effect_obj
+            .get("effect_kind")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        if kind.is_empty() || !known.contains(kind) {
+            return Some(runtime_error(
+                "UnknownEffect",
+                &format!(
+                    "unknown effect: {}",
+                    if kind.is_empty() { "<missing>" } else { kind }
+                ),
+                &format!("{path}.effects[{index}].effect_kind"),
+            ));
+        }
+    }
+    None
+}
+
+fn validate_action_capabilities_known(action: &Value, path: &str) -> Option<String> {
+    let capability = action.get("capability")?;
+    let Some(cap_obj) = object_mut(capability) else {
+        return Some(runtime_error(
+            "UnknownCapability",
+            "unknown capability: <missing>",
+            &format!("{path}.capability"),
+        ));
+    };
+    let cap_id = cap_obj
+        .get("capability_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    if cap_id.is_empty() || lookup_capability(cap_id).is_none() {
+        return Some(runtime_error(
+            "UnknownCapability",
+            &format!(
+                "unknown capability: {}",
+                if cap_id.is_empty() {
+                    "<missing>"
+                } else {
+                    cap_id
+                }
+            ),
+            &format!("{path}.capability"),
+        ));
+    }
+    let effect_kind = cap_obj
+        .get("effect_kind")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let known = known_effect_kinds();
+    if effect_kind.is_empty() || !known.contains(effect_kind) {
+        return Some(runtime_error(
+            "UnknownEffect",
+            &format!(
+                "unknown effect: {}",
+                if effect_kind.is_empty() {
+                    "<missing>"
+                } else {
+                    effect_kind
+                }
+            ),
+            &format!("{path}.capability.effect_kind"),
+        ));
+    }
+    None
+}
+
+fn validate_action_capability_effects(action: &Value, path: &str) -> Option<String> {
+    let capability = action.get("capability")?;
+    let Some(cap_obj) = object_mut(capability) else {
+        return Some(runtime_error(
+            "UnknownCapability",
+            "unknown capability: <missing>",
+            &format!("{path}.capability"),
+        ));
+    };
+    let cap_id = cap_obj
+        .get("capability_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let Some(catalog) = lookup_capability(cap_id) else {
+        return Some(runtime_error(
+            "UnknownCapability",
+            &format!(
+                "unknown capability: {}",
+                if cap_id.is_empty() {
+                    "<missing>"
+                } else {
+                    cap_id
+                }
+            ),
+            &format!("{path}.capability"),
+        ));
+    };
+    if validate_action_effects_known(action, path).is_some() {
+        return validate_action_effects_known(action, path);
+    }
+    let cap_effect = catalog.effect_kind;
+    if !action_has_effect(action, cap_effect) {
+        return Some(runtime_error(
+            "CapabilityEffectMismatch",
+            &format!(
+                "capability {:?} effect_kind {:?} not listed in action effects",
+                catalog.capability_id, cap_effect
+            ),
+            &format!("{path}.effects"),
+        ));
+    }
+    None
+}
+
+fn validate_resource_scope(action: &Value, path: &str) -> Option<String> {
+    let capability = action.get("capability")?;
+    let cap_obj = object_mut(capability)?;
+    let pattern = cap_obj
+        .get("resource_pattern")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    if pattern.is_empty() {
+        return None;
+    }
+    for key in ["reads", "writes"] {
+        let Some(resources) = action.get(key).and_then(|v| v.as_array()) else {
+            continue;
+        };
+        for (index, resource) in resources.iter().enumerate() {
+            let Some(resource_obj) = object_mut(resource) else {
+                continue;
+            };
+            let uri = resource_obj
+                .get("uri")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
+            if !uri.is_empty() && !resource_matches_pattern(uri, pattern) {
+                return Some(runtime_error(
+                    "ResourceScopeViolation",
+                    &format!("resource {uri:?} outside declared pattern {pattern:?}"),
+                    &format!("{path}.{key}[{index}].uri"),
+                ));
+            }
+        }
+    }
+    None
+}
+
+pub fn validate_direct_trace_action_semantics(trace: &Value) -> Vec<String> {
+    let mut errors = Vec::new();
+    let Some(events) = trace.get("events").and_then(|v| v.as_array()) else {
+        return errors;
+    };
+    for (index, event) in events.iter().enumerate() {
+        let Some(action) = event.get("action") else {
+            continue;
+        };
+        let base = format!("events[{index}].action");
+        if let Some(error) = validate_action_effects_known(action, &base) {
+            errors.push(error);
+        }
+        if let Some(error) = validate_action_capabilities_known(action, &base) {
+            errors.push(error);
+        }
+        if let Some(error) = validate_action_capability_effects(action, &base) {
+            errors.push(error);
+        }
+    }
+    errors
+}
 
 const TRACE_CLAIM_CLASSES: &[&str] = &[
     "SchemaValidated",
@@ -142,7 +440,9 @@ pub fn validate_pfcore_trace_hash_chain(trace: &Value) -> Vec<String> {
         {
             Some(Ok(value)) => value,
             _ => {
-                errors.push(format!("EventHashMismatch: invalid previous_event_hash at {base}"));
+                errors.push(format!(
+                    "EventHashMismatch: invalid previous_event_hash at {base}"
+                ));
                 continue;
             }
         };
@@ -195,6 +495,16 @@ pub fn validate_pfcore_trace_hash_chain(trace: &Value) -> Vec<String> {
         }
     }
 
+    for (index, event) in events.iter().enumerate() {
+        let Some(action) = event.get("action") else {
+            continue;
+        };
+        let path = format!("events[{index}].action");
+        if let Some(error) = validate_resource_scope(action, &path) {
+            errors.push(error);
+        }
+    }
+
     errors
 }
 
@@ -242,7 +552,8 @@ pub fn validate_pfcore_certificate_semantics(certificate: &Value) -> Vec<String>
             .and_then(|v| v.as_str())
             .is_none_or(|s| !s.starts_with("sha256:"))
         {
-            errors.push("root: claim_class LeanKernelChecked requires lean_environment_hash".into());
+            errors
+                .push("root: claim_class LeanKernelChecked requires lean_environment_hash".into());
         }
         let build_ok = certificate
             .get("lean_build_status")
@@ -256,9 +567,7 @@ pub fn validate_pfcore_certificate_semantics(certificate: &Value) -> Vec<String>
             if let Some(obligations) = certificate.get("obligations").and_then(|v| v.as_array()) {
                 let passed: std::collections::HashSet<String> = obligations
                     .iter()
-                    .filter(|item| {
-                        item.get("passed").and_then(|v| v.as_bool()) == Some(true)
-                    })
+                    .filter(|item| item.get("passed").and_then(|v| v.as_bool()) == Some(true))
                     .filter_map(|item| {
                         item.get("theorem")
                             .and_then(|v| v.as_str())
@@ -355,10 +664,14 @@ fn tenant_matches(principal: &Value, action: &Value) -> bool {
 pub fn validate_event_against_contract(event: &Value, contract: &Value, path: &str) -> Vec<String> {
     let mut errors = Vec::new();
     let Some(principal) = event.get("principal") else {
-        return vec![format!("ContractEventInvalid: event missing principal or action at {path}")];
+        return vec![format!(
+            "ContractEventInvalid: event missing principal or action at {path}"
+        )];
     };
     let Some(action) = event.get("action") else {
-        return vec![format!("ContractEventInvalid: event missing principal or action at {path}")];
+        return vec![format!(
+            "ContractEventInvalid: event missing principal or action at {path}"
+        )];
     };
     let contract_id = contract
         .get("contract_id")
@@ -528,7 +841,47 @@ fn authorization_decision(status: &str) -> &'static str {
         .unwrap_or("deny")
 }
 
-pub fn validate_denied_events_preserved(tool_use_trace: &Value, pfcore_trace: &Value) -> Vec<String> {
+pub fn validate_tenant_isolation(trace: &Value) -> Vec<String> {
+    let mut errors = Vec::new();
+    let events = match trace.get("events").and_then(|v| v.as_array()) {
+        Some(items) => items,
+        None => return vec!["TraceInvalid: events must be an array".into()],
+    };
+    for (index, event) in events.iter().enumerate() {
+        let base = format!("events[{index}]");
+        let Some(principal) = event.get("principal") else {
+            errors.push(format!(
+                "TenantIsolation: {base} missing principal or action"
+            ));
+            continue;
+        };
+        let Some(action) = event.get("action") else {
+            errors.push(format!(
+                "TenantIsolation: {base} missing principal or action"
+            ));
+            continue;
+        };
+        let tenant = principal
+            .get("tenant")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        if tenant.is_empty() {
+            errors.push(format!("TenantIsolation: {base}.principal.tenant is empty"));
+            continue;
+        }
+        if !tenant_matches(principal, action) {
+            errors.push(format!(
+                "TenantIsolation: cross-tenant resource access at {base} (principal tenant {tenant:?})"
+            ));
+        }
+    }
+    errors
+}
+
+pub fn validate_denied_events_preserved(
+    tool_use_trace: &Value,
+    pfcore_trace: &Value,
+) -> Vec<String> {
     let Some(tool_calls) = tool_use_trace.get("tool_calls").and_then(|v| v.as_array()) else {
         return Vec::new();
     };
@@ -587,7 +940,8 @@ mod tests {
 
     #[test]
     fn pf_core_trace_hash_chain_valid_fixture() {
-        let path = repo_root().join("examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json");
+        let path =
+            repo_root().join("examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json");
         let trace = load_json(path);
         let errors = validate_pfcore_trace_hash_chain(&trace);
         assert!(errors.is_empty(), "{errors:?}");
@@ -615,7 +969,8 @@ mod tests {
 
     #[test]
     fn pf_core_invalid_hash_chain_vector() {
-        let path = repo_root().join("python/tests/hash_vectors/pf_core/invalid/trace_hash_chain_break.json");
+        let path = repo_root()
+            .join("python/tests/hash_vectors/pf_core/invalid/trace_hash_chain_break.json");
         let trace = load_json(path);
         let errors = validate_pfcore_trace_hash_chain(&trace);
         assert!(errors.iter().any(|err| err.contains("EventHashMismatch")));
@@ -623,7 +978,8 @@ mod tests {
 
     #[test]
     fn pf_core_claim_class_overclaim_vector() {
-        let path = repo_root().join("python/tests/hash_vectors/pf_core/invalid/claim_class_overclaim_trace.json");
+        let path = repo_root()
+            .join("python/tests/hash_vectors/pf_core/invalid/claim_class_overclaim_trace.json");
         let trace = load_json(path);
         let errors = validate_pfcore_trace_hash_chain(&trace);
         assert!(errors.iter().any(|err| err.contains("ClaimClassOverclaim")));
@@ -631,7 +987,8 @@ mod tests {
 
     #[test]
     fn pf_core_contract_violation_vector() {
-        let root = repo_root().join("python/tests/hash_vectors/pf_core/invalid/contract_capability_missing");
+        let root = repo_root()
+            .join("python/tests/hash_vectors/pf_core/invalid/contract_capability_missing");
         let trace = load_json(root.join("trace.json"));
         let contract = load_json(root.join("contract.json"));
         let contract_id = contract
@@ -642,15 +999,156 @@ mod tests {
         let mut contracts = HashMap::new();
         contracts.insert(contract_id, contract);
         let errors = validate_trace_contracts(&trace, &contracts);
-        assert!(errors.iter().any(|err| err.contains("ContractCapabilityRequired")));
+        assert!(errors
+            .iter()
+            .any(|err| err.contains("ContractCapabilityRequired")));
     }
 
     #[test]
     fn pf_core_denied_event_dropped_vector() {
-        let root = repo_root().join("python/tests/hash_vectors/pf_core/invalid/denied_event_dropped");
+        let root =
+            repo_root().join("python/tests/hash_vectors/pf_core/invalid/denied_event_dropped");
         let tool_use = load_json(root.join("tool_use_trace.json"));
         let pfcore = load_json(root.join("pfcore_trace.json"));
         let errors = validate_denied_events_preserved(&tool_use, &pfcore);
         assert!(errors.iter().any(|err| err.contains("DroppedDeniedEvent")));
+    }
+
+    #[test]
+    fn pf_core_trace_hash_mismatch_vector() {
+        let path =
+            repo_root().join("python/tests/hash_vectors/pf_core/invalid/trace_hash_mismatch.json");
+        let trace = load_json(path);
+        let errors = validate_pfcore_trace_hash_chain(&trace);
+        assert!(errors.iter().any(|err| err.contains("TraceHashMismatch")));
+    }
+
+    #[test]
+    fn pf_core_cross_tenant_leak_vector() {
+        let path =
+            repo_root().join("python/tests/hash_vectors/pf_core/invalid/cross_tenant_leak.json");
+        let trace = load_json(path);
+        let errors = validate_tenant_isolation(&trace);
+        assert!(errors.iter().any(|err| err.contains("TenantIsolation")));
+    }
+
+    #[test]
+    fn pf_core_previous_event_hash_mismatch_vector() {
+        let path = repo_root()
+            .join("python/tests/hash_vectors/pf_core/invalid/previous_event_hash_mismatch.json");
+        let trace = load_json(path);
+        let errors = validate_pfcore_trace_hash_chain(&trace);
+        assert!(errors.iter().any(|err| err.contains("EventHashMismatch")));
+    }
+
+    #[test]
+    fn pf_core_direct_trace_semantics_invalid_vectors() {
+        let cases: &[(&str, &str)] = &[
+            (
+                "examples/pf-core-invalid/unknown_direct_trace_effect/trace.json",
+                "UnknownEffect",
+            ),
+            (
+                "examples/pf-core-invalid/capability_effect_mismatch/trace.json",
+                "CapabilityEffectMismatch",
+            ),
+            (
+                "examples/pf-core-invalid/unknown_direct_trace_capability/trace.json",
+                "UnknownCapability",
+            ),
+        ];
+        for (relative, needle) in cases {
+            let trace = load_json(repo_root().join(relative));
+            let errors = validate_direct_trace_action_semantics(&trace);
+            assert!(
+                errors.iter().any(|err| err.contains(needle)),
+                "{relative}: expected {needle} in {errors:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn pf_core_resource_scope_violation_vector() {
+        let path = repo_root().join("examples/pf-core-invalid/resource_scope_violation/trace.json");
+        let trace = load_json(path);
+        let errors = validate_pfcore_trace_hash_chain(&trace);
+        assert!(errors
+            .iter()
+            .any(|err| err.contains("ResourceScopeViolation")));
+    }
+
+    #[test]
+    fn pf_core_resource_pattern_catalog_parity() {
+        let samples: &[(&str, &[(&str, bool)])] = &[
+            ("*", &[("/any/uri", true), ("mailto:x@y", true)]),
+            (
+                "/data/*",
+                &[("/data/report.txt", true), ("/etc/passwd", false)],
+            ),
+            ("mailto:*", &[("mailto:a@b.c", true), ("http://x", false)]),
+            ("agent:*", &[("agent:worker-1", true), ("mcp:tool", false)]),
+            (
+                "mcp:*",
+                &[("mcp:filesystem.read", true), ("agent:x", false)],
+            ),
+            ("lab:*", &[("lab:run-1", true), ("/data/x", false)]),
+        ];
+        for entry in CAPABILITY_CATALOG {
+            let pattern = entry.resource_pattern;
+            let Some((_, cases)) = samples.iter().find(|(pat, _)| *pat == pattern) else {
+                panic!("missing parity samples for pattern {pattern:?}");
+            };
+            for (uri, expected) in *cases {
+                assert_eq!(
+                    resource_matches_pattern(uri, pattern),
+                    *expected,
+                    "pattern={pattern:?} uri={uri:?}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn pf_core_audit_invalid_vectors() {
+        let cases: &[(&str, &str, &str)] = &[
+            (
+                "examples/pf-core-invalid/lean_kernel_checked_on_trace/trace.json",
+                "PFCoreTrace.v0",
+                "ClaimClassOverclaim",
+            ),
+            (
+                "examples/pf-core-invalid/lean_kernel_checked_without_proof_ref/trace.json",
+                "PFCoreTrace.v0",
+                "ClaimClassOverclaim",
+            ),
+            (
+                "examples/pf-core-invalid/lean_kernel_checked_without_proof_term_hash/certificate.json",
+                "PFCoreCertificate.v0",
+                "proof_term_hash",
+            ),
+            (
+                "examples/pf-core-invalid/lean_kernel_checked_without_proof_term_ref/certificate.json",
+                "PFCoreCertificate.v0",
+                "proof_term_ref",
+            ),
+            (
+                "examples/pf-core-invalid/lean_kernel_checked_with_skipped_build/certificate.json",
+                "PFCoreCertificate.v0",
+                "lean_build_status",
+            ),
+        ];
+        for (relative, artifact_type, needle) in cases {
+            let path = repo_root().join(relative);
+            let value = load_json(path);
+            let errors = if *artifact_type == "PFCoreTrace.v0" {
+                validate_pfcore_trace_hash_chain(&value)
+            } else {
+                validate_pfcore_certificate_semantics(&value)
+            };
+            assert!(
+                errors.iter().any(|err| err.contains(needle)),
+                "{relative}: expected {needle} in {errors:?}"
+            );
+        }
     }
 }

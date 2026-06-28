@@ -1,0 +1,5 @@
+﻿# Normalize line endings for fixtures hashed on Linux CI.
+examples/** text eol=lf
+benchmarks/** text eol=lf
+test_vectors/** text eol=lf
+lean/** text eol=lf

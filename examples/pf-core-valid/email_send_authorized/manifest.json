@@ -1,0 +1,4 @@
+{
+  "description": "Authorized email send within policy",
+  "skip_pfcore_trace_conformance": true
+}

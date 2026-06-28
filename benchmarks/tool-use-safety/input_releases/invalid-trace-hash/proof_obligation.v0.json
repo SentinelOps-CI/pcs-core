@@ -30,8 +30,8 @@
       "kind": "VerificationAdmitsBundle",
       "inputs": {
         "verification_status": "ProofChecked",
-        "verified_input_bundle_hash": "sha256:21adad1e4817811766d484422d68ac13a056849b04e9143dcb583a87b70a9e30",
-        "certified_bundle_hash": "sha256:21adad1e4817811766d484422d68ac13a056849b04e9143dcb583a87b70a9e30",
+        "verified_input_bundle_hash": "sha256:8ec0f90d0af828db78c5ada9299daea96128c4737328d40d6d6c473046d4780d",
+        "certified_bundle_hash": "sha256:8ec0f90d0af828db78c5ada9299daea96128c4737328d40d6d6c473046d4780d",
         "release_blocking_checks_passed": true
       }
     },
@@ -39,8 +39,8 @@
       "obligation_id": "signed_bundle_admissible",
       "kind": "SignedBundleAdmissible",
       "inputs": {
-        "signed_input_bundle_hash": "sha256:21adad1e4817811766d484422d68ac13a056849b04e9143dcb583a87b70a9e30",
-        "verified_input_bundle_hash": "sha256:21adad1e4817811766d484422d68ac13a056849b04e9143dcb583a87b70a9e30"
+        "signed_input_bundle_hash": "sha256:8ec0f90d0af828db78c5ada9299daea96128c4737328d40d6d6c473046d4780d",
+        "verified_input_bundle_hash": "sha256:8ec0f90d0af828db78c5ada9299daea96128c4737328d40d6d6c473046d4780d"
       }
     }
   ],
@@ -69,5 +69,5 @@
   "lean_module": "PCS.Theorems",
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:98012907fe12b4bfdf4e2a299cfac98dfb0d2302382b7062a9de3e18fb9fa889"
+  "signature_or_digest": "sha256:69335e62a2eb10f6475b5716c00137af4f691b906731807eb9eafe8658d32f5c"
 }

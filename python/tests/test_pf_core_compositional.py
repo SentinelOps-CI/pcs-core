@@ -90,7 +90,6 @@ def test_verify_proof_binding_rejects_non_kernel_certificate(tmp_path: Path) -> 
 def test_verify_proof_binding_detects_trace_hash_mismatch(tmp_path: Path) -> None:
     if not GENERATED_PROOF.is_file():
         pytest.skip("generated proof fixture missing")
-    trace = _load(VALID_TRACE)
     cert = {
         "schema_version": "v0",
         "artifact_type": "PFCoreCertificate.v0",

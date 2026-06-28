@@ -76,21 +76,38 @@ Expected: schema validation OK; replay match (adapter output per `docs/pf-core-t
 
 ## 7. PCS release-envelope check (not per-trace PF-Core Lean)
 
+Obligation-only (Python deciders):
+
 ```bash
 pcs pcs-envelope check --obligations examples/proof_obligation.valid.json --out /tmp/lean_check_result.json --skip-lean-build
 ```
 
-Legacy alias (prints deprecation notice):
+With generated PCS Lean proof (when Lean toolchain available):
 
 ```bash
-pcs lean-check --obligations examples/proof_obligation.valid.json --out /tmp/lean_check_result.json --skip-lean-build
+pcs pcs-envelope check \
+  --obligations examples/labtrust-release/proof_obligation.v0.json \
+  --out /tmp/lean_check_result.envelope.json \
+  --lean-proof
 ```
 
-Expected: `LeanCheckResult.v0` with PCS `ProofChecked` or rejection; stderr explains this is release-envelope consistency only and directs to `pcs pf-core lean-check` for PF-Core traces. Output must not mention `LeanKernelChecked`.
+Expected with `--lean-proof`: `claim_class: EnvelopeLeanChecked`, `lean_proof_checked: true`, never `LeanKernelChecked`.
 
 ## 8. CertifyEdge (live or mock)
 
-Install [CertifyEdge](https://github.com/fraware/CertifyEdge) and ensure `certifyedge` is on PATH, or use mock mode:
+Install [CertifyEdge](https://github.com/fraware/CertifyEdge) and ensure `certifyedge` is on PATH (see `docs/pf-core/certifyedge-ci.md`), or use mock mode:
+
+**Live path** (when CLI installed):
+
+```bash
+certifyedge --version
+pcs pf-core certifyedge-check \
+  --trace examples/pf-core-valid/labtrust_replay/trace.json \
+  --property qc_release.temporal.safety \
+  --out /tmp/PFCoreCertificate.certifyedge.json
+```
+
+**Mock path** (CI fallback when CLI absent):
 
 ```bash
 PCS_CERTIFYEDGE_MOCK=1 pcs pf-core certifyedge-check \
@@ -99,7 +116,7 @@ PCS_CERTIFYEDGE_MOCK=1 pcs pf-core certifyedge-check \
   --out /tmp/PFCoreCertificate.certifyedge.json
 ```
 
-CI tries live CLI when available and falls back to mock without failing the pipeline.
+CI tries live CLI when available, logs a warning when falling back to mock, and does not fail the pipeline on missing CertifyEdge.
 
 ## 9. LabTrust end-to-end bridge (Phase E)
 

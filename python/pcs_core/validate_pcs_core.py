@@ -22,6 +22,8 @@ IMPORT_READY_VERIFICATION_STATUSES = frozenset(
         "RuntimeChecked",
     }
 )
+
+
 def _is_zero_source_commit(value: str) -> bool:
     return bool(_ZERO_COMMIT_RE.match(value.strip()))
 
@@ -164,4 +166,3 @@ def _validate_signed_bundle(data: dict[str, Any]) -> list[str]:
         _validate_status_fields(vr, "verification_result", errors)
         errors.extend(_validate_verification_result(vr))
     return errors
-

@@ -229,7 +229,7 @@ def sync_legacy_manifest_artifact_hashes(directory: Path | None = None) -> dict[
     updated: dict[str, str] = {}
     for name in MANIFEST_ARTIFACTS:
         path = base / name
-        digest = file_digest(path.read_bytes())
+        digest = file_digest(path.read_bytes().replace(b"\r\n", b"\n"))
         artifacts[str(name)] = digest
         updated[str(name)] = digest
     manifest["artifacts"] = artifacts
@@ -239,7 +239,7 @@ def sync_legacy_manifest_artifact_hashes(directory: Path | None = None) -> dict[
 
 def write_json(path: Path, data: dict[str, Any]) -> None:
     text = json.dumps(data, indent=2, ensure_ascii=False) + "\n"
-    path.write_text(text, encoding="utf-8")
+    path.write_text(text, encoding="utf-8", newline="\n")
 
 
 def is_placeholder_commit(commit: str) -> bool:

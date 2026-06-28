@@ -1,0 +1,4 @@
+{
+  "description": "Network action denied by policy",
+  "skip_pfcore_trace_conformance": true
+}

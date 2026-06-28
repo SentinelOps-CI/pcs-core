@@ -48,11 +48,11 @@
       "denominator": 3.0,
       "coverage_ratio": 0.8333333333333334,
       "details": {
-        "registry_entry_count": 38
+        "registry_entry_count": 49
       },
       "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
       "source_commit": "d444444444444444444444444444444444444444",
-      "signature_or_digest": "sha256:bc323c55da411c756903320b0dfafa85939ab5dfa23cdc4fa9ea25b74d409eea"
+      "signature_or_digest": "sha256:6b669082fc6d1421f0ab2a9db597c32b7ef69ad65e1af7f5a3b8a83d7e36bd0b"
     },
     "formal_checks": {
       "schema_version": "v0",
@@ -136,11 +136,11 @@
   "failures": [],
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:0ecca1556c0aa01032ae58b157a1aaa0af63eeba01f541ecd1b4fec45c02868f",
+  "signature_or_digest": "sha256:70379cd0160b19d7040ce1793b60633dbcfcd29f10b16b3293a689ba6bef9e3b",
   "conformance_refs": [
     {
       "suite": "lean-trust",
-      "run_id": "conf-run-lean-trust-20260521T112228Z",
+      "run_id": "conf-run-lean-trust-20260628T004834Z",
       "status": "passed"
     }
   ]
