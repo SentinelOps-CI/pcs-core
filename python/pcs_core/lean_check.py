@@ -29,7 +29,6 @@ from pcs_core.pf_core_contract import (
 )
 from pcs_core.pf_core_contract_semantics import build_contract_semantics_checked
 from pcs_core.pf_core_lean_codegen import (
-    DEFAULT_CERTIFICATE_MODE,
     certificate_mode_obligations,
     collect_contracts_for_trace,
     compute_lean_environment_hash,
