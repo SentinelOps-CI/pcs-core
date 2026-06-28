@@ -77,27 +77,23 @@ theorem capabilityMatchesEffectsD_sound (a : Action) :
     capabilityMatchesEffectsD a = true ↔ CapabilityMatchesEffects a := by
   simp [capabilityMatchesEffectsD, CapabilityMatchesEffects, decide_eq_true_iff]
 
+/-- Catalog pairs mapping capability ids to canonical embedded effects. -/
+def knownCapabilityEffectCatalog : List (String × Effect) :=
+  [("cap:file-read", Effect.read),
+    ("cap:file-write", Effect.write),
+    ("cap:network", Effect.network),
+    ("cap:email-send", Effect.externalMessage),
+    ("cap:handoff", Effect.stateChange),
+    ("cap:mcp-invoke", Effect.codeExecution),
+    ("cap:lab-release", Effect.custom "lab.release")]
+
 /-- Catalog capability id maps to its canonical embedded effect label. -/
 def KnownCapabilityEffect (cap : String) (eff : Effect) : Prop :=
-  (cap = "cap:file-read" ∧ eff = Effect.read) ∨
-    (cap = "cap:file-write" ∧ eff = Effect.write) ∨
-    (cap = "cap:network" ∧ eff = Effect.network) ∨
-    (cap = "cap:email-send" ∧ eff = Effect.externalMessage) ∨
-    (cap = "cap:handoff" ∧ eff = Effect.stateChange) ∨
-    (cap = "cap:mcp-invoke" ∧ eff = Effect.codeExecution) ∨
-    (cap = "cap:lab-release" ∧ eff = Effect.custom "lab.release")
+  (cap, eff) ∈ knownCapabilityEffectCatalog
 
 /-- Boolean decider for ``KnownCapabilityEffect``. -/
 def knownCapabilityEffectD (cap : String) (eff : Effect) : Bool :=
-  match cap, eff with
-  | "cap:file-read", Effect.read => true
-  | "cap:file-write", Effect.write => true
-  | "cap:network", Effect.network => true
-  | "cap:email-send", Effect.externalMessage => true
-  | "cap:handoff", Effect.stateChange => true
-  | "cap:mcp-invoke", Effect.codeExecution => true
-  | "cap:lab-release", Effect.custom "lab.release" => true
-  | _, _ => false
+  decide ((cap, eff) ∈ knownCapabilityEffectCatalog)
 
 /--
 **Meaning:** The capability-effect decider reflects ``KnownCapabilityEffect``.
@@ -108,19 +104,7 @@ def knownCapabilityEffectD (cap : String) (eff : Effect) : Bool :=
 -/
 theorem knownCapabilityEffectD_sound (cap : String) (eff : Effect) :
     knownCapabilityEffectD cap eff = true ↔ KnownCapabilityEffect cap eff := by
-  constructor
-  · intro h
-    unfold knownCapabilityEffectD at h
-    cases eff <;> split at h <;> simp [KnownCapabilityEffect] at h ⊢ <;> tauto
-  · intro h
-    rcases h with h | h | h | h | h | h | h
-  · simp [knownCapabilityEffectD, h.1, h.2]
-  · simp [knownCapabilityEffectD, h.1, h.2]
-  · simp [knownCapabilityEffectD, h.1, h.2]
-  · simp [knownCapabilityEffectD, h.1, h.2]
-  · simp [knownCapabilityEffectD, h.1, h.2]
-  · simp [knownCapabilityEffectD, h.1, h.2]
-  · simp [knownCapabilityEffectD, h.1, h.2]
+  simp [knownCapabilityEffectD, KnownCapabilityEffect, decide_eq_true_iff]
 
 /--
 **Meaning:** File-write catalog capability embeds ``Effect.write``.
@@ -132,14 +116,8 @@ theorem knownCapabilityEffectD_sound (cap : String) (eff : Effect) :
 theorem knownCapabilityEffect_file_write (cap : String) (eff : Effect) :
     cap = "cap:file-write" → KnownCapabilityEffect cap eff → eff = Effect.write := by
   intro hcap h
-  rcases h with ⟨hc, he⟩ | ⟨hc, he⟩ | ⟨hc, he⟩ | ⟨hc, he⟩ | ⟨hc, he⟩ | ⟨hc, he⟩ | ⟨hc, he⟩
-  · exact (hcap.trans hc.symm).false.elim
-  · exact he
-  · exact (hcap.trans hc.symm).false.elim
-  · exact (hcap.trans hc.symm).false.elim
-  · exact (hcap.trans hc.symm).false.elim
-  · exact (hcap.trans hc.symm).false.elim
-  · exact (hcap.trans hc.symm).false.elim
+  simp [KnownCapabilityEffect, knownCapabilityEffectCatalog, hcap] at h
+  exact h
 
 /-- Structural action preconditions before allowance. -/
 def ActionAdmissible (p : Principal) (a : Action) : Prop :=
