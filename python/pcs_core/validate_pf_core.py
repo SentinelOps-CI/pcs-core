@@ -204,6 +204,41 @@ def _validate_pfcore_certificate(data: dict[str, Any]) -> list[str]:
                 "root: claim_class LeanKernelChecked requires contract_refs or "
                 f"default_contract_ref {DEFAULT_TRACE_SAFE_CONTRACT_ID!r}"
             )
+        semantics_obj = data.get("contract_semantics_checked")
+        if lean_proof_checked:
+            if not isinstance(semantics_obj, dict):
+                errors.append("root: lean_proof_checked requires contract_semantics_checked")
+            else:
+                runtime = semantics_obj.get("runtime")
+                lean = semantics_obj.get("lean")
+                runtime_items = (
+                    [str(item) for item in runtime]
+                    if isinstance(runtime, list)
+                    else []
+                )
+                lean_items = (
+                    [str(item) for item in lean] if isinstance(lean, list) else []
+                )
+                if "resource_pattern_scope" not in runtime_items:
+                    errors.append(
+                        "root: lean_proof_checked contract_semantics_checked.runtime "
+                        "missing 'resource_pattern_scope'"
+                    )
+                if "resource_within_capability_pattern" not in lean_items:
+                    errors.append(
+                        "root: lean_proof_checked contract_semantics_checked.lean "
+                        "missing 'resource_within_capability_pattern'"
+                    )
+                for key in ("lean", "runtime"):
+                    section = semantics_obj.get(key)
+                    if section is None:
+                        continue
+                    if not isinstance(section, list) or any(
+                        not isinstance(item, str) for item in section
+                    ):
+                        errors.append(
+                            f"root: contract_semantics_checked.{key} must be a string array"
+                        )
     errors.extend(enforce_assumption_declared(data, registry_entries().get("PFCoreCertificate.v0")))
     return errors
 
