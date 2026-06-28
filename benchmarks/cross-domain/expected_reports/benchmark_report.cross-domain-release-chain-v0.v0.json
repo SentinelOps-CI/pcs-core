@@ -166,11 +166,11 @@
   "failures": [],
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:3689c64d126b2b8242ac1ddaff9d7514505197125962958b3c3d73a97476c044",
+  "signature_or_digest": "sha256:291f9ab46118c15fd1e5fecb900353a5c08ed874a7f4dcf406f8862b8db90c00",
   "conformance_refs": [
     {
       "suite": "multidomain",
-      "run_id": "conf-run-multidomain-20260627T235311Z",
+      "run_id": "conf-run-multidomain-20260628T002510Z",
       "status": "passed"
     }
   ]

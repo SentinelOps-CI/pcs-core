@@ -136,11 +136,11 @@
   "failures": [],
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:f14d459bb1b245e2014ecad12a44cf12b14284d62aafb4db4fac3e87dae2b0b6",
+  "signature_or_digest": "sha256:ebe3af57bdec8a561e7d863dc72c21fbd43e458ec72c81de64c9218de80ef85a",
   "conformance_refs": [
     {
       "suite": "lean-trust",
-      "run_id": "conf-run-lean-trust-20260627T235311Z",
+      "run_id": "conf-run-lean-trust-20260628T002511Z",
       "status": "passed"
     }
   ]

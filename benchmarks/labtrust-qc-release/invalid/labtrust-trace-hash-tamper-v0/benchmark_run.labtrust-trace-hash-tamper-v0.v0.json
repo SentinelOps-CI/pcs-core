@@ -3,8 +3,8 @@
   "run_id": "bench-run-labtrust-trace-hash-tamper-v0",
   "task_id": "labtrust-qc-release-v0",
   "case_id": "labtrust-trace-hash-tamper-v0",
-  "started_at": "2026-06-28T00:19:42Z",
-  "completed_at": "2026-06-28T00:19:42Z",
+  "started_at": "2026-06-28T00:27:12Z",
+  "completed_at": "2026-06-28T00:27:12Z",
   "commands": [
     {
       "command": "evaluate_labtrust_gallery benchmarks/labtrust-qc-release/invalid/labtrust-trace-hash-tamper-v0/input_artifacts",
@@ -24,8 +24,8 @@
   "certificate_status": "CertificateChecked",
   "scientific_memory_import_status": "not_applicable",
   "scientific_memory_render_status": "not_applicable",
-  "duration_ms": 2,
+  "duration_ms": 1,
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:cca5b8b5d75abe2f32bdf16a00c457a50919a5495b6f3e5efcfdd841fa976349"
+  "signature_or_digest": "sha256:6e04022b63889a773f450b39d582ee29bd18d50b19ee5207aa3569cd7fbd7405"
 }
