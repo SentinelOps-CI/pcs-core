@@ -11,10 +11,16 @@ import {
   computeEventHash,
   computeTraceHash,
   validateClaimClassOverclaim,
+  validateContractSemanticsChecked,
+  validateCrossTenantSafety,
   validateDeniedEventsPreserved,
   validateDirectTraceActionSemantics,
   validatePfcoreCertificateSemantics,
+  traceSafeD,
+  traceSafeRD,
   validatePfcoreTraceHashChain,
+  validateObservationalNonInterference,
+  validateObservationalNonInterferenceAllPairs,
   validateTenantIsolation,
   validateTraceContracts,
 } from "../pfCore.js";
@@ -258,6 +264,21 @@ test("pf-core negative hash vectors parity", () => {
   ) as Record<string, unknown>;
   const tenantErrors = validateTenantIsolation(crossTenant);
   assert.ok(tenantErrors.some((err) => err.includes("TenantIsolation")));
+  const crossTenantErrors = validateCrossTenantSafety(crossTenant);
+  assert.ok(crossTenantErrors.some((err) => err.includes("CrossTenantSafe")));
+
+  const allowedTrace = JSON.parse(
+    readFileSync(
+      join(examplesDir, "pf-core-valid/file_read_allowed/trace.json"),
+      "utf8",
+    ),
+  ) as Record<string, unknown>;
+  assert.deepEqual(validateCrossTenantSafety(allowedTrace), []);
+  assert.deepEqual(validateTenantIsolation(allowedTrace), []);
+  const events = allowedTrace.events as Record<string, unknown>[];
+  const tenant = String((events[0]?.principal as Record<string, unknown>)?.tenant ?? "");
+  assert.deepEqual(validateObservationalNonInterference(allowedTrace, tenant, "other-tenant"), []);
+  assert.deepEqual(validateObservationalNonInterferenceAllPairs(allowedTrace), []);
 
   const contractDir = join(pfCoreInvalidVectorsDir, "contract_capability_missing");
   const contractTrace = JSON.parse(
@@ -305,12 +326,55 @@ test("pf-core direct-trace semantics invalid vectors", () => {
   }
 });
 
+
+test("pf-core traceSafeRD decider parity", () => {
+  const trace = JSON.parse(
+    readFileSync(join(examplesDir, "pf-core-valid/tool_use_trace_compiled/pfcore_trace.json"), "utf8"),
+  ) as Record<string, unknown>;
+  const events = trace.events as Record<string, unknown>[];
+  assert.equal(traceSafeD(events), true);
+  assert.equal(traceSafeRD(events), true);
+  const bad = JSON.parse(
+    readFileSync(join(pfCoreInvalidExamplesDir, "resource_scope_violation/trace.json"), "utf8"),
+  ) as Record<string, unknown>;
+  const badEvents = bad.events as Record<string, unknown>[];
+  assert.equal(traceSafeRD(badEvents), false);
+});
+
 test("pf-core resource scope violation vector", () => {
   const trace = JSON.parse(
     readFileSync(join(pfCoreInvalidExamplesDir, "resource_scope_violation/trace.json"), "utf8"),
   ) as Record<string, unknown>;
   const errors = validatePfcoreTraceHashChain(trace);
   assert.ok(errors.some((err) => err.includes("ResourceScopeViolation")));
+});
+
+test("pf-core contract_semantics_checked resource obligations", () => {
+  const missingLean = {
+    claim_class: "LeanKernelChecked",
+    lean_proof_checked: true,
+    default_contract_ref: "trace-safe",
+    contract_semantics_checked: {
+      lean: [] as string[],
+      runtime: ["resource_pattern_scope"],
+    },
+  };
+  const missingErrors = validateContractSemanticsChecked(missingLean);
+  assert.ok(
+    missingErrors.some((err) => err.includes("resource_within_capability_pattern")),
+    missingErrors.join("; "),
+  );
+
+  const ok = {
+    claim_class: "LeanKernelChecked",
+    lean_proof_checked: true,
+    default_contract_ref: "trace-safe",
+    contract_semantics_checked: {
+      lean: ["resource_within_capability_pattern"],
+      runtime: ["resource_pattern_scope"],
+    },
+  };
+  assert.deepEqual(validateContractSemanticsChecked(ok), []);
 });
 
 test("pf-core audit invalid vectors parity", () => {
@@ -330,6 +394,10 @@ test("pf-core audit invalid vectors parity", () => {
     ["lean_kernel_checked_without_proof_term_hash/certificate.json", "proof_term_hash"],
     ["lean_kernel_checked_without_proof_term_ref/certificate.json", "proof_term_ref"],
     ["lean_kernel_checked_with_skipped_build/certificate.json", "lean_build_status"],
+    [
+      "certificate_mode_effectframecertificate_missing_obligations/certificate.json",
+      "certificate_mode obligations",
+    ],
   ];
   for (const [relative, needle] of certificateCases) {
     const certificate = JSON.parse(
