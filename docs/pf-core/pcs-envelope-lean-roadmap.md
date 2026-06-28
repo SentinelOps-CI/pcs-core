@@ -19,13 +19,14 @@ Implemented:
 - `python/pcs_core/pcs_lean_codegen.py` — generates `Certificate`, `RuntimeReceipt`, `VerificationResult`, and bundle hashes from `ProofObligation.v0`.
 - `lean/PCS/ReleaseChainCheck.lean` — decidable mirrors of `ReleaseChainAdmissible` predicates.
 - `lean/PCS/Generated/Obligation_*.lean` — concrete fixture proofs (LabTrust release example).
+- Generated proofs emit **both** decidable (`*D = true` via `decide`) and propositional (`*Prop` via `*D_sound`) theorems for each release-chain obligation component (`CertificateMatchesRuntime`, `VerificationAdmitsBundle`, `SignedBundleAdmissible`) plus aggregate `ReleaseChainAdmissible`.
 - `--lean-proof` on `pcs pcs-envelope check` — emits `EnvelopeLeanChecked` with `proof_term_ref`, `proof_term_hash`, and disclaimer.
 
 Not implemented (deferred):
 
 - Full schema revision for all PCS benchmark ingest paths.
 - Conformance suite `pcs-envelope-lean-proof` with mandatory `--release-grade` gate in all CI jobs.
-- Unified codegen for tool-use and computation obligation shapes beyond release-chain triple.
+- Unified codegen for tool-use and computation obligation shapes (Lean predicates exist in `ToolUse.lean` / `ComputationWitness.lean`; no fixture codegen yet).
 
 ## Claim classes (honest)
 
