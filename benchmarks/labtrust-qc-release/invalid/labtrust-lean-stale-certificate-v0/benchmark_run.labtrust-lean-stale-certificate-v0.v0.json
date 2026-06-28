@@ -3,8 +3,8 @@
   "run_id": "bench-run-labtrust-lean-stale-certificate-v0",
   "task_id": "labtrust-qc-release-v0",
   "case_id": "labtrust-lean-stale-certificate-v0",
-  "started_at": "2026-06-27T23:36:47Z",
-  "completed_at": "2026-06-27T23:36:47Z",
+  "started_at": "2026-06-28T00:19:42Z",
+  "completed_at": "2026-06-28T00:19:42Z",
   "commands": [
     {
       "command": "evaluate_labtrust_gallery benchmarks/labtrust-qc-release/invalid/labtrust-lean-stale-certificate-v0/input_artifacts",
@@ -27,5 +27,5 @@
   "duration_ms": 1,
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:f013e21d98b82f80d91fb8fc52523b9d39487c0ca2d0ef68b7438817fb6a3527"
+  "signature_or_digest": "sha256:f87a816fd23ec20cb0423d370a33daa3e457388f77d5b4decfbae87d80b7dea1"
 }

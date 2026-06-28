@@ -7,7 +7,7 @@
       "run_id": "bench-run-labtrust-valid-release-v0",
       "case_id": "labtrust-valid-release-v0",
       "path": "benchmarks/labtrust-qc-release/valid/labtrust-valid-release-v0/benchmark_run.labtrust-valid-release-v0.v0.json",
-      "observed_status": "failed"
+      "observed_status": "passed"
     },
     {
       "run_id": "bench-run-labtrust-certificate-id-tamper-v0",
@@ -26,13 +26,13 @@
   ],
   "summary": {
     "total_cases": 13,
-    "passed_cases": 8,
-    "failed_cases": 5,
-    "expected_failures_detected": 8,
+    "passed_cases": 13,
+    "failed_cases": 0,
+    "expected_failures_detected": 12,
     "unexpected_passes": 0,
-    "unexpected_failures": 5,
-    "failure_localization_accuracy": 0.8333333333333334,
-    "repair_hint_accuracy": 0.8333333333333334,
+    "unexpected_failures": 0,
+    "failure_localization_accuracy": 1.0,
+    "repair_hint_accuracy": 1.0,
     "formal_check_coverage": 0.0,
     "registry_coverage": 0.0,
     "scientific_memory_render_coverage": 0.0
@@ -80,39 +80,39 @@
       "schema_version": "v0",
       "coverage_id": "labtrust-qc-release-v0-repro",
       "metric": "release_reproducibility",
-      "numerator": 8.0,
+      "numerator": 13.0,
       "denominator": 13.0,
-      "coverage_ratio": 0.6153846153846154,
+      "coverage_ratio": 1.0,
       "details": {},
       "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
       "source_commit": "d444444444444444444444444444444444444444",
-      "signature_or_digest": "sha256:61071b2645ac22dc45ff8134be1caf0e424a836c14daaac9c4152bd5660d0f62"
+      "signature_or_digest": "sha256:f1c452c46cf4e302d2afd8daa4928500c279e0ff0de23c6d0c1c16d7eca8e30c"
     },
     "certificate_completeness": {
       "schema_version": "v0",
       "coverage_id": "labtrust-qc-release-v0-cert",
       "metric": "certificate_completeness",
-      "numerator": 8.0,
+      "numerator": 13.0,
       "denominator": 13.0,
-      "coverage_ratio": 0.6153846153846154,
+      "coverage_ratio": 1.0,
       "details": {},
       "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
       "source_commit": "d444444444444444444444444444444444444444",
-      "signature_or_digest": "sha256:c9c72e6e43c0670e578d427839187fd71d24bfed0ca5ba048bfc3dc687ce6968"
+      "signature_or_digest": "sha256:240ec8d9c238fe6ad316426ad330f3ae4ee3bda7da9021b4c42ff8471acc54b4"
     }
   },
   "failures": [],
   "producer_id": "pcs-bench",
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
-  "signature_or_digest": "sha256:2ee3c4f16f277bf2f752ec2b7075dfdd1a1c5aa8299a93a0fdd4ff5b97b214bc",
+  "signature_or_digest": "sha256:e73c7e37dbd30ed555f05cf33d21c24f70eb86e5031c47ea0fe09b6ede01fc69",
   "metric_summaries": [
     {
       "schema_version": "v0",
       "metric_id": "release_reproducibility_score",
-      "score": 0.6153846153846154,
+      "score": 1.0,
       "applicability": "measured",
-      "numerator": 8.0,
+      "numerator": 13.0,
       "denominator": 13.0,
       "reason": "coverage from labtrust-qc-release-v0-repro",
       "details": {
@@ -120,27 +120,27 @@
       },
       "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
       "source_commit": "d444444444444444444444444444444444444444",
-      "signature_or_digest": "sha256:ee5320d18324bf139e2335315e9c91595cc80eae09101ec1b49e7f0b26dc0cd1"
+      "signature_or_digest": "sha256:ea8dd9d94b8f74d1d4b920c16287d9f5e34086ed3155f250f118a814caaf701b"
     },
     {
       "schema_version": "v0",
       "metric_id": "failure_localization_accuracy",
-      "score": 0.8333333333333334,
+      "score": 1.0,
       "applicability": "measured",
-      "numerator": 10.833333,
-      "denominator": 13.0,
+      "numerator": 12.0,
+      "denominator": 12.0,
       "reason": "component alignment on invalid cases",
       "details": {},
       "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
       "source_commit": "17e414501b3e1c58e8fbde1fe89a828440a945d9",
-      "signature_or_digest": "sha256:93b980193680dfc82b54eef60a61441ca9d81c71aa7546b76f6550e5ac1c47cd"
+      "signature_or_digest": "sha256:b11fe5c3955df630bbd8e704655e65ce188076853988c5e658a45513d743882a"
     },
     {
       "schema_version": "v0",
       "metric_id": "certificate_completeness_score",
-      "score": 0.6153846153846154,
+      "score": 1.0,
       "applicability": "measured",
-      "numerator": 8.0,
+      "numerator": 13.0,
       "denominator": 13.0,
       "reason": "coverage from labtrust-qc-release-v0-cert",
       "details": {
@@ -148,7 +148,7 @@
       },
       "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
       "source_commit": "d444444444444444444444444444444444444444",
-      "signature_or_digest": "sha256:c6a3eef8948e4522b9b725b54cd2150cb27427dd2b6c4bd9a10cc1145eb84498"
+      "signature_or_digest": "sha256:75d72bd397b836fae0f2e7ec49f6a79a5f79a68f3832378a40adc125abd41bf3"
     },
     {
       "schema_version": "v0",

@@ -3,29 +3,29 @@
   "run_id": "bench-run-labtrust-lean-signed-hash-mismatch-v0",
   "task_id": "labtrust-qc-release-v0",
   "case_id": "labtrust-lean-signed-hash-mismatch-v0",
-  "started_at": "2026-06-27T23:36:47Z",
-  "completed_at": "2026-06-27T23:36:47Z",
+  "started_at": "2026-06-28T00:19:42Z",
+  "completed_at": "2026-06-28T00:19:42Z",
   "commands": [
     {
       "command": "evaluate_labtrust_gallery benchmarks/labtrust-qc-release/invalid/labtrust-lean-signed-hash-mismatch-v0/input_artifacts",
-      "exit_code": 1
+      "exit_code": 0
     }
   ],
   "artifacts_produced": [
     "manifest.json",
     "trace_certificate.json"
   ],
-  "observed_status": "failed",
-  "observed_failure_code": "trace_hash_mismatch",
-  "observed_responsible_component": "runtime_producer",
-  "observed_repair_hint": "align_provenance",
+  "observed_status": "passed",
+  "observed_failure_code": "lean_verified_input_hash_mismatch",
+  "observed_responsible_component": "verifier",
+  "observed_repair_hint": "rerun_verification",
   "system_admission_outcome": "not_evaluated",
   "release_chain_status": "invalid",
   "certificate_status": "CertificateChecked",
   "scientific_memory_import_status": "not_applicable",
   "scientific_memory_render_status": "not_applicable",
-  "duration_ms": 2,
+  "duration_ms": 3,
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:ac82f41ea5fbfdf30802043a09da4ff19ee843220caec441cd7f83be98c8d72b"
+  "signature_or_digest": "sha256:16adf4a9b42c1f35c29dfbf0eff0811d72e9375b0f0a91763a7c2d1694ee76f3"
 }

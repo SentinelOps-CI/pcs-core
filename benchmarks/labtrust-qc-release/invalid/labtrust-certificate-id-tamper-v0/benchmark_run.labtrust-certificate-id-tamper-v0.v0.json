@@ -3,8 +3,8 @@
   "run_id": "bench-run-labtrust-certificate-id-tamper-v0",
   "task_id": "labtrust-qc-release-v0",
   "case_id": "labtrust-certificate-id-tamper-v0",
-  "started_at": "2026-06-27T23:36:47Z",
-  "completed_at": "2026-06-27T23:36:47Z",
+  "started_at": "2026-06-28T00:19:42Z",
+  "completed_at": "2026-06-28T00:19:42Z",
   "commands": [
     {
       "command": "evaluate_labtrust_gallery benchmarks/labtrust-qc-release/invalid/labtrust-certificate-id-tamper-v0/input_artifacts",
@@ -27,5 +27,5 @@
   "duration_ms": 1,
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:c2f7c54b31b522a58753ae159cba4e9f489052b26376c05fe0b09c8f106c99d8"
+  "signature_or_digest": "sha256:687f3547f8ad38693190915c190e7f8b7f002406c79e5b0e4f845afba71cc272"
 }

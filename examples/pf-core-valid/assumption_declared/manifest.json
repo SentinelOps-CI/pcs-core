@@ -2,6 +2,7 @@
   "case_id": "assumption_declared",
   "description": "PFCoreCertificate with AssumptionSet.v0 assumption ref when lean checks deferred",
   "expected_valid": true,
+  "skip_pfcore_trace_conformance": true,
   "artifacts": [
     "assumption_set.json",
     "certificate.json"

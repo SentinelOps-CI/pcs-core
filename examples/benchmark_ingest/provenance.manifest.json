@@ -13,6 +13,7 @@
       "producer_repo": "LabTrust-Gym",
       "producer_command": "make pcs-bench-producer",
       "pcs_core_generator": "build_labtrust_pcs_bench_ingest",
+      "materialized_from": "LabTrust-Gym/benchmark_runs/labtrust_reproducibility/pcs_bench_ingest.v0.json",
       "adequacy_tier": "external-review-grade"
     },
     {
@@ -23,6 +24,7 @@
       "producer_repo": "CertifyEdge",
       "producer_command": "make pcs-bench-producer",
       "pcs_core_generator": "build_certifyedge_pcs_bench_ingest",
+      "materialized_from": "CertifyEdge/benchmark_runs/tool_use_safety/pcs_bench_ingest.v0.json",
       "adequacy_tier": "external-review-grade"
     },
     {

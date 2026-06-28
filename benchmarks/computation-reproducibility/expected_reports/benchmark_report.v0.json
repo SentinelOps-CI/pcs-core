@@ -7,7 +7,7 @@
       "run_id": "bench-run-valid-release-chain",
       "case_id": "valid-release-chain",
       "path": "benchmarks/computation-reproducibility/valid/valid-release-chain/benchmark_run.valid-release-chain.v0.json",
-      "observed_status": "failed"
+      "observed_status": "passed"
     },
     {
       "run_id": "bench-run-invalid-witness-hash",
@@ -26,11 +26,11 @@
   ],
   "summary": {
     "total_cases": 2,
-    "passed_cases": 1,
-    "failed_cases": 1,
+    "passed_cases": 2,
+    "failed_cases": 0,
     "expected_failures_detected": 1,
     "unexpected_passes": 0,
-    "unexpected_failures": 1,
+    "unexpected_failures": 0,
     "failure_localization_accuracy": 1.0,
     "repair_hint_accuracy": 1.0,
     "formal_check_coverage": 1.0,
@@ -80,34 +80,34 @@
       "schema_version": "v0",
       "coverage_id": "computation-reproducibility-v0-repro",
       "metric": "release_reproducibility",
-      "numerator": 1.0,
+      "numerator": 2.0,
       "denominator": 2.0,
-      "coverage_ratio": 0.5,
+      "coverage_ratio": 1.0,
       "details": {},
       "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
       "source_commit": "d444444444444444444444444444444444444444",
-      "signature_or_digest": "sha256:d74a8eb777871793a3dd1c4bd24080ff76e8fb0bb6e3e6c6340ac6a0476da86e"
+      "signature_or_digest": "sha256:c6435814009f8797dc0163108a1944aa252a13f94b5d817c35c86340413f9230"
     },
     "certificate_completeness": {
       "schema_version": "v0",
       "coverage_id": "computation-reproducibility-v0-cert",
       "metric": "certificate_completeness",
-      "numerator": 1.0,
+      "numerator": 2.0,
       "denominator": 2.0,
-      "coverage_ratio": 0.5,
+      "coverage_ratio": 1.0,
       "details": {},
       "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
       "source_commit": "d444444444444444444444444444444444444444",
-      "signature_or_digest": "sha256:b024c0956ddecc26606b60495784cc618105ac4a64bd8c98c03866dec6edbc7c"
+      "signature_or_digest": "sha256:5933e9db66537b3f6c4624ced0ec8e61855833bc0b2cc7af5a5e27342130c067"
     }
   },
   "metric_summaries": [
     {
       "schema_version": "v0",
       "metric_id": "release_reproducibility_score",
-      "score": 0.5,
+      "score": 1.0,
       "applicability": "measured",
-      "numerator": 1.0,
+      "numerator": 2.0,
       "denominator": 2.0,
       "reason": "coverage from computation-reproducibility-v0-repro",
       "details": {
@@ -115,7 +115,7 @@
       },
       "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
       "source_commit": "d444444444444444444444444444444444444444",
-      "signature_or_digest": "sha256:3a41d8a5a9931a5b6cf34b3b37c2cdc89ce3fa446e2364b94ec27ee278350e09"
+      "signature_or_digest": "sha256:0ce7b3bb6dad9a10bdc8aef6895fa880123029ab5991d70da38d2c5c4eec9faf"
     },
     {
       "schema_version": "v0",
@@ -133,9 +133,9 @@
     {
       "schema_version": "v0",
       "metric_id": "certificate_completeness_score",
-      "score": 0.5,
+      "score": 1.0,
       "applicability": "measured",
-      "numerator": 1.0,
+      "numerator": 2.0,
       "denominator": 2.0,
       "reason": "coverage from computation-reproducibility-v0-cert",
       "details": {
@@ -143,7 +143,7 @@
       },
       "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
       "source_commit": "d444444444444444444444444444444444444444",
-      "signature_or_digest": "sha256:7a8d5f12bb8a2d8ba78ccd9168f51e21ad2140600efa5f94fba0ff15113042a7"
+      "signature_or_digest": "sha256:4b419c5a8bff6ec0590d1f4a9410c33a04fc2d7d14d6f9590ac6877350366231"
     },
     {
       "schema_version": "v0",
@@ -191,21 +191,15 @@
       "signature_or_digest": "sha256:dab6da5ceaa4289e9b8acbabb89723c96e0ec55e8412934a95945008b1b8c699"
     }
   ],
-  "failures": [
-    {
-      "case_id": "valid-release-chain",
-      "run_id": "bench-run-valid-release-chain",
-      "message": "expected passed got failed (manifest_hash_mismatch)"
-    }
-  ],
+  "failures": [],
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:f33ead2f393a1c4983db4549c37d6bffbaa99bb3062988bb9fa88a607e8a0746",
+  "signature_or_digest": "sha256:28198f8993858dfee8b4107aca2af124672ca8ab63c77ac679f75d4833cebe82",
   "conformance_refs": [
     {
       "suite": "computation",
-      "run_id": "conf-run-computation-20260627T233647Z",
-      "status": "failed"
+      "run_id": "conf-run-computation-20260627T235310Z",
+      "status": "passed"
     }
   ]
 }

@@ -7,13 +7,13 @@
       "run_id": "bench-run-labtrust-valid-release-v0",
       "case_id": "labtrust-valid-release-v0",
       "path": "benchmarks/labtrust-qc-release/valid/labtrust-valid-release-v0/benchmark_run.labtrust-valid-release-v0.v0.json",
-      "observed_status": "failed"
+      "observed_status": "passed"
     },
     {
       "run_id": "bench-run-labtrust-scientific-memory-import-failure-v0",
       "case_id": "labtrust-scientific-memory-import-failure-v0",
       "path": "benchmarks/labtrust-qc-release/invalid/labtrust-scientific-memory-import-failure-v0/benchmark_run.labtrust-scientific-memory-import-failure-v0.v0.json",
-      "observed_status": "failed"
+      "observed_status": "passed"
     }
   ],
   "metrics": [
@@ -22,13 +22,13 @@
   ],
   "summary": {
     "total_cases": 2,
-    "passed_cases": 0,
-    "failed_cases": 2,
-    "expected_failures_detected": 0,
+    "passed_cases": 2,
+    "failed_cases": 0,
+    "expected_failures_detected": 1,
     "unexpected_passes": 0,
-    "unexpected_failures": 2,
-    "failure_localization_accuracy": 0.0,
-    "repair_hint_accuracy": 0.0,
+    "unexpected_failures": 0,
+    "failure_localization_accuracy": 1.0,
+    "repair_hint_accuracy": 1.0,
     "formal_check_coverage": 0.0,
     "registry_coverage": 0.0,
     "scientific_memory_render_coverage": 0.0
@@ -76,25 +76,25 @@
       "schema_version": "v0",
       "coverage_id": "scientific-memory-rendering-v0-repro",
       "metric": "release_reproducibility",
-      "numerator": 0.0,
+      "numerator": 2.0,
       "denominator": 2.0,
-      "coverage_ratio": 0.0,
+      "coverage_ratio": 1.0,
       "details": {},
       "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
       "source_commit": "d444444444444444444444444444444444444444",
-      "signature_or_digest": "sha256:3cb7800d306c76b3128835b72452486190d29bffc433edacd05e9c9dcb95dd12"
+      "signature_or_digest": "sha256:571b54f180bbf8e19a9cbb61410ed4e5b2a4668dbe186331c807ebe96d9f28e8"
     },
     "certificate_completeness": {
       "schema_version": "v0",
       "coverage_id": "scientific-memory-rendering-v0-cert",
       "metric": "certificate_completeness",
-      "numerator": 0.0,
+      "numerator": 2.0,
       "denominator": 2.0,
-      "coverage_ratio": 0.0,
+      "coverage_ratio": 1.0,
       "details": {},
       "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
       "source_commit": "d444444444444444444444444444444444444444",
-      "signature_or_digest": "sha256:c057b8d747b426f90636534d600d53c4f829fe6144d9285f0068642c581aa42d"
+      "signature_or_digest": "sha256:9f932167d6b1570072cc269d98459f38904d3ca53c60be7b124eb84299ec2b9d"
     }
   },
   "metric_summaries": [
@@ -116,30 +116,19 @@
     {
       "schema_version": "v0",
       "metric_id": "failure_localization_accuracy",
-      "score": 0.0,
+      "score": 1.0,
       "applicability": "measured",
-      "numerator": 0.0,
+      "numerator": 1.0,
       "denominator": 1.0,
       "reason": "component alignment on invalid cases",
       "details": {},
       "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
       "source_commit": "d444444444444444444444444444444444444444",
-      "signature_or_digest": "sha256:2108cf20d6c3bf6eca8bc5fcf5bbcaf3ace29c618e24c65977aba97740da75c5"
+      "signature_or_digest": "sha256:a3928277b1435079004ae7f9018d672b053006d0e5eabcc83ff426e9f58bdce2"
     }
   ],
-  "failures": [
-    {
-      "case_id": "labtrust-valid-release-v0",
-      "run_id": "bench-run-labtrust-valid-release-v0",
-      "message": "expected passed got failed (trace_hash_mismatch)"
-    },
-    {
-      "case_id": "labtrust-scientific-memory-import-failure-v0",
-      "run_id": "bench-run-labtrust-scientific-memory-import-failure-v0",
-      "message": "expected failed got failed (trace_hash_mismatch)"
-    }
-  ],
+  "failures": [],
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:b7e9a164ae867f04c7d8dc8697dbb6e74cbf17ce03fb450e2c9775a133e2a8c0"
+  "signature_or_digest": "sha256:58e2ca0c0f74fa193f1608cd1fe7033d4fb543cc7bb262fc623040a327f12070"
 }
