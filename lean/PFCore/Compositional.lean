@@ -1,5 +1,7 @@
 import PFCore.Contract
 import PFCore.Handoff
+import PFCore.NonInterference
+import PFCore.ResourcePattern
 
 /-!
 # PF-Core compositional trust (conservative extension layer)
@@ -200,5 +202,78 @@ theorem composed_trace_safe_invariant_preserved_by_safe_extension
   exact composed_contract_preserves_component_invariants c1 c2 (Trace.cons tr ev)
     (by rw [hInv1]; exact trace_safe_invariant_preserved_cons tr ev h1 hev)
     (by rw [hInv2]; exact trace_safe_invariant_preserved_cons tr ev h2 hev)
+
+/--
+**Meaning:** Appending `TraceSafe` traces yields `TraceSafe` (sequential composition).
+
+**Trusted use:** Compositional trace safety under chronological concatenation.
+
+**Does not imply:** Hash-chain integrity across trace boundaries or replay validity.
+-/
+theorem traceSafe_append : ∀ tr1 tr2, TraceSafe tr1 → TraceSafe tr2 → TraceSafe (Trace.append tr1 tr2)
+  | tr1, Trace.empty, h1, _ => h1
+  | tr1, Trace.cons tr' ev, h1, h2 => by
+    have ⟨hTr', hEv⟩ := h2
+    rw [trace_append_cons]
+    exact safe_extension_preserves_trace_safe (Trace.append tr1 tr') ev
+      (traceSafe_append tr1 tr' h1 hTr') hEv
+
+/--
+**Meaning:** Appending `TraceSafeR` traces yields `TraceSafeR` (resource-pattern composition).
+
+**Trusted use:** Stronger compositional safety with kernel resource-pattern discharge.
+
+**Does not imply:** Full glob/fnmatch parity for non-catalog URIs.
+-/
+theorem traceSafeR_append : ∀ tr1 tr2, TraceSafeR tr1 → TraceSafeR tr2 → TraceSafeR (Trace.append tr1 tr2)
+  | tr1, Trace.empty, h1, _ => h1
+  | tr1, Trace.cons tr' ev, h1, h2 => by
+    have ⟨hTr', hEv⟩ := h2
+    rw [trace_append_cons]
+    exact And.intro (traceSafeR_append tr1 tr' h1 hTr') hEv
+
+/--
+**Meaning:** Sequential composition preserves tenant isolation.
+
+**Trusted use:** Compositional NI building block for multi-segment traces.
+
+**Does not imply:** Cross-tenant covert channels or deny-side leaks.
+-/
+theorem trace_append_preserves_tenant_isolation :
+    ∀ tr1 tr2, TenantIsolation tr1 → TenantIsolation tr2 → TenantIsolation (Trace.append tr1 tr2)
+  | tr1, Trace.empty, h1, _ => h1
+  | tr1, Trace.cons tr' ev, h1, h2 => by
+    have ⟨hTr', hEv⟩ := h2
+    rw [trace_append_cons]
+    exact And.intro (trace_append_preserves_tenant_isolation tr1 tr' h1 hTr') hEv
+
+/--
+**Meaning:** Sequential composition preserves conservative cross-tenant safety.
+
+**Trusted use:** Partial global NI under trace concatenation.
+
+**Does not imply:** Full global non-interference or timing leaks.
+-/
+theorem trace_append_preserves_trace_cross_tenant_safe :
+    ∀ tr1 tr2, TraceCrossTenantSafe tr1 → TraceCrossTenantSafe tr2 →
+      TraceCrossTenantSafe (Trace.append tr1 tr2)
+  | tr1, Trace.empty, h1, _ => h1
+  | tr1, Trace.cons tr' ev, h1, h2 => by
+    have ⟨hTr', hEv⟩ := h2
+    rw [trace_append_cons]
+    exact And.intro (trace_append_preserves_trace_cross_tenant_safe tr1 tr' h1 hTr') hEv
+
+/--
+**Meaning:** `TraceSafeR` append refines `TraceSafe` append (migration link).
+
+**Trusted use:** Resource-pattern compositional safety implies base compositional safety.
+
+**Does not imply:** Reverse refinement without explicit `TraceSafeR` evidence.
+-/
+theorem traceSafeR_append_implies_traceSafe_append (tr1 tr2 : Trace)
+    (h1 : TraceSafeR tr1) (h2 : TraceSafeR tr2) :
+    TraceSafe (Trace.append tr1 tr2) :=
+  traceSafe_append tr1 tr2 (traceSafeR_implies_traceSafe tr1 h1)
+    (traceSafeR_implies_traceSafe tr2 h2)
 
 end PFCore
