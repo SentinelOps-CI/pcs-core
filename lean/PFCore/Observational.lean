@@ -77,12 +77,12 @@ theorem traceProjection_mem (tenant : String) (tr : Trace) (ev : Event) :
           exact ⟨Or.inr hIn, hLow⟩
         | inr heq =>
           subst heq
-          exact ⟨Or.inl rfl, (lowEventD_sound tenant e).mp hlow⟩
+          exact ⟨Or.inl rfl, (lowEventD_sound tenant ev).mp hlow⟩
       · intro ⟨hIn, hLow⟩
         cases hIn with
         | inl heq =>
           subst heq
-          simp [(lowEventD_sound tenant e).mpr hLow]
+          simp [(lowEventD_sound tenant ev).mpr hLow]
         | inr hIn' =>
           exact Or.inl (ih.mpr ⟨hIn', hLow⟩)
     · simp [TraceProjection, hlow, lowEventD_sound]
@@ -94,7 +94,7 @@ theorem traceProjection_mem (tenant : String) (tr : Trace) (ev : Event) :
         cases hIn with
         | inl heq =>
           subst heq
-          exact absurd hLow (fun h => (lowEventD_sound tenant e).mpr h hlow)
+          exact absurd hLow (fun h => (lowEventD_sound tenant ev).mpr h hlow)
         | inr hIn' =>
           exact ih.mpr ⟨hIn', hLow⟩
 

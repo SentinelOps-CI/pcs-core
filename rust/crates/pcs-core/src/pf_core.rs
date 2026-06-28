@@ -247,9 +247,7 @@ fn validate_action_capability_effects(action: &Value, path: &str) -> Option<Stri
 
 fn validate_resource_scope(action: &Value, path: &str) -> Option<String> {
     let capability = action.get("capability")?;
-    let Some(cap_obj) = object_mut(capability) else {
-        return None;
-    };
+    let cap_obj = object_mut(capability)?;
     let pattern = cap_obj
         .get("resource_pattern")
         .and_then(|v| v.as_str())
