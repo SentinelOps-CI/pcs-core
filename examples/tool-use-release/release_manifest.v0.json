@@ -102,13 +102,13 @@
     }
   },
   "release_status": "Validated",
-  "signature_or_digest": "sha256:c2d07b432fdc356914d83f86137eb7e896729bc8e4f8128bb3b8c2f2f7dcd147",
+  "signature_or_digest": "sha256:4caac0d439c18f503cec3f9be21686c1551d1a355c2e08920bbfb87dd3c5b4d0",
   "proof_obligation": {
     "path": "proof_obligation.v0.json",
     "sha256": "sha256:927c89fec743d4276e34be6fc46beee375d004b05e4277cbf866a72f9b8736a0"
   },
   "lean_check_result": {
     "path": "lean_check_result.v0.json",
-    "sha256": "sha256:fd71fa9155e643ed6fa2358ad0a87ec1ccfc9247e3d093a190aa6b4666513219"
+    "sha256": "sha256:11bdd0342ed22b1d2751255e5bf46fc85ca31e13e5068b0d5c9b2be98f9c7f5b"
   }
 }
