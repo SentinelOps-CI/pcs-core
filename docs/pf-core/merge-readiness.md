@@ -10,6 +10,8 @@ Verification log for PF-Core critical-issues fix plan on `main`.
 | Release chain | `d24162f` | 28328871501 | success | `validate-release-chain` green |
 | CI | `15eb268` | 28328983600 | success | Fix: remove unused import; all jobs green |
 | Release chain | `15eb268` | 28328983599 | success | `validate-release-chain` green |
+| CI | `e0c7aac` | 28329132416 | **failure** | Docs-only; Windows-1252 en-dash in merge-readiness broke `audit_claims` UTF-8 read |
+| CI | `6a6efe6` | 28329193168 | success | HEAD; encoding fix; all CI jobs green |
 
 ### Job matrix (`d24162f`, run 28328871492)
 
@@ -34,6 +36,8 @@ Verification log for PF-Core critical-issues fix plan on `main`.
 | validate-cli-contract | success |
 
 Fix commit: `15eb268` - Remove unused lean_codegen import so ruff passes on main CI.
+
+Follow-up: `e0c7aac` (verification log), `6a6efe6` (UTF-8 encoding).
 
 Prior SHA `b5ed639` CI run 28327689774 was green; `038b0bc` had Release chain success.
 ## Local verification log (2026-06-28, post fix plan)
