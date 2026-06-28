@@ -94,8 +94,8 @@ theorem traceProjection_mem (tenant : String) (tr : Trace) (ev : Event) :
         cases hIn with
         | inl heq =>
           subst heq
-          have ht : lowEventD tenant ev = true := (lowEventD_sound tenant ev).mpr hLow
-          rw [ht] at hlow
+          have ht := (lowEventD_sound tenant ev).mpr hLow
+          simp [ht] at hlow
           cases hlow
         | inr hIn' =>
           exact ih.mpr ⟨hIn', hLow⟩
