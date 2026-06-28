@@ -1,10 +1,18 @@
+import { existsSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { canonicalHash, canonicalJsonBytes } from "./hash.js";
 import {
   CAPABILITY_CATALOG,
   EFFECT_KINDS,
+  TOOL_NAME_MAP,
 } from "./pfCoreCatalog.js";
 
-export { CAPABILITY_CATALOG, EFFECT_KINDS, ROLE_CAPABILITY_MAP } from "./pfCoreCatalog.js";
+export {
+  CAPABILITY_CATALOG,
+  EFFECT_KINDS,
+  ROLE_CAPABILITY_MAP,
+  TOOL_NAME_MAP,
+} from "./pfCoreCatalog.js";
 
 export const GENESIS_HASH =
   "sha256:0000000000000000000000000000000000000000000000000000000000000000";
@@ -349,6 +357,7 @@ export function validateContractSemanticsChecked(
 }
 
 const DEFAULT_CERTIFICATE_MODE = "TraceSafeCertificate";
+const TOOL_USE_DEFAULT_CERTIFICATE_MODE = "TraceSafeRCertificate";
 
 const CERTIFICATE_MODES = new Set([
   "TraceSafeCertificate",
@@ -406,6 +415,34 @@ const MODE_OBLIGATION_THEOREMS: Record<string, readonly string[]> = {
     "concrete_contract_checked",
   ],
 };
+
+export function resolveToolMapping(
+  toolName: string,
+  toolCategory: string,
+): [string, string, string] {
+  const key = `${toolName}|${toolCategory}`;
+  const mapping = TOOL_NAME_MAP[key];
+  if (!mapping) {
+    throw new Error(
+      `UnknownCapability: ${toolName}/${toolCategory} (at tool_calls.tool_name)`,
+    );
+  }
+  return mapping;
+}
+
+export function resolveCertificateModeDefault(
+  certificate: Record<string, unknown>,
+  tracePath?: string,
+): string {
+  const explicit = certificate.certificate_mode;
+  if (typeof explicit === "string" && CERTIFICATE_MODES.has(explicit)) {
+    return explicit;
+  }
+  if (tracePath && existsSync(join(dirname(tracePath), "tool_use_trace.json"))) {
+    return TOOL_USE_DEFAULT_CERTIFICATE_MODE;
+  }
+  return DEFAULT_CERTIFICATE_MODE;
+}
 
 function stripDigestFields(
   data: Record<string, unknown>,

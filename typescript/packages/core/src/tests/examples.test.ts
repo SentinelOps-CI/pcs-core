@@ -23,6 +23,8 @@ import {
   validateObservationalNonInterferenceAllPairs,
   validateTenantIsolation,
   validateTraceContracts,
+  resolveCertificateModeDefault,
+  resolveToolMapping,
 } from "../pfCore.js";
 import { detectArtifactType, validateArtifact, ValidationError, type ArtifactType } from "../validate.js";
 
@@ -406,6 +408,16 @@ test("pf-core audit invalid vectors parity", () => {
     const errors = validatePfcoreCertificateSemantics(certificate);
     assert.ok(errors.some((err) => err.includes(needle)), `${relative}: ${errors.join("; ")}`);
   }
+});
+
+test("pf-core generated tool_map parity", () => {
+  const [capId, effectKind, pattern] = resolveToolMapping("filesystem.read", "filesystem");
+  assert.equal(capId, "cap:file-read");
+  assert.equal(effectKind, "file.read");
+  assert.equal(pattern, "/data/*");
+  assert.throws(() => resolveToolMapping("unknown.tool", "misc"));
+  const tracePath = join(examplesDir, "pf-core-valid/tool_use_trace_compiled/pfcore_trace.json");
+  assert.equal(resolveCertificateModeDefault({}, tracePath), "TraceSafeRCertificate");
 });
 
 test("shared hash vectors match test_vectors/hash fixtures", () => {
