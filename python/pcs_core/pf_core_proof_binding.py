@@ -9,7 +9,7 @@ from typing import Any, Mapping
 
 from pcs_core.lean_check import compute_proof_term_hash
 from pcs_core.paths import repo_root
-from pcs_core.pf_core_lean_codegen import compute_lean_environment_hash
+from pcs_core.pf_core_lean_codegen import compute_lean_environment_hash, compute_pfcore_kernel_hash
 from pcs_core.pf_core_runtime import compute_trace_hash
 
 
@@ -84,6 +84,7 @@ def verify_proof_binding(
     cert_trace_hash = str(cert.get("trace_hash") or "")
     cert_proof_hash = str(cert.get("proof_term_hash") or "")
     cert_env_hash = str(cert.get("lean_environment_hash") or "")
+    cert_kernel_hash = str(cert.get("pfcore_kernel_hash") or "")
     proof_ref = str(cert.get("proof_term_ref") or cert.get("proof_ref") or "")
 
     if not cert_trace_hash.startswith("sha256:"):
@@ -98,6 +99,12 @@ def verify_proof_binding(
         result.issues.append(
             ProofBindingIssue(
                 "MissingLeanEnvironmentHash", "certificate missing lean_environment_hash"
+            )
+        )
+    if not cert_kernel_hash.startswith("sha256:"):
+        result.issues.append(
+            ProofBindingIssue(
+                "MissingPfcoreKernelHash", "certificate missing pfcore_kernel_hash"
             )
         )
     if not proof_ref:
@@ -162,6 +169,16 @@ def verify_proof_binding(
                 ProofBindingIssue(
                     "LeanEnvironmentHashMismatch",
                     f"current lean environment {actual_env_hash!r} != certificate {cert_env_hash!r}",
+                )
+            )
+
+    if cert_kernel_hash.startswith("sha256:"):
+        actual_kernel_hash = compute_pfcore_kernel_hash()
+        if actual_kernel_hash != cert_kernel_hash:
+            result.issues.append(
+                ProofBindingIssue(
+                    "PfcoreKernelHashMismatch",
+                    f"current kernel hash {actual_kernel_hash!r} != certificate {cert_kernel_hash!r}",
                 )
             )
 

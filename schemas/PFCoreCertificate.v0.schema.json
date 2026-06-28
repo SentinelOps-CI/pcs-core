@@ -35,6 +35,18 @@
     "proof_term_ref": { "type": "string", "minLength": 1 },
     "lean_proof_checked": { "type": "boolean" },
     "lean_environment_hash": { "$ref": "common.defs.json#/$defs/hex_digest" },
+    "pfcore_kernel_hash": { "$ref": "common.defs.json#/$defs/hex_digest" },
+    "certificate_mode": {
+      "type": "string",
+      "enum": [
+        "TraceSafeCertificate",
+        "FramePreservedCertificate",
+        "EffectFrameCertificate",
+        "HandoffSafeCertificate",
+        "CompositionalExtensionCertificate",
+        "ContractCheckedCertificate"
+      ]
+    },
     "obligations": {
       "type": "array",
       "items": { "$ref": "pf_core.defs.json#/$defs/lean_obligation" }

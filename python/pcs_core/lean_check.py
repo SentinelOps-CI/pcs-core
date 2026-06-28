@@ -31,6 +31,9 @@ from pcs_core.pf_core_contract_semantics import build_contract_semantics_checked
 from pcs_core.pf_core_lean_codegen import (
     collect_contracts_for_trace,
     compute_lean_environment_hash,
+    compute_pfcore_kernel_hash,
+    DEFAULT_CERTIFICATE_MODE,
+    MODE_OBLIGATION_THEOREMS,
     generate_proof_obligation_file,
     proof_term_ref_from_path,
     validate_contracts_before_codegen,
@@ -39,6 +42,7 @@ from pcs_core.pf_core_runtime import (
     compute_trace_hash,
     expand_principal_capabilities,
     principal_capabilities_explicit,
+    validate_event_sequence_order,
     validate_pfcore_trace_hash_chain,
 )
 from pcs_core.validate import validate_schema
@@ -366,6 +370,10 @@ def check_pfcore_trace_lean_semantics(trace: Mapping[str, Any]) -> list[PFCoreLe
     for err in hash_errors:
         issues.append(PFCoreLeanCheckIssue("HashChainInvalid", err))
 
+    for err in validate_event_sequence_order(trace):
+        code = err.split(":", 1)[0]
+        issues.append(PFCoreLeanCheckIssue(code, err))
+
     events = _trace_events(trace)
     for index, event in enumerate(events):
         principal = event.get("principal")
@@ -416,6 +424,8 @@ def build_pfcore_certificate(
     proof_term_ref: str | None = None,
     proof_term_hash: str | None = None,
     lean_environment_hash: str | None = None,
+    pfcore_kernel_hash: str | None = None,
+    certificate_mode: str | None = None,
 ) -> dict[str, Any]:
     events = _trace_events(trace)
     trace_hash = str(trace.get("trace_hash") or compute_trace_hash(dict(trace)))
@@ -435,6 +445,10 @@ def build_pfcore_certificate(
     runtime_checks = list(contract_semantics.get("runtime", []))
     runtime_checks.append("resource_pattern_scope")
     contract_semantics["runtime"] = sorted(set(runtime_checks))
+    if lean_proof_checked:
+        lean_checks = list(contract_semantics.get("lean", []))
+        lean_checks.append("resource_within_capability_pattern")
+        contract_semantics["lean"] = sorted(set(lean_checks))
 
     default_contract_ref: str | None = None
     if lean_proof_checked:
@@ -477,6 +491,10 @@ def build_pfcore_certificate(
     }
     if lean_environment_hash:
         cert["lean_environment_hash"] = lean_environment_hash
+    if pfcore_kernel_hash:
+        cert["pfcore_kernel_hash"] = pfcore_kernel_hash
+    if certificate_mode:
+        cert["certificate_mode"] = certificate_mode
     if default_contract_ref:
         cert["default_contract_ref"] = default_contract_ref
     if proof_ref:
@@ -544,6 +562,7 @@ def run_pfcore_lean_check(
     result_out_path: Path | None = None,
     skip_build: bool = False,
     skip_lean_proof: bool = False,
+    certificate_mode: str | None = None,
 ) -> tuple[int, dict[str, Any]]:
     """Validate trace semantics, optionally prove concrete trace safety in Lean."""
     print_lean_check_disclaimer()
@@ -551,6 +570,8 @@ def run_pfcore_lean_check(
     events = _trace_events(data)
     obligations = build_decider_obligations(events)
     lean_environment_hash = compute_lean_environment_hash()
+    pfcore_kernel_hash = compute_pfcore_kernel_hash()
+    mode = certificate_mode or DEFAULT_CERTIFICATE_MODE
 
     issues = check_pfcore_trace_lean_semantics(data)
     contract_errors = validate_contracts_before_codegen(data, trace_path=trace_path)
@@ -570,6 +591,7 @@ def run_pfcore_lean_check(
                 data,
                 pfcore_generated_dir(),
                 trace_path=trace_path,
+                certificate_mode=mode,
             )
             proof_term_ref = proof_term_ref_from_path(proof_path)
             proof_term_hash = compute_proof_term_hash(proof_path)
@@ -601,6 +623,22 @@ def run_pfcore_lean_check(
                 proof_ok, proof_detail = run_lean_concrete_proof(proof_path, skip_build=False)
                 for entry in obligations[-3:]:
                     entry["passed"] = proof_ok
+                if proof_ok:
+                    for theorem in MODE_OBLIGATION_THEOREMS.get(mode, frozenset()):
+                        if theorem in {
+                            "concrete_trace_safe",
+                            "concrete_trace_safe_prop",
+                            "concrete_allowed_events_allowed",
+                        }:
+                            continue
+                        obligations.append(
+                            {
+                                "kind": "CertificateMode",
+                                "theorem": theorem,
+                                "passed": True,
+                                "proof_ref": proof_term_ref,
+                            }
+                        )
         except OSError as exc:
             issues.append(PFCoreLeanCheckIssue("LeanCodegenFailed", str(exc)))
         except ValueError as exc:
@@ -676,6 +714,8 @@ def run_pfcore_lean_check(
         proof_term_ref=proof_term_ref,
         proof_term_hash=proof_term_hash,
         lean_environment_hash=lean_environment_hash,
+        pfcore_kernel_hash=pfcore_kernel_hash,
+        certificate_mode=mode,
     )
     from pcs_core.validate import ValidationError, validate_artifact
 

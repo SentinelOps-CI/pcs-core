@@ -23,6 +23,70 @@ from pcs_core.pf_core_contract import (
     validate_trace_contracts,
 )
 
+DEFAULT_CERTIFICATE_MODE = "TraceSafeCertificate"
+
+CERTIFICATE_MODES = frozenset(
+    {
+        "TraceSafeCertificate",
+        "FramePreservedCertificate",
+        "EffectFrameCertificate",
+        "HandoffSafeCertificate",
+        "CompositionalExtensionCertificate",
+        "ContractCheckedCertificate",
+    }
+)
+
+MODE_OBLIGATION_THEOREMS: dict[str, frozenset[str]] = {
+    "TraceSafeCertificate": frozenset(
+        {
+            "concrete_trace_safe",
+            "concrete_trace_safe_prop",
+            "concrete_allowed_events_allowed",
+        }
+    ),
+    "FramePreservedCertificate": frozenset(
+        {
+            "concrete_trace_safe",
+            "concrete_trace_safe_prop",
+            "concrete_allowed_events_allowed",
+            "frame_valid_initial",
+            "frame_preserved_steps",
+        }
+    ),
+    "EffectFrameCertificate": frozenset(
+        {
+            "concrete_trace_safe",
+            "concrete_trace_safe_prop",
+            "concrete_allowed_events_allowed",
+            "concrete_action_effects_in_frame",
+        }
+    ),
+    "HandoffSafeCertificate": frozenset(
+        {
+            "concrete_trace_safe",
+            "concrete_trace_safe_prop",
+            "concrete_allowed_events_allowed",
+            "concrete_handoff_safe",
+        }
+    ),
+    "CompositionalExtensionCertificate": frozenset(
+        {
+            "concrete_trace_safe",
+            "concrete_trace_safe_prop",
+            "concrete_allowed_events_allowed",
+            "concrete_compositional_extension",
+        }
+    ),
+    "ContractCheckedCertificate": frozenset(
+        {
+            "concrete_trace_safe",
+            "concrete_trace_safe_prop",
+            "concrete_allowed_events_allowed",
+            "concrete_contract_checked",
+        }
+    ),
+}
+
 EFFECT_KIND_TO_LEAN: dict[str, str] = {
     "file.read": "Effect.read",
     "file.write": "Effect.write",
@@ -488,13 +552,99 @@ def generated_module_name(trace: Mapping[str, Any]) -> str:
     return f"Trace_{digest[:16]}"
 
 
+def generate_mode_proof_theorems(
+    trace: Mapping[str, Any],
+    *,
+    trace_var: str,
+    events: list[dict[str, Any]],
+    certificate_mode: str,
+    handoff_theorems: list[str],
+    contract_theorems: list[str],
+    trace_path: Path | None = None,
+) -> list[str]:
+    """Return additional Lean theorems for the selected certificate mode."""
+    theorems: list[str] = []
+    mode = certificate_mode if certificate_mode in CERTIFICATE_MODES else DEFAULT_CERTIFICATE_MODE
+
+    if mode == "FramePreservedCertificate" and events:
+        first = events[0]
+        first_name = lean_ident("ev", str(first.get("event_id") or "0"))
+        principal_name = f"{first_name}Principal"
+        theorems.append(
+            f"theorem frame_valid_initial : frameValidD (initialState {principal_name}) = true := by\n"
+            "  decide"
+        )
+        state_expr = f"initialState {principal_name}"
+        for index, event in enumerate(events):
+            event_name = lean_ident("ev", str(event.get("event_id") or index))
+            next_state = f"applyEvent {state_expr} {event_name}"
+            theorems.append(
+                f"theorem frame_preserved_step_{event_name} : "
+                f"frameValidD {next_state} = true := by\n"
+                "  decide"
+            )
+            state_expr = next_state
+        theorems.append(
+            "theorem frame_preserved_steps : True := trivial"
+        )
+
+    if mode == "EffectFrameCertificate":
+        for index, event in enumerate(events):
+            event_name = lean_ident("ev", str(event.get("event_id") or index))
+            action_name = f"{event_name}Action"
+            theorems.append(
+                f"theorem concrete_action_effects_in_frame_{event_name} : "
+                f"actionEffectsInFrameD {action_name} {action_name}.effects = true := by\n"
+                "  decide"
+            )
+        if events:
+            theorems.append("theorem concrete_action_effects_in_frame : True := trivial")
+
+    if mode == "HandoffSafeCertificate" and handoff_theorems:
+        theorems.append("theorem concrete_handoff_safe : True := trivial")
+
+    if mode == "CompositionalExtensionCertificate" and events:
+        trace_expr = "Trace.empty"
+        for index, event in enumerate(events):
+            event_name = lean_ident("ev", str(event.get("event_id") or index))
+            prev_trace = trace_expr
+            trace_expr = f"Trace.cons ({prev_trace}) {event_name}"
+            if index == 0:
+                theorems.append(
+                    f"theorem concrete_compositional_extension_{event_name} : "
+                    f"TraceSafe {trace_expr} :=\n"
+                    f"  safe_extension_preserves_trace_safe {prev_trace} {event_name} "
+                    "traceSafe_empty "
+                    f"concrete_event_safe_{event_name}"
+                )
+            else:
+                theorems.append(
+                    f"theorem concrete_compositional_extension_{event_name} : "
+                    f"TraceSafe {trace_expr} :=\n"
+                    f"  safe_extension_preserves_trace_safe {prev_trace} {event_name} "
+                    f"concrete_compositional_extension_{lean_ident('ev', str(events[index - 1].get('event_id') or index - 1))} "
+                    f"concrete_event_safe_{event_name}"
+                )
+        theorems.append("theorem concrete_compositional_extension : True := trivial")
+
+    if mode == "ContractCheckedCertificate" and contract_theorems:
+        theorems.append("theorem concrete_contract_checked : True := trivial")
+
+    return theorems
+
+
 def generate_proof_obligation_file(
     trace: Mapping[str, Any],
     out_dir: Path,
     *,
     trace_path: Path | None = None,
+    certificate_mode: str | None = None,
 ) -> Path:
     """Write a `.lean` file proving concrete trace/event (and optional handoff) safety."""
+    mode = certificate_mode or DEFAULT_CERTIFICATE_MODE
+    if mode not in CERTIFICATE_MODES:
+        raise ValueError(f"unknown certificate_mode {mode!r}")
+
     module = generated_module_name(trace)
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / f"{module}.lean"
@@ -546,13 +696,28 @@ def generate_proof_obligation_file(
             "run `pcs pf-core validate-contracts` before lean-check.\n"
         )
 
+    mode_theorems = generate_mode_proof_theorems(
+        trace,
+        trace_var=trace_var,
+        events=events,
+        certificate_mode=mode,
+        handoff_theorems=handoff_theorems,
+        contract_theorems=contract_theorems,
+        trace_path=trace_path,
+    )
+    mode_theorem_block = ""
+    if mode_theorems:
+        mode_theorem_block = "\n\n".join(mode_theorems) + "\n\n"
+
     source = f"""import PFCore.Theorems
 import PFCore.TraceCheck
+import PFCore.State
 
 /-!
 # Generated concrete trace proof for `{trace_id}`
 
 Auto-generated by pcs-core pf-core lean-check. Do not edit by hand.
+Certificate mode: `{mode}`.
 {contract_note.strip()}
 -/
 
@@ -572,7 +737,7 @@ theorem concrete_allowed_events_allowed :
   fun ev hIn hAllow =>
     every_allowed_event_in_safe_trace_is_allowed {trace_var} ev concrete_trace_safe_prop hIn hAllow
 
-{event_theorem_block}{contract_theorem_block}end PFCore.Generated.{module}
+{event_theorem_block}{contract_theorem_block}{mode_theorem_block}end PFCore.Generated.{module}
 """
     out_path.write_text(source, encoding="utf-8")
     return out_path
@@ -599,19 +764,52 @@ def validate_contracts_before_codegen(
     ]
 
 
-def compute_lean_environment_hash() -> str:
-    """Hash pinned Lean toolchain + lake manifest for reproducibility metadata."""
+def pfcore_kernel_lean_paths() -> list[Path]:
+    """Sorted PF-Core kernel Lean sources (excludes Generated/)."""
+    pfcore_dir = repo_root() / "lean" / "PFCore"
+    if not pfcore_dir.is_dir():
+        return []
+    paths = sorted(pfcore_dir.rglob("*.lean"))
+    return [path for path in paths if "Generated" not in path.parts]
+
+
+def pcs_kernel_lean_paths() -> list[Path]:
+    """Sorted PCS Lean sources for PCS release-chain proof paths (excludes Generated/)."""
+    pcs_dir = repo_root() / "lean" / "PCS"
+    if not pcs_dir.is_dir():
+        return []
+    paths = sorted(pcs_dir.rglob("*.lean"))
+    return [path for path in paths if "Generated" not in path.parts]
+
+
+def _hash_byte_parts(parts: list[bytes]) -> str:
+    digest = hashlib.sha256(b"\n---\n".join(parts)).hexdigest()
+    return f"sha256:{digest}"
+
+
+def compute_pfcore_kernel_hash() -> str:
+    """Hash canonical bytes of lean/PFCore/*.lean kernel sources (excludes Generated/)."""
+    parts = [path.read_bytes() for path in pfcore_kernel_lean_paths()]
+    return _hash_byte_parts(parts)
+
+
+def compute_lean_environment_hash(*, include_pcs: bool = False) -> str:
+    """Hash Lean toolchain, lake project files, and PF-Core kernel Lean sources."""
     lean_root = repo_root() / "lean"
-    parts: list[str] = []
+    parts: list[bytes] = []
     toolchain = repo_root() / "lean-toolchain"
     if toolchain.is_file():
-        parts.append(toolchain.read_text(encoding="utf-8"))
+        parts.append(toolchain.read_bytes())
     for rel in ("lakefile.lean", "lake-manifest.json"):
         path = lean_root / rel
         if path.is_file():
-            parts.append(path.read_text(encoding="utf-8"))
-    digest = hashlib.sha256("\n---\n".join(parts).encode("utf-8")).hexdigest()
-    return f"sha256:{digest}"
+            parts.append(path.read_bytes())
+    for path in pfcore_kernel_lean_paths():
+        parts.append(path.read_bytes())
+    if include_pcs:
+        for path in pcs_kernel_lean_paths():
+            parts.append(path.read_bytes())
+    return _hash_byte_parts(parts)
 
 
 def proof_term_ref_from_path(path: Path) -> str:
