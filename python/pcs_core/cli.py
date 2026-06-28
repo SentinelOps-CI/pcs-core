@@ -825,6 +825,11 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Skip lake build (for tests only)",
     )
+    p_envelope_check.add_argument(
+        "--lean-proof",
+        action="store_true",
+        help="Generate PCS obligation Lean module and run lake env lean (EnvelopeLeanChecked)",
+    )
 
     benchmark_parser = sub.add_parser("benchmark", help="PCS benchmark evaluation protocol")
     benchmark_sub = benchmark_parser.add_subparsers(dest="benchmark_cmd", required=True)
@@ -989,6 +994,7 @@ def main(argv: list[str] | None = None) -> int:
             args.obligations,
             args.out,
             skip_lean_build=args.skip_lean_build,
+            lean_proof=args.lean_proof,
             deprecated=False,
         )
     if args.command == "benchmark" and args.benchmark_cmd == "list":
@@ -1177,6 +1183,7 @@ def cmd_pcs_envelope_check(
     out_path: Path,
     *,
     skip_lean_build: bool = False,
+    lean_proof: bool = False,
     deprecated: bool = False,
 ) -> int:
     from pcs_core.lean_check import PCS_LEAN_CHECK_DEPRECATION
@@ -1192,11 +1199,15 @@ def cmd_pcs_envelope_check(
         result = run_lean_check(
             obligations_doc,
             require_lean_build=not skip_lean_build,
+            lean_proof=lean_proof,
         )
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
         validate_file(out_path)
-        print(f"OK PCS release-envelope check {out_path} status={result.get('status')}")
+        print(
+            f"OK PCS release-envelope check {out_path} "
+            f"status={result.get('status')} claim_class={result.get('claim_class')}",
+        )
         return 0 if result.get("status") == "ProofChecked" else 1
     except (ValidationError, ValueError) as exc:
         print(f"FAIL pcs-envelope check: {exc}", file=sys.stderr)
