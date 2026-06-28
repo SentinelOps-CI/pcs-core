@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import shutil
-from pathlib import Path
 
 from pcs_core.paths import repo_root
 
@@ -31,7 +30,9 @@ def main() -> None:
             encoding="utf-8",
         )
 
-        invalid_dir = repo / "examples" / "pf-core-invalid" / f"certificate_mode_{slug}_missing_obligations"
+        invalid_dir = (
+            repo / "examples" / "pf-core-invalid" / f"certificate_mode_{slug}_missing_obligations"
+        )
         invalid_dir.mkdir(parents=True, exist_ok=True)
         (invalid_dir / "manifest.json").write_text(
             json.dumps(
@@ -70,7 +71,7 @@ def main() -> None:
             "event_count": 1,
             "default_contract_ref": "trace-safe",
             "contract_semantics_checked": {
-                "lean": ["trace-safe"],
+                "lean": ["resource_within_capability_pattern"],
                 "runtime": ["resource_pattern_scope"],
             },
             "source_repo": "https://github.com/example/pcs-core",
