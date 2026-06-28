@@ -11,6 +11,7 @@ Summary of gaps between the PF-Core vision and the current `pcs-core` repository
 | `semantics_layer` on `PFCoreContract.v0` | Done | Flat field map: `lean` / `runtime` / `out_of_scope`; validator defaults |
 | `contract_semantics_checked` on certificates | Done | Derived from semantics layers + checks |
 | Cross-language semantic parity | Done | Rust `pf_core.rs`, TS `pfCore.ts`, `conformance run --suite pf-core-cross-language` |
+| Rust/TS direct-trace effect/capability parity | Done (uncommitted) | `validate_direct_trace_action_semantics` / `validateDirectTraceActionSemantics`; error codes `UnknownEffect`, `UnknownCapability`, `CapabilityEffectMismatch` |
 | Trace vs certificate claim classes | Done | Separate enums; traces reject `LeanKernelChecked` / `CertificateChecked` |
 | Direct-trace effect catalog | Done | Closed `effect_kind` enum + semantic validators |
 | `proof_term_hash` on certificates | Done | sha256 of generated `.lean` bytes before `lake env lean` |
@@ -86,7 +87,7 @@ Summary of gaps between the PF-Core vision and the current `pcs-core` repository
 
 1. **Full global cross-tenant non-interference** — conservative tenant isolation for allowed events is proved; covert channels, timing, deny-side leaks open (`non-interference.md`).
 2. **Write footprint ↔ effect linkage** — `WriteFootprintRequiresWriteEffect` explicit; derived from `ActionAdmissible` + `KnownCapabilityEffect` for catalog capabilities.
-3. **Resource-pattern scope in Lean** — Python `validate_resource_scope` and certificate `contract_semantics_checked.runtime` (`resource_pattern_scope`); not discharged in Lean kernel.
+3. **Resource-pattern scope in Lean** — Python `validate_resource_scope` and certificate `contract_semantics_checked.runtime` (`resource_pattern_scope`); `ResourcePattern.lean` provides decider parity; not discharged in Lean trace safety kernel.
 4. **Full provability-fabric-core live adapter orchestration** — hash parity covered natively via adapter CI script.
 5. **Full agent runtime, MCP, NL policy, model safety** — out of scope.
 
