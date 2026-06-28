@@ -558,9 +558,9 @@ pub fn validate_contract_semantics_checked(certificate: &Value) -> Vec<String> {
         };
         for key in ["lean", "runtime"] {
             if let Some(value) = obj.get(key) {
-                let valid = value.as_array().is_some_and(|items| {
-                    items.iter().all(|item| item.as_str().is_some())
-                });
+                let valid = value
+                    .as_array()
+                    .is_some_and(|items| items.iter().all(|item| item.as_str().is_some()));
                 if !valid {
                     errors.push(format!(
                         "root: contract_semantics_checked.{key} must be a string array"
@@ -613,7 +613,9 @@ pub fn validate_contract_semantics_checked(certificate: &Value) -> Vec<String> {
                 if certificate.get("contract_semantics_checked").is_some() {
                     errors.push("root: contract_semantics_checked has invalid shape".into());
                 } else {
-                    errors.push("root: lean_proof_checked requires contract_semantics_checked".into());
+                    errors.push(
+                        "root: lean_proof_checked requires contract_semantics_checked".into(),
+                    );
                 }
             }
         }
@@ -898,7 +900,6 @@ pub fn trace_safe_rd(events: &[Value]) -> bool {
     events.iter().all(event_safe_rd)
 }
 
-
 pub fn validate_event_against_contract(event: &Value, contract: &Value, path: &str) -> Vec<String> {
     let mut errors = Vec::new();
     let Some(principal) = event.get("principal") else {
@@ -1095,17 +1096,18 @@ pub fn validate_cross_tenant_safety(trace: &Value) -> Vec<String> {
     for (index, event) in events.iter().enumerate() {
         let base = format!("events[{index}]");
         let Some(principal) = event.get("principal") else {
-            errors.push(format!("CrossTenantSafe: {base} missing principal or action"));
+            errors.push(format!(
+                "CrossTenantSafe: {base} missing principal or action"
+            ));
             continue;
         };
         let Some(action) = event.get("action") else {
-            errors.push(format!("CrossTenantSafe: {base} missing principal or action"));
+            errors.push(format!(
+                "CrossTenantSafe: {base} missing principal or action"
+            ));
             continue;
         };
-        let decision = event
-            .get("decision")
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
+        let decision = event.get("decision").and_then(|v| v.as_str()).unwrap_or("");
         if !event_cross_tenant_safe(principal, action, decision) {
             let tenant = principal
                 .get("tenant")
@@ -1155,7 +1157,6 @@ pub fn validate_tenant_isolation(trace: &Value) -> Vec<String> {
     }
     errors
 }
-
 
 fn low_event_for_tenant(tenant: &str, event: &Value) -> bool {
     let decision = event.get("decision").and_then(|v| v.as_str()).unwrap_or("");
@@ -1409,7 +1410,9 @@ mod tests {
             repo_root().join("python/tests/hash_vectors/pf_core/invalid/cross_tenant_leak.json");
         let trace = load_json(path);
         let tenant_errors = validate_tenant_isolation(&trace);
-        assert!(tenant_errors.iter().any(|err| err.contains("TenantIsolation")));
+        assert!(tenant_errors
+            .iter()
+            .any(|err| err.contains("TenantIsolation")));
         let cross_tenant_errors = validate_cross_tenant_safety(&trace);
         assert!(cross_tenant_errors
             .iter()
@@ -1422,7 +1425,9 @@ mod tests {
         let trace = load_json(path);
         assert!(validate_cross_tenant_safety(&trace).is_empty());
         assert!(validate_tenant_isolation(&trace).is_empty());
-        assert!(validate_observational_non_interference(&trace, "tenant-a", "other-tenant").is_empty());
+        assert!(
+            validate_observational_non_interference(&trace, "tenant-a", "other-tenant").is_empty()
+        );
         assert!(validate_observational_non_interference_all_pairs(&trace).is_empty());
     }
 
@@ -1537,7 +1542,9 @@ mod tests {
             }
         });
         let errors = validate_contract_semantics_checked(&missing);
-        assert!(errors.iter().any(|err| err.contains("resource_within_capability_pattern")));
+        assert!(errors
+            .iter()
+            .any(|err| err.contains("resource_within_capability_pattern")));
 
         let ok = json!({
             "claim_class": "LeanKernelChecked",
