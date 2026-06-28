@@ -18,3 +18,5 @@ import PFCore.RoleMap
 import PFCore.Transition
 import PFCore.EffectFrame
 import PFCore.State
+import PFCore.Observational
+import PFCore.ResourcePattern
