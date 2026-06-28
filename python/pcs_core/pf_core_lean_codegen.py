@@ -24,10 +24,12 @@ from pcs_core.pf_core_contract import (
 )
 
 DEFAULT_CERTIFICATE_MODE = "TraceSafeCertificate"
+TOOL_USE_DEFAULT_CERTIFICATE_MODE = "TraceSafeRCertificate"
 
 CERTIFICATE_MODES = frozenset(
     {
         "TraceSafeCertificate",
+        "TraceSafeRCertificate",
         "FramePreservedCertificate",
         "EffectFrameCertificate",
         "HandoffSafeCertificate",
@@ -42,6 +44,16 @@ MODE_OBLIGATION_THEOREMS: dict[str, frozenset[str]] = {
             "concrete_trace_safe",
             "concrete_trace_safe_prop",
             "concrete_allowed_events_allowed",
+        }
+    ),
+    "TraceSafeRCertificate": frozenset(
+        {
+            "concrete_trace_safe",
+            "concrete_trace_safe_prop",
+            "concrete_allowed_events_allowed",
+            "concrete_trace_safe_r",
+            "concrete_trace_safe_r_prop",
+            "concrete_trace_safe_r_implies_trace_safe",
         }
     ),
     "FramePreservedCertificate": frozenset(
@@ -98,6 +110,61 @@ EFFECT_KIND_TO_LEAN: dict[str, str] = {
 }
 
 _LEAN_IDENT_RE = re.compile(r"[^a-zA-Z0-9_]")
+_THEOREM_SIGNATURE_RE = re.compile(r"theorem (\w+) : (.+) :=", re.DOTALL)
+
+
+def resolve_certificate_mode(
+    trace: Mapping[str, Any],
+    *,
+    trace_path: Path | None = None,
+    certificate_mode: str | None = None,
+) -> str:
+    """Pick certificate mode: explicit override, tool-use default, or legacy default."""
+    if certificate_mode:
+        if certificate_mode not in CERTIFICATE_MODES:
+            raise ValueError(f"unknown certificate_mode {certificate_mode!r}")
+        return certificate_mode
+    if trace_path is not None and (trace_path.parent / "tool_use_trace.json").is_file():
+        return TOOL_USE_DEFAULT_CERTIFICATE_MODE
+    return DEFAULT_CERTIFICATE_MODE
+
+
+def certificate_mode_obligations(
+    mode: str,
+    events: list[Mapping[str, Any]],
+) -> frozenset[str]:
+    """Static + per-allow-event obligations for a certificate mode."""
+    base = MODE_OBLIGATION_THEOREMS.get(mode, frozenset())
+    if mode != "TraceSafeRCertificate":
+        return base
+    resource_scope = frozenset(
+        f"concrete_action_resource_scope_{lean_ident('ev', str(event.get('event_id') or index))}"
+        for index, event in enumerate(events)
+        if str(event.get("decision") or "") == "allow"
+    )
+    return base | resource_scope
+
+
+def lean_and_intro_theorem(name: str, props: list[str], proof_refs: list[str]) -> str:
+    """Emit a conjunction theorem chaining concrete proof references via ``And.intro``."""
+    if not props:
+        raise ValueError(f"{name}: no propositions to conjoin")
+    if len(props) != len(proof_refs):
+        raise ValueError(f"{name}: props/proof_refs length mismatch")
+    if len(props) == 1:
+        return f"theorem {name} : {props[0]} := {proof_refs[0]}"
+    typ = " ∧ ".join(props)
+    proof = proof_refs[-1]
+    for ref in reversed(proof_refs[:-1]):
+        proof = f"And.intro {ref} {proof}"
+    return f"theorem {name} : {typ} := {proof}"
+
+
+def _parse_theorem_signature(lean_theorem: str) -> tuple[str, str] | None:
+    match = _THEOREM_SIGNATURE_RE.search(lean_theorem)
+    if match is None:
+        return None
+    return match.group(1), " ".join(match.group(2).split())
 
 
 def lean_string_literal(value: str) -> str:
@@ -575,58 +642,130 @@ def generate_mode_proof_theorems(
             "  decide"
         )
         state_expr = f"initialState {principal_name}"
+        step_props: list[str] = [f"frameValidD (initialState {principal_name}) = true"]
+        step_refs: list[str] = ["frame_valid_initial"]
         for index, event in enumerate(events):
             event_name = lean_ident("ev", str(event.get("event_id") or index))
             next_state = f"applyEvent {state_expr} {event_name}"
+            step_theorem = f"frame_preserved_step_{event_name}"
             theorems.append(
-                f"theorem frame_preserved_step_{event_name} : "
-                f"frameValidD {next_state} = true := by\n"
-                "  decide"
+                f"theorem {step_theorem} : frameValidD {next_state} = true := by\n  decide"
             )
+            step_props.append(f"frameValidD {next_state} = true")
+            step_refs.append(step_theorem)
             state_expr = next_state
-        theorems.append("theorem frame_preserved_steps : True := trivial")
+        theorems.append(lean_and_intro_theorem("frame_preserved_steps", step_props, step_refs))
 
     if mode == "EffectFrameCertificate":
+        effect_props: list[str] = []
+        effect_refs: list[str] = []
         for index, event in enumerate(events):
             event_name = lean_ident("ev", str(event.get("event_id") or index))
             action_name = f"{event_name}Action"
+            step_theorem = f"concrete_action_effects_in_frame_{event_name}"
             theorems.append(
-                f"theorem concrete_action_effects_in_frame_{event_name} : "
+                f"theorem {step_theorem} : "
                 f"actionEffectsInFrameD {action_name} {action_name}.effects = true := by\n"
                 "  decide"
             )
-        if events:
-            theorems.append("theorem concrete_action_effects_in_frame : True := trivial")
+            effect_props.append(f"actionEffectsInFrameD {action_name} {action_name}.effects = true")
+            effect_refs.append(step_theorem)
+        if effect_props:
+            theorems.append(
+                lean_and_intro_theorem(
+                    "concrete_action_effects_in_frame",
+                    effect_props,
+                    effect_refs,
+                )
+            )
 
     if mode == "HandoffSafeCertificate" and handoff_theorems:
-        theorems.append("theorem concrete_handoff_safe : True := trivial")
+        handoff_props: list[str] = []
+        handoff_refs: list[str] = []
+        for handoff_theorem in handoff_theorems:
+            parsed = _parse_theorem_signature(handoff_theorem)
+            if parsed is None:
+                continue
+            theorem_name, prop_type = parsed
+            handoff_props.append(prop_type)
+            handoff_refs.append(theorem_name)
+        if handoff_props:
+            theorems.append(
+                lean_and_intro_theorem("concrete_handoff_safe", handoff_props, handoff_refs)
+            )
 
     if mode == "CompositionalExtensionCertificate" and events:
         trace_expr = "Trace.empty"
+        compositional_props: list[str] = []
+        compositional_refs: list[str] = []
         for index, event in enumerate(events):
             event_name = lean_ident("ev", str(event.get("event_id") or index))
             prev_trace = trace_expr
             trace_expr = f"Trace.cons ({prev_trace}) {event_name}"
+            step_theorem = f"concrete_compositional_extension_{event_name}"
             if index == 0:
                 theorems.append(
-                    f"theorem concrete_compositional_extension_{event_name} : "
+                    f"theorem {step_theorem} : "
                     f"TraceSafe {trace_expr} :=\n"
                     f"  safe_extension_preserves_trace_safe {prev_trace} {event_name} "
                     "traceSafe_empty "
                     f"concrete_event_safe_{event_name}"
                 )
             else:
+                prev_event = lean_ident("ev", str(events[index - 1].get("event_id") or index - 1))
                 theorems.append(
-                    f"theorem concrete_compositional_extension_{event_name} : "
+                    f"theorem {step_theorem} : "
                     f"TraceSafe {trace_expr} :=\n"
                     f"  safe_extension_preserves_trace_safe {prev_trace} {event_name} "
-                    f"concrete_compositional_extension_{lean_ident('ev', str(events[index - 1].get('event_id') or index - 1))} "
+                    f"concrete_compositional_extension_{prev_event} "
                     f"concrete_event_safe_{event_name}"
                 )
-        theorems.append("theorem concrete_compositional_extension : True := trivial")
+            compositional_props.append(f"TraceSafe {trace_expr}")
+            compositional_refs.append(step_theorem)
+        if compositional_props:
+            theorems.append(
+                lean_and_intro_theorem(
+                    "concrete_compositional_extension",
+                    compositional_props,
+                    compositional_refs,
+                )
+            )
 
     if mode == "ContractCheckedCertificate" and contract_theorems:
-        theorems.append("theorem concrete_contract_checked : True := trivial")
+        contract_props: list[str] = []
+        contract_refs: list[str] = []
+        for contract_theorem in contract_theorems:
+            parsed = _parse_theorem_signature(contract_theorem)
+            if parsed is None:
+                continue
+            theorem_name, prop_type = parsed
+            contract_props.append(prop_type)
+            contract_refs.append(theorem_name)
+        if contract_props:
+            theorems.append(
+                lean_and_intro_theorem("concrete_contract_checked", contract_props, contract_refs)
+            )
+
+    if mode == "TraceSafeRCertificate" and events:
+        if not all(
+            str(event.get("decision") or "") != "allow"
+            or action_resources_within_capability_pattern_d(event.get("action") or {})
+            for event in events
+            if isinstance(event, dict)
+        ):
+            raise ValueError(
+                "TraceSafeRCertificate requires all allow events to pass resource-pattern scope"
+            )
+        theorems.extend(
+            [
+                f"theorem concrete_trace_safe_r : traceSafeRD {trace_var} = true := by\n  decide",
+                f"theorem concrete_trace_safe_r_prop : TraceSafeR {trace_var} :=\n"
+                f"  (traceSafeRD_sound {trace_var}).mp concrete_trace_safe_r",
+                f"theorem concrete_trace_safe_r_implies_trace_safe :\n"
+                f"    TraceSafe {trace_var} :=\n"
+                f"  traceSafeR_implies_traceSafe {trace_var} concrete_trace_safe_r_prop",
+            ]
+        )
 
     return theorems
 
@@ -668,8 +807,8 @@ def generate_trust_boundary_theorems(
     *,
     trace_var: str,
 ) -> list[str]:
-    """Conservative tenant isolation, cross-tenant safety, NI, and resource-scope hooks."""
-    theorems: list[str] = [
+    """Conservative tenant isolation, cross-tenant safety, NI hooks (not TraceSafeR)."""
+    return [
         f"theorem concrete_tenant_isolation_prop : TenantIsolation {trace_var} :=\n"
         f"  traceSafe_implies_tenant_isolation {trace_var} concrete_trace_safe_prop",
         f"theorem concrete_trace_cross_tenant_safe_prop : TraceCrossTenantSafe {trace_var} :=\n"
@@ -679,23 +818,6 @@ def generate_trust_boundary_theorems(
         f"  traceSafe_implies_non_interference tenantLow tenantHigh {trace_var} "
         "concrete_trace_safe_prop",
     ]
-    if events and all(
-        str(event.get("decision") or "") != "allow"
-        or action_resources_within_capability_pattern_d(event.get("action") or {})
-        for event in events
-        if isinstance(event, dict)
-    ):
-        theorems.extend(
-            [
-                f"theorem concrete_trace_safe_r : traceSafeRD {trace_var} = true := by\n  decide",
-                f"theorem concrete_trace_safe_r_prop : TraceSafeR {trace_var} :=\n"
-                f"  (traceSafeRD_sound {trace_var}).mp concrete_trace_safe_r",
-                f"theorem concrete_trace_safe_r_implies_trace_safe :\n"
-                f"    TraceSafe {trace_var} :=\n"
-                f"  traceSafeR_implies_traceSafe {trace_var} concrete_trace_safe_r_prop",
-            ]
-        )
-    return theorems
 
 
 def generate_proof_obligation_file(
@@ -706,9 +828,7 @@ def generate_proof_obligation_file(
     certificate_mode: str | None = None,
 ) -> Path:
     """Write a `.lean` file proving concrete trace/event (and optional handoff) safety."""
-    mode = certificate_mode or DEFAULT_CERTIFICATE_MODE
-    if mode not in CERTIFICATE_MODES:
-        raise ValueError(f"unknown certificate_mode {mode!r}")
+    mode = resolve_certificate_mode(trace, trace_path=trace_path, certificate_mode=certificate_mode)
 
     module = generated_module_name(trace)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -777,7 +897,9 @@ def generate_proof_obligation_file(
     trust_boundary_theorems = generate_trust_boundary_theorems(events, trace_var=trace_var)
     trust_boundary_block = "\n\n".join(trust_boundary_theorems) + "\n\n"
 
-    resource_scope_theorems = generate_resource_scope_theorems(events)
+    resource_scope_theorems = (
+        generate_resource_scope_theorems(events) if mode == "TraceSafeRCertificate" else []
+    )
     resource_scope_block = ""
     if resource_scope_theorems:
         resource_scope_block = "\n\n".join(resource_scope_theorems) + "\n\n"
@@ -796,9 +918,8 @@ Auto-generated by pcs-core pf-core lean-check. Do not edit by hand.
 Certificate mode: `{mode}`.
 {contract_note.strip()}
 Trust-boundary hooks (tenant isolation, cross-tenant safety, observational NI) are
-discharged via proved links from `TraceSafe`. When resource scope validates, optional
-`concrete_trace_safe_r*` obligations discharge `TraceSafeR` (kernel resource-pattern chain).
-Per-event `concrete_action_resource_scope_*` bridge to `ActionAdmissibleWithResourcePattern`.
+discharged via proved links from `TraceSafe`. `TraceSafeRCertificate` additionally
+discharges `concrete_trace_safe_r*` and per-event `concrete_action_resource_scope_*`.
 Base `TraceSafe` / `ActionAdmissible` omit pattern discharge; `TraceSafeR` refines them.
 -/
 

@@ -9,6 +9,7 @@ from pcs_core.paths import repo_root
 
 MODES = [
     "TraceSafeCertificate",
+    "TraceSafeRCertificate",
     "FramePreservedCertificate",
     "EffectFrameCertificate",
     "HandoffSafeCertificate",

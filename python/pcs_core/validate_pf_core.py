@@ -180,8 +180,15 @@ def _validate_pfcore_certificate(data: dict[str, Any]) -> list[str]:
         if cert_mode not in CERTIFICATE_MODES:
             errors.append(f"root: invalid certificate_mode {cert_mode!r}")
         elif lean_proof_checked:
-            mode_required = MODE_OBLIGATION_THEOREMS.get(cert_mode, frozenset())
+            mode_required = set(MODE_OBLIGATION_THEOREMS.get(cert_mode, frozenset()))
             obligations = data.get("obligations")
+            if isinstance(obligations, list):
+                for item in obligations:
+                    if not isinstance(item, dict):
+                        continue
+                    theorem = str(item.get("theorem") or "")
+                    if theorem.startswith("concrete_action_resource_scope_"):
+                        mode_required.add(theorem)
             if isinstance(obligations, list) and mode_required:
                 passed = {
                     str(item.get("theorem"))

@@ -284,6 +284,7 @@ const DEFAULT_CERTIFICATE_MODE: &str = "TraceSafeCertificate";
 
 const CERTIFICATE_MODES: &[&str] = &[
     "TraceSafeCertificate",
+    "TraceSafeRCertificate",
     "FramePreservedCertificate",
     "EffectFrameCertificate",
     "HandoffSafeCertificate",
@@ -294,6 +295,14 @@ const CERTIFICATE_MODES: &[&str] = &[
 fn mode_obligation_theorems(mode: &str) -> &'static [&'static str] {
     match mode {
         "TraceSafeCertificate" => CONCRETE_PROOF_OBLIGATIONS,
+        "TraceSafeRCertificate" => &[
+            "concrete_trace_safe",
+            "concrete_trace_safe_prop",
+            "concrete_allowed_events_allowed",
+            "concrete_trace_safe_r",
+            "concrete_trace_safe_r_prop",
+            "concrete_trace_safe_r_implies_trace_safe",
+        ],
         "FramePreservedCertificate" => &[
             "concrete_trace_safe",
             "concrete_trace_safe_prop",
@@ -693,7 +702,20 @@ pub fn validate_pfcore_certificate_semantics(certificate: &Value) -> Vec<String>
         if !certificate_mode_is_valid(cert_mode) {
             errors.push(format!("root: invalid certificate_mode {cert_mode:?}"));
         } else if certificate.get("lean_proof_checked") == Some(&Value::Bool(true)) {
-            let mode_required = mode_obligation_theorems(cert_mode);
+            let mut mode_required: std::collections::HashSet<String> =
+                mode_obligation_theorems(cert_mode)
+                    .iter()
+                    .map(|s| (*s).to_string())
+                    .collect();
+            if let Some(obligations) = certificate.get("obligations").and_then(|v| v.as_array()) {
+                for item in obligations {
+                    if let Some(theorem) = item.get("theorem").and_then(|v| v.as_str()) {
+                        if theorem.starts_with("concrete_action_resource_scope_") {
+                            mode_required.insert(theorem.to_string());
+                        }
+                    }
+                }
+            }
             let passed: std::collections::HashSet<String> = certificate
                 .get("obligations")
                 .and_then(|v| v.as_array())
@@ -717,10 +739,10 @@ pub fn validate_pfcore_certificate_semantics(certificate: &Value) -> Vec<String>
                 }
             }
             if !mode_required.is_empty() {
-                let missing_mode: Vec<&str> = mode_required
+                let missing_mode: Vec<String> = mode_required
                     .iter()
-                    .copied()
                     .filter(|theorem| !passed.contains(*theorem))
+                    .cloned()
                     .collect();
                 if !missing_mode.is_empty() {
                     errors.push(format!(

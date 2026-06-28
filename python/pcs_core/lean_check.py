@@ -30,12 +30,13 @@ from pcs_core.pf_core_contract import (
 from pcs_core.pf_core_contract_semantics import build_contract_semantics_checked
 from pcs_core.pf_core_lean_codegen import (
     DEFAULT_CERTIFICATE_MODE,
-    MODE_OBLIGATION_THEOREMS,
+    certificate_mode_obligations,
     collect_contracts_for_trace,
     compute_lean_environment_hash,
     compute_pfcore_kernel_hash,
     generate_proof_obligation_file,
     proof_term_ref_from_path,
+    resolve_certificate_mode,
     validate_contracts_before_codegen,
 )
 from pcs_core.pf_core_runtime import (
@@ -706,7 +707,7 @@ def run_pfcore_lean_check(
     obligations = build_decider_obligations(events)
     lean_environment_hash = compute_lean_environment_hash()
     pfcore_kernel_hash = compute_pfcore_kernel_hash()
-    mode = certificate_mode or DEFAULT_CERTIFICATE_MODE
+    mode = resolve_certificate_mode(data, trace_path=trace_path, certificate_mode=certificate_mode)
 
     issues = check_pfcore_trace_lean_semantics(data)
     contract_errors = validate_contracts_before_codegen(data, trace_path=trace_path)
@@ -759,7 +760,7 @@ def run_pfcore_lean_check(
                 for entry in obligations[-3:]:
                     entry["passed"] = proof_ok
                 if proof_ok:
-                    for theorem in MODE_OBLIGATION_THEOREMS.get(mode, frozenset()):
+                    for theorem in certificate_mode_obligations(mode, events):
                         if theorem in {
                             "concrete_trace_safe",
                             "concrete_trace_safe_prop",

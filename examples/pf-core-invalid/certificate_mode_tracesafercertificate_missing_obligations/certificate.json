@@ -1,0 +1,45 @@
+{
+  "schema_version": "v0",
+  "artifact_type": "PFCoreCertificate.v0",
+  "certificate_id": "pfcore-cert-mode-tracesafercertificate",
+  "trace_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "contract_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "policy_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "claim_class": "LeanKernelChecked",
+  "checker": "pcs-core",
+  "checker_version": "0.1.0",
+  "assumption_refs": [
+    "docs/pf-core/trusted-boundary.md"
+  ],
+  "certificate_mode": "TraceSafeRCertificate",
+  "lean_proof_checked": true,
+  "proof_term_ref": "lean/PFCore/Generated/example.lean",
+  "proof_term_hash": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  "lean_environment_hash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "pfcore_kernel_hash": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "lean_build_status": {
+    "ok": true,
+    "target": "PFCore",
+    "detail": "ok"
+  },
+  "obligations": [
+    {
+      "kind": "ConcreteTraceSafe",
+      "theorem": "concrete_trace_safe",
+      "passed": true
+    }
+  ],
+  "event_count": 1,
+  "default_contract_ref": "trace-safe",
+  "contract_semantics_checked": {
+    "lean": [
+      "resource_within_capability_pattern"
+    ],
+    "runtime": [
+      "resource_pattern_scope"
+    ]
+  },
+  "source_repo": "https://github.com/example/pcs-core",
+  "source_commit": "abc1234567890abc1234567890abc1234567890",
+  "signature_or_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+}

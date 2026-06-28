@@ -352,6 +352,7 @@ const DEFAULT_CERTIFICATE_MODE = "TraceSafeCertificate";
 
 const CERTIFICATE_MODES = new Set([
   "TraceSafeCertificate",
+  "TraceSafeRCertificate",
   "FramePreservedCertificate",
   "EffectFrameCertificate",
   "HandoffSafeCertificate",
@@ -364,6 +365,14 @@ const MODE_OBLIGATION_THEOREMS: Record<string, readonly string[]> = {
     "concrete_trace_safe",
     "concrete_trace_safe_prop",
     "concrete_allowed_events_allowed",
+  ],
+  TraceSafeRCertificate: [
+    "concrete_trace_safe",
+    "concrete_trace_safe_prop",
+    "concrete_allowed_events_allowed",
+    "concrete_trace_safe_r",
+    "concrete_trace_safe_r_prop",
+    "concrete_trace_safe_r_implies_trace_safe",
   ],
   FramePreservedCertificate: [
     "concrete_trace_safe",
@@ -619,8 +628,23 @@ export function validatePfcoreCertificateSemantics(
       if (!CERTIFICATE_MODES.has(certMode)) {
         errors.push(`root: invalid certificate_mode ${JSON.stringify(certMode)}`);
       } else {
-        const modeRequired = MODE_OBLIGATION_THEOREMS[certMode] ?? [];
-        const missingMode = modeRequired.filter((theorem) => !passed.has(theorem));
+        const modeRequired = new Set(MODE_OBLIGATION_THEOREMS[certMode] ?? []);
+        if (Array.isArray(certificate.obligations)) {
+          for (const item of certificate.obligations) {
+            if (
+              item &&
+              typeof item === "object" &&
+              !Array.isArray(item) &&
+              typeof (item as Record<string, unknown>).theorem === "string"
+            ) {
+              const theorem = String((item as Record<string, unknown>).theorem);
+              if (theorem.startsWith("concrete_action_resource_scope_")) {
+                modeRequired.add(theorem);
+              }
+            }
+          }
+        }
+        const missingMode = [...modeRequired].filter((theorem) => !passed.has(theorem));
         if (missingMode.length > 0) {
           errors.push(
             `root: certificate_mode obligations missing passed proofs for ${JSON.stringify(missingMode)}`,
