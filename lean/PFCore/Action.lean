@@ -108,7 +108,19 @@ def knownCapabilityEffectD (cap : String) (eff : Effect) : Bool :=
 -/
 theorem knownCapabilityEffectD_sound (cap : String) (eff : Effect) :
     knownCapabilityEffectD cap eff = true ↔ KnownCapabilityEffect cap eff := by
-  cases eff <;> simp [knownCapabilityEffectD, KnownCapabilityEffect, decide_eq_true_iff]
+  constructor
+  · intro h
+    unfold knownCapabilityEffectD at h
+    cases eff <;> split at h <;> simp [KnownCapabilityEffect] at h ⊢ <;> tauto
+  · intro h
+    rcases h with h | h | h | h | h | h | h
+  · simp [knownCapabilityEffectD, h.1, h.2]
+  · simp [knownCapabilityEffectD, h.1, h.2]
+  · simp [knownCapabilityEffectD, h.1, h.2]
+  · simp [knownCapabilityEffectD, h.1, h.2]
+  · simp [knownCapabilityEffectD, h.1, h.2]
+  · simp [knownCapabilityEffectD, h.1, h.2]
+  · simp [knownCapabilityEffectD, h.1, h.2]
 
 /--
 **Meaning:** File-write catalog capability embeds ``Effect.write``.
@@ -119,15 +131,15 @@ theorem knownCapabilityEffectD_sound (cap : String) (eff : Effect) :
 -/
 theorem knownCapabilityEffect_file_write (cap : String) (eff : Effect) :
     cap = "cap:file-write" → KnownCapabilityEffect cap eff → eff = Effect.write := by
-  rintro hcap h
-  rcases h with h0 | h1 | h2 | h3 | h4 | h5 | h6
-  · exact absurd hcap h0
-  · exact h1
-  · exact absurd hcap h2
-  · exact absurd hcap h3
-  · exact absurd hcap h4
-  · exact absurd hcap h5
-  · exact absurd hcap h6
+  intro hcap h
+  rcases h with ⟨hc, he⟩ | ⟨hc, he⟩ | ⟨hc, he⟩ | ⟨hc, he⟩ | ⟨hc, he⟩ | ⟨hc, he⟩ | ⟨hc, he⟩
+  · exact (hcap.trans hc.symm).false.elim
+  · exact he
+  · exact (hcap.trans hc.symm).false.elim
+  · exact (hcap.trans hc.symm).false.elim
+  · exact (hcap.trans hc.symm).false.elim
+  · exact (hcap.trans hc.symm).false.elim
+  · exact (hcap.trans hc.symm).false.elim
 
 /-- Structural action preconditions before allowance. -/
 def ActionAdmissible (p : Principal) (a : Action) : Prop :=
