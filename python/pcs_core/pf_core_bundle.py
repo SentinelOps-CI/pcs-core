@@ -16,6 +16,7 @@ from pcs_core.pf_core_lean_codegen import (
     compute_lean_environment_hash,
     compute_pfcore_kernel_hash,
     pfcore_kernel_lean_paths,
+    resolve_certificate_mode,
 )
 from pcs_core.pf_core_runtime import compute_trace_hash
 from pcs_core.validate import ValidationError, validate_artifact
@@ -132,6 +133,7 @@ def build_release_manifest(
     lean_check_result_rel: str | None = None,
     proof_rel: str | None = None,
     kernel_manifest: Mapping[str, Any] | None = None,
+    trace_path: Path | None = None,
 ) -> dict[str, Any]:
     trace_hash = str(certificate.get("trace_hash") or trace.get("trace_hash") or "")
     if not trace_hash.startswith("sha256:"):
@@ -153,7 +155,8 @@ def build_release_manifest(
         "lean_environment_hash": str(
             certificate.get("lean_environment_hash") or compute_lean_environment_hash()
         ),
-        "certificate_mode": certificate.get("certificate_mode") or "TraceSafeCertificate",
+        "certificate_mode": certificate.get("certificate_mode")
+        or resolve_certificate_mode(trace, trace_path=trace_path),
         "signature_or_digest": "sha256:" + "0" * 64,
     }
     if lean_check_result_rel:
@@ -201,6 +204,7 @@ def bundle_release(
         certificate_rel=cert_dest.name,
         lean_check_result_rel=lean_rel,
         proof_rel=proof_rel,
+        trace_path=trace_path,
     )
     manifest_path = out_dir / "manifest.json"
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
