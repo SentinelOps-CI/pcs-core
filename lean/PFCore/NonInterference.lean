@@ -208,6 +208,32 @@ theorem event_deny_implies_cross_tenant_safe (ev : Event) (hdeny : ev.decision =
   exact hdeny
 
 /--
+**Meaning:** Explicit deny satisfies `CrossTenantDenied` regardless of footprint.
+
+**Trusted use:** Deny-side cross-tenant NI bound (scheduler-agnostic, event-record only).
+
+**Does not imply:** Deny paths leak no resource-existence or timing information.
+-/
+theorem event_deny_implies_crossTenantDenied (ev : Event) (hdeny : ev.decision = Decision.deny) :
+    CrossTenantDenied ev := by
+  intro _
+  exact hdeny
+
+/--
+**Meaning:** Cross-tenant safety plus explicit deny yields cross-tenant denial when out-of-tenant.
+
+**Trusted use:** Links `EventCrossTenantSafe` deny branch to `CrossTenantDenied`.
+
+**Does not imply:** Policy correctness or side-channel freedom on denied attempts.
+-/
+theorem cross_tenant_safe_deny_implies_crossTenantDenied (ev : Event)
+    (_hCTS : EventCrossTenantSafe ev) (_hnot : ¬ ActionWithinTenant ev.principal ev.action)
+    (hdeny : ev.decision = Decision.deny) :
+    CrossTenantDenied ev := by
+  intro _
+  exact hdeny
+
+/--
 **Meaning:** Safe traces imply conservative cross-tenant safety on every event.
 
 **Trusted use:** Primary link from `TraceSafe` to `TraceCrossTenantSafe` (partial global NI).
@@ -328,8 +354,32 @@ theorem traceSafe_implies_tenant_isolation_admissible (tr : Trace) :
     TraceSafe tr →
     (∀ ev, EventIn ev tr → ev.decision = Decision.allow → ActionAdmissible ev.principal ev.action) →
     TenantIsolation tr := by
-  intro h _ 
+  intro h _
   exact traceSafe_implies_tenant_isolation tr h
+
+/--
+**Meaning:** `traceSafeD` implies the tenant-isolation decider (runtime certificate alignment).
+
+**Trusted use:** Linking Lean kernel deciders to conservative tenant isolation claims.
+
+**Does not imply:** Full global non-interference or covert-channel freedom.
+-/
+theorem traceSafeD_implies_tenantIsolationD (tr : Trace) (h : traceSafeD tr = true) :
+    tenantIsolationD tr = true :=
+  (tenantIsolationD_sound tr).mpr (traceSafe_implies_tenant_isolation tr
+    ((traceSafeD_sound tr).mp h))
+
+/--
+**Meaning:** `traceSafeD` implies the cross-tenant safety decider (partial global NI).
+
+**Trusted use:** Runtime `--cross-tenant-safety` decider alignment.
+
+**Does not imply:** Full global non-interference, timing leaks, or deny-side privacy.
+-/
+theorem traceSafeD_implies_traceCrossTenantSafeD (tr : Trace) (h : traceSafeD tr = true) :
+    traceCrossTenantSafeD tr = true :=
+  (traceCrossTenantSafeD_sound tr).mpr (traceSafe_implies_trace_cross_tenant_safe tr
+    ((traceSafeD_sound tr).mp h))
 
 end PFCore
 
