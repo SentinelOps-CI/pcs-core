@@ -22,5 +22,5 @@
   "release_chain_validation_status": "ProofChecked",
   "release_chain_validator": "pcs-core",
   "release_chain_checked_at": "2026-05-18T12:00:00Z",
-  "release_manifest_hash": "sha256:d7d3fa039e805c31fd548d91d471e5e5f1362467390f83e1abb5c196247d5d30"
+  "release_manifest_hash": "sha256:fda02ff54ae8933c71e826ddf454b94a5449cc349a378ebbfe8e4ed048c1c3bc"
 }

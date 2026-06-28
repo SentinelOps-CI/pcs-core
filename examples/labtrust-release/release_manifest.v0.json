@@ -74,7 +74,7 @@
       "producer": "Scientific Memory",
       "source_repo": "https://github.com/fraware/scientific-memory",
       "source_commit": "0e059e934bc95bcc4dc0cb6593b18b07a28529a2",
-      "sha256": "sha256:11d2e48a0c811ebc3bd683516c76f42b2849f604717758798c83abdb739251a3"
+      "sha256": "sha256:6ddc5ee56147a473f1f6d7379daac2fbfeb1e9fd083e8d61ac4ab85617ad2d8c"
     },
     "signed_science_claim_bundle.json": {
       "artifact_type": "SignedScienceClaimBundle.v0",
@@ -110,13 +110,13 @@
     }
   },
   "release_status": "Validated",
-  "signature_or_digest": "sha256:5d1f50874cc40f2b6605eb37924d4a8d0e91f5490769797b01b7f2fdd57ebf4a",
+  "signature_or_digest": "sha256:53c7bde0aa84906e1b0f5f142ed6750fe92feb3dd58e2861b3e7e43c7674d68e",
   "proof_obligation": {
     "path": "proof_obligation.v0.json",
-    "sha256": "sha256:de6c1071065220ba134757eefc88d99dd4fc1e60df1e5f74ade12c5b6be2f348"
+    "sha256": "sha256:982d2f2f70e678eb4ac35f74e180ed1b352ab52d9119c3700e160378c7949394"
   },
   "lean_check_result": {
     "path": "lean_check_result.v0.json",
-    "sha256": "sha256:49c1d2418e004cceab10d1b6a8d0c9ecf866a0794f24fae0ca5474b6720a7ed8"
+    "sha256": "sha256:68f92f435401c0a7071ac71582ad03a2fc0a8a1bdf5bff9730330c68b797f5cd"
   }
 }

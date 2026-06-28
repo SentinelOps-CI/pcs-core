@@ -69,6 +69,9 @@ private theorem insertResource_mem (frame : List Resource) (r res : Resource) :
     res ∈ insertResource frame r ↔ res ∈ frame ∨ res = r := by
   by_cases hin : r ∈ frame
   · simp [insertResource, hin]
+    constructor
+    · intro h; exact Or.inl h
+    · intro h; cases h with | inl h => exact h | inr heq => exact heq ▸ hin
   · simp [insertResource, hin, List.mem_cons, eq_comm]
 
 private theorem insertResource_preserves_tenant (t : String) (frame : List Resource) (r : Resource)
@@ -171,14 +174,13 @@ theorem stepState_frame_preserved (s s' : State) (ev : Event) (hApply : Applies 
   cases hdec : ev.decision with
   | deny =>
     simp [stepState, hdec] at hApply
-    injection hApply with hEq
-    exact hEq ▸ hValid
+    rw [Option.some.injEq] at hApply
+    exact hApply ▸ hValid
   | allow =>
-    unfold Applies at hApply
     by_cases hallowed : actionAllowedD ev.principal ev.action = true
-    · by_cases ht : s.tenant == ev.principal.tenant = true
+    · by_cases ht : (s.tenant == ev.principal.tenant) = true
       · simp [stepState, hdec, hallowed, ht, beq_iff_eq] at hApply
-        injection hApply with hApply
+        rw [Option.some.injEq] at hApply
         subst hApply
         rcases hValid with ⟨htenant, hframe, _⟩
         have hAct : ActionAllowed ev.principal ev.action :=

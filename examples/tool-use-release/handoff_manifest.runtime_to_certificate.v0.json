@@ -10,11 +10,11 @@
   "input_artifacts": {
     "tool_use_trace.valid.json": {
       "artifact_type": "ToolUseTrace.v0",
-      "sha256": "sha256:7d0a726c657c31db20294206c0207a34365a573c3103f447f3b3cca38190d507"
+      "sha256": "sha256:a7bfd0dd83b149ef7cba53ea11ccdc04a23226a2ad39d77e125e8825dc00f253"
     },
     "runtime_receipt.json": {
       "artifact_type": "RuntimeReceipt.v0",
-      "sha256": "sha256:33fddcdd864435cffbf8febb9c405d0ad81a7ba90b446f7d86729c5d46eaf5a8"
+      "sha256": "sha256:f95f7cfe528eb0712d3f876d3766edac6b1b859ff992448c1ca98a780e598da7"
     }
   },
   "expected_outputs": {
@@ -26,5 +26,5 @@
     "trace_hash": "sha256:42ce47fca8ec10a9c65c8d9b9384c8be52094c93d46aa9705ce7c2fa2b8c89e4"
   },
   "status": "Validated",
-  "signature_or_digest": "sha256:9a9560510a730face7c628faad2cd638c6178045380aee260042d20a21d55aa8"
+  "signature_or_digest": "sha256:4717aaa2a63ab25a2d3f76ebbb770af191660d4009e36cb7bbdb3cf3348153d7"
 }
