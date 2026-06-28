@@ -10,7 +10,11 @@ import pytest
 
 from pcs_core.lean_check import run_pfcore_lean_check
 from pcs_core.pf_core_certifyedge import (
+    CERTIFYEDGE_INSTALL_DOC,
+    certifyedge_cli_available,
+    certifyedge_mode,
     certifyedge_mock_enabled,
+    certifyedge_status,
     run_certifyedge_check,
     write_certifyedge_certificate,
 )
@@ -19,7 +23,7 @@ from pcs_core.pf_core_lean_codegen import (
     trace_has_contract_refs,
     validate_contracts_before_codegen,
 )
-from pcs_core.pf_core_runtime import validate_tenant_isolation
+from pcs_core.pf_core_runtime import validate_cross_tenant_safety, validate_tenant_isolation
 from pcs_core.validate import validate_artifact, validate_file
 
 REPO = Path(__file__).resolve().parents[2]
@@ -93,8 +97,22 @@ def test_lean_check_rejects_contract_violation(tmp_path: Path) -> None:
     assert any(issue.get("code") == "ContractViolation" for issue in issues)
 
 
+def test_validate_cross_tenant_safety_ok_on_allowed_fixture() -> None:
+    trace = _load(FILE_READ_ALLOWED)
+    assert validate_cross_tenant_safety(trace) == []
+
+
+def test_validate_cross_tenant_safety_fails_cross_tenant_allow() -> None:
+    trace = _load(CROSS_TENANT)
+    errors = validate_cross_tenant_safety(trace)
+    assert any("CrossTenantSafe" in err for err in errors)
+    assert validate_tenant_isolation(trace) != []
+
+
 def test_certifyedge_mock_mode(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("PCS_CERTIFYEDGE_MOCK", "1")
+    monkeypatch.setenv("PF_CORE_CERTIFYEDGE_MODE", "mock")
+    monkeypatch.delenv("PF_CORE_CERTIFYEDGE_MOCK", raising=False)
+    assert certifyedge_mode() == "mock"
     assert certifyedge_mock_enabled()
     result = run_certifyedge_check(LABTRUST_TRACE, "qc_release.temporal.safety")
     assert result.ok
@@ -107,7 +125,7 @@ def test_certifyedge_mock_mode(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_certifyedge_mock_writes_certificate(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setenv("PCS_CERTIFYEDGE_MOCK", "1")
+    monkeypatch.setenv("PF_CORE_CERTIFYEDGE_MOCK", "1")
     out = tmp_path / "cert.json"
     write_certifyedge_certificate(LABTRUST_TRACE, "qc_release.temporal.safety", out)
     cert = _load(out)
@@ -116,11 +134,74 @@ def test_certifyedge_mock_writes_certificate(
 
 
 def test_certifyedge_without_cli_or_mock_fails(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("PF_CORE_CERTIFYEDGE_MOCK", raising=False)
     monkeypatch.delenv("PCS_CERTIFYEDGE_MOCK", raising=False)
+    monkeypatch.delenv("PF_CORE_CERTIFYEDGE_MODE", raising=False)
     result = run_certifyedge_check(LABTRUST_TRACE, "qc_release.temporal.safety")
     if shutil.which("certifyedge") is None:
         assert not result.ok
         assert "CertifyEdge" in result.message
+
+
+def test_certifyedge_mock_fixture_in_examples() -> None:
+    mock_dir = REPO / "examples" / "pf-core-valid" / "certifyedge_mock"
+    validate_file(mock_dir / "trace.json")
+    validate_file(mock_dir / "certificate.json")
+    cert = _load(mock_dir / "certificate.json")
+    assert cert["claim_class"] == "CertificateChecked"
+    assert any(ref.startswith("mock://certifyedge/") for ref in cert.get("assumption_refs", []))
+
+
+def test_certifyedge_status_reports_env_contract() -> None:
+    status = certifyedge_status()
+    assert "env_contract" in status
+    assert "PF_CORE_CERTIFYEDGE_MODE" in status["env_contract"]
+    assert "install_doc" in status
+    assert CERTIFYEDGE_INSTALL_DOC in str(status["install_doc"])
+    assert isinstance(certifyedge_cli_available(), bool)
+
+
+def test_certifyedge_live_mock_separation(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Mock and live modes must be distinguishable on results and env contract."""
+    monkeypatch.setenv("PF_CORE_CERTIFYEDGE_MODE", "mock")
+    mock_result = run_certifyedge_check(LABTRUST_TRACE, "qc_release.temporal.safety")
+    assert mock_result.mock is True
+    assert mock_result.ok
+    assert "mock" in mock_result.message.lower()
+
+    monkeypatch.setenv("PF_CORE_CERTIFYEDGE_MODE", "live")
+    monkeypatch.delenv("PF_CORE_CERTIFYEDGE_CLI", raising=False)
+    if shutil.which("certifyedge") is None:
+        live_result = run_certifyedge_check(LABTRUST_TRACE, "qc_release.temporal.safety")
+        assert live_result.mock is False
+        assert not live_result.ok
+        assert "live" in live_result.message.lower() or "PF_CORE_CERTIFYEDGE_MODE=live" in live_result.message
+
+
+def test_certifyedge_require_live_fails_without_cli(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("PF_CORE_CERTIFYEDGE_MODE", "live")
+    monkeypatch.delenv("PF_CORE_CERTIFYEDGE_CLI", raising=False)
+    monkeypatch.delenv("PF_CORE_CERTIFYEDGE_MOCK", raising=False)
+    if shutil.which("certifyedge") is not None:
+        pytest.skip("real certifyedge on PATH")
+    result = run_certifyedge_check(
+        LABTRUST_TRACE, "qc_release.temporal.safety", require_live=True
+    )
+    assert not result.ok
+    assert "require-live" in result.message.lower() or "PF_CORE_CERTIFYEDGE_MODE=live" in result.message
+
+
+def test_certifyedge_stub_cli_format(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    stub = REPO / "scripts" / "certifyedge-stub.py"
+    if not stub.is_file():
+        pytest.skip("certifyedge-stub.py missing")
+    monkeypatch.setenv("PF_CORE_CERTIFYEDGE_MODE", "live")
+    monkeypatch.setenv("PF_CORE_CERTIFYEDGE_CLI", str(stub))
+    result = run_certifyedge_check(LABTRUST_TRACE, "qc_release.temporal.safety")
+    assert result.ok
+    assert result.mock is False
+    assert result.attestation_ref is not None
+    assert result.attestation_ref.startswith("stub://certifyedge/")
 
 
 @pytest.mark.skipif(not LAKE_AVAILABLE, reason="lake or WSL not available")
