@@ -270,10 +270,15 @@ def cmd_pf_core_validate_trace(
     tenant_isolation: bool = False,
 ) -> int:
     from pcs_core.pf_core_contract import load_contracts_from_dir, validate_trace_contracts
-    from pcs_core.pf_core_runtime import validate_pfcore_trace_hash_chain, validate_tenant_isolation
+    from pcs_core.pf_core_runtime import (
+        validate_event_sequence_order,
+        validate_pfcore_trace_hash_chain,
+        validate_tenant_isolation,
+    )
 
     data = _load_json(path)
     errors = validate_pfcore_trace_hash_chain(data)
+    errors.extend(validate_event_sequence_order(data))
     if tenant_isolation:
         errors.extend(validate_tenant_isolation(data))
     if contracts_dir is not None:
@@ -439,6 +444,7 @@ def cmd_pf_core_lean_check(
     result_out: Path | None,
     skip_build: bool,
     skip_lean_proof: bool,
+    certificate_mode: str | None,
 ) -> int:
     from pcs_core.lean_check import run_pfcore_lean_check
 
@@ -448,11 +454,42 @@ def cmd_pf_core_lean_check(
         result_out_path=result_out,
         skip_build=skip_build,
         skip_lean_proof=skip_lean_proof,
+        certificate_mode=certificate_mode,
     )
     if code == 0:
         dest = out or trace.with_name("PFCoreCertificate.v0.json")
         print(f"OK PF-Core lean-check {trace} -> {dest}")
     return code
+
+
+def cmd_pf_core_bundle_release(
+    trace: Path,
+    cert: Path,
+    out: Path,
+    lean_check_result: Path | None,
+) -> int:
+    from pcs_core.pf_core_bundle import bundle_release
+
+    manifest = bundle_release(
+        trace,
+        cert,
+        out,
+        lean_check_result_path=lean_check_result,
+    )
+    print(f"OK PF-Core release bundle {out} -> {manifest}")
+    return 0
+
+
+def cmd_pf_core_validate_bundle(path: Path) -> int:
+    from pcs_core.pf_core_bundle import validate_bundle
+
+    result = validate_bundle(path)
+    if not result.ok:
+        for issue in result.issues:
+            print(f"FAIL {issue.code}: {issue.message}", file=sys.stderr)
+        return 1
+    print(f"OK PF-Core release bundle {path}")
+    return 0
 
 
 def cmd_pf_core_audit_lean_no_sorry() -> int:
@@ -670,6 +707,29 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="Write LeanCheckResult.v0 JSON (default: alongside --out certificate)",
     )
+    pf_core_lean.add_argument(
+        "--certificate-mode",
+        type=str,
+        default=None,
+        help="Compositional certificate mode for generated Lean obligations",
+    )
+    pf_core_bundle = pf_core_sub.add_parser(
+        "bundle-release",
+        help="Assemble PF-Core release bundle (trace, certificate, proof, manifest)",
+    )
+    pf_core_bundle.add_argument("--trace", type=Path, required=True)
+    pf_core_bundle.add_argument("--cert", type=Path, required=True)
+    pf_core_bundle.add_argument("--out", type=Path, required=True)
+    pf_core_bundle.add_argument(
+        "--lean-check-result",
+        type=Path,
+        default=None,
+        help="Optional LeanCheckResult.v0.json to include in bundle",
+    )
+    pf_core_sub.add_parser(
+        "validate-bundle",
+        help="Validate PF-Core release bundle manifest and hashes",
+    ).add_argument("path", type=Path)
     pf_core_sub.add_parser(
         "audit-lean-no-sorry",
         help="Scan lean/PFCore/ for sorry/admit/axiom/unsafe",
@@ -944,7 +1004,17 @@ def main(argv: list[str] | None = None) -> int:
             args.result_out,
             args.skip_build,
             args.skip_lean_proof,
+            args.certificate_mode,
         )
+    if args.command == "pf-core" and args.pf_core_cmd == "bundle-release":
+        return cmd_pf_core_bundle_release(
+            args.trace,
+            args.cert,
+            args.out,
+            args.lean_check_result,
+        )
+    if args.command == "pf-core" and args.pf_core_cmd == "validate-bundle":
+        return cmd_pf_core_validate_bundle(args.path)
     if args.command == "pf-core" and args.pf_core_cmd == "audit-lean-no-sorry":
         return cmd_pf_core_audit_lean_no_sorry()
     if args.command == "pf-core" and args.pf_core_cmd == "replay-trace":
