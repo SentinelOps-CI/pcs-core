@@ -67,22 +67,9 @@ theorem frameValidD_sound (s : State) :
 
 private theorem insertResource_mem (frame : List Resource) (r res : Resource) :
     res ∈ insertResource frame r ↔ res ∈ frame ∨ res = r := by
-  simp [insertResource, List.mem_cons, or_left_comm, eq_comm]
-
-private theorem mem_foldl_insertResource {frame rs : List Resource} {r : Resource}
-    (hmem : r ∈ List.foldl insertResource frame rs) :
-    r ∈ frame ∨ r ∈ rs := by
-  induction rs generalizing frame with
-  | nil => simp at hmem; exact Or.inl hmem
-  | cons head tail ih =>
-    simp [List.foldl] at hmem
-    by_cases hin : head ∈ frame
-    · simp [insertResource, hin] at hmem
-      exact ih hmem
-    · simp [insertResource, hin] at hmem
-      rcases hmem with hhead | htail
-      · exact Or.inr (List.mem_cons_self head tail)
-      · exact Or.inr (List.mem_cons_of_mem head (ih htail))
+  by_cases hin : r ∈ frame
+  · simp [insertResource, hin]
+  · simp [insertResource, hin, List.mem_cons, eq_comm]
 
 private theorem insertResource_preserves_tenant (t : String) (frame : List Resource) (r : Resource)
     (hframe : frameTenantScoped t frame) (hr : r.tenant = t) :
@@ -104,15 +91,15 @@ private theorem frameTenantScoped_foldl_insert (t : String) (frame rs : List Res
     have hrest : ∀ r ∈ tail, r.tenant = t := by
       intro r hr
       exact hresources r (List.mem_cons_of_mem head hr)
-    exact ih (insertResource_preserves_tenant t frame head hframe hhead) hrest
+    exact ih (insertResource frame head) (insertResource_preserves_tenant t frame head hframe hhead) hrest
 
 private theorem resources_tenant (p : Principal) (a : Action) (r : Resource)
     (hwithin : ActionWithinTenant p a) :
-    r ∈ a.reads → r.tenant = p.tenant := fun hr => hwithin.left r hr
+    r ∈ a.reads → r.tenant = p.tenant := fun hr => (hwithin.left r hr).symm
 
 private theorem resources_tenant_write (p : Principal) (a : Action) (r : Resource)
     (hwithin : ActionWithinTenant p a) :
-    r ∈ a.writes → r.tenant = p.tenant := fun hr => hwithin.right r hr
+    r ∈ a.writes → r.tenant = p.tenant := fun hr => (hwithin.right r hr).symm
 
 private theorem expandResourceFrame_tenant (frame : List Resource) (a : Action) (p : Principal)
     (htFrame : frameTenantScoped p.tenant frame) (hwithin : ActionWithinTenant p a) :
@@ -183,21 +170,20 @@ theorem stepState_frame_preserved (s s' : State) (ev : Event) (hApply : Applies 
   unfold Applies at hApply
   cases hdec : ev.decision with
   | deny =>
-    have heq : s = s' := by
-      simp [stepState, hdec] at hApply
-      exact Option.some.inj hApply
-    subst heq
-    exact hValid
-  | allow =>
     simp [stepState, hdec] at hApply
+    injection hApply with hEq
+    exact hEq ▸ hValid
+  | allow =>
+    unfold Applies at hApply
     by_cases hallowed : actionAllowedD ev.principal ev.action = true
     · by_cases ht : s.tenant == ev.principal.tenant = true
-      · simp [hallowed, ht, BEq.beq] at hApply
-        rcases Option.some.inj hApply with rfl
+      · simp [stepState, hdec, hallowed, ht, beq_iff_eq] at hApply
+        injection hApply with hApply
+        subst hApply
         rcases hValid with ⟨htenant, hframe, _⟩
         have hAct : ActionAllowed ev.principal ev.action :=
           (actionAllowedD_sound ev.principal ev.action).mp hallowed
-        have hwithin := (show ActionAdmissible ev.principal ev.action from hAct).right.left
+        have hwithin : ActionWithinTenant ev.principal ev.action := hAct.right.left
         have ht' : s.tenant = ev.principal.tenant := by
           simpa [htenant] using (beq_iff_eq.mp ht)
         constructor
@@ -206,8 +192,8 @@ theorem stepState_frame_preserved (s s' : State) (ev : Event) (hApply : Applies 
         · unfold capabilityFrameSubset CapabilitySubset
           intro cap hmem
           exact hmem
-      · simp [hallowed, ht] at hApply
-    · simp [hallowed] at hApply
+      · simp [stepState, hdec, hallowed, ht] at hApply
+    · simp [stepState, hdec, hallowed] at hApply
 
 /--
 **Meaning:** Successful `stepState` on an allowed safe event yields `TraceExtendsSafely`.

@@ -116,10 +116,10 @@ theorem composed_contract_preserves_component_invariants (c1 c2 : Contract) (tr 
     c1.invariant tr → c2.invariant tr → (Contract.seq c1 c2).invariant tr :=
   And.intro
 
-/-- Strong contract refines weak: strong pre implies weak pre; weak post implies strong post. -/
+/-- Strong contract refines weak: strong pre implies weak pre; strong post implies weak post. -/
 def ContractRefinement (cStrong cWeak : Contract) : Prop :=
   (∀ p a, cStrong.pre p a → cWeak.pre p a) ∧
-  (∀ p a ev, cWeak.post p a ev → cStrong.post p a ev) ∧
+  (∀ p a ev, cStrong.post p a ev → cWeak.post p a ev) ∧
   (∀ tr, cStrong.invariant tr → cWeak.invariant tr)
 
 /--
@@ -140,7 +140,7 @@ theorem contract_refinement_preserves_trace_safe (cStrong cWeak : Contract) (tr 
     rcases hStrong with ⟨hTrStrong, hEvStrong, hInvStrong⟩
     rcases hRef with ⟨hPre, hPost, hInv⟩
     rcases ih hTrStrong with hTrWeak
-    refine ⟨hTrWeak, ?_, hInv hInvStrong⟩
+    refine ⟨hTrWeak, ?_, hInv (Trace.cons tr' ev) hInvStrong⟩
     · unfold SatisfiesContract at hEvStrong ⊢
       rcases hEvStrong with ⟨hPreStrong, hPostStrong⟩
       refine ⟨hPre ev.principal ev.action hPreStrong, ?_⟩
