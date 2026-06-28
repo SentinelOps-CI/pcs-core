@@ -268,10 +268,17 @@ def cmd_pf_core_validate_trace(
     contracts_dir: Path | None = None,
     *,
     tenant_isolation: bool = False,
+    cross_tenant_safety: bool = False,
+    non_interference: bool = False,
+    ni_tenant_low: str | None = None,
+    ni_tenant_high: str | None = None,
 ) -> int:
     from pcs_core.pf_core_contract import load_contracts_from_dir, validate_trace_contracts
     from pcs_core.pf_core_runtime import (
+        validate_cross_tenant_safety,
         validate_event_sequence_order,
+        validate_observational_non_interference,
+        validate_observational_non_interference_all_pairs,
         validate_pfcore_trace_hash_chain,
         validate_tenant_isolation,
     )
@@ -281,6 +288,15 @@ def cmd_pf_core_validate_trace(
     errors.extend(validate_event_sequence_order(data))
     if tenant_isolation:
         errors.extend(validate_tenant_isolation(data))
+    if cross_tenant_safety:
+        errors.extend(validate_cross_tenant_safety(data))
+    if non_interference:
+        if ni_tenant_low and ni_tenant_high:
+            errors.extend(
+                validate_observational_non_interference(data, ni_tenant_low, ni_tenant_high)
+            )
+        else:
+            errors.extend(validate_observational_non_interference_all_pairs(data))
     if contracts_dir is not None:
         contracts = load_contracts_from_dir(contracts_dir)
         for issue in validate_trace_contracts(data, contracts):
@@ -390,6 +406,7 @@ def cmd_pf_core_certifyedge_check(
     *,
     checker_version: str = "0.1.0",
     attestation_ref: str | None = None,
+    require_live: bool = False,
 ) -> int:
     from pcs_core.pf_core_certifyedge import run_certifyedge_check, write_certifyedge_certificate
 
@@ -401,6 +418,7 @@ def cmd_pf_core_certifyedge_check(
                 out,
                 checker_version=checker_version,
                 attestation_ref=attestation_ref,
+                require_live=require_live,
             )
         else:
             result = run_certifyedge_check(
@@ -408,6 +426,7 @@ def cmd_pf_core_certifyedge_check(
                 property_id,
                 checker_version=checker_version,
                 attestation_ref=attestation_ref,
+                require_live=require_live,
             )
             if not result.ok:
                 print(f"FAIL {result.message}", file=sys.stderr)
@@ -669,6 +688,26 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Also require conservative tenant isolation on all events",
     )
+    pf_core_validate.add_argument(
+        "--cross-tenant-safety",
+        action="store_true",
+        help="Also require TraceCrossTenantSafe mirror (in-tenant or deny per event)",
+    )
+    pf_core_validate.add_argument(
+        "--non-interference",
+        action="store_true",
+        help="Also require conservative observational NonInterference mirror",
+    )
+    pf_core_validate.add_argument(
+        "--ni-tenant-low",
+        default=None,
+        help="Low observer tenant for --non-interference (default: all distinct pairs)",
+    )
+    pf_core_validate.add_argument(
+        "--ni-tenant-high",
+        default=None,
+        help="High tenant for --non-interference (requires --ni-tenant-low)",
+    )
     pf_core_contracts = pf_core_sub.add_parser(
         "validate-contracts",
         help="Validate PFCoreTrace events against PFCoreContract.v0 predicates",
@@ -793,6 +832,11 @@ def main(argv: list[str] | None = None) -> int:
     pf_core_certifyedge.add_argument("--out", type=Path, required=True)
     pf_core_certifyedge.add_argument("--checker-version", type=str, default="0.1.0")
     pf_core_certifyedge.add_argument("--attestation-ref", type=str, default=None)
+    pf_core_certifyedge.add_argument(
+        "--require-live",
+        action="store_true",
+        help="Fail when CertifyEdge live CLI is absent (also PF_CORE_CERTIFYEDGE_REQUIRE_LIVE=1)",
+    )
 
     shared_hash_parser = sub.add_parser("shared-hash-vectors", help="Cross-language hash vectors")
     shared_hash_sub = shared_hash_parser.add_subparsers(dest="shared_hash_cmd", required=True)
@@ -992,6 +1036,10 @@ def main(argv: list[str] | None = None) -> int:
             args.path,
             args.contracts_dir,
             tenant_isolation=args.tenant_isolation,
+            cross_tenant_safety=args.cross_tenant_safety,
+            non_interference=args.non_interference,
+            ni_tenant_low=args.ni_tenant_low,
+            ni_tenant_high=args.ni_tenant_high,
         )
     if args.command == "pf-core" and args.pf_core_cmd == "validate-contracts":
         return cmd_pf_core_validate_contracts(args.trace, args.contracts_dir)
@@ -1036,6 +1084,7 @@ def main(argv: list[str] | None = None) -> int:
             args.out,
             checker_version=args.checker_version,
             attestation_ref=args.attestation_ref,
+            require_live=args.require_live,
         )
     if args.command == "shared-hash-vectors" and args.shared_hash_cmd == "verify":
         return cmd_shared_hash_vectors_verify()
