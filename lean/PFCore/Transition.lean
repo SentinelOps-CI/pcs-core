@@ -72,14 +72,7 @@ private theorem insertResource_mem (frame : List Resource) (r res : Resource) :
     apply Iff.intro
     · intro h; exact Or.inl h
     · intro h; rcases h with hfr | heq; exact hfr; exact heq ▸ hin
-  · simp only [insertResource, hin]
-    constructor
-    · intro h; rcases h with hfr | heq
-      · exact Or.inl hfr
-      · exact Or.inr heq
-    · intro h; rcases h with hfr | heq
-      · exact Or.inl hfr
-      · subst heq; exact Or.inr (List.mem_cons_self r frame)
+  · simp [insertResource, hin, List.mem_cons, eq_comm, or_comm]
 
 private theorem insertResource_preserves_tenant (t : String) (frame : List Resource) (r : Resource)
     (hframe : frameTenantScoped t frame) (hr : r.tenant = t) :
