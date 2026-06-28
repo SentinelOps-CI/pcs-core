@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import fnmatch
 from dataclasses import dataclass
 from typing import Any, Mapping
 
@@ -365,11 +364,38 @@ def _finalize_event(
     return event
 
 
+def _glob_match_chars_fuel(
+    fuel: int,
+    pattern: list[str],
+    uri: list[str],
+) -> bool:
+    """Lean ``globMatchCharsFuel`` subset: ``*`` wildcards only (no ``?`` / ``[]``)."""
+    if fuel == 0:
+        return False
+    if not pattern:
+        return not uri
+    if pattern[0] == "*":
+        return _glob_match_chars_fuel(fuel - 1, pattern[1:], uri) or (
+            bool(uri) and _glob_match_chars_fuel(fuel - 1, pattern, uri[1:])
+        )
+    if not uri or pattern[0] != uri[0]:
+        return False
+    return _glob_match_chars_fuel(fuel - 1, pattern[1:], uri[1:])
+
+
+def _glob_match(pattern: str, uri: str) -> bool:
+    """Match URI against catalog glob patterns (aligned with Lean ``globMatch``)."""
+    pat = list(pattern)
+    text = list(uri)
+    fuel = len(pat) + len(text) + 1
+    return _glob_match_chars_fuel(fuel, pat, text)
+
+
 def resource_matches_pattern(uri: str, pattern: str) -> bool:
     """Return True when ``uri`` matches capability ``resource_pattern``."""
     if pattern == "*":
         return True
-    return fnmatch.fnmatch(uri, pattern)
+    return _glob_match(pattern, uri)
 
 
 def validate_resource_scope(action: Mapping[str, Any], *, path: str = "action") -> None:
@@ -401,6 +427,133 @@ def _same_tenant(principal: Mapping[str, Any], action: Mapping[str, Any]) -> boo
             if isinstance(resource, dict) and str(resource.get("tenant") or "") != tenant:
                 return False
     return True
+
+
+def _event_cross_tenant_safe(
+    principal: Mapping[str, Any],
+    action: Mapping[str, Any],
+    decision: str,
+) -> bool:
+    """Mirror ``EventCrossTenantSafe``: in-tenant footprint or explicit deny."""
+    if decision == "deny":
+        return True
+    return _same_tenant(principal, action)
+
+
+def validate_cross_tenant_safety(trace: Mapping[str, Any]) -> list[str]:
+    """Return cross-tenant safety violations (``TraceCrossTenantSafe`` mirror).
+
+    Every event must be in-tenant or explicitly denied. Unlike
+    ``validate_tenant_isolation``, denied cross-tenant attempts satisfy this check.
+    Does not claim full global non-interference or covert-channel freedom.
+    """
+    errors: list[str] = []
+    events = trace.get("events")
+    if not isinstance(events, list):
+        return ["TraceInvalid: events must be an array"]
+
+    for index, event in enumerate(events):
+        if not isinstance(event, dict):
+            continue
+        base = f"events[{index}]"
+        principal = event.get("principal")
+        action = event.get("action")
+        decision = str(event.get("decision") or "")
+        if not isinstance(principal, dict) or not isinstance(action, dict):
+            errors.append(f"CrossTenantSafe: {base} missing principal or action")
+            continue
+        if not _event_cross_tenant_safe(principal, action, decision):
+            errors.append(
+                f"CrossTenantSafe: cross-tenant allow at {base} "
+                f"(principal tenant {principal.get('tenant')!r})"
+            )
+    return errors
+
+
+def _low_event_for_tenant(tenant: str, event: Mapping[str, Any]) -> bool:
+    """Mirror ``LowEvent``: allowed and principal tenant equals observer tenant."""
+    if str(event.get("decision") or "") != "allow":
+        return False
+    principal = event.get("principal")
+    if not isinstance(principal, dict):
+        return False
+    return str(principal.get("tenant") or "") == tenant
+
+
+def trace_projection_for_tenant(trace: Mapping[str, Any], tenant: str) -> list[Mapping[str, Any]]:
+    """Oldest-first low-visible events for ``tenant`` (``TraceProjection`` mirror)."""
+    projection: list[Mapping[str, Any]] = []
+    events = trace.get("events")
+    if not isinstance(events, list):
+        return projection
+    for event in events:
+        if isinstance(event, dict) and _low_event_for_tenant(tenant, event):
+            projection.append(event)
+    return projection
+
+
+def validate_observational_non_interference(
+    trace: Mapping[str, Any],
+    tenant_low: str,
+    tenant_high: str,
+) -> list[str]:
+    """Return observational NI violations (``NonInterference`` / ``nonInterferenceD`` mirror).
+
+    Conservative projection-based check only. Does not claim covert-channel freedom,
+    timing indistinguishability, or scheduler-level global non-interference.
+    """
+    if tenant_low == tenant_high:
+        return []
+
+    errors: list[str] = []
+    events = trace.get("events")
+    if not isinstance(events, list):
+        return ["TraceInvalid: events must be an array"]
+
+    projection = trace_projection_for_tenant(trace, tenant_low)
+    for index, event in enumerate(projection):
+        if not _low_event_for_tenant(tenant_low, event):
+            errors.append(
+                f"NonInterference: projected event at projection[{index}] is not "
+                f"LowEvent for tenant {tenant_low!r}"
+            )
+
+    for index, event in enumerate(events):
+        if not isinstance(event, dict):
+            continue
+        principal = event.get("principal")
+        if not isinstance(principal, dict):
+            continue
+        if str(principal.get("tenant") or "") != tenant_high:
+            continue
+        if _low_event_for_tenant(tenant_low, event):
+            errors.append(
+                f"NonInterference: high-tenant event at events[{index}] is low-visible "
+                f"to tenant {tenant_low!r}"
+            )
+    return errors
+
+
+def validate_observational_non_interference_all_pairs(trace: Mapping[str, Any]) -> list[str]:
+    """Check observational NI for every distinct tenant pair present in the trace."""
+    tenants: list[str] = []
+    events = trace.get("events")
+    if isinstance(events, list):
+        for event in events:
+            if not isinstance(event, dict):
+                continue
+            principal = event.get("principal")
+            if isinstance(principal, dict):
+                tenant = str(principal.get("tenant") or "")
+                if tenant and tenant not in tenants:
+                    tenants.append(tenant)
+    errors: list[str] = []
+    for tenant_low in tenants:
+        for tenant_high in tenants:
+            if tenant_low == tenant_high:
+                continue
+            errors.extend(validate_observational_non_interference(trace, tenant_low, tenant_high))
+    return errors
 
 
 def validate_tenant_isolation(trace: Mapping[str, Any]) -> list[str]:
