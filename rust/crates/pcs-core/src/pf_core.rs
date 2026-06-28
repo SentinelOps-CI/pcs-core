@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use serde_json::{Map, Value};
 
 use crate::hash::canonical_hash;
-use crate::pf_core_catalog::{CAPABILITY_CATALOG, EFFECT_KINDS};
+use crate::pf_core_catalog::{CAPABILITY_CATALOG, EFFECT_KINDS, TOOL_NAME_MAP};
 
 pub const GENESIS_HASH: &str =
     "sha256:0000000000000000000000000000000000000000000000000000000000000000";
@@ -281,6 +281,7 @@ const RUNTIME_RESOURCE_PATTERN_SCOPE: &str = "resource_pattern_scope";
 const LEAN_RESOURCE_WITHIN_CAPABILITY_PATTERN: &str = "resource_within_capability_pattern";
 
 const DEFAULT_CERTIFICATE_MODE: &str = "TraceSafeCertificate";
+const TOOL_USE_DEFAULT_CERTIFICATE_MODE: &str = "TraceSafeRCertificate";
 
 const CERTIFICATE_MODES: &[&str] = &[
     "TraceSafeCertificate",
@@ -340,6 +341,40 @@ fn mode_obligation_theorems(mode: &str) -> &'static [&'static str] {
 
 fn certificate_mode_is_valid(mode: &str) -> bool {
     CERTIFICATE_MODES.contains(&mode)
+}
+
+pub fn resolve_tool_mapping(
+    tool_name: &str,
+    tool_category: &str,
+) -> Result<(&'static str, &'static str, &'static str), String> {
+    for (name, category, cap_id, effect_kind, pattern) in TOOL_NAME_MAP {
+        if *name == tool_name && *category == tool_category {
+            return Ok((cap_id, effect_kind, pattern));
+        }
+    }
+    Err(format!(
+        "UnknownCapability: {tool_name}/{tool_category} (at tool_calls.tool_name)"
+    ))
+}
+
+pub fn resolve_certificate_mode_default(certificate: &Value, trace_path: Option<&str>) -> String {
+    if let Some(mode) = certificate
+        .get("certificate_mode")
+        .and_then(|v| v.as_str())
+        .filter(|mode| certificate_mode_is_valid(mode))
+    {
+        return mode.to_string();
+    }
+    if let Some(path) = trace_path {
+        let trace_dir = std::path::Path::new(path).parent();
+        if trace_dir
+            .map(|dir| dir.join("tool_use_trace.json").is_file())
+            .unwrap_or(false)
+        {
+            return TOOL_USE_DEFAULT_CERTIFICATE_MODE.to_string();
+        }
+    }
+    DEFAULT_CERTIFICATE_MODE.to_string()
 }
 
 const AUTHORIZATION_TO_DECISION: &[(&str, &str)] = &[
@@ -1627,5 +1662,27 @@ mod tests {
                 "{relative}: expected {needle} in {errors:?}"
             );
         }
+    }
+
+    #[test]
+    fn pf_core_tool_name_map_matches_catalog_fixture() {
+        let (cap_id, effect_kind, pattern) =
+            resolve_tool_mapping("filesystem.read", "filesystem").expect("mapping");
+        assert_eq!(cap_id, "cap:file-read");
+        assert_eq!(effect_kind, "file.read");
+        assert_eq!(pattern, "/data/*");
+        assert!(resolve_tool_mapping("unknown.tool", "misc").is_err());
+    }
+
+    #[test]
+    fn pf_core_tool_use_certificate_mode_default() {
+        let trace_path =
+            repo_root().join("examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json");
+        let certificate = serde_json::json!({});
+        let mode = resolve_certificate_mode_default(
+            &certificate,
+            Some(trace_path.to_str().expect("utf8")),
+        );
+        assert_eq!(mode, TOOL_USE_DEFAULT_CERTIFICATE_MODE);
     }
 }
