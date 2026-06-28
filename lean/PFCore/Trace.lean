@@ -30,6 +30,74 @@ def eventInD (ev : Event) (tr : Trace) : Bool :=
   | Trace.empty => false
   | Trace.cons tr' e => decide (ev == e) || eventInD ev tr'
 
+/-- Oldest-first event list for trace `tr` (matches runtime event order). -/
+def Trace.events : Trace → List Event
+  | Trace.empty => []
+  | Trace.cons tr ev => Trace.events tr ++ [ev]
+
+/-- Build a trace from an oldest-first event list. -/
+def Trace.ofEvents (events : List Event) : Trace :=
+  events.foldr (fun e t => Trace.cons t e) Trace.empty
+
+/-- Chronological concatenation: events of `tr1` followed by events of `tr2`. -/
+def Trace.append (tr1 tr2 : Trace) : Trace :=
+  match tr2 with
+  | Trace.empty => tr1
+  | Trace.cons tr' ev => Trace.cons (Trace.append tr1 tr') ev
+
+/--
+**Meaning:** `Trace.events` lists events in chronological (oldest-first) order.
+
+**Trusted use:** Compositional trace concatenation and projection lemmas.
+
+**Does not imply:** Hash-chain or replay validity.
+-/
+theorem trace_events_cons (tr : Trace) (ev : Event) :
+    Trace.events (Trace.cons tr ev) = Trace.events tr ++ [ev] := by
+  simp [Trace.events]
+
+/--
+**Meaning:** Append distributes over `Trace.cons` on the right.
+
+**Trusted use:** Inductive compositional safety/NI proofs under append.
+-/
+theorem trace_append_cons (tr1 tr' : Trace) (ev : Event) :
+    Trace.append tr1 (Trace.cons tr' ev) = Trace.cons (Trace.append tr1 tr') ev := by
+  rfl
+
+/--
+**Meaning:** Appending an empty trace is identity on the left.
+
+**Trusted use:** Compositional NI and safety append lemmas.
+-/
+theorem trace_append_empty_left (tr : Trace) :
+    Trace.append Trace.empty tr = tr := by
+  induction tr with
+  | empty => rfl
+  | cons tr' ev ih =>
+    simp [Trace.append, ih]
+
+/--
+**Meaning:** Appending to empty is identity on the right.
+
+**Trusted use:** Compositional NI and safety append lemmas.
+-/
+theorem trace_append_empty_right (tr : Trace) :
+    Trace.append tr Trace.empty = tr := by
+  cases tr <;> rfl
+
+/--
+**Meaning:** Chronological append concatenates oldest-first event lists.
+
+**Trusted use:** Compositional safety and observational projection under append.
+-/
+theorem trace_append_spec (tr1 tr2 : Trace) :
+    Trace.events (Trace.append tr1 tr2) = Trace.events tr1 ++ Trace.events tr2 := by
+  induction tr2 with
+  | empty => simp [Trace.append, Trace.events]
+  | cons tr' ev ih =>
+    simp [Trace.append, Trace.events, trace_events_cons, ih, List.append_assoc]
+
 /--
 **Meaning:** The empty trace is trivially safe.
 
