@@ -11,6 +11,7 @@ PCS_OBLIGATION_KIND_THEOREM: dict[str, str] = {
     ),
     "ToolTraceHashMatchesCertificate": "tool_trace_hash_matches_certificate",
     "ComputationWitnessHashAlignment": "witness_result_hashes_admissible",
+    "ReleaseChainAdmissible": "concrete_release_chain_admissible_prop",
 }
 
 PCS_UNTRUSTED_OBLIGATION_KIND_THEOREM: dict[str, str] = {}
@@ -110,7 +111,17 @@ OBLIGATION_KIND_THEOREM = PCS_OBLIGATION_KIND_THEOREM
 UNTRUSTED_OBLIGATION_KIND_THEOREM = PCS_UNTRUSTED_OBLIGATION_KIND_THEOREM
 KNOWN_OBLIGATION_KINDS = frozenset(OBLIGATION_KIND_THEOREM.keys())
 UNTRUSTED_OBLIGATION_KINDS = frozenset(UNTRUSTED_OBLIGATION_KIND_THEOREM.keys())
-LEAN_THEOREM_CATALOG = frozenset(OBLIGATION_KIND_THEOREM.values())
+PCS_CONCRETE_PROOF_THEOREMS = frozenset(
+    {
+        "concrete_certificate_matches_runtime",
+        "concrete_verification_admits_bundle",
+        "concrete_signed_bundle_admissible",
+        "concrete_release_chain_admissible",
+        "concrete_release_chain_admissible_prop",
+    }
+)
+
+LEAN_THEOREM_CATALOG = frozenset(OBLIGATION_KIND_THEOREM.values()) | PCS_CONCRETE_PROOF_THEOREMS
 UNTRUSTED_LEAN_THEOREM_CATALOG = frozenset(UNTRUSTED_OBLIGATION_KIND_THEOREM.values())
 
 LEAN_THEOREM_FAMILY = "Release-envelope consistency theorem family"
