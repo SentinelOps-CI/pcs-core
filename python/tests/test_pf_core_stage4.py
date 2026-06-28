@@ -62,6 +62,10 @@ def test_generate_proof_obligation_file_writes_theorem(tmp_path: Path) -> None:
     text = proof_path.read_text(encoding="utf-8")
     assert "theorem concrete_trace_safe" in text
     assert "theorem concrete_event_safe_" in text
+    assert "concrete_action_resource_scope_" in text
+    assert "ActionAdmissibleWithResourcePattern" in text
+    assert "theorem concrete_trace_safe_r" in text
+    assert "theorem concrete_trace_safe_r_prop" in text
     assert "decide" in text
     assert "import PFCore.TraceCheck" in text
 
