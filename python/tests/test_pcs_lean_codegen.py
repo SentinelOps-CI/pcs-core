@@ -34,6 +34,9 @@ def test_generate_proof_obligation_file_writes_theorems(tmp_path: Path) -> None:
     path = generate_proof_obligation_file(doc, tmp_path)
     text = path.read_text(encoding="utf-8")
     assert "concrete_release_chain_admissible" in text
+    assert "concrete_certificate_matches_runtime_prop" in text
+    assert "concrete_verification_admits_bundle_prop" in text
+    assert "concrete_signed_bundle_admissible_prop" in text
     assert "releaseChainAdmissibleD" in text
     assert "ReleaseChainAdmissible" in text
     assert generated_module_name(doc) in text
@@ -67,4 +70,8 @@ def test_generate_from_release_dir_matches_committed_fixture() -> None:
     generated = repo_root() / "lean" / "PCS" / "Generated"
     path = generate_from_release_dir(LABTRUST, generated)
     assert path.is_file()
-    assert "concrete_release_chain_admissible_prop" in path.read_text(encoding="utf-8")
+    text = path.read_text(encoding="utf-8")
+    assert "concrete_release_chain_admissible_prop" in text
+    assert "concrete_certificate_matches_runtime_prop" in text
+    assert "concrete_verification_admits_bundle_prop" in text
+    assert "concrete_signed_bundle_admissible_prop" in text

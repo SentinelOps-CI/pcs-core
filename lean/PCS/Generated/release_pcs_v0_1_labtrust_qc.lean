@@ -38,14 +38,27 @@ theorem concrete_certificate_matches_runtime :
     certificateMatchesRuntimeD concreteCertificate concreteRuntimeReceipt = true := by
   decide
 
+theorem concrete_certificate_matches_runtime_prop :
+    CertificateMatchesRuntime concreteCertificate concreteRuntimeReceipt :=
+  (certificateMatchesRuntimeD_sound _ _).mp concrete_certificate_matches_runtime
+
 theorem concrete_verification_admits_bundle :
     verificationAdmitsBundleD concreteVerification concreteCertifiedBundleHash = true := by
   decide
+
+theorem concrete_verification_admits_bundle_prop :
+    VerificationAdmitsBundle concreteVerification concreteCertifiedBundleHash :=
+  (verificationAdmitsBundleD_sound _ _).mp concrete_verification_admits_bundle
 
 theorem concrete_signed_bundle_admissible :
     signedBundleAdmissibleD concreteSignedInputHash
       concreteVerification.verifiedInputBundleHash = true := by
   decide
+
+theorem concrete_signed_bundle_admissible_prop :
+    SignedBundleAdmissible concreteSignedInputHash
+      concreteVerification.verifiedInputBundleHash :=
+  (signedBundleAdmissibleD_sound _ _).mp concrete_signed_bundle_admissible
 
 theorem concrete_release_chain_admissible :
     releaseChainAdmissibleD concreteCertificate concreteRuntimeReceipt concreteVerification
