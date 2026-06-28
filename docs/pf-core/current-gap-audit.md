@@ -10,7 +10,7 @@ Summary of gaps between the PF-Core vision and the current `pcs-core` repository
 |------|--------|-------|
 | `semantics_layer` on `PFCoreContract.v0` | Done | Flat field map: `lean` / `runtime` / `out_of_scope`; validator defaults |
 | `contract_semantics_checked` on certificates | Done | Derived from semantics layers + checks |
-| Cross-language semantic parity | Done | Rust `pf_core.rs`, TS `pfCore.ts`, `conformance run --suite pf-core-cross-language` |
+| Cross-language semantic parity | Done | Rust `pf_core.rs`, TS `pfCore.ts`, `conformance run --suite pf-core-cross-language`; includes `contract_semantics_checked` read/validate |
 | Rust/TS direct-trace effect/capability parity | Done (uncommitted) | `validate_direct_trace_action_semantics` / `validateDirectTraceActionSemantics`; error codes `UnknownEffect`, `UnknownCapability`, `CapabilityEffectMismatch` |
 | Trace vs certificate claim classes | Done | Separate enums; traces reject `LeanKernelChecked` / `CertificateChecked` |
 | Direct-trace effect catalog | Done | Closed `effect_kind` enum + semantic validators |
@@ -87,7 +87,7 @@ Summary of gaps between the PF-Core vision and the current `pcs-core` repository
 
 1. **Full global cross-tenant non-interference** — conservative tenant isolation for allowed events is proved; covert channels, timing, deny-side leaks open (`non-interference.md`).
 2. **Write footprint ↔ effect linkage** — `WriteFootprintRequiresWriteEffect` explicit; derived from `ActionAdmissible` + `KnownCapabilityEffect` for catalog capabilities.
-3. **Resource-pattern scope in Lean** — Python `validate_resource_scope` and certificate `contract_semantics_checked.runtime` (`resource_pattern_scope`); `ResourcePattern.lean` provides decider parity; not discharged in Lean trace safety kernel.
+3. **Resource-pattern scope in Lean** — Partial: `ResourcePattern.lean` (`TraceSafeR`, `ActionAdmissibleWithResourcePattern`); Python/Rust/TS runtime deciders (`trace_safe_rd` / trace hash-chain `validate_resource_scope`); optional codegen `concrete_trace_safe_r*` when allow events pass pattern scope; base `TraceSafe` kernel unchanged.
 4. **Full provability-fabric-core live adapter orchestration** — hash parity covered natively via adapter CI script.
 5. **Full agent runtime, MCP, NL policy, model safety** — out of scope.
 
@@ -135,10 +135,59 @@ Summary of gaps between the PF-Core vision and the current `pcs-core` repository
 
 ### Remaining gaps (post Phase I)
 
-- Full global cross-tenant non-interference (covert channels / timing).
-- Live CertifyEdge on all developer machines (release gate requires live CLI in CI).
-- Rust/TS runtime modules still duplicate some catalog tables until fully wired to `pf_core_catalog.rs` / `pfCoreCatalog.ts` imports.
-- WSL/Lean local verification depends on toolchain availability (CI lean job covers release path).
+- Full global cross-tenant non-interference (covert channels / timing / scheduler adversaries).
+- Live CertifyEdge on all developer machines (release gate requires live CLI; see `docs/pf-core/certifyedge.md`; local mock via `scripts/pf-core-certifyedge-dry-run.ps1`).
+- Rust/TS catalog consumers wired to generated `pf_core_catalog.rs` / `pfCoreCatalog.ts` (uncommitted); drift still gated by `gen_pf_core_catalog.py` + CI.
+- Rust/TS `validate_cross_tenant_safety` parity — done (uncommitted); mirrors Python `TraceCrossTenantSafe`.
+- Lean `ActionAdmissible` does not include `ResourceWithinCapabilityPattern`; scope discharged via runtime + generated `actionResourcesWithinCapabilityPatternD` obligations.
+- Rust/TS `contract_semantics_checked` validation — done (uncommitted); reads metadata only; does not substitute for Python lean-check emission.
+
+### Incremental improvements (2026-06-28)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| `nonInterferenceD_sound` + decider links | Done | `Observational.lean`: `nonInterferenceD_sound`, `traceSafeD_implies_nonInterferenceD`; `NonInterference.lean`: `traceSafeD_implies_tenantIsolationD`, `traceSafeD_implies_traceCrossTenantSafeD` |
+| Runtime `validate_cross_tenant_safety` | Done | `TraceCrossTenantSafe` mirror; CLI `--cross-tenant-safety`; Rust/TS parity |
+| Resource-pattern codegen hooks | Done | `actionResourcesWithinCapabilityPatternD` per allow event |
+| CertifyEdge env contract | Done | `PF_CORE_CERTIFYEDGE_*`; `docs/pf-core/certifyedge.md`; mock fixture at `examples/pf-core-valid/certifyedge_mock/` |
+| Windows release-grade script | Done | `scripts/pf-core-release-grade-local.ps1` (native lake) |
+| `contract_semantics_checked` Rust/TS parity | Done | `parse_contract_semantics_checked` / `validateContractSemanticsChecked`; wired into certificate semantic validation; cross-language tests |
+| Resource scope certificate obligations | Done | `lean_proof_checked` requires `resource_pattern_scope` (runtime) + `resource_within_capability_pattern` (lean) in Python/Rust/TS |
+| CertifyEdge release-gate dry-run | Done | `scripts/pf-core-certifyedge-dry-run.{ps1,sh}`; integrated into release-grade local scripts (`PF_CORE_CERTIFYEDGE_MODE=mock`) |
+| Python glob matcher parity (`globMatchCharsFuel`) | Done | `pf_core_runtime.py` aligned with Rust/TS/Lean; no `fnmatch` |
+
+### Incremental improvements (2026-06-28 session — deferral research push)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| `TraceSafeR` / `EventSafeR` kernel chain | Done | `ResourcePattern.lean`; refines `TraceSafe`; migration path without breaking base proofs |
+| Compositional append NI/safety | Done | `Compositional.lean`, `Observational.lean`: `traceSafe_append`, `trace_append_preserves_non_interference`, `traceProjection_append` |
+| Handoff + NI precondition lemmas | Done | `handoffSafe_traceSafe_non_interference`, `handoffSafe_excludes_cross_tenant_handoff` |
+| `traceSafeRD` decider + codegen | Done | `lean_check.py`, optional `concrete_trace_safe_r*` in codegen |
+| CertifyEdge `--require-live` + stub | Done | `pf_core_certifyedge.py`, `scripts/certifyedge-stub.py`, release-gate matrix |
+
+### Remaining honest deferrals (post push)
+
+- Full global cross-tenant non-interference (covert channels / timing / scheduler adversaries).
+- Base kernel `TraceSafe` / `ActionAdmissible` unchanged; `TraceSafeR` is opt-in refinement (codegen emits when scope validates).
+- Live CertifyEdge attestation vs format stub (stub validates CLI contract only).
+
+### Incremental improvements (2026-06-28 session — deferral research)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| NI adversary-model roadmap | Done | `non-interference.md` extension table |
+| Deny-event / handoff NI precondition lemmas | Done | `Observational.lean`, `NonInterference.lean`, `Handoff.lean` |
+| Runtime `validate_observational_non_interference` | Done | CLI `--non-interference`; Rust/TS parity; decider obligations in lean-check |
+| `ActionAdmissibleWithResourcePattern` bridge | Done | `ResourcePattern.lean`; codegen `concrete_action_resource_scope_*` |
+| Release gate CertifyEdge mock+live matrix | Done | `pf-core-release-gate.yml`; `certifyedge.md` |
+
+### Remaining honest deferrals (post session)
+
+- Full global cross-tenant non-interference (covert channels / timing / scheduler adversaries).
+- Kernel `TraceSafe` / `ActionAdmissible` still omit `ResourceWithinCapabilityPattern` (bridge predicate only).
+- Live CertifyEdge on all developer hosts (release gate skips live gracefully when CLI absent).
+- Rust/TS certificate validation records contract-semantics metadata but does **not** emit or imply `LeanKernelChecked` (Python lean-check only).
 
 ### Honest limitations (Phase F + Tier 2)
 
