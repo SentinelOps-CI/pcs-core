@@ -7,70 +7,10 @@ from dataclasses import dataclass
 from typing import Any, Mapping
 
 from pcs_core.hash import SIGNATURE_FIELD, canonical_hash
+from pcs_core.pf_core_catalog import CAPABILITY_CATALOG, EFFECT_KINDS, ROLE_CAPABILITY_MAP
 from pcs_core.validate import ValidationError, validate_schema
 
 GENESIS_HASH = "sha256:" + "0" * 64
-
-EFFECT_KINDS = frozenset(
-    {
-        "file.read",
-        "file.write",
-        "network.egress",
-        "email.send",
-        "handoff.delegate",
-        "mcp.invoke",
-        "lab.release",
-    }
-)
-
-CAPABILITY_CATALOG: dict[str, dict[str, str]] = {
-    "cap:file-read": {
-        "capability_id": "cap:file-read",
-        "effect_kind": "file.read",
-        "resource_pattern": "/data/*",
-    },
-    "cap:file-write": {
-        "capability_id": "cap:file-write",
-        "effect_kind": "file.write",
-        "resource_pattern": "/data/*",
-    },
-    "cap:network": {
-        "capability_id": "cap:network",
-        "effect_kind": "network.egress",
-        "resource_pattern": "*",
-    },
-    "cap:email-send": {
-        "capability_id": "cap:email-send",
-        "effect_kind": "email.send",
-        "resource_pattern": "mailto:*",
-    },
-    "cap:handoff": {
-        "capability_id": "cap:handoff",
-        "effect_kind": "handoff.delegate",
-        "resource_pattern": "agent:*",
-    },
-    "cap:mcp-invoke": {
-        "capability_id": "cap:mcp-invoke",
-        "effect_kind": "mcp.invoke",
-        "resource_pattern": "mcp:*",
-    },
-    "cap:lab-release": {
-        "capability_id": "cap:lab-release",
-        "effect_kind": "lab.release",
-        "resource_pattern": "lab:*",
-    },
-}
-
-ROLE_CAPABILITY_MAP: dict[str, list[str]] = {
-    "file_reader": ["cap:file-read"],
-    "file_admin": ["cap:file-read", "cap:file-write"],
-    "network_user": ["cap:network"],
-    "email_user": ["cap:email-send"],
-    "handoff_delegate": ["cap:handoff"],
-    "mcp_user": ["cap:mcp-invoke"],
-    "lab_operator": ["cap:lab-release"],
-    "agent": ["cap:file-read", "cap:email-send", "cap:handoff", "cap:mcp-invoke"],
-}
 
 TOOL_NAME_MAP: dict[tuple[str, str], tuple[str, str, str]] = {
     ("filesystem.read", "filesystem"): ("cap:file-read", "file.read", "/data/*"),
@@ -880,6 +820,42 @@ def validate_handoff_authority(handoff: Mapping[str, Any]) -> None:
         cap_id = str(cap.get("capability_id") or "")
         if cap_id and cap_id not in allowed:
             raise HandoffAuthorityExpansion(cap_id, f"delegated_capabilities[{index}]")
+
+
+def validate_event_sequence_order(trace: Mapping[str, Any], *, strict_gaps: bool = True) -> list[str]:
+    """Reject duplicate sequences, unsorted event arrays, and optional sequence gaps."""
+    errors: list[str] = []
+    events = trace.get("events")
+    if not isinstance(events, list):
+        return errors
+
+    seen: set[int] = set()
+    prev_seq: int | None = None
+    for index, event in enumerate(events):
+        if not isinstance(event, dict):
+            continue
+        base = f"events[{index}]"
+        sequence = event.get("sequence")
+        if not isinstance(sequence, int):
+            errors.append(f"EventSequenceInvalid: missing or invalid sequence at {base}")
+            continue
+        if sequence in seen:
+            errors.append(
+                f"EventSequenceDuplicate: duplicate sequence {sequence} at {base}"
+            )
+        seen.add(sequence)
+        if prev_seq is not None and sequence < prev_seq:
+            errors.append(
+                "EventSequenceOrderMismatch: "
+                f"events not sorted by sequence at {base} "
+                f"(sequence {sequence} < previous {prev_seq})"
+            )
+        if strict_gaps and prev_seq is not None and sequence != prev_seq + 1:
+            errors.append(
+                f"EventSequenceGap: gap between sequence {prev_seq} and {sequence} at {base}"
+            )
+        prev_seq = sequence
+    return errors
 
 
 def validate_pfcore_trace_hash_chain(trace: dict) -> list[str]:

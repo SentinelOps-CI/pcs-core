@@ -112,6 +112,9 @@ def _validate_pfcore_trace(data: dict[str, Any]) -> list[str]:
     errors.extend(_validate_direct_trace_action_semantics(data))
     errors.extend(validate_trace_contract_binding(data))
     errors.extend(validate_pfcore_trace_hash_chain(data))
+    from pcs_core.pf_core_runtime import validate_event_sequence_order
+
+    errors.extend(validate_event_sequence_order(data))
     return errors
 
 
@@ -168,6 +171,29 @@ def _validate_pfcore_certificate(data: dict[str, Any]) -> list[str]:
         env_hash = data.get("lean_environment_hash")
         if not isinstance(env_hash, str) or not env_hash.startswith("sha256:"):
             errors.append("root: claim_class LeanKernelChecked requires lean_environment_hash")
+        kernel_hash = data.get("pfcore_kernel_hash")
+        if not isinstance(kernel_hash, str) or not kernel_hash.startswith("sha256:"):
+            errors.append("root: claim_class LeanKernelChecked requires pfcore_kernel_hash")
+        cert_mode = str(data.get("certificate_mode") or "TraceSafeCertificate")
+        from pcs_core.pf_core_lean_codegen import CERTIFICATE_MODES, MODE_OBLIGATION_THEOREMS
+
+        if cert_mode not in CERTIFICATE_MODES:
+            errors.append(f"root: invalid certificate_mode {cert_mode!r}")
+        elif lean_proof_checked:
+            mode_required = MODE_OBLIGATION_THEOREMS.get(cert_mode, frozenset())
+            obligations = data.get("obligations")
+            if isinstance(obligations, list) and mode_required:
+                passed = {
+                    str(item.get("theorem"))
+                    for item in obligations
+                    if isinstance(item, dict) and item.get("passed") is True
+                }
+                missing_mode = mode_required - passed
+                if missing_mode:
+                    errors.append(
+                        "root: certificate_mode obligations missing passed proofs for "
+                        f"{sorted(missing_mode)!r}"
+                    )
         default_ref = str(data.get("default_contract_ref") or "")
         semantics = data.get("contract_semantics_checked")
         has_semantics = isinstance(semantics, dict) and (
@@ -301,6 +327,17 @@ def check_pf_core_invalid_fixtures() -> None:
                     ) from exc
             else:
                 raise ValidationError(f"Expected {case_dir} to fail at {must_fail_at}")
+            continue
+
+        if must_fail_at == "validate_event_sequence_order":
+            trace = json.loads((case_dir / "trace.json").read_text(encoding="utf-8"))
+            from pcs_core.pf_core_runtime import validate_event_sequence_order
+
+            errors = validate_event_sequence_order(trace)
+            if not any(expected_error in err for err in errors):
+                raise ValidationError(
+                    f"Expected {case_dir} to fail with {expected_error!r}, got {errors!r}"
+                )
             continue
 
         if must_fail_at == "validate_pfcore_trace_hash_chain":

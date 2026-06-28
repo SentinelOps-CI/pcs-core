@@ -1,0 +1,4 @@
+{
+  "expected_error": "EventSequenceOrderMismatch",
+  "must_fail_at": "validate_event_sequence_order"
+}
