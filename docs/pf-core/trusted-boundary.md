@@ -16,9 +16,12 @@ This document lists what PCS/PF-Core treats as trusted, untrusted, or assumed wh
 | Lean theorem catalog (PF-Core trusted set) | `python/pcs_core/lean_catalog.py` | Audited against `lean/PFCore/` |
 | PF-Core lean-check deciders | `python/pcs_core/lean_check.py` | Aligned with PF-Core Lean predicates; uses explicit `principal.capabilities` only |
 | Known capability catalog (Python) | `python/pcs_core/pf_core_runtime.py` | `CAPABILITY_CATALOG`, `validate_action_capabilities_known`, `validate_resource_scope` |
-| Known capability catalog (Lean) | `lean/PFCore/Capability.lean`, `lean/PFCore/Action.lean` | `KnownCapability`, `KnownCapabilityEffect` on `ActionAdmissible`; no resource-pattern discharge |
+| Known capability catalog (Rust) | `rust/crates/pcs-core/src/pf_core.rs` | `EFFECT_KINDS`, `CAPABILITY_CATALOG`, `validate_direct_trace_action_semantics`, `resource_matches_pattern` |
+| Known capability catalog (TypeScript) | `typescript/packages/core/src/pfCore.ts` | Same closed catalogs and direct-trace semantic validators as Python |
+| Known capability catalog (Lean) | `lean/PFCore/Capability.lean`, `lean/PFCore/Action.lean`, `lean/PFCore/ResourcePattern.lean` | `KnownCapability`, `KnownCapabilityEffect` on `ActionAdmissible`; resource-pattern matching in `ResourcePattern.lean` (runtime parity); not discharged in trace safety kernel |
 | PF-Core concrete trace Lean proofs | `lean/PFCore/Generated/` (generated) | `lake env lean` on generated `concrete_trace_safe` theorem; certificate binds via `trace_hash`, `proof_term_hash`, `lean_environment_hash` |
 | Python PF-Core semantic validation | `python/pcs_core/validate_pf_core.py` | Binds JSON artifacts to closed enums and direct-trace effect/capability rules before Lean codegen |
+| Rust/TS PF-Core semantic validation | `rust/crates/pcs-core/src/validation.rs`, `typescript/packages/core/src/validate.ts` | Cross-language direct-trace effect/capability semantics aligned with Python (`UnknownEffect`, `UnknownCapability`, `CapabilityEffectMismatch`) |
 | Tool-use / witness hash alignment theorems | `lean/PCS/ToolUse.lean`, `lean/PCS/ComputationWitness.lean` | Promoted to trusted PCS catalog (Stage 4) |
 | Role → capability expansion | `python/pcs_core/pf_core_runtime.py` | Compiler expands roles; lean-check requires explicit capabilities on traces |
 | PF-Core no-sorry audit | `python/pcs_core/lean_check.py` | Scans `lean/PFCore/` for forbidden tokens |
@@ -63,6 +66,8 @@ PF-Core kernel assurance remains exclusively on `pcs pf-core lean-check --trace 
 
 See `docs/pf-core/generated-proofs.md` for gitignored `lean/PFCore/Generated/` regeneration.
 
+**PCS per-obligation Lean term generation is deferred.** Rationale and optional design sketch: `docs/pf-core/pcs-envelope-lean-roadmap.md`.
+
 No PF-Core trusted Lean file may contain `sorry`, `admit`, `axiom`, or `unsafe` unless listed here.
 
 | File | Exception | Rationale |
@@ -99,5 +104,14 @@ No PF-Core trusted Lean file may contain `sorry`, `admit`, `axiom`, or `unsafe` 
 - `lean/PFCore/Certificate.lean`
 - `lean/PFCore/Soundness.lean`
 - `lean/PFCore/Theorems.lean`
+- `lean/PFCore/NonInterference.lean`
+- `lean/PFCore/Observational.lean`
+- `lean/PFCore/ResourcePattern.lean`
+- `lean/PFCore/ContractDecide.lean`
+- `lean/PFCore/Compositional.lean`
+- `lean/PFCore/RoleMap.lean`
+- `lean/PFCore/Transition.lean`
+- `lean/PFCore/EffectFrame.lean`
+- `lean/PFCore/State.lean`
 - `lean/PFCore.lean` (root module for `lake build PFCore`)
 - `lean/PCS.lean` (root module for `lake build PCS`)
