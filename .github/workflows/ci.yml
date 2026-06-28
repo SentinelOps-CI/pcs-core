@@ -87,15 +87,20 @@ jobs:
           cd python
           pip install -e .
           if command -v certifyedge >/dev/null 2>&1; then
+            echo "CertifyEdge CLI found: $(command -v certifyedge)"
+            certifyedge --version || true
             pcs pf-core certifyedge-check \
               --trace ../examples/pf-core-valid/labtrust_replay/trace.json \
               --property qc_release.temporal.safety \
-              --out /tmp/PFCoreCertificate.certifyedge.json || \
-            PCS_CERTIFYEDGE_MOCK=1 pcs pf-core certifyedge-check \
-              --trace ../examples/pf-core-valid/labtrust_replay/trace.json \
-              --property qc_release.temporal.safety \
-              --out /tmp/PFCoreCertificate.certifyedge.json
+              --out /tmp/PFCoreCertificate.certifyedge.json || {
+              echo "WARNING: live CertifyEdge check failed; falling back to mock"
+              PCS_CERTIFYEDGE_MOCK=1 pcs pf-core certifyedge-check \
+                --trace ../examples/pf-core-valid/labtrust_replay/trace.json \
+                --property qc_release.temporal.safety \
+                --out /tmp/PFCoreCertificate.certifyedge.json
+            }
           else
+            echo "WARNING: certifyedge not on PATH; using PCS_CERTIFYEDGE_MOCK=1"
             PCS_CERTIFYEDGE_MOCK=1 pcs pf-core certifyedge-check \
               --trace ../examples/pf-core-valid/labtrust_replay/trace.json \
               --property qc_release.temporal.safety \
