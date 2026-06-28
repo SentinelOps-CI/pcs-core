@@ -26,7 +26,7 @@ theorem hasCapabilityD_sound (p : Principal) (cap : String) :
     hasCapabilityD p cap = true ↔ HasCapability p cap := by
   simp [hasCapabilityD, HasCapability, decide_eq_true_iff]
 
-/-- Closed PF-Core capability catalog (generated from schemas/pf_core.catalog.json). -/
+/-- Closed PF-Core capability catalog (generated from catalog/pf_core.catalog.json). -/
 def knownCatalogCaps : List String := Catalog.knownCatalogCaps
 
 /-- Capability id is from the closed PF-Core catalog. -/

@@ -1,4 +1,4 @@
-"""Generate PF-Core catalog artifacts from schemas/pf_core.catalog.json."""
+"""Generate PF-Core catalog artifacts from catalog/pf_core.catalog.json."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from pathlib import Path
 
 from pcs_core.paths import repo_root
 
-CATALOG_PATH = repo_root() / "schemas" / "pf_core.catalog.json"
+CATALOG_PATH = repo_root() / "catalog" / "pf_core.catalog.json"
 
 
 def load_catalog() -> dict:
