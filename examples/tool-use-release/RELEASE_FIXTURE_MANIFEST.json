@@ -15,6 +15,6 @@
     "science_claim_bundle.certified.json": "sha256:21adad1e4817811766d484422d68ac13a056849b04e9143dcb583a87b70a9e30",
     "verification_result.json": "sha256:7ed898a96edbe59275a337da6b537f8563598f064fd770a887d13170f3112525",
     "signed_science_claim_bundle.json": "sha256:c1ecda744f3d3a7e55724d5555f8d97121fb8e46f6b6d83d871bab0b11985b15",
-    "scientific_memory_import_report.json": "sha256:1c293ec6b97481f984cdaae35a407268b166181781f0766506c620149c21af9c"
+    "scientific_memory_import_report.json": "sha256:73dac701f5475689e168206ab8a3253247dd68df607afd29514b80a7b4c2893e"
   }
 }

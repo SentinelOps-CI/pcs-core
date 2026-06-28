@@ -213,7 +213,7 @@ def workflow_profile_tool_use() -> dict[str, Any]:
         ],
         "limitations_notice": (
             "This artifact is a proof-carrying tool-use simulation result. "
-            "It is not a guarantee that a real deployed agent is safe."
+            "It is not a guarantee of operational safety for a deployed agent."
         ),
         "signature_or_digest": PLACEHOLDER_DIGEST,
     }
