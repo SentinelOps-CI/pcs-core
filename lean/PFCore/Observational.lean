@@ -1,4 +1,7 @@
+import PFCore.Compositional
+import PFCore.Handoff
 import PFCore.NonInterference
+import PFCore.ResourcePattern
 
 /-!
 # PF-Core observational equivalence (conservative tenant projection)
@@ -37,6 +40,31 @@ theorem lowEventD_sound (tenant : String) (ev : Event) :
   cases ev with
   | mk _ p a d =>
     cases d <;> simp [lowEventD, LowEvent, decide_eq_true_iff]
+
+/--
+**Meaning:** Denied events never appear in a tenant's low projection (deny-side NI bound).
+
+**Trusted use:** Scheduler-agnostic observational bound — deny decisions are high for all observers.
+
+**Does not imply:** Deny paths are side-channel free or indistinguishable under timing.
+-/
+theorem deny_event_not_low (tenant : String) (ev : Event) (hdeny : ev.decision = Decision.deny) :
+    ¬ LowEvent tenant ev := by
+  intro hLow
+  rcases hLow with ⟨hallow, _⟩
+  rw [hdeny] at hallow
+  cases hallow
+
+/--
+**Meaning:** Denied events are high-sensitivity for every observer tenant.
+
+**Trusted use:** Deny-event observational classification aligned with runtime projection.
+
+**Does not imply:** Full global non-interference or covert-channel freedom on deny paths.
+-/
+theorem deny_event_is_high (tenant : String) (ev : Event) (hdeny : ev.decision = Decision.deny) :
+    HighEvent tenant ev :=
+  fun hLow => absurd hLow (deny_event_not_low tenant ev hdeny)
 
 /--
 **Meaning:** Project trace to low-visible allowed events for `tenant` (oldest-first).
@@ -100,6 +128,19 @@ theorem traceProjection_mem (tenant : String) (tr : Trace) (ev : Event) :
           exact ih.mpr ⟨hIn', hLow⟩
 
 /--
+**Meaning:** Denied events are omitted from every tenant low projection.
+
+**Trusted use:** Trace-level deny-side projection bound (no timing or scheduler model).
+
+**Does not imply:** Cross-trace indistinguishability or completeness of logged denies.
+-/
+theorem deny_event_not_in_trace_projection (tenant : String) (tr : Trace) (ev : Event)
+    (hdeny : ev.decision = Decision.deny) (_hIn : EventIn ev tr) :
+    ev ∉ TraceProjection tenant tr := by
+  intro hMem
+  exact deny_event_not_low tenant ev hdeny ((traceProjection_mem tenant tr ev).mp hMem).right
+
+/--
 **Meaning:** Two traces are observationally equivalent for `tenant` when low projections match.
 
 **Trusted use:** Conservative observational equivalence (allowed same-tenant view only).
@@ -150,7 +191,7 @@ def listAllLowEventD (tenantLow : String) : List Event → Bool
   | [] => true
   | ev :: rest => lowEventD tenantLow ev && listAllLowEventD tenantLow rest
 
-partial def highTenantEventsHighForLowTraceD (tenantLow tenantHigh : String) (tr : Trace) : Bool :=
+def highTenantEventsHighForLowTraceD (tenantLow tenantHigh : String) (tr : Trace) : Bool :=
   match tr with
   | Trace.empty => true
   | Trace.cons tr' ev =>
@@ -163,6 +204,114 @@ def nonInterferenceD (tenantLow tenantHigh : String) (tr : Trace) : Bool :=
   else
     listAllLowEventD tenantLow (TraceProjection tenantLow tr) &&
       highTenantEventsHighForLowTraceD tenantLow tenantHigh tr
+
+/--
+**Meaning:** `listAllLowEventD` reflects universal low-event membership on a list.
+
+**Trusted use:** Building block for `nonInterferenceD_sound`.
+
+**Does not imply:** Events in the list occur in any particular trace order.
+-/
+theorem listAllLowEventD_sound (tenantLow : String) : ∀ (l : List Event),
+    listAllLowEventD tenantLow l = true ↔ ∀ ev, ev ∈ l → LowEvent tenantLow ev
+  | [] => by simp [listAllLowEventD, LowEvent]
+  | ev :: rest => by
+    have ih := listAllLowEventD_sound tenantLow rest
+    rw [listAllLowEventD, Bool.and_eq_true, lowEventD_sound tenantLow ev, ih]
+    constructor
+    · intro ⟨hEv, hRest⟩ e hMem
+      rcases List.mem_cons.mp hMem with (rfl | hmem)
+      · exact hEv
+      · exact hRest e hmem
+    · intro h
+      exact ⟨h ev (List.mem_cons_self _ _), fun e hmem => h e (List.mem_cons_of_mem _ hmem)⟩
+
+/--
+**Meaning:** `highTenantEventsHighForLowTraceD` reflects high-tenant events being high for `tenantLow`.
+
+**Trusted use:** Building block for `nonInterferenceD_sound`.
+
+**Does not imply:** Cross-tenant allows were denied or covert channels are absent.
+-/
+theorem highTenantEventsHighForLowTraceD_sound (tenantLow tenantHigh : String) (tr : Trace) :
+    highTenantEventsHighForLowTraceD tenantLow tenantHigh tr = true ↔
+      ∀ ev, EventIn ev tr → HighTenantEvent tenantHigh ev → HighEvent tenantLow ev := by
+  induction tr with
+  | empty =>
+    simp [highTenantEventsHighForLowTraceD, EventIn, HighTenantEvent, HighEvent]
+  | cons tr' ev ih =>
+    simp only [highTenantEventsHighForLowTraceD, Bool.and_eq_true, EventIn]
+    rw [ih]
+    by_cases ht : ev.principal.tenant == tenantHigh
+    · have htEq : ev.principal.tenant = tenantHigh := (beq_iff_eq).mp ht
+      simp only [ht, if_true]
+      constructor
+      · intro ⟨hTail, hHead⟩ e hIn hHigh
+        cases hIn with
+        | inl heq =>
+          subst heq
+          intro hLow
+          have hld : lowEventD tenantLow e = false := by
+            revert hHead
+            cases hb : lowEventD tenantLow e <;> simp [hb] at * <;> first | contradiction | rfl
+          exact nomatch hld.symm.trans ((lowEventD_sound tenantLow e).mpr hLow)
+        | inr hIn' =>
+          exact hTail e hIn' hHigh
+      · intro h
+        refine ⟨fun e hIn hHigh => h e (Or.inr hIn) hHigh, ?_⟩
+        by_cases hld : lowEventD tenantLow ev
+        · exfalso
+          exact (h ev (Or.inl rfl) htEq) ((lowEventD_sound tenantLow ev).mp hld)
+        · simp [hld]
+    · have hne : ev.principal.tenant ≠ tenantHigh := by
+        intro heq
+        have hb : (ev.principal.tenant == tenantHigh) = true := (beq_iff_eq).mpr heq
+        rw [hb] at ht
+        simp at ht
+      simp only [ht]
+      constructor
+      · intro ⟨hTail, _⟩ e hIn hHigh
+        cases hIn with
+        | inl heq =>
+          subst heq
+          exact absurd hHigh hne
+        | inr hIn' =>
+          exact hTail e hIn' hHigh
+      · intro h
+        exact ⟨fun e hIn hHigh => h e (Or.inr hIn) hHigh, rfl⟩
+
+/--
+**Meaning:** Non-interference decider matches conservative `NonInterference` Prop.
+
+**Trusted use:** Runtime `--non-interference` / generated `concrete_non_interference_prop` alignment.
+
+**Does not imply:** Full global non-interference, covert channels, or timing leaks.
+-/
+theorem nonInterferenceD_sound (tenantLow tenantHigh : String) (tr : Trace) :
+    nonInterferenceD tenantLow tenantHigh tr = true ↔ NonInterference tenantLow tenantHigh tr := by
+  simp only [nonInterferenceD, NonInterference]
+  by_cases hEq : tenantLow == tenantHigh
+  · rw [if_pos hEq]
+    have ht : tenantLow = tenantHigh := (beq_iff_eq).mp hEq
+    constructor
+    · intro _; exact Or.inl ht
+    · intro h
+      cases h with
+      | inl _ => rfl
+      | inr _ => rfl
+  · rw [if_neg hEq]
+    have hne : tenantLow ≠ tenantHigh := by
+      intro heq
+      have hb : (tenantLow == tenantHigh) = true := (beq_iff_eq).mpr heq
+      rw [hb] at hEq
+      simp at hEq
+    rw [Bool.and_eq_true, listAllLowEventD_sound, highTenantEventsHighForLowTraceD_sound]
+    constructor
+    · intro ⟨hLow, hHigh⟩; exact Or.inr ⟨hLow, hHigh⟩
+    · intro h
+      cases h with
+      | inl heq => exact absurd heq hne
+      | inr hp => exact hp
 
 theorem traceProjection_low_only (tenantLow : String) (tr : Trace) :
     (∀ ev, ev ∈ TraceProjection tenantLow tr → LowEvent tenantLow ev) := by
@@ -219,6 +368,20 @@ theorem traceSafe_implies_non_interference (tenantLow tenantHigh : String) (tr :
   · exact non_interference_definitional tenantLow tenantHigh tr hEq
 
 /--
+**Meaning:** `traceSafeD` implies the non-interference decider (conservative observational NI).
+
+**Trusted use:** Linking Lean kernel deciders to observational NI certificates.
+
+**Does not imply:** Full global non-interference or covert-channel freedom.
+-/
+theorem traceSafeD_implies_nonInterferenceD (tenantLow tenantHigh : String) (tr : Trace)
+    (h : traceSafeD tr = true) :
+    nonInterferenceD tenantLow tenantHigh tr = true :=
+  (nonInterferenceD_sound tenantLow tenantHigh tr).mpr
+    (traceSafe_implies_non_interference tenantLow tenantHigh tr
+      ((traceSafeD_sound tr).mp h))
+
+/--
 **Meaning:** `TraceSafe` yields both `TenantIsolation` and conservative `NonInterference`.
 
 **Trusted use:** Single entry point linking trace safety, tenant isolation, and observational NI.
@@ -253,7 +416,7 @@ theorem tenantIsolation_implies_non_interference (tenantLow tenantHigh : String)
 theorem traceCrossTenantSafe_implies_high_tenant_not_low
     (tenantLow tenantHigh : String) (tr : Trace) (ev : Event)
     (hDiff : tenantLow ≠ tenantHigh) (_hCTS : TraceCrossTenantSafe tr)
-    (hIn : EventIn ev tr) (hHigh : HighTenantEvent tenantHigh ev) :
+    (_hIn : EventIn ev tr) (hHigh : HighTenantEvent tenantHigh ev) :
     HighEvent tenantLow ev :=
   high_tenant_event_not_low_for_distinct_observer tenantLow tenantHigh ev hDiff hHigh
 
@@ -284,6 +447,94 @@ theorem non_interference_observational_equivalence (tenantLow tenantHigh : Strin
     (hProj : TraceProjection tenantLow tr1 = TraceProjection tenantLow tr2) :
     ObservationallyEquivalentForTenant tenantLow tr1 tr2 :=
   low_projection_eq_observational tenantLow tr1 tr2 hProj
+
+/--
+**Meaning:** Low projection of an appended trace equals append of low projections.
+
+**Trusted use:** Compositional observational NI under sequential trace composition.
+
+**Does not imply:** Scheduler independence or covert-channel freedom.
+-/
+theorem traceProjection_append (tenant : String) (tr1 tr2 : Trace) :
+    TraceProjection tenant (Trace.append tr1 tr2) =
+      TraceProjection tenant tr1 ++ TraceProjection tenant tr2 := by
+  induction tr2 with
+  | empty =>
+    simp [TraceProjection, Trace.append, Trace.ofEvents, Trace.events]
+  | cons tr' ev ih =>
+    rw [trace_append_cons]
+    by_cases hlow : lowEventD tenant ev
+    · simp [TraceProjection, hlow, lowEventD_sound, ih, List.append_assoc]
+    · simp [TraceProjection, hlow, lowEventD_sound, ih]
+
+/--
+**Meaning:** Sequential composition preserves conservative `NonInterference`.
+
+**Trusted use:** Compositional partial global NI for distinct tenant pairs.
+
+**Does not imply:** Full global non-interference, timing leaks, or covert channels.
+-/
+theorem trace_append_preserves_non_interference (tenantLow tenantHigh : String) (tr1 tr2 : Trace)
+    (_h1 : NonInterference tenantLow tenantHigh tr1)
+    (_h2 : NonInterference tenantLow tenantHigh tr2) :
+    NonInterference tenantLow tenantHigh (Trace.append tr1 tr2) := by
+  by_cases hEq : tenantLow = tenantHigh
+  · exact Or.inl hEq
+  · have hDiff : tenantLow ≠ tenantHigh := by
+      intro heq
+      exact hEq heq
+    exact non_interference_definitional tenantLow tenantHigh (Trace.append tr1 tr2) hDiff
+
+/--
+**Meaning:** `TraceSafe` on both components yields NI on their append (compositional link).
+
+**Trusted use:** Multi-segment trace certificates with observational NI discharge.
+
+**Does not imply:** Cross-trace indistinguishability under adversarial scheduling.
+-/
+theorem traceSafe_append_implies_non_interference (tenantLow tenantHigh : String) (tr1 tr2 : Trace)
+    (h1 : TraceSafe tr1) (h2 : TraceSafe tr2) :
+    NonInterference tenantLow tenantHigh (Trace.append tr1 tr2) :=
+  trace_append_preserves_non_interference tenantLow tenantHigh tr1 tr2
+    (traceSafe_implies_non_interference tenantLow tenantHigh tr1 h1)
+    (traceSafe_implies_non_interference tenantLow tenantHigh tr2 h2)
+
+/--
+**Meaning:** `TraceSafeR` append implies base `TraceSafe` append and conservative NI.
+
+**Trusted use:** Resource-pattern compositional chain with observational NI.
+
+**Does not imply:** Kernel `TraceSafe` alone discharges resource patterns.
+-/
+theorem traceSafeR_append_implies_non_interference (tenantLow tenantHigh : String) (tr1 tr2 : Trace)
+    (h1 : TraceSafeR tr1) (h2 : TraceSafeR tr2) :
+    NonInterference tenantLow tenantHigh (Trace.append tr1 tr2) :=
+  traceSafe_append_implies_non_interference tenantLow tenantHigh tr1 tr2
+    (traceSafeR_implies_traceSafe tr1 h1) (traceSafeR_implies_traceSafe tr2 h2)
+
+/--
+**Meaning:** Under `HandoffSafe` and `TraceSafe`, conservative NI holds with same-tenant handoff.
+
+**Trusted use:** Handoff-side tenant NI bound (cross-tenant handoff excluded by `HandoffSafe`).
+
+**Does not imply:** Post-handoff event isolation without trace safety or explicit downgrade policy.
+-/
+theorem handoffSafe_traceSafe_non_interference (h : Handoff) (hSafe : HandoffSafe h)
+    (tenantLow tenantHigh : String) (tr : Trace) (hTrace : TraceSafe tr) :
+    NonInterference tenantLow tenantHigh tr ∧ h.fromPrincipal.tenant = h.toPrincipal.tenant := by
+  exact ⟨traceSafe_implies_non_interference tenantLow tenantHigh tr hTrace, hSafe.right⟩
+
+/--
+**Meaning:** Cross-tenant handoff cannot be `HandoffSafe`; NI across tenants via handoff remains open.
+
+**Trusted use:** Documents downgrade/cross-tenant handoff as out-of-scope for conservative NI.
+
+**Does not imply:** Runtime rejects invalid handoffs or post-handoff isolation.
+-/
+theorem handoffSafe_excludes_cross_tenant_handoff (h : Handoff) (tFrom tTo : String)
+    (hFrom : h.fromPrincipal.tenant = tFrom) (hTo : h.toPrincipal.tenant = tTo)
+    (hDiff : tFrom ≠ tTo) : ¬ HandoffSafe h :=
+  handoffSafe_forbids_distinct_tenant h tFrom tTo hFrom hTo hDiff
 
 end PFCore
 
