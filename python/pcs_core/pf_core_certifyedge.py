@@ -121,7 +121,8 @@ def run_certifyedge_check(
     cli = _find_certifyedge_cli()
     if cli is None:
         print(
-            f"WARNING: CertifyEdge CLI not found on PATH; failing closed. {CERTIFYEDGE_INSTALL_DOC}",
+            "WARNING: CertifyEdge CLI not found on PATH; failing closed. "
+            f"{CERTIFYEDGE_INSTALL_DOC}",
             file=sys.stderr,
         )
         return CertificateCheckResult(

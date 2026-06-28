@@ -65,8 +65,8 @@ theorem traceProjection_mem (tenant : String) (tr : Trace) (ev : Event) :
   induction tr with
   | empty =>
     simp [TraceProjection, EventIn, LowEvent]
-  | cons tr' head ih =>
-    by_cases hlow : lowEventD tenant head
+  | cons tr' e ih =>
+    by_cases hlow : lowEventD tenant e
     · simp [TraceProjection, hlow, lowEventD_sound]
       constructor
       · intro h
@@ -77,12 +77,12 @@ theorem traceProjection_mem (tenant : String) (tr : Trace) (ev : Event) :
           exact ⟨Or.inr hIn, hLow⟩
         | inr heq =>
           subst heq
-          exact ⟨Or.inl rfl, (lowEventD_sound tenant head).mp hlow⟩
+          exact ⟨Or.inl rfl, (lowEventD_sound tenant e).mp hlow⟩
       · intro ⟨hIn, hLow⟩
         cases hIn with
         | inl heq =>
           subst heq
-          simp [(lowEventD_sound tenant head).mpr hLow]
+          simp [(lowEventD_sound tenant e).mpr hLow]
         | inr hIn' =>
           exact Or.inl (ih.mpr ⟨hIn', hLow⟩)
     · simp [TraceProjection, hlow, lowEventD_sound]
@@ -94,7 +94,7 @@ theorem traceProjection_mem (tenant : String) (tr : Trace) (ev : Event) :
         cases hIn with
         | inl heq =>
           subst heq
-          exact absurd hLow (fun h => (lowEventD_sound tenant head).mpr h hlow)
+          exact absurd hLow (fun h => (lowEventD_sound tenant e).mpr h hlow)
         | inr hIn' =>
           exact ih.mpr ⟨hIn', hLow⟩
 
@@ -145,13 +145,6 @@ def NonInterference (tenantLow tenantHigh : String) (tr : Trace) : Prop :=
     ((∀ ev, ev ∈ TraceProjection tenantLow tr → LowEvent tenantLow ev) ∧
       (∀ ev, EventIn ev tr → HighTenantEvent tenantHigh ev → HighEvent tenantLow ev))
 
-def nonInterferenceD (tenantLow tenantHigh : String) (tr : Trace) : Bool :=
-  if tenantLow == tenantHigh then
-    true
-  else
-    listAllLowEventD tenantLow (TraceProjection tenantLow tr) &&
-      highTenantEventsHighForLowTraceD tenantLow tenantHigh tr
-
 def listAllLowEventD (tenantLow : String) : List Event → Bool
   | [] => true
   | ev :: rest => lowEventD tenantLow ev && listAllLowEventD tenantLow rest
@@ -162,6 +155,13 @@ partial def highTenantEventsHighForLowTraceD (tenantLow tenantHigh : String) (tr
   | Trace.cons tr' ev =>
     highTenantEventsHighForLowTraceD tenantLow tenantHigh tr' &&
       (if ev.principal.tenant == tenantHigh then ! lowEventD tenantLow ev else true)
+
+def nonInterferenceD (tenantLow tenantHigh : String) (tr : Trace) : Bool :=
+  if tenantLow == tenantHigh then
+    true
+  else
+    listAllLowEventD tenantLow (TraceProjection tenantLow tr) &&
+      highTenantEventsHighForLowTraceD tenantLow tenantHigh tr
 
 theorem traceProjection_low_only (tenantLow : String) (tr : Trace) :
     (∀ ev, ev ∈ TraceProjection tenantLow tr → LowEvent tenantLow ev) := by
@@ -175,7 +175,7 @@ theorem high_tenant_event_not_low_for_distinct_observer
   intro hLow
   rcases hLow with ⟨_, hTenantLow⟩
   rw [hHigh] at hTenantLow
-  exact hDiff hTenantLow
+  exact hDiff hTenantLow.symm
 
 theorem high_tenant_events_high_for_low_observer
     (tenantLow tenantHigh : String) (tr : Trace) (hDiff : tenantLow ≠ tenantHigh) :

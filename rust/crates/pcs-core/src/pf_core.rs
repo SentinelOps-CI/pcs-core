@@ -141,7 +141,10 @@ fn validate_action_effects_known(action: &Value, path: &str) -> Option<String> {
         if kind.is_empty() || !known.contains(kind) {
             return Some(runtime_error(
                 "UnknownEffect",
-                &format!("unknown effect: {}", if kind.is_empty() { "<missing>" } else { kind }),
+                &format!(
+                    "unknown effect: {}",
+                    if kind.is_empty() { "<missing>" } else { kind }
+                ),
                 &format!("{path}.effects[{index}].effect_kind"),
             ));
         }
@@ -167,7 +170,11 @@ fn validate_action_capabilities_known(action: &Value, path: &str) -> Option<Stri
             "UnknownCapability",
             &format!(
                 "unknown capability: {}",
-                if cap_id.is_empty() { "<missing>" } else { cap_id }
+                if cap_id.is_empty() {
+                    "<missing>"
+                } else {
+                    cap_id
+                }
             ),
             &format!("{path}.capability"),
         ));
@@ -212,7 +219,11 @@ fn validate_action_capability_effects(action: &Value, path: &str) -> Option<Stri
             "UnknownCapability",
             &format!(
                 "unknown capability: {}",
-                if cap_id.is_empty() { "<missing>" } else { cap_id }
+                if cap_id.is_empty() {
+                    "<missing>"
+                } else {
+                    cap_id
+                }
             ),
             &format!("{path}.capability"),
         ));
@@ -1063,17 +1074,25 @@ mod tests {
         let path = repo_root().join("examples/pf-core-invalid/resource_scope_violation/trace.json");
         let trace = load_json(path);
         let errors = validate_pfcore_trace_hash_chain(&trace);
-        assert!(errors.iter().any(|err| err.contains("ResourceScopeViolation")));
+        assert!(errors
+            .iter()
+            .any(|err| err.contains("ResourceScopeViolation")));
     }
 
     #[test]
     fn pf_core_resource_pattern_catalog_parity() {
         let samples: &[(&str, &[(&str, bool)])] = &[
             ("*", &[("/any/uri", true), ("mailto:x@y", true)]),
-            ("/data/*", &[("/data/report.txt", true), ("/etc/passwd", false)]),
+            (
+                "/data/*",
+                &[("/data/report.txt", true), ("/etc/passwd", false)],
+            ),
             ("mailto:*", &[("mailto:a@b.c", true), ("http://x", false)]),
             ("agent:*", &[("agent:worker-1", true), ("mcp:tool", false)]),
-            ("mcp:*", &[("mcp:filesystem.read", true), ("agent:x", false)]),
+            (
+                "mcp:*",
+                &[("mcp:filesystem.read", true), ("agent:x", false)],
+            ),
             ("lab:*", &[("lab:run-1", true), ("/data/x", false)]),
         ];
         for entry in CAPABILITY_CATALOG {

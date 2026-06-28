@@ -140,7 +140,9 @@ def release_chain_values_from_obligations(
 
 
 def generated_module_name(obligations_doc: Mapping[str, Any]) -> str:
-    obligation_id = str(obligations_doc.get("obligation_id") or canonical_hash(dict(obligations_doc)))
+    obligation_id = str(
+        obligations_doc.get("obligation_id") or canonical_hash(dict(obligations_doc))
+    )
     digest = obligation_id.removeprefix("proof-obligation-")
     slug = lean_ident("Obligation", digest)
     return slug

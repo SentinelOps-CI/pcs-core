@@ -36,9 +36,19 @@ PF_CORE_TYPES = sorted(
 # Audit-list invalid vectors: Python/Rust/TS must reject the same error class.
 INVALID_AUDIT_CASES: tuple[tuple[str, str, str, str], ...] = (
     ("hash_vectors", "invalid/trace_hash_chain_break.json", "PFCoreTrace.v0", "EventHashMismatch"),
-    ("hash_vectors", "invalid/claim_class_overclaim_trace.json", "PFCoreTrace.v0", "ClaimClassOverclaim"),
+    (
+        "hash_vectors",
+        "invalid/claim_class_overclaim_trace.json",
+        "PFCoreTrace.v0",
+        "ClaimClassOverclaim",
+    ),
     ("hash_vectors", "invalid/trace_hash_mismatch.json", "PFCoreTrace.v0", "TraceHashMismatch"),
-    ("hash_vectors", "invalid/previous_event_hash_mismatch.json", "PFCoreTrace.v0", "EventHashMismatch"),
+    (
+        "hash_vectors",
+        "invalid/previous_event_hash_mismatch.json",
+        "PFCoreTrace.v0",
+        "EventHashMismatch",
+    ),
     ("hash_vectors", "invalid/cross_tenant_leak.json", "PFCoreTrace.v0", "TenantIsolation"),
     (
         "examples",
