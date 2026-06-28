@@ -1,3 +1,4 @@
+import PFCore.Catalog
 import PFCore.Principal
 
 /-!
@@ -25,10 +26,8 @@ theorem hasCapabilityD_sound (p : Principal) (cap : String) :
     hasCapabilityD p cap = true ↔ HasCapability p cap := by
   simp [hasCapabilityD, HasCapability, decide_eq_true_iff]
 
-/-- Closed PF-Core capability catalog (mirrors Python ``CAPABILITY_CATALOG``). -/
-def knownCatalogCaps : List String :=
-  ["cap:file-read", "cap:file-write", "cap:network", "cap:email-send",
-    "cap:handoff", "cap:mcp-invoke", "cap:lab-release"]
+/-- Closed PF-Core capability catalog (generated from schemas/pf_core.catalog.json). -/
+def knownCatalogCaps : List String := Catalog.knownCatalogCaps
 
 /-- Capability id is from the closed PF-Core catalog. -/
 def KnownCapability (cap : String) : Prop :=

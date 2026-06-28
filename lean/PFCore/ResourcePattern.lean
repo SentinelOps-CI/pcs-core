@@ -1,3 +1,4 @@
+import PFCore.Catalog
 import PFCore.Resource
 
 /-!
@@ -21,6 +22,9 @@ deriving Repr, DecidableEq
 
 def ResourcePattern.ofString (s : String) : ResourcePattern :=
   if s = "*" then ResourcePattern.any else ResourcePattern.glob s
+
+def capabilityPatternFor (cap : String) : ResourcePattern :=
+  ResourcePattern.ofString (Catalog.capabilityPatternString cap)
 
 /-- Recursive glob match for `*` wildcards (Python `fnmatch` subset used by PF-Core). -/
 partial def globMatchChars : List Char → List Char → Bool
@@ -95,14 +99,30 @@ theorem resourceMatchesPatternD_sound (r : Resource) (pat : ResourcePattern) :
   | glob pattern =>
     simp [resourceMatchesPatternD, ResourceMatchesPattern, uriMatchesPatternD_sound]
 
-/-- Catalog patterns used by PF-Core runtime capability table (parity anchor). -/
-def catalogResourcePatterns : List ResourcePattern :=
-  [ ResourcePattern.glob "/data/*"
-  , ResourcePattern.any
-  , ResourcePattern.glob "mailto:*"
-  , ResourcePattern.glob "agent:*"
-  , ResourcePattern.glob "mcp:*"
-  , ResourcePattern.glob "lab:*"
-  ]
+/--
+**Meaning:** Resource `r` URI matches the catalog pattern bound to capability `cap`.
+
+**Trusted use:** Runtime `validate_resource_scope` parity; certificate
+`contract_semantics_checked.runtime` (`resource_pattern_scope`).
+
+**Does not imply:** Lean kernel discharge inside `ActionAdmissible` without runtime check.
+-/
+def ResourceWithinCapabilityPattern (r : Resource) (cap : String) : Prop :=
+  ResourceMatchesPattern r (capabilityPatternFor cap)
+
+def resourceWithinCapabilityPatternD (r : Resource) (cap : String) : Bool :=
+  resourceMatchesPatternD r (capabilityPatternFor cap)
+
+/--
+**Meaning:** Decider reflects `ResourceWithinCapabilityPattern` for catalog capabilities.
+
+**Trusted use:** Cross-language parity and certificate runtime semantics recording.
+
+**Does not imply:** Automatic inclusion in `TraceSafe` without runtime validation.
+-/
+theorem resourceWithinCapabilityPatternD_sound (r : Resource) (cap : String) :
+    resourceWithinCapabilityPatternD r cap = true ↔ ResourceWithinCapabilityPattern r cap := by
+  simp [resourceWithinCapabilityPatternD, ResourceWithinCapabilityPattern,
+    resourceMatchesPatternD_sound]
 
 end PFCore
