@@ -67,7 +67,9 @@ def test_research_grade_theorems_in_catalog() -> None:
 
 def test_research_grade_lean_catalog_audit() -> None:
     errors = audit_lean_catalog()
-    research_errors = [err for err in errors if any(name in err for name in RESEARCH_GRADE_THEOREMS)]
+    research_errors = [
+        err for err in errors if any(name in err for name in RESEARCH_GRADE_THEOREMS)
+    ]
     assert research_errors == [], research_errors
 
 

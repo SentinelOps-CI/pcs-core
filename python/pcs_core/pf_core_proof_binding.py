@@ -61,7 +61,9 @@ def verify_proof_binding(
         return result
 
     if not isinstance(cert, Mapping):
-        result.issues.append(ProofBindingIssue("InvalidCertificate", "certificate root must be object"))
+        result.issues.append(
+            ProofBindingIssue("InvalidCertificate", "certificate root must be object")
+        )
         return result
 
     claim_class = str(cert.get("claim_class") or "")
@@ -85,17 +87,23 @@ def verify_proof_binding(
     proof_ref = str(cert.get("proof_term_ref") or cert.get("proof_ref") or "")
 
     if not cert_trace_hash.startswith("sha256:"):
-        result.issues.append(ProofBindingIssue("MissingTraceHash", "certificate missing trace_hash"))
+        result.issues.append(
+            ProofBindingIssue("MissingTraceHash", "certificate missing trace_hash")
+        )
     if not cert_proof_hash.startswith("sha256:"):
         result.issues.append(
             ProofBindingIssue("MissingProofTermHash", "certificate missing proof_term_hash")
         )
     if not cert_env_hash.startswith("sha256:"):
         result.issues.append(
-            ProofBindingIssue("MissingLeanEnvironmentHash", "certificate missing lean_environment_hash")
+            ProofBindingIssue(
+                "MissingLeanEnvironmentHash", "certificate missing lean_environment_hash"
+            )
         )
     if not proof_ref:
-        result.issues.append(ProofBindingIssue("MissingProofTermRef", "certificate missing proof_term_ref"))
+        result.issues.append(
+            ProofBindingIssue("MissingProofTermRef", "certificate missing proof_term_ref")
+        )
 
     resolved_trace: Path | None = None
     if trace_path is not None:
@@ -112,7 +120,9 @@ def verify_proof_binding(
                 result.issues.append(ProofBindingIssue("TraceUnreadable", str(exc)))
             else:
                 if isinstance(trace, Mapping):
-                    actual_trace_hash = str(trace.get("trace_hash") or compute_trace_hash(dict(trace)))
+                    actual_trace_hash = str(
+                        trace.get("trace_hash") or compute_trace_hash(dict(trace))
+                    )
                     if cert_trace_hash and actual_trace_hash != cert_trace_hash:
                         result.issues.append(
                             ProofBindingIssue(
@@ -121,7 +131,9 @@ def verify_proof_binding(
                             )
                         )
                 else:
-                    result.issues.append(ProofBindingIssue("InvalidTrace", "trace root must be object"))
+                    result.issues.append(
+                        ProofBindingIssue("InvalidTrace", "trace root must be object")
+                    )
 
     resolved_proof: Path | None = None
     if proof_ref:
@@ -129,7 +141,9 @@ def verify_proof_binding(
         result.proof_path = resolved_proof
         if not resolved_proof.is_file():
             result.issues.append(
-                ProofBindingIssue("ProofFileMissing", f"generated proof not found: {resolved_proof}")
+                ProofBindingIssue(
+                    "ProofFileMissing", f"generated proof not found: {resolved_proof}"
+                )
             )
         elif cert_proof_hash.startswith("sha256:"):
             actual_proof_hash = compute_proof_term_hash(resolved_proof)

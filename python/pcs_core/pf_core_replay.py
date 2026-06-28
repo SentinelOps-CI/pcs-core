@@ -11,10 +11,10 @@ from typing import Any, Mapping
 from pcs_core.hash import canonical_hash
 from pcs_core.pf_core_runtime import (
     GENESIS_HASH,
-    compute_event_hash,
-    compute_trace_hash,
     compile_runtime_observation_to_event,
     compile_tool_use_trace_to_pfcore_trace,
+    compute_event_hash,
+    compute_trace_hash,
     normalize_hash,
 )
 from pcs_core.validate import detect_artifact_type, validate_schema
@@ -59,6 +59,7 @@ def replay_preserves_claim_boundary(source_claim_class: str, replay_claim_class:
     if source_rank is None or replay_rank is None:
         return False
     return replay_rank <= source_rank
+
 
 _HASH_COMPARE_KEYS = frozenset({"trace_hash", "event_hash", "signature_or_digest"})
 

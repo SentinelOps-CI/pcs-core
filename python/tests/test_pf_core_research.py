@@ -30,7 +30,7 @@ RESEARCH_HELPER_THEOREMS = frozenset(
 )
 
 ROLE_MAP_KEYS_PATTERN = re.compile(
-    r'def runtimeRoleMap\s*:\s*RoleMap\s*:=\s*\{\s*entries\s*:=\s*\[(.*?)\]\s*\}',
+    r"def runtimeRoleMap\s*:\s*RoleMap\s*:=\s*\{\s*entries\s*:=\s*\[(.*?)\]\s*\}",
     re.DOTALL,
 )
 ROLE_ENTRY_PATTERN = re.compile(r'\(\s*"([^"]+)"\s*,')

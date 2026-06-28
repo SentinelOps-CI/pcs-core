@@ -227,7 +227,9 @@ def normalize_hash(value: str) -> str:
 
 
 def compute_event_hash(event: Mapping[str, Any]) -> str:
-    payload = {key: value for key, value in event.items() if key not in ("event_hash", SIGNATURE_FIELD)}
+    payload = {
+        key: value for key, value in event.items() if key not in ("event_hash", SIGNATURE_FIELD)
+    }
     return canonical_hash(payload)
 
 

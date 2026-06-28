@@ -5,9 +5,7 @@ from __future__ import annotations
 # PCS release-envelope family (lean/PCS/Theorems.lean).
 PCS_OBLIGATION_KIND_THEOREM: dict[str, str] = {
     "CertificateMatchesRuntime": "admissible_release_has_matching_trace_hash",
-    "VerificationAdmitsBundle": (
-        "admissible_release_has_verified_input_hash_equal_to_bundle_hash"
-    ),
+    "VerificationAdmitsBundle": ("admissible_release_has_verified_input_hash_equal_to_bundle_hash"),
     "SignedBundleAdmissible": (
         "admissible_release_has_signed_input_hash_equal_to_verified_input_hash"
     ),
@@ -92,7 +90,9 @@ PF_CORE_SOUNDNESS_THEOREMS = frozenset(
     }
 )
 
-PF_CORE_THEOREM_CATALOG = frozenset(PF_CORE_OBLIGATION_KIND_THEOREM.values()) | PF_CORE_SOUNDNESS_THEOREMS
+PF_CORE_THEOREM_CATALOG = (
+    frozenset(PF_CORE_OBLIGATION_KIND_THEOREM.values()) | PF_CORE_SOUNDNESS_THEOREMS
+)
 
 # Concrete proof obligations emitted by pf_core_lean_codegen (LeanKernelChecked only).
 PF_CORE_CONCRETE_PROOF_THEOREMS = frozenset(

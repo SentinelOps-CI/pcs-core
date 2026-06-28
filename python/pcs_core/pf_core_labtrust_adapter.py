@@ -6,11 +6,11 @@ from typing import Any, Mapping
 
 from pcs_core.pf_core_runtime import (
     GENESIS_HASH,
-    compute_trace_hash,
-    expand_principal_capabilities,
     _finalize_event,
     _validate_action,
     _validate_principal,
+    compute_trace_hash,
+    expand_principal_capabilities,
 )
 
 LABTRUST_PRINCIPAL = {
@@ -35,12 +35,12 @@ def normalize_labtrust_release(
     receipt = runtime_receipt or {}
     trace_id = str(receipt.get("run_id") or "labtrust-qc-release-v0.1").replace("/", "-")
     timestamp = str(
-        receipt.get("started_at")
-        or trace_certificate.get("created_at")
-        or "2026-05-16T11:58:00Z"
+        receipt.get("started_at") or trace_certificate.get("created_at") or "2026-05-16T11:58:00Z"
     )
     source_repo = str(trace_certificate.get("source_repo") or receipt.get("source_repo") or "")
-    source_commit = str(trace_certificate.get("source_commit") or receipt.get("source_commit") or "")
+    source_commit = str(
+        trace_certificate.get("source_commit") or receipt.get("source_commit") or ""
+    )
 
     principal = _validate_principal(dict(LABTRUST_PRINCIPAL))
     principal["capabilities"] = expand_principal_capabilities(principal)
@@ -63,7 +63,9 @@ def normalize_labtrust_release(
                 }
             ],
             "writes": [],
-            "input_hash": str(receipt.get("events_hash") or trace_certificate.get("trace_hash") or GENESIS_HASH),
+            "input_hash": str(
+                receipt.get("events_hash") or trace_certificate.get("trace_hash") or GENESIS_HASH
+            ),
             "output_hash": str(
                 receipt.get("output_hashes", {}).get("trace.json")
                 if isinstance(receipt.get("output_hashes"), dict)

@@ -50,15 +50,13 @@ def lean_ident(prefix: str, raw: str) -> str:
 def effect_kind_to_lean(effect_kind: str) -> str:
     mapped = EFFECT_KIND_TO_LEAN.get(effect_kind)
     if mapped is None:
-        return f'Effect.custom {lean_string_literal(effect_kind)}'
+        return f"Effect.custom {lean_string_literal(effect_kind)}"
     return mapped
 
 
 def principal_to_lean(principal: Mapping[str, Any], *, name: str) -> str:
     roles = [lean_string_literal(str(role)) for role in principal.get("roles", [])]
-    capabilities = [
-        lean_string_literal(str(cap)) for cap in principal.get("capabilities", [])
-    ]
+    capabilities = [lean_string_literal(str(cap)) for cap in principal.get("capabilities", [])]
     roles_expr = "[]" if not roles else f"[{', '.join(roles)}]"
     caps_expr = "[]" if not capabilities else f"[{', '.join(capabilities)}]"
     return (
@@ -99,16 +97,16 @@ def action_to_lean(action: Mapping[str, Any], *, name: str) -> str:
         effect_exprs = ["Effect.read"]
     reads = action.get("reads")
     writes = action.get("writes")
-    read_exprs = [
-        resource_to_lean(item)
-        for item in reads
-        if isinstance(item, dict)
-    ] if isinstance(reads, list) else []
-    write_exprs = [
-        resource_to_lean(item)
-        for item in writes
-        if isinstance(item, dict)
-    ] if isinstance(writes, list) else []
+    read_exprs = (
+        [resource_to_lean(item) for item in reads if isinstance(item, dict)]
+        if isinstance(reads, list)
+        else []
+    )
+    write_exprs = (
+        [resource_to_lean(item) for item in writes if isinstance(item, dict)]
+        if isinstance(writes, list)
+        else []
+    )
     reads_expr = "[]" if not read_exprs else f"[{', '.join(read_exprs)}]"
     writes_expr = "[]" if not write_exprs else f"[{', '.join(write_exprs)}]"
     return (
@@ -204,7 +202,8 @@ def contract_pre_to_lean(contract: Mapping[str, Any], *, name: str) -> str:
             effect_expr = f"some {effect_kind_to_lean(effect)}"
         if (
             pre.get("require_tenant_match") is True
-            and field_semantics_layer(contract, section="pre", field="require_tenant_match") == "lean"
+            and field_semantics_layer(contract, section="pre", field="require_tenant_match")
+            == "lean"
         ):
             tenant_expr = "true"
         role = pre.get("require_role")
@@ -239,7 +238,8 @@ def contract_post_to_lean(contract: Mapping[str, Any], *, name: str) -> str:
             decision_expr = f"some {decision_to_lean(decision)}"
         if (
             post.get("require_event_safe") is True
-            and field_semantics_layer(contract, section="post", field="require_event_safe") == "lean"
+            and field_semantics_layer(contract, section="post", field="require_event_safe")
+            == "lean"
         ):
             safe_expr = "true"
     return (
@@ -257,15 +257,11 @@ def contract_invariant_to_lean(contract: Mapping[str, Any], *, name: str) -> str
     if (
         isinstance(invariant, dict)
         and invariant.get("require_trace_safe") is True
-        and field_semantics_layer(contract, section="invariant", field="require_trace_safe") == "lean"
+        and field_semantics_layer(contract, section="invariant", field="require_trace_safe")
+        == "lean"
     ):
         safe_expr = "true"
-    return (
-        f"def {name} : ContractInvariantSpec :=\n"
-        "  {\n"
-        f"    requireTraceSafe := {safe_expr}\n"
-        "  }"
-    )
+    return f"def {name} : ContractInvariantSpec :=\n  {{\n    requireTraceSafe := {safe_expr}\n  }}"
 
 
 def contract_specs_to_lean(contract: Mapping[str, Any], *, base_name: str) -> str:
@@ -365,13 +361,15 @@ def _contract_has_lean_post_fields(contract: Mapping[str, Any]) -> bool:
     post = contract.get("post")
     if not isinstance(post, dict):
         return False
-    if post.get("require_decision") and field_semantics_layer(
-        contract, section="post", field="require_decision"
-    ) == "lean":
+    if (
+        post.get("require_decision")
+        and field_semantics_layer(contract, section="post", field="require_decision") == "lean"
+    ):
         return True
-    if post.get("require_event_safe") is True and field_semantics_layer(
-        contract, section="post", field="require_event_safe"
-    ) == "lean":
+    if (
+        post.get("require_event_safe") is True
+        and field_semantics_layer(contract, section="post", field="require_event_safe") == "lean"
+    ):
         return True
     return False
 
@@ -422,7 +420,10 @@ def collect_handoffs_near_trace(
                 raw = tool_use.get("handoffs")
                 if isinstance(raw, list):
                     for item in raw:
-                        if isinstance(item, dict) and item.get("artifact_type") == "PFCoreHandoff.v0":
+                        if (
+                            isinstance(item, dict)
+                            and item.get("artifact_type") == "PFCoreHandoff.v0"
+                        ):
                             add_handoff(item)
     return handoffs
 

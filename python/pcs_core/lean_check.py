@@ -22,6 +22,11 @@ from pcs_core.lean_catalog import (
     PF_CORE_THEOREM_CATALOG,
 )
 from pcs_core.paths import repo_root
+from pcs_core.pf_core_contract import (
+    DEFAULT_TRACE_SAFE_CONTRACT_ID,
+    default_trace_safe_contract_hash,
+    trace_has_contract_binding,
+)
 from pcs_core.pf_core_contract_semantics import build_contract_semantics_checked
 from pcs_core.pf_core_lean_codegen import (
     collect_contracts_for_trace,
@@ -29,11 +34,6 @@ from pcs_core.pf_core_lean_codegen import (
     generate_proof_obligation_file,
     proof_term_ref_from_path,
     validate_contracts_before_codegen,
-)
-from pcs_core.pf_core_contract import (
-    DEFAULT_TRACE_SAFE_CONTRACT_ID,
-    default_trace_safe_contract_hash,
-    trace_has_contract_binding,
 )
 from pcs_core.pf_core_runtime import (
     compute_trace_hash,
@@ -231,8 +231,8 @@ def action_within_tenant_d(principal: Mapping[str, Any], action: Mapping[str, An
 
 def action_admissible_d(principal: Mapping[str, Any], action: Mapping[str, Any]) -> bool:
     from pcs_core.pf_core_runtime import (
-        validate_action_capability_effects,
         validate_action_capabilities_known,
+        validate_action_capability_effects,
         validate_action_effects_known,
         validate_resource_scope,
     )

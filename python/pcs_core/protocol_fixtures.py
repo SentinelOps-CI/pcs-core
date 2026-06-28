@@ -140,9 +140,7 @@ def labtrust_release_manifest_body(
     validation_base = validation_file_dir or (examples_dir() / "labtrust-release")
     validation_file = validation_base / validation_artifact_path
     if validation_file.is_file():
-        validation_digest = file_digest(
-            validation_file.read_bytes().replace(b"\r\n", b"\n")
-        )
+        validation_digest = file_digest(validation_file.read_bytes().replace(b"\r\n", b"\n"))
     else:
         validation_digest = PLACEHOLDER_DIGEST
     body: dict[str, Any] = {

@@ -191,13 +191,17 @@ def validate_event_against_contract(
     principal = event.get("principal")
     action = event.get("action")
     if not isinstance(principal, dict) or not isinstance(action, dict):
-        issues.append(ContractIssue("ContractEventInvalid", "event missing principal or action", path))
+        issues.append(
+            ContractIssue("ContractEventInvalid", "event missing principal or action", path)
+        )
         return issues
 
     if isinstance(pre, dict):
-        if pre.get("require_tenant_match") and field_semantics_layer(
-            contract, section="pre", field="require_tenant_match"
-        ) != "out_of_scope":
+        if (
+            pre.get("require_tenant_match")
+            and field_semantics_layer(contract, section="pre", field="require_tenant_match")
+            != "out_of_scope"
+        ):
             if not _tenant_matches(principal, action):
                 issues.append(
                     ContractIssue(
@@ -305,9 +309,11 @@ def validate_event_against_contract(
                         f"{path}.decision",
                     )
                 )
-        if post.get("require_event_safe") is True and field_semantics_layer(
-            contract, section="post", field="require_event_safe"
-        ) != "out_of_scope":
+        if (
+            post.get("require_event_safe") is True
+            and field_semantics_layer(contract, section="post", field="require_event_safe")
+            != "out_of_scope"
+        ):
             decision = str(event.get("decision") or "allow")
             if decision == "allow":
                 cap = action.get("capability")

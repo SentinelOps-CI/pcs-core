@@ -5,8 +5,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
-
 from pcs_core.pf_core_certificate import attach_external_certificate_check
 from pcs_core.pf_core_labtrust_adapter import normalize_labtrust_release
 from pcs_core.pf_core_replay import replay_trace, run_replay_trace

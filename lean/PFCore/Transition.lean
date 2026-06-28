@@ -72,7 +72,14 @@ private theorem insertResource_mem (frame : List Resource) (r res : Resource) :
     apply Iff.intro
     · intro h; exact Or.inl h
     · intro h; rcases h with hfr | heq; exact hfr; exact heq ▸ hin
-  · simp only [insertResource, hin, List.mem_cons, eq_comm]
+  · simp only [insertResource, hin]
+    constructor
+    · intro h; rcases h with hfr | heq
+      · exact Or.inl hfr
+      · exact Or.inr heq
+    · intro h; rcases h with hfr | heq
+      · exact Or.inl hfr
+      · subst heq; exact Or.inr (List.mem_cons_self r frame)
 
 private theorem insertResource_preserves_tenant (t : String) (frame : List Resource) (r : Resource)
     (hframe : frameTenantScoped t frame) (hr : r.tenant = t) :
@@ -187,7 +194,7 @@ theorem stepState_frame_preserved (s s' : State) (ev : Event) (hApply : Applies 
                 resourceFrame := expandResourceFrame s.resourceFrame ev.action
                 capabilityFrame := ev.principal.capabilities } := by
           simp [stepState, hdec, hallowed, ht, beq_iff_eq] at hApply
-          exact hApply
+          exact hApply.symm
         subst hstate
         have hAct : ActionAllowed ev.principal ev.action :=
           (actionAllowedD_sound ev.principal ev.action).mp hallowed

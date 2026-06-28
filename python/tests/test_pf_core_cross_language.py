@@ -17,7 +17,7 @@ from pcs_core.pf_core_runtime import (
     validate_denied_events_preserved,
     validate_pfcore_trace_hash_chain,
 )
-from pcs_core.validate import ARTIFACT_SCHEMAS, detect_artifact_type, validate_schema
+from pcs_core.validate import ARTIFACT_SCHEMAS, detect_artifact_type
 
 REPO = Path(__file__).resolve().parents[2]
 INVALID_VECTORS = REPO / "python" / "tests" / "hash_vectors" / "pf_core" / "invalid"
@@ -25,7 +25,8 @@ INVALID_VECTORS = REPO / "python" / "tests" / "hash_vectors" / "pf_core" / "inva
 PF_CORE_TYPES = sorted(
     key
     for key in ARTIFACT_SCHEMAS
-    if key.startswith("PFCore") or key in {"ToolUseTrace.v0", "LeanCheckResult.v0", "PCSBridgeCertificate.v0"}
+    if key.startswith("PFCore")
+    or key in {"ToolUseTrace.v0", "LeanCheckResult.v0", "PCSBridgeCertificate.v0"}
 )
 
 TS_SCHEMAS = REPO / "typescript" / "packages" / "core" / "src" / "schema.ts"
@@ -40,7 +41,9 @@ def _load_json(path: Path) -> dict:
 def _extract_quoted_types(path: Path, marker: str) -> set[str]:
     text = path.read_text(encoding="utf-8")
     block = text.split(marker, 1)[-1]
-    return set(re.findall(r'"((?:PFCore|ToolUseTrace|LeanCheckResult|PCSBridgeCertificate)[^"]+)"', block))
+    return set(
+        re.findall(r'"((?:PFCore|ToolUseTrace|LeanCheckResult|PCSBridgeCertificate)[^"]+)"', block)
+    )
 
 
 def test_python_pf_core_schemas_registered() -> None:
@@ -139,7 +142,9 @@ def test_python_invalid_pf_core_vectors(relative: str, needle: str) -> None:
 def test_python_denied_event_preserved_invalid_vector() -> None:
     from pcs_core.pf_core_runtime import DroppedDeniedEvent, validate_denied_events_preserved
 
-    root = REPO / "python" / "tests" / "hash_vectors" / "pf_core" / "invalid" / "denied_event_dropped"
+    root = (
+        REPO / "python" / "tests" / "hash_vectors" / "pf_core" / "invalid" / "denied_event_dropped"
+    )
     tool_use = _load_json(root / "tool_use_trace.json")
     pfcore = _load_json(root / "pfcore_trace.json")
     with pytest.raises(DroppedDeniedEvent):
@@ -184,10 +189,14 @@ def test_shared_negative_vectors_python() -> None:
     assert any("ClaimClassOverclaim" in err for err in validate_pfcore_trace_hash_chain(overclaim))
 
     trace_mismatch = _load_json(INVALID_VECTORS / "trace_hash_mismatch.json")
-    assert any("TraceHashMismatch" in err for err in validate_pfcore_trace_hash_chain(trace_mismatch))
+    assert any(
+        "TraceHashMismatch" in err for err in validate_pfcore_trace_hash_chain(trace_mismatch)
+    )
 
     prev_mismatch = _load_json(INVALID_VECTORS / "previous_event_hash_mismatch.json")
-    assert any("EventHashMismatch" in err for err in validate_pfcore_trace_hash_chain(prev_mismatch))
+    assert any(
+        "EventHashMismatch" in err for err in validate_pfcore_trace_hash_chain(prev_mismatch)
+    )
 
     from pcs_core.pf_core_runtime import validate_tenant_isolation
 

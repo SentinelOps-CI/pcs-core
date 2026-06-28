@@ -694,7 +694,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     pf_core_verify_binding = pf_core_sub.add_parser(
         "verify-proof-binding",
-        help="Verify certificate trace_hash, proof_term_hash, lean_environment_hash, and proof file",
+        help=(
+            "Verify certificate trace_hash, proof_term_hash, lean_environment_hash, and proof file"
+        ),
     )
     pf_core_verify_binding.add_argument(
         "--certificate",
