@@ -68,10 +68,10 @@ theorem frameValidD_sound (s : State) :
 private theorem insertResource_mem (frame : List Resource) (r res : Resource) :
     res ∈ insertResource frame r ↔ res ∈ frame ∨ res = r := by
   by_cases hin : r ∈ frame
-  · simp [insertResource, hin]
-    constructor
+  · simp only [insertResource, hin]
+    apply Iff.intro
     · intro h; exact Or.inl h
-    · intro h; cases h with | inl h => exact h | inr heq => exact heq ▸ hin
+    · intro h; rcases h with hfr | heq; exact hfr; exact heq ▸ hin
   · simp [insertResource, hin, List.mem_cons, eq_comm]
 
 private theorem insertResource_preserves_tenant (t : String) (frame : List Resource) (r : Resource)
@@ -174,14 +174,13 @@ theorem stepState_frame_preserved (s s' : State) (ev : Event) (hApply : Applies 
   cases hdec : ev.decision with
   | deny =>
     simp [stepState, hdec] at hApply
-    rw [Option.some.injEq] at hApply
-    exact hApply ▸ hValid
+    cases hApply
+    exact hValid
   | allow =>
     by_cases hallowed : actionAllowedD ev.principal ev.action = true
     · by_cases ht : (s.tenant == ev.principal.tenant) = true
       · simp [stepState, hdec, hallowed, ht, beq_iff_eq] at hApply
-        rw [Option.some.injEq] at hApply
-        subst hApply
+        cases hApply
         rcases hValid with ⟨htenant, hframe, _⟩
         have hAct : ActionAllowed ev.principal ev.action :=
           (actionAllowedD_sound ev.principal ev.action).mp hallowed
