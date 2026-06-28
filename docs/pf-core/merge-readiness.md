@@ -33,7 +33,7 @@ Verification log for PF-Core critical-issues fix plan on `main`.
 | pf-core-adapter | success |
 | validate-cli-contract | success |
 
-Fix commit: `15eb268` — Remove unused lean_codegen import so ruff passes on main CI.
+Fix commit: `15eb268` - Remove unused lean_codegen import so ruff passes on main CI.
 
 Prior SHA `b5ed639` CI run 28327689774 was green; `038b0bc` had Release chain success.
 ## Local verification log (2026-06-28, post fix plan)
