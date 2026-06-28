@@ -16,9 +16,12 @@ from pcs_core.pf_core_runtime import (
     compute_event_hash,
     compute_trace_hash,
     resource_matches_pattern,
+    validate_cross_tenant_safety,
     validate_denied_events_preserved,
     validate_pfcore_trace_hash_chain,
     validate_tenant_isolation,
+    validate_observational_non_interference,
+    validate_observational_non_interference_all_pairs,
 )
 from pcs_core.validate import ARTIFACT_SCHEMAS, detect_artifact_type, validate_semantics
 
@@ -304,10 +307,19 @@ def test_shared_negative_vectors_python() -> None:
         "EventHashMismatch" in err for err in validate_pfcore_trace_hash_chain(prev_mismatch)
     )
 
-    from pcs_core.pf_core_runtime import validate_tenant_isolation
+    from pcs_core.pf_core_runtime import validate_cross_tenant_safety, validate_tenant_isolation
 
     cross_tenant = _load_json(INVALID_VECTORS / "cross_tenant_leak.json")
     assert any("TenantIsolation" in err for err in validate_tenant_isolation(cross_tenant))
+    assert any("CrossTenantSafe" in err for err in validate_cross_tenant_safety(cross_tenant))
+
+    allowed = _load_json(REPO / "examples" / "pf-core-valid" / "file_read_allowed" / "trace.json")
+    assert validate_cross_tenant_safety(allowed) == []
+    assert validate_tenant_isolation(allowed) == []
+
+    tenant = allowed["events"][0]["principal"]["tenant"]
+    assert validate_observational_non_interference(allowed, tenant, "other-tenant") == []
+    assert validate_observational_non_interference_all_pairs(allowed) == []
 
     contract_dir = INVALID_VECTORS / "contract_capability_missing"
     contract_trace = _load_json(contract_dir / "trace.json")
@@ -341,7 +353,7 @@ def test_python_invalid_audit_vectors(
     assert any(needle in err for err in errors), errors
 
 
-def test_resource_pattern_catalog_python_fnmatch() -> None:
+def test_resource_pattern_catalog_python_glob_match() -> None:
     """Parity anchor for Lean ResourcePattern.lean / runtime validate_resource_scope."""
     samples = {
         "*": [("/any/uri", True), ("mailto:x@y", True)],
@@ -358,9 +370,86 @@ def test_resource_pattern_catalog_python_fnmatch() -> None:
             assert resource_matches_pattern(uri, pattern) is expected, (pattern, uri)
 
 
+def test_resource_pattern_rejects_fnmatch_only_features() -> None:
+    """Catalog glob subset does not treat ``?`` or ``[]`` as wildcards."""
+    assert not resource_matches_pattern("a", "?")
+    assert not resource_matches_pattern("a", "[a]")
+
+
 def test_observational_and_resource_pattern_lean_modules_exist() -> None:
     for module in ("Observational.lean", "ResourcePattern.lean"):
         path = REPO / "lean" / "PFCore" / module
         text = path.read_text(encoding="utf-8")
         assert "sorry" not in text, module
         assert "theorem" in text, module
+
+
+def test_contract_semantics_checked_resource_obligations_parity() -> None:
+    """Rust/TS/Python reject lean_proof_checked certs missing resource scope metadata."""
+    from pcs_core.validate_pf_core import _validate_pfcore_certificate
+
+    missing_lean = {
+        "schema_version": "v0",
+        "artifact_type": "PFCoreCertificate.v0",
+        "certificate_id": "test-missing-lean-resource-semantics",
+        "trace_hash": "sha256:" + "0" * 64,
+        "contract_hash": "sha256:" + "0" * 64,
+        "policy_hash": "sha256:" + "0" * 64,
+        "claim_class": "LeanKernelChecked",
+        "checker": "pcs-core",
+        "checker_version": "0.1.0",
+        "assumption_refs": ["docs/pf-core/trusted-boundary.md"],
+        "lean_proof_checked": True,
+        "proof_term_ref": "lean/PFCore/Generated/example.lean",
+        "proof_term_hash": "sha256:" + "f" * 64,
+        "lean_environment_hash": "sha256:" + "e" * 64,
+        "pfcore_kernel_hash": "sha256:" + "d" * 64,
+        "lean_build_status": {"ok": True, "target": "PFCore", "detail": "ok"},
+        "default_contract_ref": "trace-safe",
+        "contract_semantics_checked": {
+            "lean": [],
+            "runtime": ["resource_pattern_scope"],
+        },
+        "source_repo": "https://github.com/example/pcs-core",
+        "source_commit": "abc1234567890abc1234567890abc1234567890",
+        "signature_or_digest": "sha256:" + "0" * 64,
+    }
+    errors = _validate_pfcore_certificate(missing_lean)
+    assert any("resource_within_capability_pattern" in err for err in errors)
+
+    ok = dict(missing_lean)
+    ok["contract_semantics_checked"] = {
+        "lean": ["resource_within_capability_pattern"],
+        "runtime": ["resource_pattern_scope"],
+    }
+    resource_errors = [
+        err
+        for err in _validate_pfcore_certificate(ok)
+        if "resource_within_capability_pattern" in err or "resource_pattern_scope" in err
+    ]
+    assert resource_errors == []
+
+def test_trace_safe_rd_decider_parity() -> None:
+    """Python lean_check TraceSafeR decider matches TraceSafe on catalog-valid traces."""
+    from pcs_core.lean_check import trace_safe_d, trace_safe_rd
+
+    trace = _load_json(VALID_TRACE)
+    events = trace["events"]
+    assert trace_safe_d(events)
+    assert trace_safe_rd(events)
+    assert trace_safe_rd(events) == trace_safe_d(events)
+
+    bad = _load_json(REPO / "examples" / "pf-core-invalid" / "resource_scope_violation" / "trace.json")
+    bad_events = bad["events"]
+    assert not trace_safe_rd(bad_events)
+
+
+def test_codegen_emits_trace_safe_r_obligations_on_valid_trace(tmp_path: Path) -> None:
+    from pcs_core.pf_core_lean_codegen import generate_proof_obligation_file
+
+    trace = _load_json(VALID_TRACE)
+    proof_path = generate_proof_obligation_file(trace, tmp_path, trace_path=VALID_TRACE)
+    text = proof_path.read_text(encoding="utf-8")
+    assert "theorem concrete_trace_safe_r" in text
+    assert "traceSafeRD" in text
+
