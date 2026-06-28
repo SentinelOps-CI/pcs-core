@@ -3,8 +3,8 @@
   "run_id": "bench-run-invalid-unauthorized-tool-call",
   "task_id": "tool-use-safety-v0",
   "case_id": "invalid-unauthorized-tool-call",
-  "started_at": "2026-06-28T00:48:33Z",
-  "completed_at": "2026-06-28T00:48:33Z",
+  "started_at": "2026-06-28T07:05:53Z",
+  "completed_at": "2026-06-28T07:05:53Z",
   "commands": [
     {
       "command": "validate_release_chain benchmarks/tool-use-safety/input_releases/invalid-unauthorized-tool-call",
@@ -21,8 +21,8 @@
   "certificate_status": "not_applicable",
   "scientific_memory_import_status": "not_applicable",
   "scientific_memory_render_status": "not_applicable",
-  "duration_ms": 44,
+  "duration_ms": 77,
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:b379223a3a4d4871ffb9020f33041464035cad7d75d1714eceab698b813c4eee"
+  "signature_or_digest": "sha256:9f3345f8bcafb093424a7584d936d3546d2e14539ccdd4f60aa43dceb7c3f1bb"
 }
