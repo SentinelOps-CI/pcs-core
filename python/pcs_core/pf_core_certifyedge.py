@@ -70,6 +70,8 @@ def run_certifyedge_check(
     attestation_ref: str | None = None,
 ) -> CertificateCheckResult:
     """Run CertifyEdge (or mock) against a PFCoreTrace and return check metadata."""
+    import sys
+
     path = Path(trace_path)
     trace = _load_trace(path)
     property_id = property_spec.strip()
@@ -77,6 +79,11 @@ def run_certifyedge_check(
         raise ValueError("property_spec (property id) is required")
 
     if certifyedge_mock_enabled():
+        print(
+            "WARNING: PCS_CERTIFYEDGE_MOCK=1 — using mock CertifyEdge attestation; "
+            "install CertifyEdge for live checks.",
+            file=sys.stderr,
+        )
         mock_ref = attestation_ref or f"mock://certifyedge/{property_id}"
         cert = attach_external_certificate_check(
             trace,
@@ -113,6 +120,10 @@ def run_certifyedge_check(
 
     cli = _find_certifyedge_cli()
     if cli is None:
+        print(
+            f"WARNING: CertifyEdge CLI not found on PATH; failing closed. {CERTIFYEDGE_INSTALL_DOC}",
+            file=sys.stderr,
+        )
         return CertificateCheckResult(
             ok=False,
             checker="certifyedge",
