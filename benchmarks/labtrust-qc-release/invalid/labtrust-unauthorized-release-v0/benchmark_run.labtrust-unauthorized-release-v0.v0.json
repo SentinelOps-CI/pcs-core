@@ -3,8 +3,8 @@
   "run_id": "bench-run-labtrust-unauthorized-release-v0",
   "task_id": "labtrust-qc-release-v0",
   "case_id": "labtrust-unauthorized-release-v0",
-  "started_at": "2026-06-28T00:48:33Z",
-  "completed_at": "2026-06-28T00:48:33Z",
+  "started_at": "2026-06-28T07:05:52Z",
+  "completed_at": "2026-06-28T07:05:52Z",
   "commands": [
     {
       "command": "evaluate_labtrust_gallery benchmarks/labtrust-qc-release/invalid/labtrust-unauthorized-release-v0/input_artifacts",
@@ -27,5 +27,5 @@
   "duration_ms": 1,
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:cf6ad1a86f06fbacce18ae1d036334bc8b6e3991963ac37f451ea75a2b78448f"
+  "signature_or_digest": "sha256:aeb54fe9721fc643b7ac68010ac701cc4f9332f0aea242cfddb97a28e7e69d1d"
 }
