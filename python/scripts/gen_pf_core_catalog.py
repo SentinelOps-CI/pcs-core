@@ -175,7 +175,13 @@ def main() -> None:
         check=True,
     )
     generate_lean(catalog, root / "lean" / "PFCore" / "Catalog.lean")
-    generate_rust(catalog, root / "rust" / "crates" / "pcs-core" / "src" / "pf_core_catalog.rs")
+    rust_catalog = root / "rust" / "crates" / "pcs-core" / "src" / "pf_core_catalog.rs"
+    generate_rust(catalog, rust_catalog)
+    subprocess.run(
+        ["cargo", "fmt", "--", "crates/pcs-core/src/pf_core_catalog.rs"],
+        cwd=root / "rust",
+        check=True,
+    )
     generate_typescript(
         catalog,
         root / "typescript" / "packages" / "core" / "src" / "pfCoreCatalog.ts",
