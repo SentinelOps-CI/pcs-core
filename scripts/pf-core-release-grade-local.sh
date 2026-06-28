@@ -53,6 +53,8 @@ step "pf-core cross-language pytest" pytest -q tests/test_pf_core_cross_language
 step "pf-core tier1 pytest" pytest -q tests/test_pf_core_tier1.py
 step "pf-core compositional pytest" pytest -q tests/test_pf_core_compositional.py
 step "pf-core research pytest" pytest -q tests/test_pf_core_research.py tests/test_pf_core_research_grade.py
+step "pf-core observational pytest" pytest -q tests/test_pf_core_observational.py
+step "pf-core phase F pytest" pytest -q tests/test_pf_core_phase_f.py
 step "pf-core conformance release-grade" pcs conformance run --suite pf-core --release-grade
 step "pf-core cross-language conformance" pcs conformance run --suite pf-core-cross-language
 
@@ -75,6 +77,7 @@ if lake_available; then
     FAILED+=("pf-core verify-proof-binding")
   fi
 elif wsl_lake_available; then
+  echo "NOTE: native lake unavailable; attempting WSL (may timeout on some Windows hosts)"
   step "lake build PFCore (WSL)" wsl bash -lc "export PATH=\"\$HOME/.elan/bin:\$PATH\"; cd '${WSL_ROOT}/lean' && lake build PFCore"
   step "pf-core lean-check full (WSL)" wsl bash -lc "cd '${WSL_ROOT}/python' && pcs pf-core lean-check --trace '${WSL_ROOT}/examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json' --out /tmp/pfcore-release-grade-cert.json"
   step "pf-core verify-proof-binding (WSL)" wsl bash -lc "cd '${WSL_ROOT}/python' && test -f /tmp/pfcore-release-grade-cert.json && pcs pf-core verify-proof-binding --certificate /tmp/pfcore-release-grade-cert.json --trace '${WSL_ROOT}/examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json'"
@@ -85,6 +88,15 @@ fi
 
 cd "${ROOT}/rust"
 step "rust pf_core tests" cargo test pf_core -q
+
+echo ""
+echo "=== CertifyEdge release-gate dry-run (mock) ==="
+if bash "${ROOT}/scripts/pf-core-certifyedge-dry-run.sh"; then
+  echo "OK CertifyEdge dry-run"
+else
+  echo "FAIL CertifyEdge dry-run"
+  FAILED+=("CertifyEdge dry-run")
+fi
 
 echo ""
 echo "=== Summary ==="
