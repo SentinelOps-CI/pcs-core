@@ -560,8 +560,7 @@ pub fn validate_pfcore_certificate_semantics(certificate: &Value) -> Vec<String>
             .and_then(|v| v.as_str())
             .is_none_or(|s| !s.starts_with("sha256:"))
         {
-            errors
-                .push("root: claim_class LeanKernelChecked requires pfcore_kernel_hash".into());
+            errors.push("root: claim_class LeanKernelChecked requires pfcore_kernel_hash".into());
         }
         let build_ok = certificate
             .get("lean_build_status")
