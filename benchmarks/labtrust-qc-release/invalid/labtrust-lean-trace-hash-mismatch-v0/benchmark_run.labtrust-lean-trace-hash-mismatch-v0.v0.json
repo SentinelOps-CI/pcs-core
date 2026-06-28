@@ -3,8 +3,8 @@
   "run_id": "bench-run-labtrust-lean-trace-hash-mismatch-v0",
   "task_id": "labtrust-qc-release-v0",
   "case_id": "labtrust-lean-trace-hash-mismatch-v0",
-  "started_at": "2026-06-28T00:27:12Z",
-  "completed_at": "2026-06-28T00:27:12Z",
+  "started_at": "2026-06-28T00:48:33Z",
+  "completed_at": "2026-06-28T00:48:33Z",
   "commands": [
     {
       "command": "evaluate_labtrust_gallery benchmarks/labtrust-qc-release/invalid/labtrust-lean-trace-hash-mismatch-v0/input_artifacts",
@@ -27,5 +27,5 @@
   "duration_ms": 1,
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:4c4c4b1115470fe0a6b884d3c801accab09c77eeecc51e63a7bef559a47f2421"
+  "signature_or_digest": "sha256:8bbbb633e256bf84124d08b5689efe028802e5aad11b2a304991f2dd20f2a1f9"
 }

@@ -8,19 +8,19 @@
   "chain_root": {
     "trace_hash": "sha256:42ce47fca8ec10a9c65c8d9b9384c8be52094c93d46aa9705ce7c2fa2b8c89e4",
     "certificate_id": "cert-tool-use-safety-v0",
-    "certified_bundle_hash": "sha256:21adad1e4817811766d484422d68ac13a056849b04e9143dcb583a87b70a9e30",
-    "signed_bundle_hash": "sha256:c1ecda744f3d3a7e55724d5555f8d97121fb8e46f6b6d83d871bab0b11985b15"
+    "certified_bundle_hash": "sha256:8ec0f90d0af828db78c5ada9299daea96128c4737328d40d6d6c473046d4780d",
+    "signed_bundle_hash": "sha256:b530e409f16527c66cdb6d824af399cbe45d38d78fb2c401bba3518c02ce977a"
   },
   "release_chain_validation_result": {
     "path": "release_chain_validation_result.v0.json",
-    "sha256": "sha256:8ce4be20f5a9fef3e6ef990c1abd6b6c5f98ec8ff67a393d2163728fcf07560e"
+    "sha256": "sha256:7c0f320adf5b570da3fc3920560db65eef30262597f2f6349cdf66a6102fa527"
   },
   "canonical_signed_bundle": {
     "path": "signed_science_claim_bundle.json",
-    "sha256": "sha256:c1ecda744f3d3a7e55724d5555f8d97121fb8e46f6b6d83d871bab0b11985b15"
+    "sha256": "sha256:b530e409f16527c66cdb6d824af399cbe45d38d78fb2c401bba3518c02ce977a"
   },
   "canonical_claim_id": "claim-qc-release-v0.1",
-  "limitations_notice": "This artifact is a proof-carrying tool-use simulation result. It is not a guarantee that a real deployed agent is safe.",
+  "limitations_notice": "This artifact is a proof-carrying tool-use simulation result. It is not a guarantee of operational safety for a deployed agent.",
   "producer_repos": {
     "pcs_core": {
       "repo": "https://github.com/SentinelOps-CI/pcs-core",
@@ -50,7 +50,7 @@
       "producer": "pcs-core",
       "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
       "source_commit": "d444444444444444444444444444444444444444",
-      "sha256": "sha256:7d0a726c657c31db20294206c0207a34365a573c3103f447f3b3cca38190d507"
+      "sha256": "sha256:a7bfd0dd83b149ef7cba53ea11ccdc04a23226a2ad39d77e125e8825dc00f253"
     },
     "tool_use_certificate.valid.json": {
       "artifact_type": "ToolUseCertificate.v0",
@@ -58,7 +58,7 @@
       "producer": "pcs-core",
       "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
       "source_commit": "d444444444444444444444444444444444444444",
-      "sha256": "sha256:145f884300ad795444e06e9916a2a720d33a10d960f1015bd2781ace5b8dbdf4"
+      "sha256": "sha256:3e517b1d66dcd475d4d69f01f9b5790cf55610250c356ec3fddd96a868e02cb6"
     },
     "runtime_receipt.json": {
       "artifact_type": "RuntimeReceipt.v0",
@@ -66,7 +66,7 @@
       "producer": "pcs-core",
       "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
       "source_commit": "d444444444444444444444444444444444444444",
-      "sha256": "sha256:33fddcdd864435cffbf8febb9c405d0ad81a7ba90b446f7d86729c5d46eaf5a8"
+      "sha256": "sha256:f95f7cfe528eb0712d3f876d3766edac6b1b859ff992448c1ca98a780e598da7"
     },
     "science_claim_bundle.certified.json": {
       "artifact_type": "ScienceClaimBundle.v0",
@@ -74,7 +74,7 @@
       "producer": "pcs-core",
       "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
       "source_commit": "d444444444444444444444444444444444444444",
-      "sha256": "sha256:21adad1e4817811766d484422d68ac13a056849b04e9143dcb583a87b70a9e30"
+      "sha256": "sha256:8ec0f90d0af828db78c5ada9299daea96128c4737328d40d6d6c473046d4780d"
     },
     "workflow_profile.v0.json": {
       "artifact_type": "WorkflowProfile.v0",
@@ -82,7 +82,7 @@
       "producer": "pcs-core",
       "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
       "source_commit": "d444444444444444444444444444444444444444",
-      "sha256": "sha256:0f54c947169f2733cf05ae8486b73afbc7bd82ec51275448f72d18ad29783e66"
+      "sha256": "sha256:ae33f37f50f3e073e1c83284e5a1e2cb2cb56e6b2110fffbf9b2cf5b0cb77dae"
     },
     "verification_result.json": {
       "artifact_type": "VerificationResult.v0",
@@ -90,7 +90,7 @@
       "producer": "Provability Fabric",
       "source_repo": "https://github.com/SentinelOps-CI/provability-fabric",
       "source_commit": "c333333333333333333333333333333333333333",
-      "sha256": "sha256:7ed898a96edbe59275a337da6b537f8563598f064fd770a887d13170f3112525"
+      "sha256": "sha256:07a5b4077f7207965f4f37ddb7bf0940394a91a433dcfc0e0de35cdf257d7366"
     },
     "signed_science_claim_bundle.json": {
       "artifact_type": "SignedScienceClaimBundle.v0",
@@ -98,17 +98,17 @@
       "producer": "Provability Fabric",
       "source_repo": "https://github.com/SentinelOps-CI/provability-fabric",
       "source_commit": "c333333333333333333333333333333333333333",
-      "sha256": "sha256:c1ecda744f3d3a7e55724d5555f8d97121fb8e46f6b6d83d871bab0b11985b15"
+      "sha256": "sha256:b530e409f16527c66cdb6d824af399cbe45d38d78fb2c401bba3518c02ce977a"
     }
   },
   "release_status": "Validated",
-  "signature_or_digest": "sha256:a3544e3dde7f0ce52f66d0c34c36a3007eba6dd408885eb383a06c7426080434",
+  "signature_or_digest": "sha256:c2d07b432fdc356914d83f86137eb7e896729bc8e4f8128bb3b8c2f2f7dcd147",
   "proof_obligation": {
     "path": "proof_obligation.v0.json",
-    "sha256": "sha256:850557b7f2e5c97c8c8de3ef8ff54ffad0372068705eeea5709dc545d57c1e3e"
+    "sha256": "sha256:927c89fec743d4276e34be6fc46beee375d004b05e4277cbf866a72f9b8736a0"
   },
   "lean_check_result": {
     "path": "lean_check_result.v0.json",
-    "sha256": "sha256:c9fd57ecd0e2423d86f2057fac39d5b4489819a13f60a5e080d6ce299455a1f9"
+    "sha256": "sha256:fd71fa9155e643ed6fa2358ad0a87ec1ccfc9247e3d093a190aa6b4666513219"
   }
 }

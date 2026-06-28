@@ -25,17 +25,17 @@
   "logs": [],
   "source_repo": "https://github.com/fraware/LabTrust-Gym",
   "source_commit": "5eac714fd7dc813d2523febcb85c56821558a1b7",
-  "signature_or_digest": "sha256:ded82166d133f12cdc3f7b06bbe5bb93bcee810df3880631b2a8a7802de7133c",
+  "signature_or_digest": "sha256:cbf524f8b92e3aa8d3f3efebdd37c5ae01e161a18ecef02cd50276f974693e46",
   "artifact_refs": [
     {
       "schema_version": "v0",
       "artifact_type": "BenchmarkRun.v0",
       "path": "valid/labtrust-valid-release-v0/benchmark_run.labtrust-valid-release-v0.v0.json",
-      "sha256": "sha256:e439fee034178cfe734c1a4487b7259474611b162b11ac08962fe1a5f57be875",
+      "sha256": "sha256:c0bc4dfd0e239b393eff2c2266b1ef351e28d910e1c14de569275381f3ecd4f9",
       "role": "producer_export",
       "source_repo": "https://github.com/fraware/LabTrust-Gym",
       "source_commit": "5eac714fd7dc813d2523febcb85c56821558a1b7",
-      "signature_or_digest": "sha256:e13c5ac6925c050eb75a5d7e20d474b7b939838b0aebe830d8c38c3160427a25"
+      "signature_or_digest": "sha256:0444e4e2155d1c7f0e016b0c8249422b009eba0be98c6387b583d2ee2afeead8"
     },
     {
       "schema_version": "v0",

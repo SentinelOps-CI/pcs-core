@@ -10,7 +10,7 @@
   "input_artifacts": {
     "tool_use_certificate.valid.json": {
       "artifact_type": "ToolUseCertificate.v0",
-      "sha256": "sha256:145f884300ad795444e06e9916a2a720d33a10d960f1015bd2781ace5b8dbdf4"
+      "sha256": "sha256:3e517b1d66dcd475d4d69f01f9b5790cf55610250c356ec3fddd96a868e02cb6"
     }
   },
   "expected_outputs": {
@@ -23,5 +23,5 @@
     "trace_hash": "sha256:42ce47fca8ec10a9c65c8d9b9384c8be52094c93d46aa9705ce7c2fa2b8c89e4"
   },
   "status": "Validated",
-  "signature_or_digest": "sha256:358cfe13ec84e8b3b58db4871b1fc80035fd28385606bf84a884d92c77ff12b8"
+  "signature_or_digest": "sha256:97035e1aeffa8f77067b9d70777b170ce70cbf6dfd099ce4568e688cbfcaf140"
 }

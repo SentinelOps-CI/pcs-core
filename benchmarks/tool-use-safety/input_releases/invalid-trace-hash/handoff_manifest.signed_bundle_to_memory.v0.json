@@ -10,7 +10,7 @@
   "input_artifacts": {
     "signed_science_claim_bundle.json": {
       "artifact_type": "SignedScienceClaimBundle.v0",
-      "sha256": "sha256:c1ecda744f3d3a7e55724d5555f8d97121fb8e46f6b6d83d871bab0b11985b15"
+      "sha256": "sha256:b530e409f16527c66cdb6d824af399cbe45d38d78fb2c401bba3518c02ce977a"
     }
   },
   "expected_outputs": {
@@ -23,5 +23,5 @@
     "claim_id": "claim-qc-release-v0.1"
   },
   "status": "Validated",
-  "signature_or_digest": "sha256:7d355cd6b4958592fe7456bfdf422c90d2e7694e9f9cbf258ed3cc96d4219c67"
+  "signature_or_digest": "sha256:7f00cf40614447f24990dd0bdcf901a60aa7555ed63df97579e68545561acc76"
 }

@@ -194,11 +194,11 @@
   "failures": [],
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:15026e30ab5c44a12f5f9bbff30fe11d449d414928d54e22edda5f7d45a25d2c",
+  "signature_or_digest": "sha256:d8a650e16939d91fe4e05de9ecb8beda0b77b07fca3e652bbf8ad76b6f40abe9",
   "conformance_refs": [
     {
       "suite": "computation",
-      "run_id": "conf-run-computation-20260628T002510Z",
+      "run_id": "conf-run-computation-20260628T004834Z",
       "status": "passed"
     }
   ]

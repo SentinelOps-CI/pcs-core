@@ -3,8 +3,8 @@
   "run_id": "bench-run-invalid-rejected-certificate",
   "task_id": "tool-use-safety-v0",
   "case_id": "invalid-rejected-certificate",
-  "started_at": "2026-06-28T00:27:12Z",
-  "completed_at": "2026-06-28T00:27:12Z",
+  "started_at": "2026-06-28T00:48:33Z",
+  "completed_at": "2026-06-28T00:48:33Z",
   "commands": [
     {
       "command": "validate_release_chain benchmarks/tool-use-safety/input_releases/invalid-rejected-certificate",
@@ -21,8 +21,8 @@
   "certificate_status": "not_applicable",
   "scientific_memory_import_status": "not_applicable",
   "scientific_memory_render_status": "not_applicable",
-  "duration_ms": 42,
+  "duration_ms": 43,
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:e8a4f23cb4c14fe5673ffcb40e0929c6c2d30f184a6be96bb1e5edff56341107"
+  "signature_or_digest": "sha256:dc6755540ec4031f1e80b63ea9c354c1d205d1214aa3c7bd789b394d91bac5d1"
 }

@@ -50,6 +50,6 @@
     "unapproved_network_call",
     "unknown_authorization_status"
   ],
-  "limitations_notice": "This artifact is a proof-carrying tool-use simulation result. It is not a guarantee that a real deployed agent is safe.",
-  "signature_or_digest": "sha256:39ea95403f2f7065eaa7cda0084f8f68865bdb9054882e10f016e6d255bc0a49"
+  "limitations_notice": "This artifact is a proof-carrying tool-use simulation result. It is not a guarantee of operational safety for a deployed agent.",
+  "signature_or_digest": "sha256:02de75f38beeb2bcf81d69a2f8913f5ff5eba1287ca380f9efc4d3d7e418b410"
 }
