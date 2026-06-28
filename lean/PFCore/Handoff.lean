@@ -62,4 +62,33 @@ theorem handoff_does_not_expand_authority (h : Handoff) (cap : String) :
   intro hsafe hmem
   exact hsafe.left cap hmem
 
+/--
+**Meaning:** Safe handoffs require matching principal tenant strings (NI precondition).
+
+**Trusted use:** Cross-tenant handoff is excluded from `HandoffSafe`; full handoff NI remains open.
+
+**Does not imply:** Non-interference under cross-tenant delegation or post-handoff event isolation.
+-/
+theorem handoffSafe_requires_same_tenant (h : Handoff) :
+    HandoffSafe h → h.fromPrincipal.tenant = h.toPrincipal.tenant := by
+  intro hsafe
+  exact hsafe.right
+
+/--
+**Meaning:** Cross-tenant handoff records cannot satisfy `HandoffSafe`.
+
+**Trusted use:** Documents handoff-side tenant NI precondition for conservative claims.
+
+**Does not imply:** Runtime always rejects invalid handoffs or that handoff events are NI-safe.
+-/
+theorem handoffSafe_forbids_distinct_tenant (h : Handoff) (tFrom tTo : String)
+    (hFrom : h.fromPrincipal.tenant = tFrom) (hTo : h.toPrincipal.tenant = tTo)
+    (hDiff : tFrom ≠ tTo) :
+    ¬ HandoffSafe h := by
+  intro hsafe
+  have hEq : tFrom = tTo := by
+    rw [← hFrom, ← hTo]
+    exact hsafe.right
+  exact hDiff hEq
+
 end PFCore
