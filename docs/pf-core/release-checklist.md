@@ -16,8 +16,10 @@ Pre-release verification for PF-Core in `pcs-core`. Run from repository root unl
 | Lean job: `lake build PFCore` | Kernel compiles; decider soundness theorems check |
 | Lean job: `pcs pf-core lean-check` | Concrete trace proof + `LeanKernelChecked` path on fixture |
 | Lean job: `validate-contracts` | Contract runtime checker on `contract_checked/` |
-| `PCS_CERTIFYEDGE_MOCK=1 pcs pf-core certifyedge-check` | External checker hook (mock attestation; live CLI when installed) |
-| `bash scripts/run-pf-core-adapter-ci.sh` | provability-fabric-core hash vector parity (optional CI job) |
+| `pcs pf-core bundle-release` / `validate-bundle` | Release bundle manifest with trace, certificate, proof, kernel hashes |
+| `.github/workflows/pf-core-release-gate.yml` | Live CertifyEdge required (no mock fallback) on main/tags |
+| `python scripts/gen_pf_core_catalog.py` in CI | Generated catalog artifacts match `schemas/pf_core.catalog.json` |
+| `pf-core-adapter` job on `main` | `continue-on-error: false` — adapter parity blocks main |
 
 ## Local full demo
 

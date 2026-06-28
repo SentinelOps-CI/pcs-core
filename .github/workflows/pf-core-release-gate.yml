@@ -1,0 +1,31 @@
+name: PF-Core Release Gate
+
+on:
+  push:
+    branches: [main, master]
+    tags: ["v*"]
+  pull_request:
+
+jobs:
+  certifyedge-release-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: CertifyEdge release gate (live required)
+        run: |
+          cd python
+          pip install -e .
+          if ! command -v certifyedge >/dev/null 2>&1; then
+            echo "FAIL: certifyedge CLI required for PF-Core release gate"
+            exit 1
+          fi
+          certifyedge --version || true
+          pcs pf-core certifyedge-check \
+            --trace ../examples/pf-core-valid/labtrust_replay/trace.json \
+            --property qc_release.temporal.safety \
+            --out /tmp/PFCoreCertificate.certifyedge.release.json
+          test -f /tmp/PFCoreCertificate.certifyedge.release.json
+          pcs validate /tmp/PFCoreCertificate.certifyedge.release.json

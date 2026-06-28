@@ -66,6 +66,10 @@ if lake_available; then
   if [[ -f "${PF_CORE_RELEASE_CERT}" ]]; then
     step "pf-core verify-proof-binding" pcs pf-core verify-proof-binding \
       --certificate "${PF_CORE_RELEASE_CERT}" --trace "${TRACE}"
+    BUNDLE_DIR="$(mktemp -d /tmp/pfcore-release-grade-bundle.XXXXXX 2>/dev/null || echo /tmp/pfcore-release-grade-bundle)"
+    step "pf-core bundle-release" pcs pf-core bundle-release \
+      --trace "${TRACE}" --cert "${PF_CORE_RELEASE_CERT}" --out "${BUNDLE_DIR}"
+    step "pf-core validate-bundle" pcs pf-core validate-bundle "${BUNDLE_DIR}"
   else
     echo "FAIL pf-core verify-proof-binding (certificate missing)"
     FAILED+=("pf-core verify-proof-binding")

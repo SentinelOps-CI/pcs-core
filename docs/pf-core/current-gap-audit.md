@@ -121,6 +121,25 @@ Summary of gaps between the PF-Core vision and the current `pcs-core` repository
 | F3 — CertifyEdge hook + mock CI | Done | `pf_core_certifyedge.py` |
 | Release checklist + theorem sheet | Done | `release-checklist.md` |
 
+## Phase I — Trust-boundary release fixes (2026-06)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| I1 — `pfcore_kernel_hash` + full `lean_environment_hash` | Done | PF-Core `*.lean` bytes + toolchain + lake files |
+| I2 — Event sequence order validator | Done | `validate_event_sequence_order`; wired to validate-trace / lean-check |
+| I3 — Release bundle CLI | Done | `bundle-release`, `validate-bundle`, manifest hashes |
+| I4 — Compositional `certificate_mode` | Done | Six modes; `--certificate-mode` on lean-check; codegen obligations |
+| I5 — Resource pattern Lean subset | Done | `ResourceWithinCapabilityPattern` in `ResourcePattern.lean` |
+| I6 — Release gates | Done | `pf-core-release-gate.yml`; adapter blocking on main |
+| I7 — Single-source catalog | Done | `schemas/pf_core.catalog.json` + `gen_pf_core_catalog.py` + CI drift check |
+
+### Remaining gaps (post Phase I)
+
+- Full global cross-tenant non-interference (covert channels / timing).
+- Live CertifyEdge on all developer machines (release gate requires live CLI in CI).
+- Rust/TS runtime modules still duplicate some catalog tables until fully wired to `pf_core_catalog.rs` / `pfCoreCatalog.ts` imports.
+- WSL/Lean local verification depends on toolchain availability (CI lean job covers release path).
+
 ### Honest limitations (Phase F + Tier 2)
 
 - Tenant theorems cover **allowed events in safe traces**, not global cross-tenant non-interference.

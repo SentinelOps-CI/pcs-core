@@ -106,6 +106,8 @@ if lean_path_available; then
     if [[ -f "${PF_CORE_RELEASE_CERT}" ]]; then
       step "pf-core lean-check certificate validate" pcs validate "${PF_CORE_RELEASE_CERT}"
       step "pf-core verify-proof-binding" pcs pf-core verify-proof-binding --certificate "${PF_CORE_RELEASE_CERT}" --trace "${PF_CORE_TRACE}"
+      step "pf-core bundle-release" pcs pf-core bundle-release --trace "${PF_CORE_TRACE}" --cert "${PF_CORE_RELEASE_CERT}" --out /tmp/pfcore-release-bundle
+      step "pf-core validate-bundle" pcs pf-core validate-bundle /tmp/pfcore-release-bundle
     else
       echo "FAIL pf-core lean-check certificate validate (certificate missing)"
       FAILED+=("pf-core lean-check certificate validate")

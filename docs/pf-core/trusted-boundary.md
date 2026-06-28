@@ -15,11 +15,12 @@ This document lists what PCS/PF-Core treats as trusted, untrusted, or assumed wh
 | Lean theorem catalog (PCS trusted set) | `python/pcs_core/lean_catalog.py` | Audited against `lean/PCS/Theorems.lean` |
 | Lean theorem catalog (PF-Core trusted set) | `python/pcs_core/lean_catalog.py` | Audited against `lean/PFCore/` |
 | PF-Core lean-check deciders | `python/pcs_core/lean_check.py` | Aligned with PF-Core Lean predicates; uses explicit `principal.capabilities` only |
-| Known capability catalog (Python) | `python/pcs_core/pf_core_runtime.py` | `CAPABILITY_CATALOG`, `validate_action_capabilities_known`, `validate_resource_scope` |
-| Known capability catalog (Rust) | `rust/crates/pcs-core/src/pf_core.rs` | `EFFECT_KINDS`, `CAPABILITY_CATALOG`, `validate_direct_trace_action_semantics`, `resource_matches_pattern` |
-| Known capability catalog (TypeScript) | `typescript/packages/core/src/pfCore.ts` | Same closed catalogs and direct-trace semantic validators as Python |
-| Known capability catalog (Lean) | `lean/PFCore/Capability.lean`, `lean/PFCore/Action.lean`, `lean/PFCore/ResourcePattern.lean` | `KnownCapability`, `KnownCapabilityEffect` on `ActionAdmissible`; resource-pattern matching in `ResourcePattern.lean` (runtime parity); not discharged in trace safety kernel |
-| PF-Core concrete trace Lean proofs | `lean/PFCore/Generated/` (generated) | `lake env lean` on generated `concrete_trace_safe` theorem; certificate binds via `trace_hash`, `proof_term_hash`, `lean_environment_hash` |
+| Known capability catalog (Python) | `schemas/pf_core.catalog.json` → `python/pcs_core/pf_core_catalog.py` | Generated single-source catalog; imported by `pf_core_runtime.py` |
+| Known capability catalog (Rust) | `rust/crates/pcs-core/src/pf_core_catalog.rs` | Generated from catalog JSON |
+| Known capability catalog (TypeScript) | `typescript/packages/core/src/pfCoreCatalog.ts` | Generated from catalog JSON |
+| Known capability catalog (Lean) | `lean/PFCore/Catalog.lean`, `Capability.lean`, `ResourcePattern.lean` | `KnownCapability`, `ResourceWithinCapabilityPattern`; runtime `resource_pattern_scope` on certificates |
+| PF-Core concrete trace Lean proofs | `lean/PFCore/Generated/` (generated) | `lake env lean` on generated proof; certificate binds `trace_hash`, `proof_term_hash`, `lean_environment_hash`, `pfcore_kernel_hash` |
+| PF-Core release bundle | `python/pcs_core/pf_core_bundle.py` | `pcs pf-core bundle-release` / `validate-bundle` with manifest hashes |
 | Python PF-Core semantic validation | `python/pcs_core/validate_pf_core.py` | Binds JSON artifacts to closed enums and direct-trace effect/capability rules before Lean codegen |
 | Rust/TS PF-Core semantic validation | `rust/crates/pcs-core/src/validation.rs`, `typescript/packages/core/src/validate.ts` | Cross-language direct-trace effect/capability semantics aligned with Python (`UnknownEffect`, `UnknownCapability`, `CapabilityEffectMismatch`) |
 | Tool-use / witness hash alignment theorems | `lean/PCS/ToolUse.lean`, `lean/PCS/ComputationWitness.lean` | Promoted to trusted PCS catalog (Stage 4) |

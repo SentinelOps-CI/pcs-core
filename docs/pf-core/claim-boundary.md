@@ -30,7 +30,7 @@ Traces and certificates use **different closed claim-class enums**. Traces recor
 | `AssumptionDeclared` | Documented assumptions only |
 | `OutOfScope` | Outside PF-Core trusted kernel |
 
-`LeanKernelChecked` certificates require `proof_term_ref`, `proof_term_hash` (sha256 of generated `.lean` bytes), `lean_environment_hash`, `lean_proof_checked: true`, passed concrete obligations, and contract grounding.
+`LeanKernelChecked` certificates require `proof_term_ref`, `proof_term_hash` (sha256 of generated `.lean` bytes), `lean_environment_hash`, `pfcore_kernel_hash`, `lean_proof_checked: true`, passed concrete obligations (mode-specific via `certificate_mode`), and contract grounding.
 
 Do **not** use PCS `ProofChecked` alone as a PF-Core formal claim.
 

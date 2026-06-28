@@ -112,6 +112,14 @@ jobs:
           pytest -q tests/test_pf_core_tier1.py tests/test_pf_core_cross_language.py
       - name: Schema drift check (reference)
         run: bash scripts/pcs-schema-diff.sh schemas
+      - name: PF-Core catalog drift check
+        run: |
+          cd python
+          python scripts/gen_pf_core_catalog.py
+          git diff --exit-code ../python/pcs_core/pf_core_catalog.py \
+            ../lean/PFCore/Catalog.lean \
+            ../rust/crates/pcs-core/src/pf_core_catalog.rs \
+            ../typescript/packages/core/src/pfCoreCatalog.ts
       - name: PF-Core adapter parity (provability-fabric-core pin)
         run: bash scripts/run-pf-core-adapter-ci.sh
       - name: LabTrust release fixtures
@@ -147,7 +155,7 @@ jobs:
 
   pf-core-adapter:
     runs-on: ubuntu-latest
-    continue-on-error: true
+    continue-on-error: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
