@@ -6,11 +6,36 @@ Verification log for PF-Core critical-issues fix plan on `main`.
 
 | Workflow | SHA | Run ID | Result | Notes |
 |----------|-----|--------|--------|-------|
-| CI | `b5ed639` | 28327689774 | success | Latest `origin/main` at plan start |
-| Release chain | `b5ed639` | â€” | pending | Not observed on latest SHA at fetch; re-run after push |
+| CI | `d24162f` | 28328871492 | **failure** | `python` ruff F401 unused `DEFAULT_CERTIFICATE_MODE` in `lean_check.py`; `validate-cli-contract` skipped (upstream) |
+| Release chain | `d24162f` | 28328871501 | success | `validate-release-chain` green |
+| CI | `15eb268` | 28328983600 | success | Fix: remove unused import; all jobs green |
+| Release chain | `15eb268` | 28328983599 | success | `validate-release-chain` green |
 
-Prior SHA `038b0bc` had Release chain success; `b5ed639` CI green after Rust catalog fmt parity fix.
+### Job matrix (`d24162f`, run 28328871492)
 
+| Job | Result |
+|-----|--------|
+| python | **failure** |
+| lean | success |
+| rust | success |
+| typescript | success |
+| pf-core-adapter | success |
+| validate-cli-contract | skipped |
+
+### Job matrix (`15eb268`, run 28328983600)
+
+| Job | Result |
+|-----|--------|
+| python | success |
+| lean | success |
+| rust | success |
+| typescript | success |
+| pf-core-adapter | success |
+| validate-cli-contract | success |
+
+Fix commit: `15eb268` — Remove unused lean_codegen import so ruff passes on main CI.
+
+Prior SHA `b5ed639` CI run 28327689774 was green; `038b0bc` had Release chain success.
 ## Local verification log (2026-06-28, post fix plan)
 
 | Step | Result |
