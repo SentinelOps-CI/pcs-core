@@ -96,3 +96,68 @@ Reference: `docs/pf-core/claim-boundary.md`, `docs/pf-core/non-interference.md`,
 - F1: `NonInterference.lean` + `validate_tenant_isolation` + `cross_tenant_leak/` fixture
 - F2: `ContractDecide.lean` + Lean codegen contract discharge for mapped JSON fields
 - F3: `pf_core_certifyedge.py` + `pcs pf-core certifyedge-check` + mock CI path
+
+## GitHub release gate dry-run (no tag push)
+
+These steps mirror CI without pushing a tag or committing.
+
+### PF-Core release gate (`workflow_dispatch`)
+
+Workflow file: `.github/workflows/pf-core-release-gate.yml`
+
+1. Open GitHub → Actions → **PF-Core Release Gate** → **Run workflow** (branch: `main`).
+2. The job installs `python/` and runs CertifyEdge with `PF_CORE_CERTIFYEDGE_REQUIRE_LIVE=1` and `--require-live`.
+3. Live CLI resolution order: `secrets.PF_CORE_CERTIFYEDGE_CLI` → `certifyedge` on PATH → `scripts/certifyedge-stub.py`.
+4. Success criteria: `/tmp/PFCoreCertificate.certifyedge.release.json` validates; attestation is not `mock://`; `checker` and `checker_version` present.
+
+Local equivalent (stub format contract):
+
+```powershell
+powershell -File scripts/pf-core-certifyedge-stub-dry-run.ps1
+```
+
+Local mock dev path (not accepted as release attestation):
+
+```powershell
+powershell -File scripts/pf-core-certifyedge-dry-run.ps1
+```
+
+### Release chain workflow
+
+Workflow file: `.github/workflows/release-chain.yml` (also exercised in `ci.yml`).
+
+Local equivalent from repository root:
+
+```bash
+pcs validate-release-chain examples/labtrust-release/
+pcs validate-release-chain examples/tool-use-release/
+pcs validate-release-chain examples/computation-release/
+```
+
+### Full local release-grade (recommended pre-tag)
+
+```powershell
+powershell -File scripts/pf-core-release-grade-local.ps1
+```
+
+```bash
+bash scripts/pf-core-release-grade-local.sh
+```
+
+## Final sign-off (local, pre-tag)
+
+Complete before tagging; record date and operator in this section (local edit only).
+
+| Gate | Command | Pass (Y/N) | Date | Notes |
+|------|---------|------------|------|-------|
+| Full release-grade matrix | `scripts/pf-core-release-grade-local.{ps1,sh}` | | | |
+| Release-chain protocol | `pcs validate-release-chain examples/{labtrust,tool-use,computation}-release/` | | | |
+| PCS Lean codegen | `pytest tests/test_pcs_lean_codegen.py` | | | |
+| Cross-language parity | `pytest tests/test_pf_core_cross_language.py`; `cargo test pf_core`; `npm test` | | | |
+| Catalog drift | `python scripts/gen_pf_core_catalog.py && git diff --exit-code ...` | | | |
+| No sorry/axiom | `pcs pf-core audit-lean-no-sorry` | | | |
+| CertifyEdge stub dry-run | `scripts/pf-core-certifyedge-stub-dry-run.ps1` | | | |
+| README PF-Core section accurate | Manual review | | | |
+| Honest deferrals unchanged or updated | `docs/pf-core/merge-readiness.md` | | | |
+
+**2026-06-29 local run (`9d69386`):** all automated gates in rows 1–7 passed on Windows native `lake`. Row 8–9 updated in this release prep pass. No tag pushed.
