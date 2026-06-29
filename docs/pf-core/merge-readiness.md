@@ -10,11 +10,11 @@ HEAD evidence recorded after closing production gaps B1–B7, PCS envelope Phase
 
 | Workflow | SHA | Run ID | Result | Notes |
 |----------|-----|--------|--------|-------|
-| CI | `4f6cf34` | [28403151444](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28403151444) | success | PF-Core production gaps + ruff format |
+| CI | `66a5b64` | [28403349283](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28403349283) | success | Release tag `v0.1.0-pf-core` at this SHA |
 | Release chain | `4f6cf34` | [28403151442](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28403151442) | success | validate-release-chain green |
 | PF-Core Release Gate | — | workflow_dispatch | — | Actions → **PF-Core Release Gate** → Run workflow (branch `main` or tag `v0.1.0-pf-core`); requires `PF_CORE_CERTIFYEDGE_CLI` secret or `certifyedge` on PATH; rejects `mock://` and `stub://` unless `PF_CORE_CERTIFYEDGE_ALLOW_STUB=1` (staging only) |
 
-**Local matrix (2026-06-29, HEAD `4f6cf34`, Windows native `lake`):** `scripts/pf-core-release-grade-local.ps1` — all steps green; pytest `-k pf_core` 305 passed, 3 skipped; `cargo test pf_core` 21 passed; `npm test` 28 passed; `pcs conformance run --suite pf-core --release-grade` OK; CertifyEdge mock + stub dry-runs OK (dev only).
+**Local matrix (2026-06-29, tag `v0.1.0-pf-core` at `66a5b64`, Windows native `lake`):** `scripts/pf-core-release-grade-local.ps1` — all steps green; pytest `-k pf_core` 305 passed, 3 skipped; `cargo test pf_core` 21 passed; `npm test` 28 passed; `pcs conformance run --suite pf-core --release-grade` OK; `bundle-release` + `validate-bundle` OK; CertifyEdge mock + stub dry-runs OK (dev only).
 
 **Release verify:** `scripts/run-release-verify.sh` — run on Linux/Git Bash for isolated bundle validation + adversarial invalid-fixture sweep (includes `certificate_mode_contractcheckedcertificate_missing_contract_file`).
 
@@ -34,12 +34,21 @@ HEAD evidence recorded after closing production gaps B1–B7, PCS envelope Phase
 
 | Step | Status | Evidence |
 |------|--------|----------|
-| 1. Latest-head evidence | **done** | HEAD `4f6cf34`; CI + release-chain URLs above; local release-grade matrix green |
+| 1. Latest-head evidence | **done** | Tag `v0.1.0-pf-core` at `66a5b64`; CI [28403349283](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28403349283); release-chain [28403151442](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28403151442) |
 | 2. TraceSafeRCertificate by policy | **done** | Trace field, WorkflowProfile, catalog `workflow_certificate_modes`; release-grade rejects base `TraceSafeCertificate` for tool-use |
 | 3. Fully self-contained bundles | **done** | `bundle-release` / `validate-bundle`; isolated temp-dir test in release verify |
 | 4. Release-only CertifyEdge | **done** | Release gate: live CLI required; mock/stub rejected on release path |
 | 5. Adversarial certificate-mode fixtures | **done** | Seven mode-specific invalid fixtures under `examples/pf-core-invalid/certificate_mode_*` |
 | 6. Freeze claim boundary | **done** | `README.md`, `claim-boundary.md`, this document |
+
+## Phase 1 — Release cut (2026-06-29)
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Tag `v0.1.0-pf-core` | **done** | `66a5b64`; pushed to `origin` |
+| CHANGELOG | **done** | PF-Core v0.1.0-pf-core section |
+| Local bundle-release | **done** | `pcs pf-core bundle-release` + `validate-bundle` on tool-use fixture |
+| GitHub Release assets | **ops** | Attach bundle after release-gate workflow_dispatch |
 
 ## Bounded claim
 
