@@ -156,9 +156,7 @@ def resolve_certificate_mode(
         catalog_mode = _workflow_certificate_mode_from_catalog(workflow_id)
         if catalog_mode:
             if catalog_mode not in CERTIFICATE_MODES:
-                raise ValueError(
-                    f"unknown catalog required_certificate_mode {catalog_mode!r}"
-                )
+                raise ValueError(f"unknown catalog required_certificate_mode {catalog_mode!r}")
             return catalog_mode
     if (
         not release_grade

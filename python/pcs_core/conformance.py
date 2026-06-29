@@ -665,8 +665,7 @@ def _check_pcs_envelope_generated_lean_proof(errors: list[str], checks: int) -> 
             continue
         if not result.get("lean_proof_checked"):
             errors.append(
-                f"pcs-envelope.generated-lean-proof/{release_name}: "
-                "lean_proof_checked must be true"
+                f"pcs-envelope.generated-lean-proof/{release_name}: lean_proof_checked must be true"
             )
     return checks
 
