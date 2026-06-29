@@ -63,6 +63,21 @@ def test_certificate_mode_codegen_has_no_trivial_aggregates(
 def test_tool_use_default_certificate_mode_is_trace_safe_r() -> None:
     trace = _load(VALID_TRACE)
     assert resolve_certificate_mode(trace, trace_path=VALID_TRACE) == "TraceSafeRCertificate"
+    assert trace.get("required_certificate_mode") == "TraceSafeRCertificate"
+
+
+def test_release_grade_rejects_trace_safe_certificate_on_tool_use() -> None:
+    from pcs_core.lean_check import run_pfcore_lean_check
+
+    trace = _load(VALID_TRACE)
+    work = REPO / "examples" / "pf-core-valid" / "file_read_allowed" / "trace.json"
+    code, result = run_pfcore_lean_check(
+        work,
+        release_grade=True,
+    )
+    assert code != 0
+    codes = [issue.get("code") for issue in result.get("issues", [])]
+    assert "CertificateModePolicyViolation" in codes
 
 
 def test_trace_safe_r_certificate_requires_resource_scope_theorems(tmp_path: Path) -> None:

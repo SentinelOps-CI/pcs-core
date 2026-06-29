@@ -76,7 +76,7 @@ if lake_available; then
   step "lake build PFCore" bash -lc "cd '${ROOT}/lean' && lake build PFCore"
   step "lake build PCS" bash -lc "cd '${ROOT}/lean' && lake build PCS"
   step "pf-core lean-check full (TraceSafeRCertificate default)" \
-    pcs pf-core lean-check --trace "${TRACE}" --out "${PF_CORE_RELEASE_CERT}"
+    pcs pf-core lean-check --trace "${TRACE}" --out "${PF_CORE_RELEASE_CERT}" --release-grade
   if [[ -f "${PF_CORE_RELEASE_CERT}" ]]; then
     step "verify TraceSafeRCertificate + substantive proof" python3 - "${PF_CORE_RELEASE_CERT}" "${ROOT}" <<'PY'
 import json
@@ -126,7 +126,7 @@ elif wsl_lake_available; then
   echo "NOTE: native lake unavailable; attempting WSL (may timeout on some Windows hosts)"
   step "lake build PFCore (WSL)" wsl bash -lc "export PATH=\"\$HOME/.elan/bin:\$PATH\"; cd '${WSL_ROOT}/lean' && lake build PFCore"
   step "lake build PCS (WSL)" wsl bash -lc "export PATH=\"\$HOME/.elan/bin:\$PATH\"; cd '${WSL_ROOT}/lean' && lake build PCS"
-  step "pf-core lean-check full (WSL)" wsl bash -lc "cd '${WSL_ROOT}/python' && pcs pf-core lean-check --trace '${WSL_ROOT}/examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json' --out /tmp/pfcore-release-grade-cert.json"
+  step "pf-core lean-check full (WSL)" wsl bash -lc "cd '${WSL_ROOT}/python' && pcs pf-core lean-check --trace '${WSL_ROOT}/examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json' --out /tmp/pfcore-release-grade-cert.json --release-grade"
   step "pf-core verify-proof-binding (WSL)" wsl bash -lc "cd '${WSL_ROOT}/python' && test -f /tmp/pfcore-release-grade-cert.json && pcs pf-core verify-proof-binding --certificate /tmp/pfcore-release-grade-cert.json --trace '${WSL_ROOT}/examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json'"
 else
   echo "SKIP Lean path: neither lake nor wsl available (conformance --release-grade may have already failed closed)"

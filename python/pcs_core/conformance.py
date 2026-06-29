@@ -638,6 +638,7 @@ def _check_pf_core_generated_lean_proof(errors: list[str], checks: int) -> int:
             out_path=cert_path,
             skip_build=False,
             skip_lean_proof=False,
+            release_grade=conformance_release_grade(),
         )
         certificate = result.get("certificate")
         if code != 0:

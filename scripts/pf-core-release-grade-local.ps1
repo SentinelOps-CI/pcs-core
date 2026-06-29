@@ -71,7 +71,7 @@ if (Test-LakeAvailable) {
         Pop-Location
     }
     Step "pf-core lean-check full (TraceSafeRCertificate default)" {
-        pcs pf-core lean-check --trace $trace --out $certFile
+        pcs pf-core lean-check --trace $trace --out $certFile --release-grade
     }
     if (Test-Path $certFile) {
         Step "verify TraceSafeRCertificate + substantive proof" {

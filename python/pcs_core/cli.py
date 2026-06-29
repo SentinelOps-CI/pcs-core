@@ -464,6 +464,7 @@ def cmd_pf_core_lean_check(
     skip_build: bool,
     skip_lean_proof: bool,
     certificate_mode: str | None,
+    release_grade: bool = False,
 ) -> int:
     from pcs_core.lean_check import run_pfcore_lean_check
 
@@ -474,6 +475,7 @@ def cmd_pf_core_lean_check(
         skip_build=skip_build,
         skip_lean_proof=skip_lean_proof,
         certificate_mode=certificate_mode,
+        release_grade=release_grade,
     )
     if code == 0:
         dest = out or trace.with_name("PFCoreCertificate.v0.json")
@@ -751,6 +753,11 @@ def main(argv: list[str] | None = None) -> int:
         type=str,
         default=None,
         help="Compositional certificate mode for generated Lean obligations",
+    )
+    pf_core_lean.add_argument(
+        "--release-grade",
+        action="store_true",
+        help="Enforce release-grade certificate mode policy (tool-use requires TraceSafeRCertificate)",
     )
     pf_core_bundle = pf_core_sub.add_parser(
         "bundle-release",
@@ -1053,6 +1060,7 @@ def main(argv: list[str] | None = None) -> int:
             args.skip_build,
             args.skip_lean_proof,
             args.certificate_mode,
+            args.release_grade,
         )
     if args.command == "pf-core" and args.pf_core_cmd == "bundle-release":
         return cmd_pf_core_bundle_release(

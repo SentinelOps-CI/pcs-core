@@ -33,6 +33,7 @@ from pcs_core.pf_core_lean_codegen import (
     collect_contracts_for_trace,
     compute_lean_environment_hash,
     compute_pfcore_kernel_hash,
+    enforce_tool_use_certificate_mode_policy,
     generate_proof_obligation_file,
     proof_term_ref_from_path,
     resolve_certificate_mode,
@@ -698,6 +699,7 @@ def run_pfcore_lean_check(
     skip_build: bool = False,
     skip_lean_proof: bool = False,
     certificate_mode: str | None = None,
+    release_grade: bool = False,
 ) -> tuple[int, dict[str, Any]]:
     """Validate trace semantics, optionally prove concrete trace safety in Lean."""
     print_lean_check_disclaimer()
@@ -709,6 +711,14 @@ def run_pfcore_lean_check(
     mode = resolve_certificate_mode(data, trace_path=trace_path, certificate_mode=certificate_mode)
 
     issues = check_pfcore_trace_lean_semantics(data)
+    policy_error = enforce_tool_use_certificate_mode_policy(
+        data,
+        mode,
+        trace_path=trace_path,
+        release_grade=release_grade,
+    )
+    if policy_error:
+        issues.append(PFCoreLeanCheckIssue("CertificateModePolicyViolation", policy_error))
     contract_errors = validate_contracts_before_codegen(data, trace_path=trace_path)
     for err in contract_errors:
         issues.append(PFCoreLeanCheckIssue("ContractViolation", err))
