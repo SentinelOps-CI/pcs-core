@@ -728,6 +728,23 @@ def _check_pf_core_generated_lean_proof(errors: list[str], checks: int) -> int:
             if not binding.ok:
                 for issue in binding.issues:
                     errors.append(f"pf-core.verify-proof-binding: {issue.code}: {issue.message}")
+            cert_mode = str(certificate.get("certificate_mode") or "")
+            if cert_mode != "TraceSafeRCertificate":
+                errors.append(
+                    "pf-core.generated-lean-proof: release-grade tool-use trace requires "
+                    f"certificate_mode TraceSafeRCertificate, got {cert_mode!r}"
+                )
+            passed_theorems = {
+                str(item.get("theorem"))
+                for item in (certificate.get("obligations") or [])
+                if isinstance(item, dict) and item.get("passed") is True
+            }
+            missing_r = {"concrete_trace_safe_r", "concrete_trace_safe_r_prop"} - passed_theorems
+            if missing_r:
+                errors.append(
+                    "pf-core.generated-lean-proof: release-grade requires TraceSafeR proof "
+                    f"obligations {sorted(missing_r)!r}"
+                )
     return checks
 
 

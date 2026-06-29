@@ -27,7 +27,7 @@ Traces and certificates use **different closed claim-class enums**. Traces recor
 | `SchemaValidated` | JSON Schema and PF-Core semantic checks passed |
 | `RuntimeChecked` | Runtime/decider checks without Lean kernel proof |
 | `CertificateChecked` | External checker attestation (e.g. CertifyEdge) |
-| `LeanKernelChecked` | Concrete trace obligation proved in the Lean kernel (`traceSafeD tr = true`) |
+| `LeanKernelChecked` | Concrete trace obligation proved in the Lean kernel (`traceSafeD tr = true`; tool-use release-grade requires `traceSafeRD` / `TraceSafeRCertificate`) |
 | `ReplayValidated` | Deterministic replay certificate |
 | `AssumptionDeclared` | Documented assumptions only |
 | `OutOfScope` | Outside PF-Core trusted kernel |
@@ -95,6 +95,8 @@ Successful lean-check writes a certificate with matching `claim_class`, `assumpt
 | Trace safety proof | `TraceSafe` / `EventSafe` / `ActionAdmissible` | No — tenant and capability rules only |
 | Stronger trace safety (optional) | `TraceSafeR` / `EventSafeR` / `ActionAdmissibleR` | Yes — catalog glob subset via `globMatchCharsFuel` when codegen emits `concrete_trace_safe_r*` |
 | lean-check generated proof | `concrete_action_resource_scope_*` → `ActionAdmissibleWithResourcePattern` | Bridge; `TraceSafeR` when scope validates for all allow events |
+
+**Release-grade tool-use policy:** Under `pcs pf-core lean-check --release-grade`, tool-use traces must resolve to `TraceSafeRCertificate` (via `required_certificate_mode`, WorkflowProfile, or catalog `workflow_certificate_modes`). The sibling `tool_use_trace.json` heuristic is disabled. Successful `LeanKernelChecked` certificates require passed `concrete_trace_safe_r` and `concrete_trace_safe_r_prop` obligations; base `traceSafeD` alone is insufficient. Base `TraceSafeCertificate` remains for legacy / non–tool-use traces only. Refinement to base `TraceSafe` is documented via `traceSafeR_implies_traceSafe`.
 
 Reference: `lean/PFCore/ResourcePattern.lean`, Python `resource_matches_pattern`.
 

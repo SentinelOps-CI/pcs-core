@@ -42,6 +42,7 @@ from pcs_core.pf_core_lean_codegen import (
 from pcs_core.pf_core_runtime import (
     compute_trace_hash,
     expand_principal_capabilities,
+    is_tool_use_trace,
     principal_capabilities_explicit,
     validate_event_sequence_order,
     validate_pfcore_trace_hash_chain,
@@ -708,7 +709,12 @@ def run_pfcore_lean_check(
     obligations = build_decider_obligations(events)
     lean_environment_hash = compute_lean_environment_hash()
     pfcore_kernel_hash = compute_pfcore_kernel_hash()
-    mode = resolve_certificate_mode(data, trace_path=trace_path, certificate_mode=certificate_mode)
+    mode = resolve_certificate_mode(
+        data,
+        trace_path=trace_path,
+        certificate_mode=certificate_mode,
+        release_grade=release_grade,
+    )
 
     issues = check_pfcore_trace_lean_semantics(data)
     policy_error = enforce_tool_use_certificate_mode_policy(
@@ -737,6 +743,7 @@ def run_pfcore_lean_check(
                 pfcore_generated_dir(),
                 trace_path=trace_path,
                 certificate_mode=mode,
+                release_grade=release_grade,
             )
             proof_term_ref = proof_term_ref_from_path(proof_path)
             proof_term_hash = compute_proof_term_hash(proof_path)
@@ -846,6 +853,42 @@ def run_pfcore_lean_check(
             lean_environment_hash=lean_environment_hash,
         )
         return _emit(1, result)
+
+    if (
+        proof_ok
+        and release_grade
+        and is_tool_use_trace(data, trace_path=trace_path)
+        and not skip_lean_proof
+        and not skip_build
+    ):
+        passed_theorems = {
+            str(entry.get("theorem"))
+            for entry in obligations
+            if isinstance(entry, dict) and entry.get("passed") is True
+        }
+        missing_r = {"concrete_trace_safe_r", "concrete_trace_safe_r_prop"} - passed_theorems
+        if missing_r:
+            issues.append(
+                PFCoreLeanCheckIssue(
+                    "TraceSafeRObligationMissing",
+                    "release-grade tool-use lean-check requires TraceSafeR proof obligations "
+                    f"{sorted(missing_r)!r}; base traceSafeD alone is insufficient",
+                )
+            )
+            result = build_lean_check_result(
+                trace_path=trace_path,
+                issues=issues,
+                no_sorry_errors=no_sorry_errors,
+                build_ok=build_ok,
+                build_detail=build_detail,
+                proof_ok=False,
+                proof_detail="trace-safe-r-obligations-missing",
+                skip_build=skip_build,
+                skip_lean_proof=skip_lean_proof,
+                obligations=obligations,
+                lean_environment_hash=lean_environment_hash,
+            )
+            return _emit(1, result)
 
     cert = build_pfcore_certificate(
         data,
