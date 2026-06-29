@@ -357,6 +357,7 @@ export function validateContractSemanticsChecked(
 }
 
 const DEFAULT_CERTIFICATE_MODE = "TraceSafeCertificate";
+const TOOL_USE_WORKFLOW_PROFILE_ID = "agent_tool_use.safety_v0";
 const TOOL_USE_DEFAULT_CERTIFICATE_MODE = "TraceSafeRCertificate";
 
 const CERTIFICATE_MODES = new Set([
@@ -442,6 +443,10 @@ export function resolveCertificateModeDefault(
   const required = trace?.required_certificate_mode;
   if (typeof required === "string" && CERTIFICATE_MODES.has(required)) {
     return required;
+  }
+  const workflowId = trace?.workflow_id;
+  if (workflowId === TOOL_USE_WORKFLOW_PROFILE_ID) {
+    return TOOL_USE_DEFAULT_CERTIFICATE_MODE;
   }
   if (tracePath && existsSync(join(dirname(tracePath), "tool_use_trace.json"))) {
     return TOOL_USE_DEFAULT_CERTIFICATE_MODE;
