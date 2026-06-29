@@ -26,7 +26,22 @@ Not implemented (deferred):
 
 - Full schema revision for all PCS benchmark ingest paths.
 - Conformance suite `pcs-envelope-lean-proof` with mandatory `--release-grade` gate in all CI jobs.
-- Unified codegen for tool-use and computation obligation shapes (Lean predicates exist in `ToolUse.lean` / `ComputationWitness.lean`; no fixture codegen yet).
+- Full computation witness admissibility codegen over all `result_hashes` (single-hash `witnessResultHashListedD` path implemented).
+
+## Stage PCS-Lean (tool-use + computation partial)
+
+Implemented (2026-06-29):
+
+- `generate_proof_obligation_file` routes by `workflow_id`: LabTrust release chain, tool-use hash alignment + release chain, computation witness result-hash listing + verification/signed bundle.
+- `lean/PCS/Generated/release_pcs_v0_1_tool_use_safety.lean` — `concrete_tool_use_release_admissible_prop`.
+- `lean/PCS/Generated/release_pcs_v0_1_scientific_computation.lean` — `concrete_computation_release_admissible_prop`.
+- `witnessResultHashListedD` decidable mirror in `lean/PCS/ComputationWitness.lean`.
+
+Boundaries: these modules discharge PCS envelope obligations only. They do **not** emit PF-Core `LeanKernelChecked` or tool-use resource-scope proofs.
+
+Previously deferred (still out of scope):
+
+- Unified PF-Core kernel codegen for tool-use traces (use `pcs pf-core lean-check` instead).
 
 ## Claim classes (honest)
 
