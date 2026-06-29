@@ -1,0 +1,62 @@
+{
+  "schema_version": "v0",
+  "description": "Normative resolve_certificate_mode vectors for release-grade policy parity (Python, Rust, TypeScript).",
+  "cases": [
+    {
+      "case_id": "explicit_trace_field_release_grade",
+      "trace": {
+        "required_certificate_mode": "TraceSafeRCertificate",
+        "workflow_id": "agent_tool_use.safety_v0"
+      },
+      "release_grade": true,
+      "has_sibling_tool_use_trace": false,
+      "expected_mode": "TraceSafeRCertificate",
+      "expected_digest": "sha256:48d37c2e8762f30f4f5c7f97a6424a103db8b80aaec8f4ab7b6b3a8e18d9258a",
+      "canonical_json": "{\"case_id\":\"explicit_trace_field_release_grade\",\"expected_mode\":\"TraceSafeRCertificate\",\"has_sibling_tool_use_trace\":false,\"release_grade\":true,\"trace\":{\"required_certificate_mode\":\"TraceSafeRCertificate\",\"workflow_id\":\"agent_tool_use.safety_v0\"}}"
+    },
+    {
+      "case_id": "workflow_catalog_map_release_grade",
+      "trace": {
+        "workflow_id": "agent_tool_use.safety_v0"
+      },
+      "release_grade": true,
+      "has_sibling_tool_use_trace": false,
+      "expected_mode": "TraceSafeRCertificate",
+      "expected_digest": "sha256:11d5478fe35bb7db9cf71c29d4c6865b54ad0ced5e7abe81399cf6f44640d310",
+      "canonical_json": "{\"case_id\":\"workflow_catalog_map_release_grade\",\"expected_mode\":\"TraceSafeRCertificate\",\"has_sibling_tool_use_trace\":false,\"release_grade\":true,\"trace\":{\"workflow_id\":\"agent_tool_use.safety_v0\"}}"
+    },
+    {
+      "case_id": "sibling_heuristic_non_release",
+      "trace": {
+        "trace_id": "trace-no-policy"
+      },
+      "release_grade": false,
+      "has_sibling_tool_use_trace": true,
+      "expected_mode": "TraceSafeRCertificate",
+      "expected_digest": "sha256:e6f394b6e8a4723af94b625e9c06bb41cfe7213e11b8e7a690b0a7857b1627d2",
+      "canonical_json": "{\"case_id\":\"sibling_heuristic_non_release\",\"expected_mode\":\"TraceSafeRCertificate\",\"has_sibling_tool_use_trace\":true,\"release_grade\":false,\"trace\":{\"trace_id\":\"trace-no-policy\"}}"
+    },
+    {
+      "case_id": "release_grade_skips_sibling_heuristic",
+      "trace": {
+        "trace_id": "trace-no-policy"
+      },
+      "release_grade": true,
+      "has_sibling_tool_use_trace": true,
+      "expected_mode": "TraceSafeCertificate",
+      "expected_digest": "sha256:368bd2595094226a2bc19f7f62e5092b82fca3debd64c64b413c37041e615f36",
+      "canonical_json": "{\"case_id\":\"release_grade_skips_sibling_heuristic\",\"expected_mode\":\"TraceSafeCertificate\",\"has_sibling_tool_use_trace\":true,\"release_grade\":true,\"trace\":{\"trace_id\":\"trace-no-policy\"}}"
+    },
+    {
+      "case_id": "legacy_default_release_grade",
+      "trace": {
+        "trace_id": "plain-trace"
+      },
+      "release_grade": true,
+      "has_sibling_tool_use_trace": false,
+      "expected_mode": "TraceSafeCertificate",
+      "expected_digest": "sha256:488d16cf3a10d01e417b9cc99d229e4953919d7bb0322b6ebcdfb11bf927cda6",
+      "canonical_json": "{\"case_id\":\"legacy_default_release_grade\",\"expected_mode\":\"TraceSafeCertificate\",\"has_sibling_tool_use_trace\":false,\"release_grade\":true,\"trace\":{\"trace_id\":\"plain-trace\"}}"
+    }
+  ]
+}
