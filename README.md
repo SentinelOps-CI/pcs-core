@@ -168,6 +168,43 @@ Core artifact types, including runs, certificates, claim bundles, release manife
 
 ---
 
+## PF-Core (Provability Fabric kernel)
+
+PF-Core is the trace-safety kernel in `pcs-core`: Python deciders aligned with Lean predicates, concrete proof codegen, and release bundles for independent verification. It is separate from PCS release-envelope checks (`ProofChecked` / `EnvelopeLeanChecked`).
+
+| Topic | Detail |
+|-------|--------|
+| Tool-use certificate mode | **`TraceSafeRCertificate`** is the default when a sibling `tool_use_trace.json` is present; legacy traces default to `TraceSafeCertificate`. |
+| Capability catalog | `catalog/pf_core.catalog.json` is the single source; `python/scripts/gen_pf_core_catalog.py` generates Python, Rust, TypeScript, and Lean maps (no manual `TOOL_NAME_MAP` drift). |
+| Release bundles | `pcs pf-core bundle-release` copies trace, certificate, proof, and a **`kernel/`** tree; `kernel_manifest.json` lists per-file `sha256:` digests. `validate-bundle` checks the bundle alone (not the checkout). |
+| CertifyEdge | **Mock** (`mock://`, dev/CI demos) vs **live/stub** (release gate). Release tags require live or format stub; mock is rejected on the release path. |
+
+### PF-Core quick start
+
+From repository root after `pip install -e python/.[dev]` and native `lake` on PATH:
+
+```bash
+# Runtime + Lean kernel proof (TraceSafeRCertificate on tool-use fixture)
+pcs pf-core lean-check --trace examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json
+
+# Self-contained release bundle
+pcs pf-core bundle-release \
+  --trace examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json \
+  --cert /tmp/pfcore-cert.json \
+  --out /tmp/pfcore-bundle
+pcs pf-core validate-bundle /tmp/pfcore-bundle
+
+# Full local release-grade matrix (pytest, lake PFCore+PCS, conformance, CertifyEdge mock+stub)
+powershell -File scripts/pf-core-release-grade-local.ps1   # Windows
+bash scripts/pf-core-release-grade-local.sh                # Linux / macOS
+```
+
+Further PF-Core docs: [docs/pf-core/merge-readiness.md](docs/pf-core/merge-readiness.md), [docs/pf-core/release-checklist.md](docs/pf-core/release-checklist.md), [docs/pf-core/claim-boundary.md](docs/pf-core/claim-boundary.md).
+
+**Honest boundaries:** `LeanKernelChecked` covers concrete trace safety (and mode-specific obligations), not global non-interference or full JSON contract discharge. `CertificateChecked` from CertifyEdge does not upgrade to `LeanKernelChecked`. PCS envelope Lean proofs do not substitute for PF-Core kernel proofs.
+
+---
+
 ## Workflows in v0.1
 
 | Workflow | Example fixtures |
