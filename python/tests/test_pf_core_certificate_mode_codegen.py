@@ -66,6 +66,17 @@ def test_tool_use_default_certificate_mode_is_trace_safe_r() -> None:
     assert trace.get("required_certificate_mode") == "TraceSafeRCertificate"
 
 
+def test_tool_use_certificate_mode_from_workflow_profile_without_trace_field(
+    tmp_path: Path,
+) -> None:
+    trace = dict(_load(FILE_READ))
+    trace["workflow_id"] = "agent_tool_use.safety_v0"
+    trace.pop("required_certificate_mode", None)
+    trace_file = tmp_path / "pfcore_trace.json"
+    trace_file.write_text(json.dumps(trace), encoding="utf-8")
+    assert resolve_certificate_mode(trace, trace_path=trace_file) == "TraceSafeRCertificate"
+
+
 def test_release_grade_rejects_trace_safe_certificate_on_tool_use() -> None:
     from pcs_core.lean_check import run_pfcore_lean_check
 
@@ -73,6 +84,7 @@ def test_release_grade_rejects_trace_safe_certificate_on_tool_use() -> None:
     code, result = run_pfcore_lean_check(
         work,
         release_grade=True,
+        certificate_mode="TraceSafeCertificate",
     )
     assert code != 0
     codes = [issue.get("code") for issue in result.get("issues", [])]

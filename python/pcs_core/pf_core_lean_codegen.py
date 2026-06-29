@@ -130,6 +130,17 @@ def resolve_certificate_mode(
         if required not in CERTIFICATE_MODES:
             raise ValueError(f"unknown required_certificate_mode {required!r}")
         return required
+    workflow_id = str(trace.get("workflow_id") or "")
+    if workflow_id:
+        from pcs_core.workflow_profiles import required_certificate_mode_for_workflow
+
+        profile_mode = required_certificate_mode_for_workflow(workflow_id)
+        if profile_mode:
+            if profile_mode not in CERTIFICATE_MODES:
+                raise ValueError(
+                    f"unknown workflow profile required_certificate_mode {profile_mode!r}"
+                )
+            return profile_mode
     if trace_path is not None and (trace_path.parent / "tool_use_trace.json").is_file():
         return TOOL_USE_DEFAULT_CERTIFICATE_MODE
     return DEFAULT_CERTIFICATE_MODE
