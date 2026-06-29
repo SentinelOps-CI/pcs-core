@@ -4,7 +4,7 @@
 
 Release tag for the PF-Core production kernel on `pcs-core` `main`. Bounded claim: machine-checkable trace certificates for catalog-driven, resource-pattern-scoped agentic tool-use traces. Release-grade tool-use `LeanKernelChecked` requires the TraceSafeR evidence chain.
 
-**Release SHA:** tag `v0.1.0-pf-core` at `66a5b64` (see GitHub Releases).
+**Release SHA:** tag `v0.1.0-pf-core` at `3ebccaa` (see GitHub Releases).
 
 ### Added
 
