@@ -14,6 +14,7 @@ from pcs_core.lean_check import compute_proof_term_hash
 from pcs_core.paths import repo_root
 from pcs_core.pf_core_lean_codegen import (
     compute_lean_environment_hash,
+    compute_lean_environment_hash_from_bundle,
     compute_pfcore_kernel_hash,
     pfcore_kernel_lean_paths,
     resolve_certificate_mode,
@@ -124,6 +125,23 @@ def _copy_kernel_into_bundle(out_dir: Path, manifest: Mapping[str, Any]) -> None
         shutil.copy2(src, dest)
 
 
+def _copy_lean_environment_into_bundle(out_dir: Path) -> None:
+    """Copy pinned Lean toolchain and lake project files into the bundle root."""
+    lean_root = repo_root() / "lean"
+    toolchain_src = lean_root / "lean-toolchain"
+    if toolchain_src.is_file():
+        shutil.copy2(toolchain_src, out_dir / "lean-toolchain")
+        dest_toolchain = out_dir / "lean" / "lean-toolchain"
+        dest_toolchain.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(toolchain_src, dest_toolchain)
+    for rel in ("lakefile.lean", "lake-manifest.json"):
+        src = lean_root / rel
+        if src.is_file():
+            dest = out_dir / "lean" / rel
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src, dest)
+
+
 def build_release_manifest(
     *,
     trace: Mapping[str, Any],
@@ -134,12 +152,15 @@ def build_release_manifest(
     proof_rel: str | None = None,
     kernel_manifest: Mapping[str, Any] | None = None,
     trace_path: Path | None = None,
+    bundle_dir: Path | None = None,
 ) -> dict[str, Any]:
     trace_hash = str(certificate.get("trace_hash") or trace.get("trace_hash") or "")
     if not trace_hash.startswith("sha256:"):
         trace_hash = compute_trace_hash(dict(trace))
     proof_term_hash = str(certificate.get("proof_term_hash") or "")
     kernel_manifest = kernel_manifest or build_kernel_manifest()
+    kernel_root = bundle_dir if bundle_dir is not None else repo_root()
+    kernel_files_root = kernel_root / "kernel" if bundle_dir is not None else repo_root()
     manifest: dict[str, Any] = {
         "schema_version": "v0",
         "artifact_type": "PFCoreReleaseBundleManifest.v0",
@@ -150,15 +171,20 @@ def build_release_manifest(
         "kernel_manifest_path": "kernel_manifest.json",
         "pfcore_kernel_hash": compute_pfcore_kernel_hash_from_manifest(
             kernel_manifest,
-            root=repo_root(),
+            root=kernel_files_root,
         ),
-        "lean_environment_hash": str(
-            certificate.get("lean_environment_hash") or compute_lean_environment_hash()
-        ),
+        "lean_environment_hash": str(certificate.get("lean_environment_hash") or ""),
         "certificate_mode": certificate.get("certificate_mode")
         or resolve_certificate_mode(trace, trace_path=trace_path),
         "signature_or_digest": "sha256:" + "0" * 64,
     }
+    if bundle_dir is not None:
+        manifest["lean_environment_hash"] = compute_lean_environment_hash_from_bundle(
+            bundle_dir,
+            kernel_manifest,
+        )
+    elif not manifest["lean_environment_hash"]:
+        manifest["lean_environment_hash"] = compute_lean_environment_hash()
     if lean_check_result_rel:
         manifest["lean_check_result_path"] = lean_check_result_rel
     if proof_rel:
@@ -197,20 +223,25 @@ def bundle_release(
         shutil.copy2(proof_path, proof_dest)
         proof_rel = proof_dest.name
 
-    manifest, kernel_manifest = build_release_manifest(
+    kernel_manifest = build_kernel_manifest()
+    _copy_kernel_into_bundle(out_dir, kernel_manifest)
+    _copy_lean_environment_into_bundle(out_dir)
+
+    manifest, _kernel_manifest = build_release_manifest(
         trace=trace,
         certificate=certificate,
         trace_rel=trace_dest.name,
         certificate_rel=cert_dest.name,
         lean_check_result_rel=lean_rel,
         proof_rel=proof_rel,
+        kernel_manifest=kernel_manifest,
         trace_path=trace_path,
+        bundle_dir=out_dir,
     )
     manifest_path = out_dir / "manifest.json"
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     kernel_manifest_path = out_dir / "kernel_manifest.json"
     kernel_manifest_path.write_text(json.dumps(kernel_manifest, indent=2) + "\n", encoding="utf-8")
-    _copy_kernel_into_bundle(out_dir, kernel_manifest)
     return manifest_path
 
 
@@ -311,7 +342,7 @@ def validate_bundle(bundle_dir: Path) -> BundleValidationResult:
                     root=bundle_dir / "kernel",
                 )
             else:
-                actual_kernel = compute_pfcore_kernel_hash()
+                raise FileNotFoundError("kernel_manifest.json not found in bundle")
         except (OSError, json.JSONDecodeError, ValueError, FileNotFoundError) as exc:
             result.issues.append(BundleIssue("KernelManifestInvalid", str(exc)))
             actual_kernel = ""
@@ -328,31 +359,11 @@ def validate_bundle(bundle_dir: Path) -> BundleValidationResult:
             manifest.get("kernel_manifest_path") or "kernel_manifest.json"
         )
         try:
-            if kernel_manifest_path.is_file():
-                kernel_manifest = _load_json(kernel_manifest_path)
-                env_parts: list[bytes] = []
-                lean_root = repo_root() / "lean"
-                toolchain = repo_root() / "lean-toolchain"
-                if toolchain.is_file():
-                    env_parts.append(toolchain.read_bytes())
-                for rel in ("lakefile.lean", "lake-manifest.json"):
-                    path = lean_root / rel
-                    if path.is_file():
-                        env_parts.append(path.read_bytes())
-                entries = kernel_manifest.get("files")
-                if isinstance(entries, list):
-                    for entry in sorted(entries, key=lambda item: str(item.get("path") or "")):
-                        if not isinstance(entry, dict):
-                            continue
-                        rel = str(entry.get("path") or "")
-                        path = bundle_dir / "kernel" / rel
-                        if path.is_file():
-                            env_parts.append(path.read_bytes())
-                digest = hashlib.sha256(b"\n---\n".join(env_parts)).hexdigest()
-                actual_env = f"sha256:{digest}"
-            else:
-                actual_env = compute_lean_environment_hash()
-        except (OSError, json.JSONDecodeError, ValueError) as exc:
+            if not kernel_manifest_path.is_file():
+                raise FileNotFoundError("kernel_manifest.json not found in bundle")
+            kernel_manifest = _load_json(kernel_manifest_path)
+            actual_env = compute_lean_environment_hash_from_bundle(bundle_dir, kernel_manifest)
+        except (OSError, json.JSONDecodeError, ValueError, FileNotFoundError) as exc:
             result.issues.append(BundleIssue("LeanEnvironmentInvalid", str(exc)))
             actual_env = ""
         if actual_env and actual_env != manifest_env_hash:
