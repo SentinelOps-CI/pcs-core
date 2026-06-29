@@ -11,6 +11,7 @@ import pytest
 from pcs_core.lean_check import run_pfcore_lean_check
 from pcs_core.pf_core_certifyedge import (
     CERTIFYEDGE_INSTALL_DOC,
+    classify_attestation_ref,
     certifyedge_cli_available,
     certifyedge_mock_enabled,
     certifyedge_mode,
@@ -117,6 +118,7 @@ def test_certifyedge_mock_mode(monkeypatch: pytest.MonkeyPatch) -> None:
     result = run_certifyedge_check(LABTRUST_TRACE, "qc_release.temporal.safety")
     assert result.ok
     assert result.mock
+    assert result.attestation_class == "mock"
     assert result.certificate is not None
     assert result.certificate["claim_class"] == "CertificateChecked"
     validate_artifact(result.certificate, "PFCoreCertificate.v0")
@@ -166,6 +168,7 @@ def test_certifyedge_live_mock_separation(monkeypatch: pytest.MonkeyPatch) -> No
     monkeypatch.setenv("PF_CORE_CERTIFYEDGE_MODE", "mock")
     mock_result = run_certifyedge_check(LABTRUST_TRACE, "qc_release.temporal.safety")
     assert mock_result.mock is True
+    assert mock_result.attestation_class == "mock"
     assert mock_result.ok
     assert "mock" in mock_result.message.lower()
 
@@ -179,6 +182,13 @@ def test_certifyedge_live_mock_separation(monkeypatch: pytest.MonkeyPatch) -> No
             "live" in live_result.message.lower()
             or "PF_CORE_CERTIFYEDGE_MODE=live" in live_result.message
         )
+
+
+def test_classify_attestation_ref() -> None:
+    assert classify_attestation_ref("mock://certifyedge/foo") == "mock"
+    assert classify_attestation_ref("stub://certifyedge/foo/trace.json") == "stub"
+    assert classify_attestation_ref("https://attest.example/proof/abc") == "live"
+    assert classify_attestation_ref(None) is None
 
 
 def test_certifyedge_require_live_fails_without_cli(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -200,8 +210,25 @@ def test_certifyedge_mock_attestation_not_release_grade(monkeypatch: pytest.Monk
     result = run_certifyedge_check(LABTRUST_TRACE, "qc_release.temporal.safety")
     assert result.ok
     assert result.mock is True
+    assert result.attestation_class == "mock"
     assert result.attestation_ref is not None
     assert result.attestation_ref.startswith("mock://")
+
+    release_result = run_certifyedge_check(
+        LABTRUST_TRACE, "qc_release.temporal.safety", require_live=True
+    )
+    assert not release_result.ok
+    assert release_result.attestation_class == "mock"
+    assert "mock attestation rejected" in release_result.message.lower()
+
+
+def test_certifyedge_mock_rejected_when_require_live(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("PF_CORE_CERTIFYEDGE_MODE", "mock")
+    monkeypatch.delenv("PF_CORE_CERTIFYEDGE_MOCK", raising=False)
+    result = run_certifyedge_check(LABTRUST_TRACE, "qc_release.temporal.safety", require_live=True)
+    assert not result.ok
+    assert result.attestation_class == "mock"
+    assert "mock attestation rejected" in result.message.lower()
 
 
 def test_certifyedge_stub_cli_format(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
@@ -210,11 +237,35 @@ def test_certifyedge_stub_cli_format(monkeypatch: pytest.MonkeyPatch, tmp_path: 
         pytest.skip("certifyedge-stub.py missing")
     monkeypatch.setenv("PF_CORE_CERTIFYEDGE_MODE", "live")
     monkeypatch.setenv("PF_CORE_CERTIFYEDGE_CLI", str(stub))
+    monkeypatch.delenv("PF_CORE_CERTIFYEDGE_ALLOW_STUB", raising=False)
     result = run_certifyedge_check(LABTRUST_TRACE, "qc_release.temporal.safety")
     assert result.ok
     assert result.mock is False
+    assert result.attestation_class == "stub"
     assert result.attestation_ref is not None
     assert result.attestation_ref.startswith("stub://certifyedge/")
+
+
+def test_certifyedge_stub_rejected_on_release_path(monkeypatch: pytest.MonkeyPatch) -> None:
+    stub = REPO / "scripts" / "certifyedge-stub.py"
+    if not stub.is_file():
+        pytest.skip("certifyedge-stub.py missing")
+    monkeypatch.setenv("PF_CORE_CERTIFYEDGE_MODE", "live")
+    monkeypatch.setenv("PF_CORE_CERTIFYEDGE_CLI", str(stub))
+    monkeypatch.delenv("PF_CORE_CERTIFYEDGE_ALLOW_STUB", raising=False)
+    result = run_certifyedge_check(
+        LABTRUST_TRACE, "qc_release.temporal.safety", require_live=True
+    )
+    assert not result.ok
+    assert result.attestation_class == "stub"
+    assert "stub" in result.message.lower()
+
+    monkeypatch.setenv("PF_CORE_CERTIFYEDGE_ALLOW_STUB", "1")
+    allowed = run_certifyedge_check(
+        LABTRUST_TRACE, "qc_release.temporal.safety", require_live=True
+    )
+    assert allowed.ok
+    assert allowed.attestation_class == "stub"
 
 
 @pytest.mark.skipif(not LAKE_AVAILABLE, reason="lake or WSL not available")

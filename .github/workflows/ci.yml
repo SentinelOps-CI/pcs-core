@@ -82,6 +82,9 @@ jobs:
           pip install -e .
           pcs validate ../examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json
           pcs pf-core validate-trace ../examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json
+      # Dev CI policy: live CertifyEdge when available; mock fallback for format validation.
+      # Release gate (pf-core-release-gate.yml) requires live CLI and rejects mock:// / stub://.
+      # See docs/pf-core/certifyedge-ci.md
       - name: PF-Core CertifyEdge check (live or mock)
         run: |
           cd python
@@ -93,14 +96,14 @@ jobs:
               --trace ../examples/pf-core-valid/labtrust_replay/trace.json \
               --property qc_release.temporal.safety \
               --out /tmp/PFCoreCertificate.certifyedge.json || {
-              echo "WARNING: live CertifyEdge check failed; falling back to mock"
+              echo "WARNING: live CertifyEdge check failed; falling back to mock (dev CI only)"
               PCS_CERTIFYEDGE_MOCK=1 pcs pf-core certifyedge-check \
                 --trace ../examples/pf-core-valid/labtrust_replay/trace.json \
                 --property qc_release.temporal.safety \
                 --out /tmp/PFCoreCertificate.certifyedge.json
             }
           else
-            echo "WARNING: certifyedge not on PATH; using PCS_CERTIFYEDGE_MOCK=1"
+            echo "WARNING: certifyedge not on PATH; using PCS_CERTIFYEDGE_MOCK=1 (dev CI only)"
             PCS_CERTIFYEDGE_MOCK=1 pcs pf-core certifyedge-check \
               --trace ../examples/pf-core-valid/labtrust_replay/trace.json \
               --property qc_release.temporal.safety \

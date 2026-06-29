@@ -14,6 +14,7 @@ from pcs_core.pf_core_certificate import attach_external_certificate_check
 from pcs_core.validate import validate_schema
 
 CertifyEdgeMode = Literal["auto", "live", "mock"]
+AttestationClass = Literal["live", "stub", "mock"]
 
 CERTIFYEDGE_INSTALL_DOC = (
     "Install CertifyEdge from https://github.com/fraware/CertifyEdge and ensure "
@@ -34,6 +35,7 @@ class CertificateCheckResult:
     external_status: str
     message: str
     attestation_ref: str | None = None
+    attestation_class: AttestationClass | None = None
     mock: bool = False
     certificate: dict[str, Any] | None = None
 
@@ -42,9 +44,25 @@ def _truthy_env(name: str) -> bool:
     return os.environ.get(name, "").strip().lower() in {"1", "true", "yes"}
 
 
+def certifyedge_allow_stub() -> bool:
+    """When true, format-validation stub may satisfy ``require_live`` (local/staging only)."""
+    return _truthy_env("PF_CORE_CERTIFYEDGE_ALLOW_STUB")
+
+
 def certifyedge_require_live() -> bool:
     """When true, missing live CLI is a hard failure (release gate / ``--require-live``)."""
     return _truthy_env("PF_CORE_CERTIFYEDGE_REQUIRE_LIVE")
+
+
+def classify_attestation_ref(ref: str | None) -> AttestationClass | None:
+    """Classify an attestation reference by URI prefix."""
+    if not ref:
+        return None
+    if ref.startswith("mock://"):
+        return "mock"
+    if ref.startswith("stub://"):
+        return "stub"
+    return "live"
 
 
 def certifyedge_mode() -> CertifyEdgeMode:
@@ -61,41 +79,72 @@ def certifyedge_mock_enabled() -> bool:
     return certifyedge_mode() == "mock"
 
 
+def _is_format_stub_path(cli: str) -> bool:
+    path = Path(cli)
+    if path.suffix != ".py" or not path.is_file():
+        return False
+    name = path.name.lower()
+    return "certifyedge-stub" in name or name.endswith("-stub.py")
+
+
+def _find_live_certifyedge_cli() -> str | None:
+    """Resolve a live CertifyEdge binary (never a ``.py`` format-validation stub)."""
+    explicit = os.environ.get("PF_CORE_CERTIFYEDGE_CLI", "").strip()
+    if explicit and not _is_format_stub_path(explicit):
+        path = Path(explicit)
+        if path.is_file():
+            return str(path)
+        resolved = shutil.which(explicit)
+        if resolved and not _is_format_stub_path(resolved):
+            return resolved
+    resolved = shutil.which("certifyedge")
+    if resolved and not _is_format_stub_path(resolved):
+        return resolved
+    return None
+
+
+def _find_format_stub() -> str | None:
+    """Resolve an explicit format-validation stub (``certifyedge-stub.py`` via env only)."""
+    explicit = os.environ.get("PF_CORE_CERTIFYEDGE_CLI", "").strip()
+    if explicit and _is_format_stub_path(explicit):
+        path = Path(explicit)
+        if path.is_file():
+            return str(path)
+    return None
+
+
 def certifyedge_cli_available() -> bool:
-    return _find_certifyedge_cli() is not None
+    return _find_live_certifyedge_cli() is not None
 
 
 def certifyedge_status() -> dict[str, object]:
     """Report CertifyEdge CLI availability for operators and CI."""
     mode = certifyedge_mode()
-    cli = _find_certifyedge_cli()
+    live_cli = _find_live_certifyedge_cli()
+    stub_cli = _find_format_stub()
     return {
-        "available": cli is not None,
-        "cli_path": cli,
+        "available": live_cli is not None,
+        "cli_path": live_cli,
+        "format_stub_path": stub_cli,
         "mode": mode,
         "mock_enabled": mode == "mock",
         "live_required": mode == "live" or certifyedge_require_live(),
         "require_live_env": certifyedge_require_live(),
+        "allow_stub_env": certifyedge_allow_stub(),
         "env_contract": {
             "PF_CORE_CERTIFYEDGE_MODE": "auto | live | mock (default: auto)",
-            "PF_CORE_CERTIFYEDGE_CLI": "optional explicit path to certifyedge binary",
+            "PF_CORE_CERTIFYEDGE_CLI": "optional explicit path to certifyedge binary or stub script",
             "PF_CORE_CERTIFYEDGE_MOCK": "1 forces mock mode (alias: PCS_CERTIFYEDGE_MOCK)",
             "PF_CORE_CERTIFYEDGE_REQUIRE_LIVE": "1 fails when live CLI absent (release gate)",
+            "PF_CORE_CERTIFYEDGE_ALLOW_STUB": "1 allows format stub on require-live (staging only)",
         },
         "install_doc": CERTIFYEDGE_INSTALL_DOC,
     }
 
 
 def _find_certifyedge_cli() -> str | None:
-    explicit = os.environ.get("PF_CORE_CERTIFYEDGE_CLI", "").strip()
-    if explicit:
-        path = Path(explicit)
-        if path.is_file():
-            return str(path)
-        resolved = shutil.which(explicit)
-        if resolved:
-            return resolved
-    return shutil.which("certifyedge")
+    """Backward-compatible alias: prefer live CLI, then explicit format stub."""
+    return _find_live_certifyedge_cli() or _find_format_stub()
 
 
 def _certifyedge_cmd(cli: str) -> list[str]:
@@ -113,6 +162,45 @@ def _load_trace(trace_path: Path) -> dict[str, Any]:
     if not isinstance(data, dict):
         raise ValueError(f"{trace_path}: trace root must be a JSON object")
     return data
+
+
+def _reject_release_attestation(
+    attestation_class: AttestationClass,
+    *,
+    require_live: bool,
+) -> CertificateCheckResult | None:
+    """Return a failure result when release-grade attestation class is disallowed."""
+    if not require_live:
+        return None
+    if attestation_class == "mock":
+        return CertificateCheckResult(
+            ok=False,
+            checker="certifyedge",
+            checker_version="0.1.0",
+            property_id="",
+            external_status="Rejected",
+            message=(
+                "mock attestation rejected when require_live (--require-live or "
+                "PF_CORE_CERTIFYEDGE_REQUIRE_LIVE=1)"
+            ),
+            attestation_class="mock",
+            mock=True,
+        )
+    if attestation_class == "stub" and not certifyedge_allow_stub():
+        return CertificateCheckResult(
+            ok=False,
+            checker="certifyedge",
+            checker_version="0.1.0",
+            property_id="",
+            external_status="Rejected",
+            message=(
+                "stub attestation rejected on release path; set PF_CORE_CERTIFYEDGE_ALLOW_STUB=1 "
+                "only for documented staging exceptions"
+            ),
+            attestation_class="stub",
+            mock=False,
+        )
+    return None
 
 
 def run_certifyedge_check(
@@ -135,7 +223,22 @@ def run_certifyedge_check(
     mode = certifyedge_mode()
     require_live = require_live or certifyedge_require_live()
 
+    if attestation_ref is not None:
+        explicit_class = classify_attestation_ref(attestation_ref)
+        if explicit_class == "mock" and require_live:
+            rejected = _reject_release_attestation("mock", require_live=True)
+            assert rejected is not None
+            return CertificateCheckResult(
+                **{**rejected.__dict__, "property_id": property_id, "checker_version": checker_version}
+            )
+
     if mode == "mock":
+        if require_live:
+            rejected = _reject_release_attestation("mock", require_live=True)
+            assert rejected is not None
+            return CertificateCheckResult(
+                **{**rejected.__dict__, "property_id": property_id, "checker_version": checker_version}
+            )
         print(
             "WARNING: CertifyEdge mock mode (PF_CORE_CERTIFYEDGE_MODE=mock or "
             "PF_CORE_CERTIFYEDGE_MOCK=1) — not a live external attestation. "
@@ -172,11 +275,39 @@ def run_certifyedge_check(
             external_status="CertificateChecked",
             message="CertifyEdge mock attestation (PF_CORE_CERTIFYEDGE_MODE=mock)",
             attestation_ref=mock_ref,
+            attestation_class="mock",
             mock=True,
             certificate=cert,
         )
 
-    cli = _find_certifyedge_cli()
+    live_cli = _find_live_certifyedge_cli()
+    stub_cli = _find_format_stub()
+    using_stub = False
+    cli: str | None
+    if stub_cli is not None:
+        cli = stub_cli
+        using_stub = True
+    elif live_cli is not None:
+        cli = live_cli
+    else:
+        cli = None
+
+    if cli is not None and using_stub and require_live and not certifyedge_allow_stub():
+        return CertificateCheckResult(
+            ok=False,
+            checker="certifyedge",
+            checker_version=checker_version,
+            property_id=property_id,
+            external_status="Rejected",
+            message=(
+                "PF_CORE_CERTIFYEDGE_MODE=live or --require-live requires live CertifyEdge "
+                "CLI (format stub rejected). "
+                f"{CERTIFYEDGE_INSTALL_DOC}"
+            ),
+            attestation_class="stub",
+            mock=False,
+        )
+
     if cli is None:
         if mode == "auto" and not require_live:
             print(
@@ -235,6 +366,18 @@ def run_certifyedge_check(
         )
 
     resolved_ref = attestation_ref or detail_attestation_ref(proc.stdout)
+    attestation_class = classify_attestation_ref(resolved_ref) or ("stub" if using_stub else "live")
+    rejected = _reject_release_attestation(attestation_class, require_live=require_live)
+    if rejected is not None:
+        return CertificateCheckResult(
+            **{
+                **rejected.__dict__,
+                "property_id": property_id,
+                "checker_version": checker_version,
+                "attestation_ref": resolved_ref,
+            }
+        )
+
     cert = attach_external_certificate_check(
         trace,
         checker="certifyedge",
@@ -256,14 +399,20 @@ def run_certifyedge_check(
             "proof_ref": property_id,
         },
     ]
+    message = (
+        "CertifyEdge check-trace succeeded (format stub)"
+        if attestation_class == "stub"
+        else "CertifyEdge check-trace succeeded (live)"
+    )
     return CertificateCheckResult(
         ok=True,
         checker="certifyedge",
         checker_version=checker_version,
         property_id=property_id,
         external_status="CertificateChecked",
-        message="CertifyEdge check-trace succeeded (live)",
+        message=message,
         attestation_ref=resolved_ref,
+        attestation_class=attestation_class,
         mock=False,
         certificate=cert,
     )
@@ -299,6 +448,14 @@ def write_certifyedge_certificate(
     cert = result.certificate
     if cert.get("claim_class") != "CertificateChecked":
         raise RuntimeError("CertifyEdge path must emit CertificateChecked only")
+    attestation_class = result.attestation_class or classify_attestation_ref(result.attestation_ref)
+    if require_live and attestation_class in {"mock", "stub"}:
+        if attestation_class == "stub" and certifyedge_allow_stub():
+            pass
+        else:
+            raise RuntimeError(
+                f"{attestation_class} attestation rejected when require_live: {result.attestation_ref}"
+            )
     errors = validate_schema(cert, "PFCoreCertificate.v0")
     if errors:
         raise RuntimeError(f"invalid PFCoreCertificate.v0: {'; '.join(errors)}")

@@ -29,17 +29,15 @@ jobs:
           elif command -v certifyedge >/dev/null 2>&1; then
             CLI="$(command -v certifyedge)"
             echo "Using certifyedge on PATH: ${CLI}"
-          elif [ -f ../scripts/certifyedge-stub.py ]; then
-            CLI="$(python3 -c 'import os; print(os.path.realpath("../scripts/certifyedge-stub.py"))')"
-            chmod +x "${CLI}" || true
-            echo "Using CertifyEdge format stub: ${CLI}"
           else
-            echo "FAIL: release gate requires live CertifyEdge CLI or stub (mock attestation rejected)."
+            echo "FAIL: release gate requires live CertifyEdge CLI (PF_CORE_CERTIFYEDGE_CLI secret or certifyedge on PATH)."
+            echo "Format stub and mock attestation are rejected on the release path."
+            echo "See docs/pf-core/certifyedge-ci.md"
             exit 1
           fi
           export PF_CORE_CERTIFYEDGE_CLI="${CLI}"
           export PF_CORE_CERTIFYEDGE_MODE=live
-          ${CLI} --version || true
+          certifyedge --version || "${CLI}" --version || true
           pcs pf-core certifyedge-check \
             --require-live \
             --trace ../examples/pf-core-valid/labtrust_replay/trace.json \
@@ -49,6 +47,7 @@ jobs:
           pcs validate /tmp/PFCoreCertificate.certifyedge.release.json
           python3 - <<'PY'
           import json
+          import os
           import sys
 
           cert = json.load(open("/tmp/PFCoreCertificate.certifyedge.release.json", encoding="utf-8"))
@@ -60,8 +59,17 @@ jobs:
           if not attestation:
               print("FAIL: release certificate missing attestation_ref/proof_ref")
               sys.exit(1)
+          allow_stub = os.environ.get("PF_CORE_CERTIFYEDGE_ALLOW_STUB", "").strip().lower() in {
+              "1",
+              "true",
+              "yes",
+          }
           if attestation.startswith("mock://"):
               print(f"FAIL: mock attestation rejected on release path: {attestation}")
+              sys.exit(1)
+          if attestation.startswith("stub://") and not allow_stub:
+              print(f"FAIL: stub attestation rejected on release path: {attestation}")
+              print("Set PF_CORE_CERTIFYEDGE_ALLOW_STUB=1 only for documented staging exceptions.")
               sys.exit(1)
           if not cert.get("checker") or not cert.get("checker_version"):
               print("FAIL: release certificate missing checker metadata")

@@ -7,9 +7,10 @@ PF-Core integrates the external [CertifyEdge](https://github.com/fraware/Certify
 | Variable | Values | Default | Meaning |
 |----------|--------|---------|---------|
 | `PF_CORE_CERTIFYEDGE_MODE` | `auto`, `live`, `mock` | `auto` | Execution mode |
-| `PF_CORE_CERTIFYEDGE_CLI` | path or command name | unset | Explicit CertifyEdge binary |
+| `PF_CORE_CERTIFYEDGE_CLI` | path or command name | unset | Explicit CertifyEdge binary (or format stub script) |
 | `PF_CORE_CERTIFYEDGE_MOCK` | `1`, `true`, `yes` | unset | Forces mock mode (same as `MODE=mock`) |
 | `PF_CORE_CERTIFYEDGE_REQUIRE_LIVE` | `1`, `true`, `yes` | unset | Fail when live CLI absent (`--require-live` alias) |
+| `PF_CORE_CERTIFYEDGE_ALLOW_STUB` | `1`, `true`, `yes` | unset | Allow format stub on `require_live` (staging only) |
 
 Legacy alias: `PCS_CERTIFYEDGE_MOCK=1` (still honored).
 
@@ -32,7 +33,15 @@ pcs pf-core certifyedge-check \
 
 Use `--require-live` (or `PF_CORE_CERTIFYEDGE_REQUIRE_LIVE=1`) on release runners to fail closed when the live CLI is absent.
 
-Format-validation stub (CI, no real attestation): `scripts/certifyedge-stub.py` — mimics `check-trace` stdout (`attestation: stub://...`).
+### Attestation classes
+
+| Class | `proof_ref` prefix | Allowed in |
+|-------|-------------------|------------|
+| **live** | real attestation URL/hash from CertifyEdge binary | release gate |
+| **stub** | `stub://certifyedge/` | local/CI format validation only |
+| **mock** | `mock://` | dev CI only |
+
+Format-validation stub (CI, no real attestation): `scripts/certifyedge-stub.py` — mimics `check-trace` stdout (`attestation: stub://...`). Must be set explicitly via `PF_CORE_CERTIFYEDGE_CLI`; never auto-selected on the release gate.
 
 Status probe (Python):
 
@@ -101,17 +110,17 @@ Mock mode is **not** a substitute for release-gate live CertifyEdge attestation.
 | Context | CertifyEdge requirement |
 |---------|-------------------------|
 | Main CI (`ci.yml`) | Live when CLI present; `PCS_CERTIFYEDGE_MOCK=1` fallback |
-| Release gate (`pf-core-release-gate.yml`) | Mock always; live with CLI/stub; `PF_CORE_CERTIFYEDGE_REQUIRE_LIVE=1` fails if absent |
+| Release gate (`pf-core-release-gate.yml`) | Live CLI required; rejects `mock://` and `stub://` |
 | Local dev | `PF_CORE_CERTIFYEDGE_MODE=mock` for demos |
 
 ### Release gate matrix
 
 | Step | When | Outcome |
 |------|------|---------|
-| Mock certifyedge-check | Always | Validates mock fixture; does not claim live attestation |
-| Live certifyedge-check | CLI, stub, or `PF_CORE_CERTIFYEDGE_CLI` secret | `PF_CORE_CERTIFYEDGE_MODE=live` + `--require-live`; required success when run |
-| Live skip / fail | No CLI; `REQUIRE_LIVE=0` | Workflow continues (mock validated) |
-| Live hard fail | No CLI; `PF_CORE_CERTIFYEDGE_REQUIRE_LIVE=1` | Workflow fails |
+| Live certifyedge-check | `PF_CORE_CERTIFYEDGE_CLI` secret or `certifyedge` on PATH | `PF_CORE_CERTIFYEDGE_MODE=live` + `--require-live`; must succeed |
+| Attestation validation | After live check | Reject `mock://`; reject `stub://` unless `PF_CORE_CERTIFYEDGE_ALLOW_STUB=1` |
+| Mock certifyedge-check | Separate step | Validates mock fixture; does not claim live attestation |
+| Hard fail | No live CLI on release runner | Workflow fails (no automatic stub fallback) |
 
 Repository secret (optional): `PF_CORE_CERTIFYEDGE_CLI` — absolute path to the CertifyEdge binary on the release runner.
 
