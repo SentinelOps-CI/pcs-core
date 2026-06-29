@@ -1,0 +1,7 @@
+{
+  "expected_error": "ContractCheckedCertificate cannot claim lean_proof_checked",
+  "must_fail_at": "validate_semantics",
+  "certificate_mode": "ContractCheckedCertificate",
+  "artifact_file": "certificate.json",
+  "artifact_type": "PFCoreCertificate.v0"
+}

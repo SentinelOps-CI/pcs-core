@@ -38,6 +38,11 @@ ADVERSARIAL = [
         "ContractCheckedCertificate",
         "Contract precondition fails for mapped trace event.",
     ),
+    (
+        "certificate_mode_contractcheckedcertificate_missing_contract_file",
+        "ContractCheckedCertificate",
+        "Certificate claims contract discharge while contract JSON file is absent.",
+    ),
 ]
 
 VALID_MODES = [

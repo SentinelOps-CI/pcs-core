@@ -557,15 +557,23 @@ def generate_certificate_mode_adversarial_fixtures() -> None:
             "validate_tenant_isolation",
             "trace.json",
         ),
-        (
-            "certificate_mode_contractcheckedcertificate_failed_precondition",
-            "ContractCheckedCertificate",
-            INVALID / "contract_ref_missing" / "trace.json",
-            "ContractRefMissing",
-            "validate_trace_contracts",
-            "trace.json",
-        ),
-    ]
+    (
+        "certificate_mode_contractcheckedcertificate_failed_precondition",
+        "ContractCheckedCertificate",
+        INVALID / "contract_ref_missing" / "trace.json",
+        "ContractRefMissing",
+        "validate_trace_contracts",
+        "trace.json",
+    ),
+    (
+        "certificate_mode_contractcheckedcertificate_missing_contract_file",
+        "ContractCheckedCertificate",
+        None,
+        "ContractCheckedCertificate cannot claim lean_proof_checked",
+        "validate_semantics",
+        "certificate.json",
+    ),
+]
     for name, mode, src, expected_error, must_fail_at, artifact_file in cases:
         case = INVALID / name
         case.mkdir(parents=True, exist_ok=True)
@@ -583,9 +591,13 @@ def generate_certificate_mode_adversarial_fixtures() -> None:
             must_fail_at=must_fail_at,
             certificate_mode=mode,
             artifact_file=artifact_file,
-            artifact_type="PFCoreTrace.v0"
-            if artifact_file == "trace.json"
-            else "PFCoreHandoff.v0",
+            artifact_type=(
+                "PFCoreTrace.v0"
+                if artifact_file == "trace.json"
+                else "PFCoreHandoff.v0"
+                if artifact_file == "handoff.json"
+                else "PFCoreCertificate.v0"
+            ),
         )
 
 

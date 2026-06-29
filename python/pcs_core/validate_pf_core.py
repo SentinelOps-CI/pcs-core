@@ -207,6 +207,18 @@ def _validate_pfcore_certificate(data: dict[str, Any]) -> list[str]:
                         "root: certificate_mode obligations missing passed proofs for "
                         f"{sorted(missing_mode)!r}"
                     )
+        if cert_mode == "ContractCheckedCertificate" and lean_proof_checked:
+            semantics_obj = data.get("contract_semantics_checked")
+            if isinstance(semantics_obj, dict):
+                runtime = semantics_obj.get("runtime")
+                if isinstance(runtime, list):
+                    for item in runtime:
+                        item_str = str(item)
+                        if item_str.startswith("missing_contract:"):
+                            errors.append(
+                                "root: ContractCheckedCertificate cannot claim lean_proof_checked "
+                                f"with unresolved contract ref {item_str!r}"
+                            )
         default_ref = str(data.get("default_contract_ref") or "")
         semantics = data.get("contract_semantics_checked")
         has_semantics = isinstance(semantics, dict) and (
