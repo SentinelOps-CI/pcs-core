@@ -281,6 +281,7 @@ const RUNTIME_RESOURCE_PATTERN_SCOPE: &str = "resource_pattern_scope";
 const LEAN_RESOURCE_WITHIN_CAPABILITY_PATTERN: &str = "resource_within_capability_pattern";
 
 const DEFAULT_CERTIFICATE_MODE: &str = "TraceSafeCertificate";
+const TOOL_USE_WORKFLOW_PROFILE_ID: &str = "agent_tool_use.safety_v0";
 const TOOL_USE_DEFAULT_CERTIFICATE_MODE: &str = "TraceSafeRCertificate";
 
 const CERTIFICATE_MODES: &[&str] = &[
@@ -376,6 +377,11 @@ pub fn resolve_certificate_mode_default(
             .filter(|mode| certificate_mode_is_valid(mode))
         {
             return required.to_string();
+        }
+        if let Some(workflow_id) = trace.get("workflow_id").and_then(|v| v.as_str()) {
+            if workflow_id == TOOL_USE_WORKFLOW_PROFILE_ID {
+                return TOOL_USE_DEFAULT_CERTIFICATE_MODE.to_string();
+            }
         }
     }
     if let Some(path) = trace_path {
