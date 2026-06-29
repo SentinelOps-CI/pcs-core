@@ -17,8 +17,8 @@ from pcs_core.hash import PLACEHOLDER_DIGEST, canonical_hash  # noqa: E402
 from pcs_core.paths import examples_dir  # noqa: E402
 from pcs_core.protocol_fixtures import (  # noqa: E402
     CERTIFYEDGE_REPO,
-    PF_REPO,
     PCS_CORE_REPO,
+    PF_REPO,
     SM_REPO,
 )
 from pcs_core.registry import build_artifact_registry  # noqa: E402
@@ -215,6 +215,14 @@ def workflow_profile_tool_use() -> dict[str, Any]:
             "This artifact is a proof-carrying tool-use simulation result. "
             "It is not a guarantee of operational safety for a deployed agent."
         ),
+        "formalization": {
+            "trust_kernel": "pf-core",
+            "required_obligations": ["traceSafeRD"],
+            "formalization_scope": "trust_envelope_only",
+            "pf_core": {
+                "required_certificate_mode": "TraceSafeRCertificate",
+            },
+        },
         "signature_or_digest": PLACEHOLDER_DIGEST,
     }
     return _with_digest(body)
@@ -345,7 +353,9 @@ def main() -> int:
                         receipts[0]["trace_hash"] = trace["trace_hash"]
             _write_json(release / name, _with_digest(doc))
 
-    certified = json.loads((release / "science_claim_bundle.certified.json").read_text(encoding="utf-8"))
+    certified = json.loads(
+        (release / "science_claim_bundle.certified.json").read_text(encoding="utf-8")
+    )
     certified_digest = file_digest(
         (release / "science_claim_bundle.certified.json").read_bytes(),
     )
@@ -366,7 +376,9 @@ def main() -> int:
         signed["signed_input_bundle_hash"] = certified_digest
         _write_json(signed_path, _with_digest(signed))
 
-    certified = json.loads((release / "science_claim_bundle.certified.json").read_text(encoding="utf-8"))
+    certified = json.loads(
+        (release / "science_claim_bundle.certified.json").read_text(encoding="utf-8")
+    )
     signed = json.loads((release / "signed_science_claim_bundle.json").read_text(encoding="utf-8"))
 
     manifest_body: dict[str, Any] = {
@@ -580,7 +592,9 @@ def main() -> int:
     )
     cited = collect_chain_registry_refs(validation["checks"])
     deferred_refs = {item["registry_ref"] for item in validation["deferred_registry_checks"]}
-    for ref in sorted(required_release_blocking_refs_for_profile(TOOL_USE_WORKFLOW_ID) - cited - deferred_refs):
+    for ref in sorted(
+        required_release_blocking_refs_for_profile(TOOL_USE_WORKFLOW_ID) - cited - deferred_refs
+    ):
         found = lookup_registry_check(ref)
         if found is None:
             continue
@@ -675,8 +689,8 @@ def main() -> int:
     _write_json(examples_dir() / "tool_use_trace.valid.json", trace)
     _write_json(examples_dir() / "tool_use_certificate.valid.json", cert)
 
-    from pcs_core.shared_hash_vectors import write_shared_vectors
     from pcs_core.semantic_check_execution import build_semantic_check_execution
+    from pcs_core.shared_hash_vectors import write_shared_vectors
 
     (examples_dir() / "semantic_check_execution.valid.json").write_text(
         json.dumps(build_semantic_check_execution(), indent=2) + "\n",
