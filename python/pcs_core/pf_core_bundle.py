@@ -15,7 +15,6 @@ from pcs_core.paths import repo_root
 from pcs_core.pf_core_lean_codegen import (
     compute_lean_environment_hash,
     compute_lean_environment_hash_from_bundle,
-    compute_pfcore_kernel_hash,
     pfcore_kernel_lean_paths,
     resolve_certificate_mode,
 )

@@ -17,12 +17,12 @@ from typing import Any, Mapping
 
 from pcs_core.hash import canonical_hash
 from pcs_core.paths import repo_root
-from pcs_core.pf_core_runtime import is_tool_use_trace
 from pcs_core.pf_core_contract import (
     field_semantics_layer,
     load_contracts_from_dir,
     validate_trace_contracts,
 )
+from pcs_core.pf_core_runtime import is_tool_use_trace
 
 DEFAULT_CERTIFICATE_MODE = "TraceSafeCertificate"
 TOOL_USE_DEFAULT_CERTIFICATE_MODE = "TraceSafeRCertificate"

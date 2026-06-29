@@ -757,7 +757,7 @@ def main(argv: list[str] | None = None) -> int:
     pf_core_lean.add_argument(
         "--release-grade",
         action="store_true",
-        help="Enforce release-grade certificate mode policy (tool-use requires TraceSafeRCertificate)",
+        help="Enforce release-grade certificate mode policy for tool-use traces",
     )
     pf_core_bundle = pf_core_sub.add_parser(
         "bundle-release",

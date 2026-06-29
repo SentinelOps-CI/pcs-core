@@ -69,7 +69,6 @@ def test_tool_use_default_certificate_mode_is_trace_safe_r() -> None:
 def test_release_grade_rejects_trace_safe_certificate_on_tool_use() -> None:
     from pcs_core.lean_check import run_pfcore_lean_check
 
-    trace = _load(VALID_TRACE)
     work = REPO / "examples" / "pf-core-valid" / "file_read_allowed" / "trace.json"
     code, result = run_pfcore_lean_check(
         work,
