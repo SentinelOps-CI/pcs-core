@@ -38,4 +38,15 @@ theorem witness_result_hash_listedD_sound (resultHashes : List Hash) (artifactHa
     witnessResultHashListedD resultHashes artifactHash = true ↔ artifactHash ∈ resultHashes := by
   simp [witnessResultHashListedD, List.any_eq_true, decide_eq_true_iff, hash_beq_iff_eq]
 
+/-- Decidable check: every witness result hash appears in the declared artifact digest set. -/
+def witnessResultHashesAdmissibleD (witnessResultHashes artifactHashes : List Hash) : Bool :=
+  witnessResultHashes.all fun witnessHash =>
+    artifactHashes.any fun artifactHash => decide (witnessHash == artifactHash)
+
+theorem witnessResultHashesAdmissibleD_sound (witnessResultHashes artifactHashes : List Hash) :
+    witnessResultHashesAdmissibleD witnessResultHashes artifactHashes = true ↔
+      ∀ h ∈ witnessResultHashes, h ∈ artifactHashes := by
+  simp [witnessResultHashesAdmissibleD, List.all_eq_true, List.any_eq_true, decide_eq_true_iff,
+    hash_beq_iff_eq]
+
 end PCS
