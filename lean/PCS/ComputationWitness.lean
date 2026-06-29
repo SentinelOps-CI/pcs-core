@@ -30,4 +30,12 @@ theorem witness_result_hashes_admissible
 def proofCheckedRequiresCertificateCheckedWitness (releaseStatus witnessStatus : String) : Prop :=
   releaseStatus = "ProofChecked" → witnessStatus = "CertificateChecked"
 
+/-- Decidable check: a concrete result artifact digest appears in witness result_hashes. -/
+def witnessResultHashListedD (resultHashes : List Hash) (artifactHash : Hash) : Bool :=
+  resultHashes.any fun h => h == artifactHash
+
+theorem witness_result_hash_listedD_sound (resultHashes : List Hash) (artifactHash : Hash) :
+    witnessResultHashListedD resultHashes artifactHash = true ↔ artifactHash ∈ resultHashes := by
+  simp [witnessResultHashListedD, List.any_eq_true, decide_eq_true_iff, hash_beq_iff_eq]
+
 end PCS
