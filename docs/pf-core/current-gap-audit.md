@@ -4,14 +4,14 @@ Summary of gaps between the PF-Core vision and the current `pcs-core` repository
 
 ## Tier 1 — production trusted kernel (complete)
 
-**Status:** Tier 1 production kernel: complete (uncommitted)
+**Status:** Tier 1 production kernel: complete
 
 | Item | Status | Notes |
 |------|--------|-------|
 | `semantics_layer` on `PFCoreContract.v0` | Done | Flat field map: `lean` / `runtime` / `out_of_scope`; validator defaults |
 | `contract_semantics_checked` on certificates | Done | Derived from semantics layers + checks |
 | Cross-language semantic parity | Done | Rust `pf_core.rs`, TS `pfCore.ts`, `conformance run --suite pf-core-cross-language`; includes `contract_semantics_checked` read/validate |
-| Rust/TS direct-trace effect/capability parity | Done (uncommitted) | `validate_direct_trace_action_semantics` / `validateDirectTraceActionSemantics`; error codes `UnknownEffect`, `UnknownCapability`, `CapabilityEffectMismatch` |
+| Rust/TS direct-trace effect/capability parity | Done | `validate_direct_trace_action_semantics` / `validateDirectTraceActionSemantics`; error codes `UnknownEffect`, `UnknownCapability`, `CapabilityEffectMismatch` |
 | Trace vs certificate claim classes | Done | Separate enums; traces reject `LeanKernelChecked` / `CertificateChecked` |
 | Direct-trace effect catalog | Done | Closed `effect_kind` enum + semantic validators |
 | `proof_term_hash` on certificates | Done | sha256 of generated `.lean` bytes before `lake env lean` |
@@ -19,7 +19,7 @@ Summary of gaps between the PF-Core vision and the current `pcs-core` repository
 | Generated-lean-proof conformance | Done | Subcheck in `conformance run --suite pf-core` |
 | `pcs pcs-envelope check` | Done | Alias; `pcs lean-check` deprecated with notice |
 | PCS envelope-only framing (choice B) | Done | No `LeanKernelChecked` on PCS path; docs + tests |
-| CertifyEdge live-then-mock CI | Done | `pf_core_certifyedge.py`; CI mock fallback |
+| CertifyEdge live/stub/mock classes | Done | `pf_core_certifyedge.py`; dev CI mock; release gate live/stub only |
 | `scripts/run-pf-core-adapter-ci.sh` | Done | Pinned provability-fabric-core hash parity |
 | Tier 1 tests | Done | `test_pf_core_tier1.py` |
 
@@ -196,3 +196,35 @@ Summary of gaps between the PF-Core vision and the current `pcs-core` repository
 - Lean contract discharge maps capability, effect, tenant, decision, event_safe, trace_safe only; role/policy/evidence refs remain runtime-only (`semantics_layer`).
 - CertifyEdge live CLI depends on external install; CI uses mock when absent.
 - PKI is documented out of scope for v0.1 only.
+
+## Production hardening (B1–B7, 2026-06-29)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| B1 — CertifyEdge live/stub/mock separation | Done | `AttestationClass`; release gate hardening; `certifyedge-ci.md` matrix |
+| B2 — workflow_certificate_modes + release-grade mode policy | Done | Catalog map; Rust/TS parity; sibling heuristic skipped under `--release-grade` |
+| B3 — TraceSafeR sole tool-use LeanKernelChecked path | Done | Release-grade lean-check/codegen/conformance; `claim-boundary.md` updated |
+| B6 — ContractChecked missing contract file fixture | Done | `certificate_mode_contractcheckedcertificate_missing_contract_file/` |
+| B7 — Documentation sync | Done | merge-readiness, gap audit, README, audit-claims |
+| Phase 3 — PCS envelope lean-proof | Done | PCS generated-lean-proof conformance; multi-artifact witness codegen |
+
+### Remaining honest deferrals (post B1–B7)
+
+- Full global cross-tenant non-interference (v0.2+ research; see `non-interference.md`).
+- Full JSON contract Lean discharge for role/policy/evidence fields.
+- Write footprint ↔ effect linkage as derived kernel theorem.
+- Live provability-fabric-core orchestration beyond adapter hash parity.
+- Rust/TS do not emit `LeanKernelChecked` (Python lean-check authority).
+- Base `TraceSafe` kernel unchanged; release-grade tool-use requires TraceSafeR chain.
+
+## v0.2+ research backlog (deferred)
+
+Track as separate milestones; no public claim upgrade without proofs + fixtures + CI subchecks:
+
+| Item | Deliverable |
+|------|-------------|
+| Full global cross-tenant NI | Extend `non-interference.md` adversary model + new lemmas |
+| Full JSON contract Lean discharge | Extend `ContractDecide.lean` for policy/evidence refs |
+| Write footprint ↔ effect linkage | Derived theorem from `ActionAdmissible` + catalog |
+| Live provability-fabric-core orchestration | Beyond `scripts/run-pf-core-adapter-ci.sh` hash parity |
+| Agent runtime / MCP / NL policy | Out of scope per `mission.md` |

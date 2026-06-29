@@ -174,10 +174,10 @@ PF-Core is the trace-safety kernel in `pcs-core`: Python deciders aligned with L
 
 | Topic | Detail |
 |-------|--------|
-| Tool-use certificate mode | Traces declare **`required_certificate_mode: TraceSafeRCertificate`** (policy field on `PFCoreTrace.v0`); **`WorkflowProfile.v0` `formalization.pf_core.required_certificate_mode`** for `agent_tool_use.safety_v0`; legacy examples may still resolve via sibling `tool_use_trace.json`. Release-grade lean-check rejects tool-use traces that resolve to base `TraceSafeCertificate` only. |
+| Tool-use certificate mode | **`TraceSafeRCertificate`** is the sole release-grade `LeanKernelChecked` path for tool-use traces: set `required_certificate_mode` on the trace, resolve via catalog `workflow_certificate_modes`, or `WorkflowProfile` policy. Release-grade mode resolution skips the sibling-file heuristic; base `TraceSafeCertificate` is legacy/non–tool-use only. |
 | Capability catalog | `catalog/pf_core.catalog.json` is the single source; `python/scripts/gen_pf_core_catalog.py` generates Python, Rust, TypeScript, and Lean maps (no manual `TOOL_NAME_MAP` drift). |
 | Release bundles | `pcs pf-core bundle-release` copies trace, certificate, proof, **`lean-toolchain`**, **`lean/lakefile.lean`**, **`lean/lake-manifest.json`**, and a **`kernel/`** tree; `kernel_manifest.json` lists per-file `sha256:` digests. `validate-bundle` checks the bundle alone (hashes from bundled contents only). |
-| CertifyEdge | **Mock** (`mock://`, dev/CI demos) vs **live/stub** (release gate). Release tags require live or format stub; mock is rejected on the release path. |
+| CertifyEdge | Three attestation classes: **live** (release gate), **stub** (`stub://`, format validation / staging with explicit flag), **mock** (`mock://`, dev CI only). Release path rejects mock; stub requires `PF_CORE_CERTIFYEDGE_ALLOW_STUB=1` when `require_live`. |
 
 ### PF-Core quick start
 
