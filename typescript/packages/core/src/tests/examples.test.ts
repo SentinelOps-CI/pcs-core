@@ -417,7 +417,8 @@ test("pf-core generated tool_map parity", () => {
   assert.equal(pattern, "/data/*");
   assert.throws(() => resolveToolMapping("unknown.tool", "misc"));
   const tracePath = join(examplesDir, "pf-core-valid/tool_use_trace_compiled/pfcore_trace.json");
-  assert.equal(resolveCertificateModeDefault({}, tracePath), "TraceSafeRCertificate");
+  const trace = JSON.parse(readFileSync(tracePath, "utf8")) as Record<string, unknown>;
+  assert.equal(resolveCertificateModeDefault({}, tracePath, trace), "TraceSafeRCertificate");
 });
 
 test("shared hash vectors match test_vectors/hash fixtures", () => {

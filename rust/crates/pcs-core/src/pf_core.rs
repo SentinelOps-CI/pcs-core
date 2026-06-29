@@ -357,13 +357,26 @@ pub fn resolve_tool_mapping(
     ))
 }
 
-pub fn resolve_certificate_mode_default(certificate: &Value, trace_path: Option<&str>) -> String {
+pub fn resolve_certificate_mode_default(
+    certificate: &Value,
+    trace: Option<&Value>,
+    trace_path: Option<&str>,
+) -> String {
     if let Some(mode) = certificate
         .get("certificate_mode")
         .and_then(|v| v.as_str())
         .filter(|mode| certificate_mode_is_valid(mode))
     {
         return mode.to_string();
+    }
+    if let Some(trace) = trace {
+        if let Some(required) = trace
+            .get("required_certificate_mode")
+            .and_then(|v| v.as_str())
+            .filter(|mode| certificate_mode_is_valid(mode))
+        {
+            return required.to_string();
+        }
     }
     if let Some(path) = trace_path {
         let trace_dir = std::path::Path::new(path).parent();
@@ -1678,9 +1691,11 @@ mod tests {
     fn pf_core_tool_use_certificate_mode_default() {
         let trace_path =
             repo_root().join("examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json");
+        let trace = load_json(trace_path.clone());
         let certificate = serde_json::json!({});
         let mode = resolve_certificate_mode_default(
             &certificate,
+            Some(&trace),
             Some(trace_path.to_str().expect("utf8")),
         );
         assert_eq!(mode, TOOL_USE_DEFAULT_CERTIFICATE_MODE);

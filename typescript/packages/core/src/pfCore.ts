@@ -433,10 +433,15 @@ export function resolveToolMapping(
 export function resolveCertificateModeDefault(
   certificate: Record<string, unknown>,
   tracePath?: string,
+  trace?: Record<string, unknown>,
 ): string {
   const explicit = certificate.certificate_mode;
   if (typeof explicit === "string" && CERTIFICATE_MODES.has(explicit)) {
     return explicit;
+  }
+  const required = trace?.required_certificate_mode;
+  if (typeof required === "string" && CERTIFICATE_MODES.has(required)) {
+    return required;
   }
   if (tracePath && existsSync(join(dirname(tracePath), "tool_use_trace.json"))) {
     return TOOL_USE_DEFAULT_CERTIFICATE_MODE;
