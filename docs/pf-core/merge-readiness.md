@@ -1,19 +1,19 @@
 # PF-Core merge readiness
 
-Release-ready verification log for PF-Core on `main` (local uncommitted session 2026-06-28).
+Release-ready verification log for PF-Core on `main`.
 
-## Status: release-ready (local verification)
+## Status: release-ready
 
-All critical issues #1-7 addressed. Local release-grade matrix passes with native `lake` on Windows. Changes in this session are **uncommitted** per operator request.
+All six critical-issue plan steps verified on HEAD (`9724c6b`, 2026-06-29). No code fixes required — blockers referenced at `b5ed639` are resolved on current main. Local release-grade matrix passes with native `lake` on Windows.
 
-## HEAD CI evidence (2026-06-28)
+## HEAD CI evidence (2026-06-29)
 
 | Workflow | SHA | Run ID | Result | Notes |
 |----------|-----|--------|--------|-------|
-| CI | `6a6efe6` | 28329193168 | success | HEAD on main; all CI jobs green |
-| Release chain | `6a6efe6` | (paired) | success | `validate-release-chain` green |
+| CI | `9724c6b` | 28330791563 | success | HEAD on main; all CI jobs green |
+| Release chain | `9724c6b` | 28330791564 | success | `validate-release-chain` green |
 
-Prior fix commits: `15eb268` (ruff import), `6a6efe6` (UTF-8 encoding).
+Prior fix commits (already on main): `21d1575` (And.intro mode obligations), `d24162f`/`15eb268` (CertifyEdge + ruff), catalog `tool_map` generation, kernel bundle manifest.
 
 ## Local verification matrix (A-G plan)
 
@@ -27,11 +27,11 @@ Prior fix commits: `15eb268` (ruff import), `6a6efe6` (UTF-8 encoding).
 | F. Merge-readiness bundle | **complete** | This document | Verification matrix populated |
 | G. CertifyEdge live path (stub) | **complete** | `scripts/pf-core-certifyedge-stub-dry-run.ps1` | `stub://` attestation, `checker_version`, attestation in `assumption_refs` |
 
-## Full release-grade local proof
+## Full release-grade local proof (2026-06-29)
 
 | Step | Result | Notes |
 |------|--------|-------|
-| `scripts/pf-core-release-grade-local.ps1` | OK | Full matrix |
+| `scripts/pf-core-release-grade-local.ps1` | OK | Full matrix (285 pytest, lake PFCore+PCS, lean-check, bundle, rust, CertifyEdge mock+stub) |
 | All `test_pf_core_*.py` | OK | pytest sweep |
 | `pytest -k pf_core` | OK | PF-Core subset |
 | Certificate-mode codegen (no `: True := trivial`) | OK | grep clean on `lean/PFCore/Generated/` |
@@ -46,6 +46,17 @@ Prior fix commits: `15eb268` (ruff import), `6a6efe6` (UTF-8 encoding).
 | `npm test` (@pcs/core) | OK | TypeScript parity tests |
 | `pcs conformance run --suite pf-core --release-grade` | OK | Release-grade conformance |
 | PCS Lean codegen prop theorems | OK | Three component `*_prop` + aggregate in `lean/PCS/Generated/` |
+
+## Six-step critical issues audit (2026-06-29, HEAD `9724c6b`)
+
+| Step | Audit | Evidence |
+|------|-------|----------|
+| 1. Release evidence | **already done** | CI + Release chain green on `9724c6b`; local `pf-core-release-grade-local.ps1` all steps OK |
+| 2. Marker theorems | **already done** | Grep `: True := trivial` clean on `lean/PFCore/Generated/` and codegen; `lean_and_intro_theorem` emits `And.intro` chains |
+| 3. TraceSafeRCertificate | **already done** | 7 modes in schema/codegen; `MODE_OBLIGATION_THEOREMS` includes `concrete_trace_safe_r*`; tool-use default via `tool_use_trace.json` sibling |
+| 4. tool_map | **already done** | `catalog/pf_core.catalog.json` `tool_map`; generated `pf_core_catalog.py`/Rust/TS; runtime imports catalog (no manual map) |
+| 5. Kernel in bundles | **already done** | `build_kernel_manifest()` per-file sha256; `kernel/` copied into bundle; `validate-bundle` validates from manifest not checkout |
+| 6. CertifyEdge release hardening | **already done** | `PF_CORE_CERTIFYEDGE_REQUIRE_LIVE`, `--require-live`, release gate rejects `mock://`; dev CI mock path preserved |
 
 ## Issue status (critical fix plan)
 
