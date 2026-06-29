@@ -101,11 +101,14 @@ Reference: `docs/pf-core/claim-boundary.md`, `docs/pf-core/non-interference.md`,
 
 These steps mirror CI without pushing a tag or committing.
 
-### PF-Core release gate (`workflow_dispatch`)
+### PF-Core release gate (`workflow_dispatch` or tag)
 
 Workflow file: `.github/workflows/pf-core-release-gate.yml`
 
-1. Open GitHub → Actions → **PF-Core Release Gate** → **Run workflow** (branch: `main`).
+**Tag dry-run (no push):** create a local annotated tag only, or use `workflow_dispatch` on branch `main` — do not push `v*` tags until sign-off below is complete.
+
+1. Open GitHub → Actions → **PF-Core Release Gate** → **Run workflow** (branch: `main`, or select a release candidate branch).
+2. Alternatively, push tag `v0.1.x` only after local `scripts/pf-core-release-grade-local.{ps1,sh}` and release-chain validation pass.
 2. The job installs `python/` and runs CertifyEdge with `PF_CORE_CERTIFYEDGE_REQUIRE_LIVE=1` and `--require-live`.
 3. Live CLI resolution order: `secrets.PF_CORE_CERTIFYEDGE_CLI` → `certifyedge` on PATH → `scripts/certifyedge-stub.py`.
 4. Success criteria: `/tmp/PFCoreCertificate.certifyedge.release.json` validates; attestation is not `mock://`; `checker` and `checker_version` present.
@@ -160,4 +163,4 @@ Complete before tagging; record date and operator in this section (local edit on
 | README PF-Core section accurate | Manual review | | | |
 | Honest deferrals unchanged or updated | `docs/pf-core/merge-readiness.md` | | | |
 
-**2026-06-29 local run (`9d69386`):** all automated gates in rows 1–7 passed on Windows native `lake`. Row 8–9 updated in this release prep pass. No tag pushed.
+**2026-06-29 local run (`2012a1d` + remaining-work sweep):** all automated gates in rows 1–7 passed on Windows native `lake`. WorkflowProfile certificate-mode policy, PCS witness admissibility codegen, adversarial READMEs, and `run-release-verify.sh` bundle isolation aligned. Rows 8–9 reviewed. No tag pushed.
