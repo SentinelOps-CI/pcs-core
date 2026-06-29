@@ -34,6 +34,7 @@
     "source_repo": { "type": "string", "format": "uri" },
     "source_commit": { "type": "string", "minLength": 7 },
     "local_dev": { "type": "boolean" },
+    "required_certificate_mode": { "$ref": "pf_core.defs.json#/$defs/certificate_mode" },
     "signature_or_digest": { "$ref": "common.defs.json#/$defs/hex_digest" }
   }
 }

@@ -33,6 +33,18 @@
         "OutOfScope"
       ]
     },
+    "certificate_mode": {
+      "type": "string",
+      "enum": [
+        "TraceSafeCertificate",
+        "TraceSafeRCertificate",
+        "FramePreservedCertificate",
+        "EffectFrameCertificate",
+        "HandoffSafeCertificate",
+        "CompositionalExtensionCertificate",
+        "ContractCheckedCertificate"
+      ]
+    },
     "decision": {
       "type": "string",
       "enum": ["allow", "deny"]
