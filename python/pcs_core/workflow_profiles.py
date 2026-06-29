@@ -81,6 +81,23 @@ def audit_workflow_profile_files() -> list[str]:
     return errors
 
 
+def required_certificate_mode_for_workflow(workflow_id: str) -> str | None:
+    """Return PF-Core certificate mode from WorkflowProfile formalization, if declared."""
+    profile = load_workflow_profile(workflow_id)
+    if profile is None:
+        return None
+    formalization = profile.get("formalization")
+    if not isinstance(formalization, dict):
+        return None
+    pf_core = formalization.get("pf_core")
+    if not isinstance(pf_core, dict):
+        return None
+    mode = pf_core.get("required_certificate_mode")
+    if isinstance(mode, str) and mode.strip():
+        return mode.strip()
+    return None
+
+
 def required_release_blocking_refs_for_profile(workflow_profile_id: str | None) -> set[str]:
     if not workflow_profile_id:
         from pcs_core.registry_semantics import collect_required_release_blocking_refs
