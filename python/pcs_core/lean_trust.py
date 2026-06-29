@@ -420,10 +420,12 @@ def run_lean_check(
     import sys
 
     from pcs_core.pcs_lean_codegen import (
+        aggregate_lean_theorem_for_workflow,
         compute_lean_environment_hash,
         generate_proof_obligation_file,
         generated_module_name,
         proof_term_ref_from_path,
+        workflow_id_from_obligations,
     )
 
     print(PCS_LEAN_CHECK_DISCLAIMER, file=sys.stderr)
@@ -480,12 +482,14 @@ def run_lean_check(
             from pcs_core.lean_check import compute_proof_term_hash
 
             proof_term_hash = compute_proof_term_hash(proof_path)
+            workflow_id = workflow_id_from_obligations(obligations_doc)
+            aggregate_theorem = aggregate_lean_theorem_for_workflow(workflow_id)
             obligation_results.append(
                 {
                     "obligation_id": f"generated_{module}",
                     "kind": "ReleaseChainAdmissible",
                     "status": "passed",
-                    "lean_theorem": "concrete_release_chain_admissible_prop",
+                    "lean_theorem": aggregate_theorem,
                     "failure_reason": "",
                 },
             )
