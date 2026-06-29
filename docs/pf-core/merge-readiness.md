@@ -4,7 +4,7 @@ Release-ready verification log for PF-Core on `main`.
 
 ## Status: release-ready
 
-All six critical-issue plan steps verified on HEAD (`9724c6b`, 2026-06-29). No code fixes required — blockers referenced at `b5ed639` are resolved on current main. Local release-grade matrix passes with native `lake` on Windows.
+All six critical-issue plan steps verified on HEAD (`9724c6b`, 2026-06-29). Local release-grade re-run on `9d69386` (2026-06-29) confirms no regressions. No code fixes required — blockers referenced at `b5ed639` are resolved on current main.
 
 ## HEAD CI evidence (2026-06-29)
 
@@ -13,25 +13,27 @@ All six critical-issue plan steps verified on HEAD (`9724c6b`, 2026-06-29). No c
 | CI | `9724c6b` | 28330791563 | success | HEAD on main; all CI jobs green |
 | Release chain | `9724c6b` | 28330791564 | success | `validate-release-chain` green |
 
-Prior fix commits (already on main): `21d1575` (And.intro mode obligations), `d24162f`/`15eb268` (CertifyEdge + ruff), catalog `tool_map` generation, kernel bundle manifest.
+Prior fix commits (already on main): `21d1575` (And.intro mode obligations), `d24162f`/`15eb268` (CertifyEdge + ruff), catalog `tool_map` generation, kernel bundle manifest. Documentation record: `9d69386`.
 
 ## Local verification matrix (A-G plan)
 
 | Plan item | Status | Local command | Result |
 |-----------|--------|---------------|--------|
-| A. PCS per-obligation Lean | **incremental** | `pytest tests/test_pcs_lean_codegen.py`; `lake build PCS` | Component prop theorems (`*_prop`) for all three release-chain obligations; tool-use/computation codegen deferred |
+| A. PCS per-obligation Lean | **incremental** | `pytest tests/test_pcs_lean_codegen.py`; `lake build PCS` | LabTrust + tool-use + computation witness codegen; tool-use `EnvelopeLeanChecked` compiles; full witness admissibility deferred |
 | B. Compositional trust | **complete** | `pytest tests/test_pf_core_compositional.py tests/test_pf_core_research.py` | All roadmap theorems proved in Lean; runtime tests pass |
 | C. Release checklist | **complete** | See `docs/pf-core/release-checklist.md` local matrix | Every gate has local command |
 | D. Cross-language parity | **complete** | `pytest tests/test_pf_core_cross_language.py`; `cargo test pf_core`; `npm test` | TraceSafeRCertificate, tool_map, mode obligations, resource scope, cross-tenant, NI |
-| E. Examples and conformance | **complete** | `pcs examples check`; `pcs conformance run --suite pf-core --release-grade` | 18/18 pf-core-valid dirs have manifests |
+| E. Examples and conformance | **complete** | `pcs examples check`; `pcs conformance run --suite pf-core --release-grade` | 18/18 pf-core-valid dirs; `tool_use_trace_compiled` documents TraceSafeRCertificate path |
 | F. Merge-readiness bundle | **complete** | This document | Verification matrix populated |
 | G. CertifyEdge live path (stub) | **complete** | `scripts/pf-core-certifyedge-stub-dry-run.ps1` | `stub://` attestation, `checker_version`, attestation in `assumption_refs` |
 
-## Full release-grade local proof (2026-06-29)
+## Full release-grade local proof (2026-06-29, re-run on `9d69386`)
 
 | Step | Result | Notes |
 |------|--------|-------|
 | `scripts/pf-core-release-grade-local.ps1` | OK | Full matrix (285 pytest, lake PFCore+PCS, lean-check, bundle, rust, CertifyEdge mock+stub) |
+| Release-chain protocol | OK | `validate-release-chain` labtrust + tool-use + computation-release |
+| `pytest tests/test_pcs_lean_codegen.py` | OK | 10 tests; tool-use `EnvelopeLeanChecked` with aggregate theorem |
 | All `test_pf_core_*.py` | OK | pytest sweep |
 | `pytest -k pf_core` | OK | PF-Core subset |
 | Certificate-mode codegen (no `: True := trivial`) | OK | grep clean on `lean/PFCore/Generated/` |
@@ -42,10 +44,10 @@ Prior fix commits (already on main): `21d1575` (And.intro mode obligations), `d2
 | `bundle-release` / `validate-bundle` | OK | `kernel_manifest.json` + bundled `kernel/` |
 | CertifyEdge mock + stub dry-run | OK | Mock dev path; stub format contract |
 | Rust/TS `TOOL_NAME_MAP` + mode default parity | OK | `resolve_tool_mapping` / `resolveCertificateModeDefault` |
-| `cargo test pf_core` | OK | Rust parity tests |
-| `npm test` (@pcs/core) | OK | TypeScript parity tests |
+| `cargo test pf_core` | OK | 19 Rust parity tests |
+| `npm test` (@pcs/core) | OK | 28 TypeScript tests |
 | `pcs conformance run --suite pf-core --release-grade` | OK | Release-grade conformance |
-| PCS Lean codegen prop theorems | OK | Three component `*_prop` + aggregate in `lean/PCS/Generated/` |
+| PCS Lean codegen (tool-use + computation) | OK | `lean/PCS/Generated/release_pcs_v0_1_tool_use_safety.lean`, `..._scientific_computation.lean` compile |
 
 ## Six-step critical issues audit (2026-06-29, HEAD `9724c6b`)
 
@@ -86,7 +88,8 @@ Prior fix commits (already on main): `21d1575` (And.intro mode obligations), `d2
 ## Honest deferrals
 
 - Full global non-interference under adversarial schedulers.
-- PCS tool-use / computation witness Lean codegen (predicates exist; no fixture path yet).
+- PCS computation witness full `witnessResultHashesAdmissible` codegen (single-hash listing proved; all-hashes admissibility deferred).
+- PCS tool-use Lean codegen does not discharge PF-Core `TraceSafeR` / resource-scope kernel proofs.
 - Live CertifyEdge production deployment beyond stub/CLI matrix.
 - WSL duplicate Lean path on Windows hosts without native `lake`.
 - Rust/TS do not emit `LeanKernelChecked` certificates (Python lean-check only).
