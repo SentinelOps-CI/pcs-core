@@ -603,7 +603,72 @@ def _suite_pf_core() -> tuple[list[str], list[str], int]:
     checks += 1
     errors.extend(audit_pfcore_lean_no_sorry())
     checks = _check_pf_core_generated_lean_proof(errors, checks)
+    checks = _check_pcs_envelope_generated_lean_proof(errors, checks)
     return errors, [], checks
+
+
+def _check_pcs_envelope_generated_lean_proof(errors: list[str], checks: int) -> int:
+    import platform
+    import shutil
+
+    from pcs_core.lean_trust import extract_proof_obligations_from_release, run_lean_check
+
+    release_names = (
+        "labtrust-release",
+        "tool-use-release",
+        "computation-release",
+    )
+
+    lake_available = shutil.which("lake") is not None
+    wsl_available = platform.system() == "Windows" and shutil.which("wsl") is not None
+    if not lake_available and not wsl_available:
+        if conformance_release_grade():
+            errors.append(
+                "pcs-envelope.generated-lean-proof: release-grade requires lake or WSL "
+                "for Lean proof check"
+            )
+            return checks + 1
+        return checks
+
+    for release_name in release_names:
+        release_path = examples_dir() / release_name
+        checks += 1
+        if not release_path.is_dir():
+            errors.append(f"pcs-envelope.generated-lean-proof: missing {release_name}")
+            continue
+        try:
+            obligations_doc = extract_proof_obligations_from_release(release_path)
+        except ValueError as exc:
+            errors.append(f"pcs-envelope.generated-lean-proof/{release_name}: {exc}")
+            continue
+        result = run_lean_check(
+            obligations_doc,
+            require_lean_build=True,
+            lean_proof=True,
+        )
+        if result.get("status") != "ProofChecked":
+            failures = [
+                item.get("failure_reason")
+                for item in result.get("obligation_results") or []
+                if isinstance(item, dict) and item.get("status") == "failed"
+            ]
+            errors.append(
+                f"pcs-envelope.generated-lean-proof/{release_name}: lean-check failed "
+                f"({failures or result.get('claim_class')})"
+            )
+            continue
+        if result.get("claim_class") != "EnvelopeLeanChecked":
+            errors.append(
+                f"pcs-envelope.generated-lean-proof/{release_name}: "
+                "expected claim_class EnvelopeLeanChecked"
+            )
+            continue
+        if not result.get("lean_proof_checked"):
+            errors.append(
+                f"pcs-envelope.generated-lean-proof/{release_name}: "
+                "lean_proof_checked must be true"
+            )
+    return checks
 
 
 def _check_pf_core_generated_lean_proof(errors: list[str], checks: int) -> int:

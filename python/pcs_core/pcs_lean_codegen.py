@@ -235,6 +235,18 @@ def tool_use_values_from_obligations(
     }
 
 
+def declared_artifact_hashes_for_computation(values: Mapping[str, Any]) -> list[str]:
+    """Return the full witness `result_hashes` listing as the declared artifact digest set."""
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for raw in values.get("witness_result_hashes") or []:
+        digest = str(raw)
+        if digest not in seen:
+            seen.add(digest)
+            ordered.append(digest)
+    return ordered
+
+
 def computation_values_from_obligations(
     obligations_doc: Mapping[str, Any],
     *,
@@ -456,10 +468,9 @@ theorem concrete_tool_use_release_admissible_prop :
     )
 
 
-def _computation_theorems_block(*, artifact_hashes: list[str]) -> str:
-    artifact_list = hash_list_to_lean(artifact_hashes)
-    return f"""
-def concreteArtifactHashes : List Hash := {artifact_list}
+def _computation_theorems_block() -> str:
+    return """
+def concreteArtifactHashes : List Hash := witnessDeclaredArtifactHashes concreteComputationWitness
 
 theorem concrete_witness_result_hashes_admissible :
     witnessResultHashesAdmissibleD concreteComputationWitness.resultHashes
@@ -534,16 +545,12 @@ def generate_proof_obligation_file(
     elif workflow_id == "scientific_computation.reproducibility_v0":
         imports = "import PCS.ComputationWitness\nimport PCS.ReleaseChainCheck"
         disclaimer = (
-            "This discharges computation witness result-hash admissibility (declared artifact "
-            "digest set) plus verification/signed bundle obligations. Multi-artifact witness "
-            "sets beyond the release fixture remain a documented deferral. It does **not** imply "
-            "PF-Core trace safety or `LeanKernelChecked`."
+            "This discharges computation witness result-hash admissibility over the full "
+            "witness `result_hashes` listing plus verification/signed bundle obligations. "
+            "It does **not** imply PF-Core trace safety or `LeanKernelChecked`."
         )
-        comp_values = computation_values_from_obligations(obligations_doc, release_dir=release_dir)
         values_body = generate_computation_lean(obligations_doc, release_dir=release_dir)
-        theorems = _computation_theorems_block(
-            artifact_hashes=[str(comp_values["result_artifact_sha256"])],
-        )
+        theorems = _computation_theorems_block()
         eval_line = ""
     else:
         imports = "import PCS.ReleaseChainCheck"

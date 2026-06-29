@@ -13,6 +13,7 @@ from pcs_core.paths import examples_dir, repo_root
 from pcs_core.pcs_lean_codegen import (
     aggregate_lean_theorem_for_workflow,
     computation_values_from_obligations,
+    declared_artifact_hashes_for_computation,
     generate_from_release_dir,
     generate_proof_obligation_file,
     generated_module_name,
@@ -91,8 +92,11 @@ def test_tool_use_values_from_obligations() -> None:
 
 def test_computation_values_from_obligations() -> None:
     doc = extract_proof_obligations_from_release(COMPUTATION)
-    values = computation_values_from_obligations(doc)
+    values = computation_values_from_obligations(doc, release_dir=COMPUTATION)
     assert values["result_artifact_sha256"] in values["witness_result_hashes"]
+    declared = declared_artifact_hashes_for_computation(values)
+    assert declared == values["witness_result_hashes"]
+    assert len(declared) >= 2
 
 
 def test_generate_tool_use_proof_file(tmp_path: Path) -> None:
@@ -110,6 +114,7 @@ def test_generate_computation_proof_file(tmp_path: Path) -> None:
     doc = extract_proof_obligations_from_release(COMPUTATION)
     path = generate_proof_obligation_file(doc, tmp_path, release_dir=COMPUTATION)
     text = path.read_text(encoding="utf-8")
+    assert "witnessDeclaredArtifactHashes concreteComputationWitness" in text
     assert "concrete_witness_result_hashes_admissible_prop" in text
     assert "concrete_witness_result_hash_listed_prop" in text
     assert "concrete_computation_release_admissible_prop" in text

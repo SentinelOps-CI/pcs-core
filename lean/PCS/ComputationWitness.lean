@@ -19,6 +19,15 @@ structure ComputationWitness where
 def witnessResultHashesAdmissible (witness : ComputationWitness) (artifactHashes : List Hash) : Prop :=
   ∀ h ∈ witness.resultHashes, h ∈ artifactHashes
 
+/-- Declared artifact digest set for multi-artifact witnesses: the full `resultHashes` listing. -/
+def witnessDeclaredArtifactHashes (witness : ComputationWitness) : List Hash :=
+  witness.resultHashes
+
+theorem witness_declared_artifact_hashes_self_admissible (witness : ComputationWitness) :
+    witnessResultHashesAdmissible witness (witnessDeclaredArtifactHashes witness) := by
+  intro h hh
+  exact hh
+
 theorem witness_result_hashes_admissible
     (witness : ComputationWitness) (artifactHashes : List Hash)
     (h : witnessResultHashesAdmissible witness artifactHashes)

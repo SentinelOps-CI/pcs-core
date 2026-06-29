@@ -5,7 +5,8 @@
   "lean_module": "PCS.Theorems",
   "lean_theorem": "ReleaseChainAdmissible",
   "status": "ProofChecked",
-  "checked_at": "2026-06-28T00:48:30Z",
+  "claim_class": "ProofChecked",
+  "checked_at": "2026-06-29T20:58:12Z",
   "lean_version": "leanprover/lean4:stable",
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
@@ -33,5 +34,7 @@
       "failure_reason": ""
     }
   ],
-  "signature_or_digest": "sha256:46006f2dbeb6b1ed7d4840e085dbbdd7e1c3c977b24d0ea8e0af50878206365d"
+  "lean_proof_checked": false,
+  "disclaimer": "PCS release-envelope consistency check validates ProofObligation.v0 release-envelope consistency against the PCS theorem catalog. A `ProofChecked` or `EnvelopeLeanChecked` LeanCheckResult does not imply PF-Core trace safety. Use `pcs pf-core lean-check --trace <PFCoreTrace.v0.json>` for PF-Core kernel assurance.",
+  "signature_or_digest": "sha256:109a70fec3c3f1a838f458a8b647b57ffef269db94eaacc6e3eb318b482b5efd"
 }

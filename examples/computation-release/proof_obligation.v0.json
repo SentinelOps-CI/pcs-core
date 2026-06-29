@@ -10,7 +10,8 @@
       "inputs": {
         "witness_id": "witness-sci-comp-repro-001",
         "witness_result_hashes": [
-          "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
         ],
         "result_artifact_sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         "witness_status": "CertificateChecked",
@@ -61,5 +62,5 @@
   "lean_module": "PCS.Theorems",
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:8f3640d982b551859055d5fb1f351b8f099bc3b3f5b6c9feda56bee69aaa6c83"
+  "signature_or_digest": "sha256:a732eaa1158b399f7e73917689f293a58a033c9c256a7f0b7f45e84aecb5f2c5"
 }

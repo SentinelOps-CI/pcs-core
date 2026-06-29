@@ -13,10 +13,10 @@
     "environment_receipt.json": "sha256:c01a8f055da8965e01c1172eb7ff9f58e702619261a6d6159e24ee861e134598",
     "computation_run_receipt.json": "sha256:567e0adeec5bc61786efa529dcb777f5ac2ddda1f8cb1160d67e5638405cbd4a",
     "result_artifact.json": "sha256:a2b8d26f9d0e056e7fd963156021a88b43c764c84357e2ff8ae70cd2c2d99acc",
-    "computation_witness.json": "sha256:b89def93118f055abb45b8b0187e2aaeb452ec6eae502c9ba9bbf7ded83377cb",
+    "computation_witness.json": "sha256:fc8aa214f4e08a205734ed1d11efe04979430001c966b7b9b66a4ec36f809532",
     "science_claim_bundle.certified.json": "sha256:5a6a675d23354d219e85daec27a89443d8648d158249e86c48b99528b4412643",
     "verification_result.json": "sha256:f78c35d74928bb139e2d507424a022f2dfa78fcc2e1a67ccd4adeb0f51e0b43c",
     "signed_science_claim_bundle.json": "sha256:e6419afb62cf88f2ae12f5f8bf58fc7ebde8cf7f2f28b61c9aea1a2aba889c4a",
-    "scientific_memory_import_report.json": "sha256:ba324c85c2aee78e1893c7b667e8580cbeede842b7027d42b9474b8c9dafbe70"
+    "scientific_memory_import_report.json": "sha256:2e0eb651afa576796cab671320b7d8dea52dac0dd7864ba55501fdebfe9a06ca"
   }
 }

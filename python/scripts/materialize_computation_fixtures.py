@@ -182,7 +182,9 @@ def _witness_body(
         "dataset_hash": dataset_hash or dataset["aggregate_hash"],
         "environment_hash": environment_hash or receipt_body_digest(environment),
         "run_receipt_hash": run_receipt_hash or receipt_body_digest(run_receipt),
-        "result_hashes": result_hashes if result_hashes is not None else [str(result["sha256"])],
+        "result_hashes": result_hashes
+        if result_hashes is not None
+        else [str(result["sha256"]), str(run_receipt["stdout_hash"])],
         "code_repo": RUNNER_REPO,
         "code_commit": code_commit if code_commit is not None else run_receipt["code_commit"],
         "checker": "certifyedge",
