@@ -39,6 +39,7 @@ def is_tool_use_trace(
             return True
     return False
 
+
 AUTHORIZATION_TO_DECISION = {
     "authorized": "allow",
     "rejected": "deny",
