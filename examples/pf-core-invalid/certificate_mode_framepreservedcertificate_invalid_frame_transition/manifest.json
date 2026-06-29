@@ -1,0 +1,7 @@
+{
+  "expected_error": "TenantIsolation",
+  "must_fail_at": "validate_tenant_isolation",
+  "certificate_mode": "FramePreservedCertificate",
+  "artifact_file": "trace.json",
+  "artifact_type": "PFCoreTrace.v0"
+}

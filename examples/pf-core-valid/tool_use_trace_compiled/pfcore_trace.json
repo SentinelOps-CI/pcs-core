@@ -123,11 +123,12 @@
       "signature_or_digest": "sha256:7994dfefd17f813d69a257195ba97cba519c4698f475b55a90933fc29a5db839"
     }
   ],
-  "trace_hash": "sha256:716cbed45d37ebe49deffd517021e74f7f8751f6baf6e00c2fdc6c3022b626f3",
+  "trace_hash": "sha256:794df7257eed7064fc0c51ad0293c77ca6dcd9a913f7fd2aabb29d630bb6edff",
   "policy_hash": "sha256:76d4443f09c6fb0d6cc7bebc5c80eae53bd008e4a212ab61d0d1844ac773b5cd",
   "contract_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
   "claim_class": "RuntimeChecked",
+  "required_certificate_mode": "TraceSafeRCertificate",
   "source_repo": "https://github.com/example/agent-runtime",
   "source_commit": "a111111111111111111111111111111111111111",
-  "signature_or_digest": "sha256:716cbed45d37ebe49deffd517021e74f7f8751f6baf6e00c2fdc6c3022b626f3"
+  "signature_or_digest": "sha256:794df7257eed7064fc0c51ad0293c77ca6dcd9a913f7fd2aabb29d630bb6edff"
 }

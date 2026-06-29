@@ -514,8 +514,84 @@ def generate_hash_vectors() -> None:
     )
 
 
+def generate_certificate_mode_adversarial_fixtures() -> None:
+    """Mode-specific invalid traces wired for release-grade conformance."""
+    cases = [
+        (
+            "certificate_mode_tracesafercertificate_resource_scope_on_allow",
+            "TraceSafeRCertificate",
+            INVALID / "resource_scope_violation" / "trace.json",
+            "ResourceScopeViolation",
+            "validate_pfcore_trace_hash_chain",
+            "trace.json",
+        ),
+        (
+            "certificate_mode_framepreservedcertificate_invalid_frame_transition",
+            "FramePreservedCertificate",
+            INVALID / "cross_tenant_allowed_event" / "trace.json",
+            "TenantIsolation",
+            "validate_tenant_isolation",
+            "trace.json",
+        ),
+        (
+            "certificate_mode_effectframecertificate_undeclared_effect",
+            "EffectFrameCertificate",
+            INVALID / "capability_effect_mismatch" / "trace.json",
+            "CapabilityEffectMismatch",
+            "validate_semantics",
+            "trace.json",
+        ),
+        (
+            "certificate_mode_handoffsafecertificate_delegated_expansion",
+            "HandoffSafeCertificate",
+            None,
+            "HandoffAuthorityExpansion",
+            "validate_handoff_authority",
+            "handoff.json",
+        ),
+        (
+            "certificate_mode_compositionalextensioncertificate_unsafe_extension",
+            "CompositionalExtensionCertificate",
+            INVALID / "cross_tenant_leak" / "trace.json",
+            "TenantIsolation",
+            "validate_tenant_isolation",
+            "trace.json",
+        ),
+        (
+            "certificate_mode_contractcheckedcertificate_failed_precondition",
+            "ContractCheckedCertificate",
+            INVALID / "contract_ref_missing" / "trace.json",
+            "ContractRefMissing",
+            "validate_trace_contracts",
+            "trace.json",
+        ),
+    ]
+    for name, mode, src, expected_error, must_fail_at, artifact_file in cases:
+        case = INVALID / name
+        case.mkdir(parents=True, exist_ok=True)
+        if name.endswith("delegated_expansion"):
+            shutil.copy2(INVALID / "handoff_authority_expansion" / "handoff.json", case / "handoff.json")
+        elif src is not None:
+            shutil.copy2(src, case / artifact_file)
+            if must_fail_at == "validate_trace_contracts":
+                contracts_src = INVALID / "contract_ref_missing" / "contracts"
+                if contracts_src.is_dir():
+                    shutil.copytree(contracts_src, case / "contracts", dirs_exist_ok=True)
+        write_manifest(
+            case,
+            expected_error=expected_error,
+            must_fail_at=must_fail_at,
+            certificate_mode=mode,
+            artifact_file=artifact_file,
+            artifact_type="PFCoreTrace.v0"
+            if artifact_file == "trace.json"
+            else "PFCoreHandoff.v0",
+        )
+
+
 def main() -> None:
     generate_invalid_fixtures()
+    generate_certificate_mode_adversarial_fixtures()
     generate_hash_vectors()
     print("generated deferred PF-Core fixtures and hash vectors")
 

@@ -1,0 +1,7 @@
+{
+  "expected_error": "ContractRefMissing",
+  "must_fail_at": "validate_trace_contracts",
+  "certificate_mode": "ContractCheckedCertificate",
+  "artifact_file": "trace.json",
+  "artifact_type": "PFCoreTrace.v0"
+}

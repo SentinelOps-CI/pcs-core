@@ -1,0 +1,33 @@
+{
+  "schema_version": "v0",
+  "artifact_type": "PFCoreHandoff.v0",
+  "handoff_id": "handoff-bad-1",
+  "from_principal": {
+    "principal_id": "agent-1",
+    "principal_kind": "agent",
+    "tenant": "tenant-a",
+    "roles": [
+      "file_reader"
+    ],
+    "capabilities": []
+  },
+  "to_principal": {
+    "principal_id": "agent-2",
+    "principal_kind": "agent",
+    "tenant": "tenant-a",
+    "roles": [
+      "handoff_delegate"
+    ],
+    "capabilities": []
+  },
+  "delegated_capabilities": [
+    {
+      "capability_id": "cap:network",
+      "effect_kind": "network.egress",
+      "resource_pattern": "*"
+    }
+  ],
+  "reason": "over-delegation",
+  "evidence_refs": [],
+  "signature_or_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+}

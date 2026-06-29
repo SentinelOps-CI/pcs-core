@@ -290,6 +290,9 @@ def main() -> None:
         "signature_or_digest": GENESIS_HASH,
     }
     compiled = compile_tool_use_trace_to_pfcore_trace(tool_trace)
+    compiled["required_certificate_mode"] = "TraceSafeRCertificate"
+    compiled["trace_hash"] = compute_trace_hash(compiled)
+    compiled["signature_or_digest"] = compiled["trace_hash"]
     _write(VALID / "tool_use_trace_compiled" / "tool_use_trace.json", tool_trace)
     _write(VALID / "tool_use_trace_compiled" / "pfcore_trace.json", compiled)
 

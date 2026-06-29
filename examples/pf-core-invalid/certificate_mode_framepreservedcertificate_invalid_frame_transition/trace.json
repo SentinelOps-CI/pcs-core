@@ -1,14 +1,14 @@
 {
   "schema_version": "v0",
   "artifact_type": "PFCoreTrace.v0",
-  "trace_id": "trace-file-read-1",
+  "trace_id": "trace-cross-tenant-1",
   "workflow_id": "agent_tool_use.safety_v0",
   "events": [
     {
       "schema_version": "v0",
       "artifact_type": "PFCoreEvent.v0",
-      "event_id": "ev-file-read-1",
-      "trace_id": "trace-file-read-1",
+      "event_id": "ev-cross-tenant-1",
+      "trace_id": "trace-cross-tenant-1",
       "sequence": 0,
       "timestamp": "2026-06-18T00:00:00Z",
       "principal": {
@@ -41,8 +41,8 @@
         "reads": [
           {
             "resource_id": "res-1",
-            "uri": "/data/report.txt",
-            "tenant": "tenant-a"
+            "uri": "/data/secret.txt",
+            "tenant": "tenant-b"
           }
         ],
         "writes": [],
@@ -54,17 +54,17 @@
       "contract_refs": [],
       "evidence_refs": [],
       "previous_event_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
-      "event_hash": "sha256:4f54951a4b008bdb24f2bb88438cff876fadd84259ad6d83e8211980303a214b",
+      "event_hash": "sha256:3f95e0f3e30e374f429ae57b2691b64a10e7f1ebd85639157e5f5ffffde068de",
       "source_repo": "https://github.com/example/agent-runtime",
       "source_commit": "abc1234567890abc1234567890abc1234567890",
-      "signature_or_digest": "sha256:e6ae0e0c4c702dd1f83a6adb29a97e7d89b9741537b3ebd95bb476f754ea4960"
+      "signature_or_digest": "sha256:3f95e0f3e30e374f429ae57b2691b64a10e7f1ebd85639157e5f5ffffde068de"
     }
   ],
-  "trace_hash": "sha256:7c586dc277783547e76b3b78a5357cd4bb12e20627df11fa55e3f82c920ac6de",
+  "trace_hash": "sha256:2289214038152161f810c4f1a7d30994b45aba10cb94cd5cd83856c390844ac6",
   "policy_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
   "contract_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
   "claim_class": "RuntimeChecked",
   "source_repo": "https://github.com/example/agent-runtime",
   "source_commit": "abc1234567890abc1234567890abc1234567890",
-  "signature_or_digest": "sha256:bc26bbf4e65c1722cf2dd56723238ff13b72526ee6450d0bb9e4e54a4c3a4d30"
+  "signature_or_digest": "sha256:2289214038152161f810c4f1a7d30994b45aba10cb94cd5cd83856c390844ac6"
 }

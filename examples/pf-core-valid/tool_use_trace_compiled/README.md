@@ -1,19 +1,19 @@
 # Tool-use trace compiled to PF-Core
 
-Validates the **TraceSafeRCertificate** tool-use path: `ToolUseTrace.v0` compiles to `PFCoreTrace.v0`, and `pcs pf-core lean-check` defaults to `TraceSafeRCertificate` when `tool_use_trace.json` is a sibling of the trace file.
+Validates the **TraceSafeRCertificate** tool-use path: `ToolUseTrace.v0` compiles to `PFCoreTrace.v0` with explicit `required_certificate_mode: TraceSafeRCertificate`. Release-grade `pcs pf-core lean-check --release-grade` rejects tool-use traces that resolve to base `TraceSafeCertificate` only.
 
 ## Files
 
 | File | Role |
 |------|------|
-| `tool_use_trace.json` | Source `ToolUseTrace.v0` (triggers tool-use certificate mode default) |
-| `pfcore_trace.json` | Compiled `PFCoreTrace.v0` for lean-check and bundle-release |
+| `tool_use_trace.json` | Source `ToolUseTrace.v0` (legacy sibling heuristic fallback for examples) |
+| `pfcore_trace.json` | Compiled `PFCoreTrace.v0` with `required_certificate_mode` for lean-check and bundle-release |
 | `manifest.json` | Example fixture metadata for `pcs examples check` |
 
 ## Lean kernel check
 
 ```bash
-pcs pf-core lean-check --trace examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json
+pcs pf-core lean-check --trace examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json --release-grade
 ```
 
 Expect `certificate_mode: TraceSafeRCertificate`, `claim_class: LeanKernelChecked`, and a substantive `concrete_trace_safe_r` obligation (not a trivial `:=` trivial aggregate).
@@ -30,6 +30,6 @@ pcs pf-core bundle-release \
 pcs pf-core validate-bundle /tmp/pfcore-bundle
 ```
 
-The bundle includes `kernel_manifest.json` and a self-contained `kernel/` copy for hash validation without the source checkout.
+The bundle includes `lean-toolchain`, `lean/lakefile.lean`, `lean/lake-manifest.json`, `kernel_manifest.json`, and a self-contained `kernel/` copy for hash validation without the source checkout.
 
 See [docs/pf-core/claim-boundary.md](../../docs/pf-core/claim-boundary.md) for claim classes.

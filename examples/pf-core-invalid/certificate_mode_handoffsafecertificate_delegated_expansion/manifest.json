@@ -1,0 +1,7 @@
+{
+  "expected_error": "HandoffAuthorityExpansion",
+  "must_fail_at": "validate_handoff_authority",
+  "certificate_mode": "HandoffSafeCertificate",
+  "artifact_file": "handoff.json",
+  "artifact_type": "PFCoreHandoff.v0"
+}

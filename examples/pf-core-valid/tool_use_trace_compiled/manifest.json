@@ -3,5 +3,6 @@
   "trace_file": "pfcore_trace.json",
   "tool_use_source": "tool_use_trace.json",
   "certificate_mode_default": "TraceSafeRCertificate",
+  "required_certificate_mode": "TraceSafeRCertificate",
   "replay_required": true
 }
