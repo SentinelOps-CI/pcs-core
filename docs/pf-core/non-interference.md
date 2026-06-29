@@ -148,3 +148,17 @@ PF-Core v0.1 proves **projection-based, trace-record, scheduler-agnostic** bound
 **Incremental lemmas shipped (honest subset):** deny-event projection bounds, cross-tenant deny via `CrossTenantDenied`, handoff same-tenant preconditions, `TraceSafe → NonInterference` for distinct tenants on recorded events only.
 
 **Do not claim** full global NI, covert-channel absence, or scheduler independence until the extensions above are formalized and proved without `sorry`.
+
+## v0.2+ research milestones (deferred)
+
+These items require new Lean proofs, adversarial fixtures, and CI subchecks before any public claim upgrade. Track in `current-gap-audit.md`.
+
+| Milestone | Deliverable | Gate |
+|-----------|-------------|------|
+| Full global cross-tenant NI | Extend adversary model in this document; prove scheduler-independent bounds or document permanent open axes | New lemmas + fixtures + conformance subcheck |
+| Full JSON contract Lean discharge | Extend `ContractDecide.lean` for role/policy/evidence refs | Codegen + `lake env lean` on contract fixtures |
+| Write footprint ↔ effect linkage | Derived theorem from `ActionAdmissible` + `KnownCapabilityEffect` | Kernel lemma + runtime parity test |
+| Live provability-fabric-core orchestration | Beyond `scripts/run-pf-core-adapter-ci.sh` hash parity | Adapter CI green on pinned release |
+| Agent runtime / MCP / NL policy | Remain out of scope | `mission.md` boundary unchanged |
+
+No v0.1 release claim covers these milestones.
