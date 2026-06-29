@@ -76,6 +76,7 @@ step "pytest protocol" pytest -q tests/test_protocol_conformance.py tests/test_b
 step "pf-core valid fixtures" pcs pf-core validate-trace ../examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json
 step "pf-core lean no-sorry audit" pcs pf-core audit-lean-no-sorry
 step "pf-core pytest" pytest -q tests/test_pf_core_*.py
+step "pf-core invalid adversarial fixtures" python -c "from pcs_core.validate_pf_core import check_pf_core_invalid_fixtures; check_pf_core_invalid_fixtures()"
 
 PF_CORE_TRACE="${ROOT}/examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json"
 
@@ -108,6 +109,11 @@ if lean_path_available; then
       step "pf-core verify-proof-binding" pcs pf-core verify-proof-binding --certificate "${PF_CORE_RELEASE_CERT}" --trace "${PF_CORE_TRACE}"
       step "pf-core bundle-release" pcs pf-core bundle-release --trace "${PF_CORE_TRACE}" --cert "${PF_CORE_RELEASE_CERT}" --out /tmp/pfcore-release-bundle
       step "pf-core validate-bundle" pcs pf-core validate-bundle /tmp/pfcore-release-bundle
+      step "pf-core validate-bundle isolated" bash -lc "
+        ISOLATED=\$(mktemp -d /tmp/pfcore-isolated-bundle.XXXXXX)
+        cp -a /tmp/pfcore-release-bundle \"\${ISOLATED}/bundle\"
+        cd '${PY}' && pcs pf-core validate-bundle \"\${ISOLATED}/bundle\"
+      "
     else
       echo "FAIL pf-core lean-check certificate validate (certificate missing)"
       FAILED+=("pf-core lean-check certificate validate")
