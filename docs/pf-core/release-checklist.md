@@ -153,14 +153,14 @@ Complete before tagging; record date and operator in this section (local edit on
 
 | Gate | Command | Pass (Y/N) | Date | Notes |
 |------|---------|------------|------|-------|
-| Full release-grade matrix | `scripts/pf-core-release-grade-local.{ps1,sh}` | | | |
-| Release-chain protocol | `pcs validate-release-chain examples/{labtrust,tool-use,computation}-release/` | | | |
-| PCS Lean codegen | `pytest tests/test_pcs_lean_codegen.py` | | | |
-| Cross-language parity | `pytest tests/test_pf_core_cross_language.py`; `cargo test pf_core`; `npm test` | | | |
-| Catalog drift | `python scripts/gen_pf_core_catalog.py && git diff --exit-code ...` | | | |
-| No sorry/axiom | `pcs pf-core audit-lean-no-sorry` | | | |
-| CertifyEdge stub dry-run | `scripts/pf-core-certifyedge-stub-dry-run.ps1` | | | |
-| README PF-Core section accurate | Manual review | | | |
-| Honest deferrals unchanged or updated | `docs/pf-core/merge-readiness.md` | | | |
+| Full release-grade matrix | `scripts/pf-core-release-grade-local.{ps1,sh}` | Y | 2026-06-29 | Windows native `lake` |
+| Release-chain protocol | `pcs validate-release-chain examples/{labtrust,tool-use,computation}-release/` | Y | 2026-06-29 | |
+| PCS Lean codegen | `pytest tests/test_pcs_lean_codegen.py` | Y | 2026-06-29 | Included in pf_core pytest sweep |
+| Cross-language parity | `pytest tests/test_pf_core_cross_language.py`; `cargo test pf_core`; `npm test` | Y | 2026-06-29 | 21 Rust, 28 TS |
+| Catalog drift | `python scripts/gen_pf_core_catalog.py && git diff --exit-code ...` | Y | 2026-06-29 | |
+| No sorry/axiom | `pcs pf-core audit-lean-no-sorry` | Y | 2026-06-29 | |
+| CertifyEdge stub dry-run | `scripts/pf-core-certifyedge-stub-dry-run.ps1` | Y | 2026-06-29 | |
+| README PF-Core section accurate | Manual review | Y | 2026-06-29 | TraceSafeR + CertifyEdge classes |
+| Honest deferrals unchanged or updated | `docs/pf-core/merge-readiness.md` | Y | 2026-06-29 | v0.2 backlog documented |
 
-**2026-06-29 local run (`2012a1d` + remaining-work sweep):** all automated gates in rows 1–7 passed on Windows native `lake`. WorkflowProfile certificate-mode policy, PCS witness admissibility codegen, adversarial READMEs, and `run-release-verify.sh` bundle isolation aligned. Rows 8–9 reviewed. No tag pushed.
+**2026-06-29 sign-off (`d327d07`):** All automated gates in rows 1–7 passed on Windows native `lake`. B1–B7 production hardening complete; Phase 3 PCS lean-proof shipped. Tag `v0.1.0-pf-core` at green CI on lint fix commit.
