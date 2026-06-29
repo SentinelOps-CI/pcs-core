@@ -8,20 +8,20 @@ HEAD evidence recorded after closing production gaps B1–B7, PCS envelope Phase
 
 ## HEAD CI evidence (2026-06-29)
 
-**HEAD SHA:** `ff6b7c7` — CI green ([workflow run 28403733006](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28403733006)).
+**HEAD SHA:** `ea16683` — CI green ([workflow run 28405144850](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28405144850)).
 
 | Job | SHA | Run | Result | Job URL |
 |-----|-----|-----|--------|---------|
-| python | `ff6b7c7` | 28403733006 | success | [84161195441](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28403733006/job/84161195441) |
-| lean | `ff6b7c7` | 28403733006 | success | [84161195493](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28403733006/job/84161195493) |
-| pf-core-adapter | `ff6b7c7` | 28403733006 | success | [84161195492](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28403733006/job/84161195492) |
-| rust | `ff6b7c7` | 28403733006 | success | [84161195478](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28403733006/job/84161195478) |
-| typescript | `ff6b7c7` | 28403733006 | success | [84161195447](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28403733006/job/84161195447) |
-| validate-cli-contract | `ff6b7c7` | 28403733006 | success | [84161660130](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28403733006/job/84161660130) |
+| python | `ea16683` | 28405144850 | success | [84165796670](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28405144850/job/84165796670) |
+| lean | `ea16683` | 28405144850 | success | [84165796645](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28405144850/job/84165796645) |
+| pf-core-adapter | `ea16683` | 28405144850 | success | [84165796626](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28405144850/job/84165796626) |
+| rust | `ea16683` | 28405144850 | success | [84165796648](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28405144850/job/84165796648) |
+| typescript | `ea16683` | 28405144850 | success | [84165796633](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28405144850/job/84165796633) |
+| validate-cli-contract | `ea16683` | 28405144850 | success | [84166200583](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28405144850/job/84166200583) |
 
 **Release chain:** [28403151442](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28403151442) at `4f6cf34` (success; doc-only commits after this SHA do not re-trigger release-chain path filters).
 
-**PF-Core Release Gate:** [28403946699](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28403946699) on tag `v0.1.0-pf-core` — **expected failure** without live CertifyEdge CLI (`PF_CORE_CERTIFYEDGE_CLI` secret or `certifyedge` on PATH). Staging exception: `PF_CORE_CERTIFYEDGE_ALLOW_STUB=1` with `--require-live` (documented in `certifyedge-ci.md`). Live attestation remains an external ops dependency.
+**PF-Core Release Gate:** [28405143541](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28405143541) (`workflow_dispatch` on `main` at `ea16683`) and [28405303036](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28405303036) (tag `v0.1.0-pf-core` push) — **expected failure** without live CertifyEdge CLI (`PF_CORE_CERTIFYEDGE_CLI` secret or `certifyedge` on PATH). Staging exception: `PF_CORE_CERTIFYEDGE_ALLOW_STUB=1` with `--require-live` (documented in `certifyedge-ci.md`). Live attestation remains an external ops dependency.
 
 **Local matrix (2026-06-29, Windows native `lake`):** `scripts/pf-core-release-grade-local.ps1` — all steps green; pytest `-k pf_core` 295 passed, 3 skipped; certificate-mode resolution vectors 5 passed; `cargo test pf_core` 21 passed; `npm test` 28 passed; `pcs conformance run --suite pf-core --release-grade` OK; `bundle-release` + `validate-bundle` OK; CertifyEdge mock + stub dry-runs OK (dev only).
 
@@ -44,7 +44,7 @@ HEAD evidence recorded after closing production gaps B1–B7, PCS envelope Phase
 
 | Step | Status | Evidence |
 |------|--------|----------|
-| 1. Latest-head evidence | **done** | Six CI jobs at `ff6b7c7`; release-chain [28403151442](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28403151442) |
+| 1. Latest-head evidence | **done** | Six CI jobs at `ea16683` [28405144850](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28405144850); release-chain [28403151442](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28403151442) |
 | 2. TraceSafeRCertificate by policy | **done** | Trace field, WorkflowProfile, catalog `workflow_certificate_modes`; release-grade rejects base `TraceSafeCertificate` for tool-use |
 | 3. Fully self-contained bundles | **done** | `bundle-release` / `validate-bundle`; isolated temp-dir test in release verify |
 | 4. Release-only CertifyEdge | **done** | Release gate: live CLI required; mock/stub rejected on release path |
@@ -58,7 +58,7 @@ HEAD evidence recorded after closing production gaps B1–B7, PCS envelope Phase
 | Tag `v0.1.0-pf-core` | **done** | Points to release SHA after hardening commits; CI green before tag move |
 | CHANGELOG | **done** | PF-Core v0.1.0-pf-core section |
 | Local bundle-release | **done** | `pcs pf-core bundle-release` + `validate-bundle` on tool-use fixture |
-| GitHub Release | **done** | `gh release create v0.1.0-pf-core` with bundle tarball attached |
+| GitHub Release | **done** | [v0.1.0-pf-core](https://github.com/SentinelOps-CI/pcs-core/releases/tag/v0.1.0-pf-core) with bundle tarball attached |
 
 ## Bounded claim
 
