@@ -203,6 +203,7 @@ Summary of gaps between the PF-Core vision and the current `pcs-core` repository
 |------|--------|-------|
 | B1 — CertifyEdge live/stub/mock separation | Done | `AttestationClass`; release gate hardening; `certifyedge-ci.md` matrix |
 | B2 — workflow_certificate_modes + release-grade mode policy | Done | Catalog map; Rust/TS parity; sibling heuristic skipped under `--release-grade` |
+| B5 — certificate-mode resolution hash vectors | Done | `hash_vectors/pf_core/certificate_mode_resolution/vectors.json`; release-grade normative digests |
 | B3 — TraceSafeR sole tool-use LeanKernelChecked path | Done | Release-grade lean-check/codegen/conformance; `claim-boundary.md` updated |
 | B6 — ContractChecked missing contract file fixture | Done | `certificate_mode_contractcheckedcertificate_missing_contract_file/` |
 | B7 — Documentation sync | Done | merge-readiness, gap audit, README, audit-claims |

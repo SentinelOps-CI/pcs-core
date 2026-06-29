@@ -163,4 +163,4 @@ Complete before tagging; record date and operator in this section (local edit on
 | README PF-Core section accurate | Manual review | Y | 2026-06-29 | TraceSafeR + CertifyEdge classes |
 | Honest deferrals unchanged or updated | `docs/pf-core/merge-readiness.md` | Y | 2026-06-29 | v0.2 backlog documented |
 
-**2026-06-29 sign-off (`e8f83a1`):** All automated gates in rows 1–7 passed on Windows native `lake`. B1–B7 production hardening complete; Phase 3 PCS lean-proof shipped. Tag `v0.1.0-pf-core` at `e8f83a1` after green CI.
+**2026-06-29 sign-off (`ff6b7c7`):** All automated gates in rows 1–7 passed on Windows native `lake`. B1–B7 + B5 certificate-mode vectors + Phase 3 PCS lean-proof complete. Tag `v0.1.0-pf-core` published with GitHub Release bundle. Release gate [28403946699](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28403946699) fails without live CertifyEdge (expected); staging via `PF_CORE_CERTIFYEDGE_ALLOW_STUB=1`.

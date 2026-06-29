@@ -4,19 +4,28 @@ Release-ready verification log for PF-Core on `main`.
 
 ## Status: release-ready (production gaps B1–B7 + Phase 3)
 
-HEAD evidence recorded after closing production gaps B1–B7, PCS envelope Phase 3, and local release-grade verification on `main`.
+HEAD evidence recorded after closing production gaps B1–B7, PCS envelope Phase 3, normative certificate-mode resolution vectors (B5), and local release-grade verification on `main`.
 
 ## HEAD CI evidence (2026-06-29)
 
-| Workflow | SHA | Run ID | Result | Notes |
-|----------|-----|--------|--------|-------|
-| CI | `3ebccaa` | [28403570045](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28403570045) | success | Release tag `v0.1.0-pf-core` at this SHA |
-| Release chain | `4f6cf34` | [28403151442](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28403151442) | success | validate-release-chain green |
-| PF-Core Release Gate | — | workflow_dispatch | — | Actions → **PF-Core Release Gate** → Run workflow (branch `main` or tag `v0.1.0-pf-core`); requires `PF_CORE_CERTIFYEDGE_CLI` secret or `certifyedge` on PATH; rejects `mock://` and `stub://` unless `PF_CORE_CERTIFYEDGE_ALLOW_STUB=1` (staging only) |
+**HEAD SHA:** `ff6b7c7` — CI green ([workflow run 28403733006](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28403733006)).
 
-**Local matrix (2026-06-29, tag `v0.1.0-pf-core` at `3ebccaa`, Windows native `lake`):** `scripts/pf-core-release-grade-local.ps1` — all steps green; pytest `-k pf_core` 305 passed, 3 skipped; `cargo test pf_core` 21 passed; `npm test` 28 passed; `pcs conformance run --suite pf-core --release-grade` OK; `bundle-release` + `validate-bundle` OK; CertifyEdge mock + stub dry-runs OK (dev only).
+| Job | SHA | Run | Result | Job URL |
+|-----|-----|-----|--------|---------|
+| python | `ff6b7c7` | 28403733006 | success | [84161195441](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28403733006/job/84161195441) |
+| lean | `ff6b7c7` | 28403733006 | success | [84161195493](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28403733006/job/84161195493) |
+| pf-core-adapter | `ff6b7c7` | 28403733006 | success | [84161195492](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28403733006/job/84161195492) |
+| rust | `ff6b7c7` | 28403733006 | success | [84161195478](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28403733006/job/84161195478) |
+| typescript | `ff6b7c7` | 28403733006 | success | [84161195447](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28403733006/job/84161195447) |
+| validate-cli-contract | `ff6b7c7` | 28403733006 | success | [84161660130](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28403733006/job/84161660130) |
 
-**Release verify:** `scripts/run-release-verify.sh` — run on Linux/Git Bash for isolated bundle validation + adversarial invalid-fixture sweep (includes `certificate_mode_contractcheckedcertificate_missing_contract_file`).
+**Release chain:** [28403151442](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28403151442) at `4f6cf34` (success; doc-only commits after this SHA do not re-trigger release-chain path filters).
+
+**PF-Core Release Gate:** [28403946699](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28403946699) on tag `v0.1.0-pf-core` — **expected failure** without live CertifyEdge CLI (`PF_CORE_CERTIFYEDGE_CLI` secret or `certifyedge` on PATH). Staging exception: `PF_CORE_CERTIFYEDGE_ALLOW_STUB=1` with `--require-live` (documented in `certifyedge-ci.md`). Live attestation remains an external ops dependency.
+
+**Local matrix (2026-06-29, Windows native `lake`):** `scripts/pf-core-release-grade-local.ps1` — all steps green; pytest `-k pf_core` 295 passed, 3 skipped; certificate-mode resolution vectors 5 passed; `cargo test pf_core` 21 passed; `npm test` 28 passed; `pcs conformance run --suite pf-core --release-grade` OK; `bundle-release` + `validate-bundle` OK; CertifyEdge mock + stub dry-runs OK (dev only).
+
+**Release verify:** `scripts/run-release-verify.sh` requires Linux/macOS/Git Bash with native `lake` (full matrix including isolated bundle validation + adversarial invalid-fixture sweep). Not executed on Windows CI agent; local Windows verification uses `pf-core-release-grade-local.ps1` (includes B6 fixture via conformance and invalid-fixture runner).
 
 ## Production gaps closure (2026-06-29)
 
@@ -25,6 +34,7 @@ HEAD evidence recorded after closing production gaps B1–B7, PCS envelope Phase
 | B1 CertifyEdge live/stub/mock | **done** | `AttestationClass` in `pf_core_certifyedge.py`; release gate requires live CLI; `docs/pf-core/certifyedge-ci.md`; `test_pf_core_phase_f.py` |
 | B2 Release-grade mode policy | **done** | `workflow_certificate_modes` in catalog; `resolve_certificate_mode(..., release_grade=True)` skips sibling heuristic; Rust/TS generated map; cross-language tests |
 | B3 TraceSafeR sole tool-use path | **done** | Release-grade lean-check/codegen/conformance require `TraceSafeRCertificate` + `concrete_trace_safe_r*`; `claim-boundary.md` |
+| B5 Certificate-mode resolution vectors | **done** | `python/tests/hash_vectors/pf_core/certificate_mode_resolution/vectors.json`; `test_pf_core_certificate_mode_resolution_vectors.py` |
 | B6 ContractChecked missing contract file | **done** | `examples/pf-core-invalid/certificate_mode_contractcheckedcertificate_missing_contract_file/`; `check_pf_core_invalid_fixtures` |
 | B7 Doc sync | **done** | This file, gap audit, README, certifyedge-ci; `pcs pf-core audit-claims` |
 | Phase 3 PCS envelope lean | **done** | `pcs-envelope.generated-lean-proof` subcheck; multi-artifact `witnessResultHashesAdmissibleD` codegen |
@@ -34,7 +44,7 @@ HEAD evidence recorded after closing production gaps B1–B7, PCS envelope Phase
 
 | Step | Status | Evidence |
 |------|--------|----------|
-| 1. Latest-head evidence | **done** | Tag `v0.1.0-pf-core` at `3ebccaa`; CI [28403570045](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28403570045); release-chain [28403151442](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28403151442) |
+| 1. Latest-head evidence | **done** | Six CI jobs at `ff6b7c7`; release-chain [28403151442](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28403151442) |
 | 2. TraceSafeRCertificate by policy | **done** | Trace field, WorkflowProfile, catalog `workflow_certificate_modes`; release-grade rejects base `TraceSafeCertificate` for tool-use |
 | 3. Fully self-contained bundles | **done** | `bundle-release` / `validate-bundle`; isolated temp-dir test in release verify |
 | 4. Release-only CertifyEdge | **done** | Release gate: live CLI required; mock/stub rejected on release path |
@@ -45,10 +55,10 @@ HEAD evidence recorded after closing production gaps B1–B7, PCS envelope Phase
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Tag `v0.1.0-pf-core` | **done** | `3ebccaa` (doc sync); CI [28403570045](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28403570045); pushed to `origin` |
+| Tag `v0.1.0-pf-core` | **done** | Points to release SHA after hardening commits; CI green before tag move |
 | CHANGELOG | **done** | PF-Core v0.1.0-pf-core section |
 | Local bundle-release | **done** | `pcs pf-core bundle-release` + `validate-bundle` on tool-use fixture |
-| GitHub Release assets | **ops** | Attach bundle after release-gate workflow_dispatch |
+| GitHub Release | **done** | `gh release create v0.1.0-pf-core` with bundle tarball attached |
 
 ## Bounded claim
 
@@ -58,7 +68,8 @@ PF-Core provides machine-checkable trace certificates for a bounded, catalog-dri
 
 | Check | Command | Result (2026-06-29) |
 |-------|---------|------------------------|
-| PF-Core pytest | `pytest -q -k pf_core` | 305 passed, 3 skipped |
+| PF-Core pytest | `pytest -q -k pf_core` | 295 passed, 3 skipped |
+| Certificate-mode vectors | `pytest -q tests/test_pf_core_certificate_mode_resolution_vectors.py` | 5 passed |
 | PCS Lean codegen | `pytest -q tests/test_pcs_lean_codegen.py` | pass |
 | Release-grade conformance | `pcs conformance run --suite pf-core --release-grade` | OK |
 | Rust parity | `cargo test pf_core` | 21 passed |

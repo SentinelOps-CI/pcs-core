@@ -4,7 +4,7 @@
 
 Release tag for the PF-Core production kernel on `pcs-core` `main`. Bounded claim: machine-checkable trace certificates for catalog-driven, resource-pattern-scoped agentic tool-use traces. Release-grade tool-use `LeanKernelChecked` requires the TraceSafeR evidence chain.
 
-**Release SHA:** tag `v0.1.0-pf-core` at `3ebccaa` (see GitHub Releases).
+**Release SHA:** tag `v0.1.0-pf-core` at release cut SHA on `main` (see GitHub Releases and `merge-readiness.md`).
 
 ### Added
 
@@ -12,6 +12,7 @@ Release tag for the PF-Core production kernel on `pcs-core` `main`. Bounded clai
 - Catalog `workflow_certificate_modes` map with release-grade `resolve_certificate_mode` parity across Python, Rust, TypeScript (`1fadcfd`).
 - Release-grade enforcement of TraceSafeR as sole tool-use `LeanKernelChecked` path (`748601d`).
 - Adversarial fixture `certificate_mode_contractcheckedcertificate_missing_contract_file` (`e061495`).
+- Normative hash vectors for `resolve_certificate_mode` release-grade policy (`certificate_mode_resolution/vectors.json`).
 - PCS envelope generated-lean-proof conformance and multi-artifact witness codegen (`0aaee97`).
 
 ### Changed

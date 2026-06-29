@@ -48,7 +48,7 @@ This checklist covers the **production trusted kernel** only: contract semantics
 
 | Role | Name | Date | Result |
 |------|------|------|--------|
-| Engineering | PCS maintainers | 2026-06-29 | Tier 1 complete; B1–B7 hardening shipped; tag `v0.1.0-pf-core` pending green CI |
-| Security / assurance | PCS maintainers | 2026-06-29 | Claim boundaries accepted; TraceSafeR release-grade path; CertifyEdge live/stub/mock separation |
+| Engineering | PCS maintainers | 2026-06-29 | Tier 1 complete; B1–B7 + B5 vectors + Phase 3 shipped; tag `v0.1.0-pf-core`; six CI jobs green at `ff6b7c7` |
+| Security / assurance | PCS maintainers | 2026-06-29 | Claim boundaries accepted; TraceSafeR release-grade path; CertifyEdge live/stub/mock separation; release gate blocks without live CLI |
 
 Reference: `docs/pf-core/current-gap-audit.md`, `docs/pf-core/release-checklist.md`, `CHANGELOG.md`.
