@@ -10,11 +10,11 @@ HEAD evidence recorded after closing production gaps B1–B7, PCS envelope Phase
 
 | Workflow | SHA | Run ID | Result | Notes |
 |----------|-----|--------|--------|-------|
-| CI | `9d672e3` | pending post-push | — | Prior baseline [28400984580](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28400984580) at `93625a1` |
-| Release chain | `9d672e3` | pending post-push | — | Prior baseline [28400984561](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28400984561) at `93625a1` |
+| CI | `5ddb36e` | pending post-push | — | Prior baseline [28400984580](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28400984580) at `93625a1` |
+| Release chain | `5ddb36e` | pending post-push | — | Prior baseline [28400984561](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28400984561) at `93625a1` |
 | PF-Core Release Gate | — | workflow_dispatch | — | Actions → **PF-Core Release Gate** → Run workflow (branch `main` or tag `v0.1.0-pf-core`); requires `PF_CORE_CERTIFYEDGE_CLI` secret or `certifyedge` on PATH; rejects `mock://` and `stub://` unless `PF_CORE_CERTIFYEDGE_ALLOW_STUB=1` (staging only) |
 
-**Local matrix (2026-06-29, HEAD `9d672e3`, Windows native `lake`):** `scripts/pf-core-release-grade-local.ps1` — all steps green; pytest `-k pf_core` 305 passed, 3 skipped; `cargo test pf_core` 21 passed; `npm test` 28 passed; `pcs conformance run --suite pf-core --release-grade` OK; CertifyEdge mock + stub dry-runs OK (dev only).
+**Local matrix (2026-06-29, HEAD `5ddb36e`, Windows native `lake`):** `scripts/pf-core-release-grade-local.ps1` — all steps green; pytest `-k pf_core` 305 passed, 3 skipped; `cargo test pf_core` 21 passed; `npm test` 28 passed; `pcs conformance run --suite pf-core --release-grade` OK; CertifyEdge mock + stub dry-runs OK (dev only).
 
 **Release verify:** `scripts/run-release-verify.sh` — run on Linux/Git Bash for isolated bundle validation + adversarial invalid-fixture sweep (includes `certificate_mode_contractcheckedcertificate_missing_contract_file`).
 
@@ -34,7 +34,7 @@ HEAD evidence recorded after closing production gaps B1–B7, PCS envelope Phase
 
 | Step | Status | Evidence |
 |------|--------|----------|
-| 1. Latest-head evidence | **done** | HEAD `9d672e3`; CI URLs refresh post-push; local release-grade matrix green |
+| 1. Latest-head evidence | **done** | HEAD `5ddb36e`; CI URLs refresh post-push; local release-grade matrix green |
 | 2. TraceSafeRCertificate by policy | **done** | Trace field, WorkflowProfile, catalog `workflow_certificate_modes`; release-grade rejects base `TraceSafeCertificate` for tool-use |
 | 3. Fully self-contained bundles | **done** | `bundle-release` / `validate-bundle`; isolated temp-dir test in release verify |
 | 4. Release-only CertifyEdge | **done** | Release gate: live CLI required; mock/stub rejected on release path |
