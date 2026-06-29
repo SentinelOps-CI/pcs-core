@@ -1,5 +1,7 @@
 {
-  "description": "Tool-use trace compiled to PF-Core",
+  "description": "Tool-use trace compiled to PF-Core (TraceSafeRCertificate lean-check path)",
   "trace_file": "pfcore_trace.json",
+  "tool_use_source": "tool_use_trace.json",
+  "certificate_mode_default": "TraceSafeRCertificate",
   "replay_required": true
 }
