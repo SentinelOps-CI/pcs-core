@@ -174,9 +174,9 @@ PF-Core is the trace-safety kernel in `pcs-core`: Python deciders aligned with L
 
 | Topic | Detail |
 |-------|--------|
-| Tool-use certificate mode | **`TraceSafeRCertificate`** is the default when a sibling `tool_use_trace.json` is present; legacy traces default to `TraceSafeCertificate`. |
+| Tool-use certificate mode | Traces declare **`required_certificate_mode: TraceSafeRCertificate`** (policy field on `PFCoreTrace.v0`); legacy examples may still resolve via sibling `tool_use_trace.json`. Release-grade lean-check rejects tool-use traces that resolve to base `TraceSafeCertificate` only. |
 | Capability catalog | `catalog/pf_core.catalog.json` is the single source; `python/scripts/gen_pf_core_catalog.py` generates Python, Rust, TypeScript, and Lean maps (no manual `TOOL_NAME_MAP` drift). |
-| Release bundles | `pcs pf-core bundle-release` copies trace, certificate, proof, and a **`kernel/`** tree; `kernel_manifest.json` lists per-file `sha256:` digests. `validate-bundle` checks the bundle alone (not the checkout). |
+| Release bundles | `pcs pf-core bundle-release` copies trace, certificate, proof, **`lean-toolchain`**, **`lean/lakefile.lean`**, **`lean/lake-manifest.json`**, and a **`kernel/`** tree; `kernel_manifest.json` lists per-file `sha256:` digests. `validate-bundle` checks the bundle alone (hashes from bundled contents only). |
 | CertifyEdge | **Mock** (`mock://`, dev/CI demos) vs **live/stub** (release gate). Release tags require live or format stub; mock is rejected on the release path. |
 
 ### PF-Core quick start
@@ -201,7 +201,7 @@ bash scripts/pf-core-release-grade-local.sh                # Linux / macOS
 
 Further PF-Core docs: [docs/pf-core/merge-readiness.md](docs/pf-core/merge-readiness.md), [docs/pf-core/release-checklist.md](docs/pf-core/release-checklist.md), [docs/pf-core/claim-boundary.md](docs/pf-core/claim-boundary.md).
 
-**Honest boundaries:** `LeanKernelChecked` covers concrete trace safety (and mode-specific obligations), not global non-interference or full JSON contract discharge. `CertificateChecked` from CertifyEdge does not upgrade to `LeanKernelChecked`. PCS envelope Lean proofs do not substitute for PF-Core kernel proofs.
+PF-Core provides machine-checkable trace certificates for a bounded, catalog-driven, resource-pattern-scoped subset of agentic tool-use traces. It does not claim global AI safety, full contract discharge in the Lean kernel, or operational guarantees for deployed agents outside the stated catalog and claim class.
 
 ---
 

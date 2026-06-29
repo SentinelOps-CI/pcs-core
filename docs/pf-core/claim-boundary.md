@@ -1,5 +1,7 @@
 # PF-Core claim boundary
 
+PF-Core provides machine-checkable trace certificates for a bounded, catalog-driven, resource-pattern-scoped subset of agentic tool-use traces. It does not claim global AI safety, full JSON contract discharge in the Lean kernel, or operational guarantees for deployed agents outside the stated catalog and claim class.
+
 PF-Core separates **lifecycle status** (PCS `status` field) from **claim class** (what assurance was obtained). A certificate may carry `status: CertificateChecked` while `claim_class: RuntimeChecked` if only runtime predicates were evaluated.
 
 ## PFCoreTraceClaimClass vs PFCoreCertificateClaimClass

@@ -2,96 +2,51 @@
 
 Release-ready verification log for PF-Core on `main`.
 
-## Status: release-ready
+## Status: release-ready (six-step critical issues plan)
 
-All six critical-issue plan steps verified on HEAD (`9724c6b`, 2026-06-29). Local release-grade re-run on `9d69386` (2026-06-29) confirms no regressions. No code fixes required — blockers referenced at `b5ed639` are resolved on current main.
+HEAD evidence recorded after executing the six-step PF-Core critical issues plan on `main`.
 
 ## HEAD CI evidence (2026-06-29)
 
 | Workflow | SHA | Run ID | Result | Notes |
 |----------|-----|--------|--------|-------|
-| CI | `9724c6b` | 28330791563 | success | HEAD on main; all CI jobs green |
-| Release chain | `9724c6b` | 28330791564 | success | `validate-release-chain` green |
+| CI | `c121103` | [28363685794](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28363685794) | success | Prior HEAD before plan execution |
+| Release chain | `c121103` | [28363685824](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28363685824) | success | `validate-release-chain` green |
 
-Prior fix commits (already on main): `21d1575` (And.intro mode obligations), `d24162f`/`15eb268` (CertifyEdge + ruff), catalog `tool_map` generation, kernel bundle manifest. Documentation record: `9d69386`.
+Post-plan local verification re-run on working tree (2026-06-29): pytest `-k pf_core` 287 passed; `pcs conformance run --suite pf-core --release-grade` OK; `cargo test pf_core` 19 passed; `npm test` 28 passed.
 
-## Local verification matrix (A-G plan)
+## Six-step critical issues plan (2026-06-29)
 
-| Plan item | Status | Local command | Result |
-|-----------|--------|---------------|--------|
-| A. PCS per-obligation Lean | **incremental** | `pytest tests/test_pcs_lean_codegen.py`; `lake build PCS` | LabTrust + tool-use + computation witness codegen; tool-use `EnvelopeLeanChecked` compiles; full witness admissibility deferred |
-| B. Compositional trust | **complete** | `pytest tests/test_pf_core_compositional.py tests/test_pf_core_research.py` | All roadmap theorems proved in Lean; runtime tests pass |
-| C. Release checklist | **complete** | See `docs/pf-core/release-checklist.md` local matrix | Every gate has local command |
-| D. Cross-language parity | **complete** | `pytest tests/test_pf_core_cross_language.py`; `cargo test pf_core`; `npm test` | TraceSafeRCertificate, tool_map, mode obligations, resource scope, cross-tenant, NI |
-| E. Examples and conformance | **complete** | `pcs examples check`; `pcs conformance run --suite pf-core --release-grade` | 18/18 pf-core-valid dirs; `tool_use_trace_compiled` documents TraceSafeRCertificate path |
-| F. Merge-readiness bundle | **complete** | This document | Verification matrix populated |
-| G. CertifyEdge live path (stub) | **complete** | `scripts/pf-core-certifyedge-stub-dry-run.ps1` | `stub://` attestation, `checker_version`, attestation in `assumption_refs` |
+| Step | Status | Evidence |
+|------|--------|----------|
+| 1. Latest-head evidence | **done** | `git fetch origin`; HEAD `c121103`; CI + Release chain URLs above; local conformance release-grade OK |
+| 2. TraceSafeRCertificate by policy | **done** | `required_certificate_mode` on `PFCoreTrace.v0`; `resolve_certificate_mode` prefers trace policy; release-grade lean-check rejects tool-use traces resolving to `TraceSafeCertificate` only; Rust/TS parity |
+| 3. Fully self-contained bundles | **done** | `bundle-release` copies `lean-toolchain`, `lean/lakefile.lean`, `lean/lake-manifest.json`, kernel tree, proof, trace, cert; `validate-bundle` hashes from bundled contents only; isolated temp-dir test |
+| 4. Release-only CertifyEdge | **done** | `.github/workflows/pf-core-release-gate.yml` requires live/stub attestation on `v*` tags; dev CI keeps mock (`mock://` rejected on release path) |
+| 5. Adversarial certificate-mode fixtures | **done** | Six mode-specific invalid fixtures under `examples/pf-core-invalid/certificate_mode_*`; wired via `check_pf_core_invalid_fixtures` and release-grade conformance |
+| 6. Freeze claim boundary | **done** | Bounded claim in `README.md`, `claim-boundary.md`, this document |
 
-## Full release-grade local proof (2026-06-29, re-run on `9d69386`)
+## Bounded claim
 
-| Step | Result | Notes |
-|------|--------|-------|
-| `scripts/pf-core-release-grade-local.ps1` | OK | Full matrix (285 pytest, lake PFCore+PCS, lean-check, bundle, rust, CertifyEdge mock+stub) |
-| Release-chain protocol | OK | `validate-release-chain` labtrust + tool-use + computation-release |
-| `pytest tests/test_pcs_lean_codegen.py` | OK | 10 tests; tool-use `EnvelopeLeanChecked` with aggregate theorem |
-| All `test_pf_core_*.py` | OK | pytest sweep |
-| `pytest -k pf_core` | OK | PF-Core subset |
-| Certificate-mode codegen (no `: True := trivial`) | OK | grep clean on `lean/PFCore/Generated/` |
-| Catalog `tool_map` drift | OK | `gen_pf_core_catalog.py` + git diff |
-| `pcs pf-core audit-lean-no-sorry` | OK | PFCore + PCS scope |
-| `lake build PFCore` + `lake build PCS` | OK | Native lake on Windows |
-| `lean-check` tool-use trace | OK | Default `TraceSafeRCertificate`; substantive `concrete_trace_safe_r*` |
-| `bundle-release` / `validate-bundle` | OK | `kernel_manifest.json` + bundled `kernel/` |
-| CertifyEdge mock + stub dry-run | OK | Mock dev path; stub format contract |
-| Rust/TS `TOOL_NAME_MAP` + mode default parity | OK | `resolve_tool_mapping` / `resolveCertificateModeDefault` |
-| `cargo test pf_core` | OK | 19 Rust parity tests |
-| `npm test` (@pcs/core) | OK | 28 TypeScript tests |
-| `pcs conformance run --suite pf-core --release-grade` | OK | Release-grade conformance |
-| PCS Lean codegen (tool-use + computation) | OK | `lean/PCS/Generated/release_pcs_v0_1_tool_use_safety.lean`, `..._scientific_computation.lean` compile |
+PF-Core provides machine-checkable trace certificates for a bounded, catalog-driven, resource-pattern-scoped subset of agentic tool-use traces.
 
-## Six-step critical issues audit (2026-06-29, HEAD `9724c6b`)
+## Local verification matrix
 
-| Step | Audit | Evidence |
-|------|-------|----------|
-| 1. Release evidence | **already done** | CI + Release chain green on `9724c6b`; local `pf-core-release-grade-local.ps1` all steps OK |
-| 2. Marker theorems | **already done** | Grep `: True := trivial` clean on `lean/PFCore/Generated/` and codegen; `lean_and_intro_theorem` emits `And.intro` chains |
-| 3. TraceSafeRCertificate | **already done** | 7 modes in schema/codegen; `MODE_OBLIGATION_THEOREMS` includes `concrete_trace_safe_r*`; tool-use default via `tool_use_trace.json` sibling |
-| 4. tool_map | **already done** | `catalog/pf_core.catalog.json` `tool_map`; generated `pf_core_catalog.py`/Rust/TS; runtime imports catalog (no manual map) |
-| 5. Kernel in bundles | **already done** | `build_kernel_manifest()` per-file sha256; `kernel/` copied into bundle; `validate-bundle` validates from manifest not checkout |
-| 6. CertifyEdge release hardening | **already done** | `PF_CORE_CERTIFYEDGE_REQUIRE_LIVE`, `--require-live`, release gate rejects `mock://`; dev CI mock path preserved |
-
-## Issue status (critical fix plan)
-
-| Issue | Status | Notes |
-|-------|--------|-------|
-| #2 Substantive certificate-mode obligations | **fixed** | Aggregate theorems use `And.intro` chains; no `: True := trivial` |
-| #3 Catalog `tool_map` generation | **fixed** | Single-source `catalog/pf_core.catalog.json`; generated Python/Rust/TS maps |
-| #4 Manual `TOOL_NAME_MAP` removal | **fixed** | Runtime imports generated catalog map |
-| #5 `TraceSafeRCertificate` | **fixed** | Tool-use default; resource-scope + `TraceSafeR` obligations |
-| #6 CertifyEdge release gates | **fixed** | Release gate requires live/stub attestation; dev CI keeps mock |
-| #7 Self-contained release bundles | **fixed** | `kernel_manifest.json` + bundled `kernel/`; validate from bundle |
-
-## Cross-language parity summary (D)
-
-| Capability | Python | Rust | TypeScript |
-|------------|--------|------|------------|
-| `TraceSafeRCertificate` mode default (tool-use) | yes | yes | yes |
-| Mode obligation theorem lists (6 modes) | yes | yes | yes |
-| `resolve_tool_mapping` / catalog `tool_map` | yes | yes | yes |
-| Resource scope validation | yes | yes | yes |
-| Cross-tenant safety decider | yes | yes | yes |
-| Observational NI decider | yes | yes | yes |
-| `contract_semantics_checked` on certificates | yes | yes | yes |
-| `kernel_manifest` bundle validate | yes | n/a (Python CLI) | n/a |
-| Lean kernel proof emission | yes | no (by design) | no (by design) |
+| Check | Command | Result (2026-06-29) |
+|-------|---------|------------------------|
+| PF-Core pytest | `pytest -q -k pf_core` | 287 passed, 3 skipped |
+| Release-grade conformance | `pcs conformance run --suite pf-core --release-grade` | OK |
+| Rust parity | `cargo test pf_core` | 19 passed |
+| TypeScript parity | `npm test` (@pcs/core) | 28 passed |
+| Release-grade local matrix | `scripts/pf-core-release-grade-local.ps1` | Run on hosts with native `lake` |
+| Release verify | `scripts/run-release-verify.sh` | Linux/macOS/Git Bash matrix |
 
 ## Honest deferrals
 
 - Full global non-interference under adversarial schedulers.
-- PCS computation witness full `witnessResultHashesAdmissible` codegen (single-hash listing proved; all-hashes admissibility deferred).
+- PCS computation witness full `witnessResultHashesAdmissible` codegen.
 - PCS tool-use Lean codegen does not discharge PF-Core `TraceSafeR` / resource-scope kernel proofs.
 - Live CertifyEdge production deployment beyond stub/CLI matrix.
-- WSL duplicate Lean path on Windows hosts without native `lake`.
 - Rust/TS do not emit `LeanKernelChecked` certificates (Python lean-check only).
 
-Reference: `docs/pf-core/claim-boundary.md`, `docs/pf-core/current-gap-audit.md`, `docs/pf-core/pcs-envelope-lean-roadmap.md`.
+Reference: `docs/pf-core/claim-boundary.md`, `docs/pf-core/current-gap-audit.md`, `docs/pf-core/release-checklist.md`.
