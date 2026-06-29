@@ -10,8 +10,8 @@ HEAD evidence recorded after executing the six-step PF-Core critical issues plan
 
 | Workflow | SHA | Run ID | Result | Notes |
 |----------|-----|--------|--------|-------|
-| CI | `c121103` | [28363685794](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28363685794) | success | Prior HEAD before plan execution |
-| Release chain | `c121103` | [28363685824](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28363685824) | success | `validate-release-chain` green |
+| CI | `7f7a91c` | [28394806678](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28394806678) | success | Six-step plan commits green |
+| Release chain | `7f7a91c` | [28394806729](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28394806729) | success | `validate-release-chain` green |
 
 Post-plan local verification re-run on working tree (2026-06-29): pytest `-k pf_core` 287 passed; `pcs conformance run --suite pf-core --release-grade` OK; `cargo test pf_core` 19 passed; `npm test` 28 passed.
 
