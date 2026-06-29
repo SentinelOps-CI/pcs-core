@@ -16,6 +16,29 @@ from pcs_core.validate import ValidationError, validate_schema
 
 GENESIS_HASH = "sha256:" + "0" * 64
 
+TOOL_USE_DEFAULT_CERTIFICATE_MODE = "TraceSafeRCertificate"
+
+
+def is_tool_use_trace(
+    trace: Mapping[str, Any],
+    *,
+    trace_path: Any | None = None,
+) -> bool:
+    """Return True when trace policy targets tool-use certificate mode."""
+    required = trace.get("required_certificate_mode")
+    if required == TOOL_USE_DEFAULT_CERTIFICATE_MODE:
+        return True
+    workflow_id = str(trace.get("workflow_id") or "")
+    if workflow_id.startswith("agent_tool_use"):
+        return True
+    if trace_path is not None:
+        from pathlib import Path
+
+        path = trace_path if isinstance(trace_path, Path) else Path(str(trace_path))
+        if (path.parent / "tool_use_trace.json").is_file():
+            return True
+    return False
+
 AUTHORIZATION_TO_DECISION = {
     "authorized": "allow",
     "rejected": "deny",
@@ -945,6 +968,7 @@ def compile_tool_use_trace_to_pfcore_trace(tool_use_trace: dict) -> dict:
         "policy_hash": str(tool_use_trace["policy_hash"]),
         "contract_hash": GENESIS_HASH,
         "claim_class": claim_class,
+        "required_certificate_mode": TOOL_USE_DEFAULT_CERTIFICATE_MODE,
         "source_repo": str(tool_use_trace["source_repo"]),
         "source_commit": str(tool_use_trace["source_commit"]),
         "signature_or_digest": GENESIS_HASH,

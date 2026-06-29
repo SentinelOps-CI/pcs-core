@@ -17,6 +17,7 @@ from typing import Any, Mapping
 
 from pcs_core.hash import canonical_hash
 from pcs_core.paths import repo_root
+from pcs_core.pf_core_runtime import is_tool_use_trace
 from pcs_core.pf_core_contract import (
     field_semantics_layer,
     load_contracts_from_dir,
@@ -119,14 +120,37 @@ def resolve_certificate_mode(
     trace_path: Path | None = None,
     certificate_mode: str | None = None,
 ) -> str:
-    """Pick certificate mode: explicit override, tool-use default, or legacy default."""
+    """Pick certificate mode: CLI override, trace policy, example fallback, or legacy default."""
     if certificate_mode:
         if certificate_mode not in CERTIFICATE_MODES:
             raise ValueError(f"unknown certificate_mode {certificate_mode!r}")
         return certificate_mode
+    required = trace.get("required_certificate_mode")
+    if isinstance(required, str) and required:
+        if required not in CERTIFICATE_MODES:
+            raise ValueError(f"unknown required_certificate_mode {required!r}")
+        return required
     if trace_path is not None and (trace_path.parent / "tool_use_trace.json").is_file():
         return TOOL_USE_DEFAULT_CERTIFICATE_MODE
     return DEFAULT_CERTIFICATE_MODE
+
+
+def enforce_tool_use_certificate_mode_policy(
+    trace: Mapping[str, Any],
+    mode: str,
+    *,
+    trace_path: Path | None = None,
+    release_grade: bool = False,
+) -> str | None:
+    """Release-grade policy: tool-use traces must not resolve to base TraceSafeCertificate."""
+    if not release_grade:
+        return None
+    if is_tool_use_trace(trace, trace_path=trace_path) and mode == DEFAULT_CERTIFICATE_MODE:
+        return (
+            "tool-use trace must resolve to TraceSafeRCertificate under release-grade policy "
+            "(set required_certificate_mode on trace or remove TraceSafeCertificate override)"
+        )
+    return None
 
 
 def certificate_mode_obligations(
@@ -999,7 +1023,7 @@ def compute_lean_environment_hash(*, include_pcs: bool = False) -> str:
     """Hash Lean toolchain, lake project files, and PF-Core kernel Lean sources."""
     lean_root = repo_root() / "lean"
     parts: list[bytes] = []
-    toolchain = repo_root() / "lean-toolchain"
+    toolchain = lean_root / "lean-toolchain"
     if toolchain.is_file():
         parts.append(toolchain.read_bytes())
     for rel in ("lakefile.lean", "lake-manifest.json"):
@@ -1011,6 +1035,35 @@ def compute_lean_environment_hash(*, include_pcs: bool = False) -> str:
     if include_pcs:
         for path in pcs_kernel_lean_paths():
             parts.append(path.read_bytes())
+    return _hash_byte_parts(parts)
+
+
+def compute_lean_environment_hash_from_bundle(
+    bundle_dir: Path,
+    kernel_manifest: Mapping[str, Any],
+) -> str:
+    """Hash Lean environment using only files copied into a release bundle."""
+    parts: list[bytes] = []
+    for rel in ("lean-toolchain", "lean/lean-toolchain"):
+        path = bundle_dir / rel
+        if path.is_file():
+            parts.append(path.read_bytes())
+            break
+    for rel in ("lean/lakefile.lean", "lean/lake-manifest.json"):
+        path = bundle_dir / rel
+        if path.is_file():
+            parts.append(path.read_bytes())
+    entries = kernel_manifest.get("files")
+    if isinstance(entries, list):
+        for entry in sorted(entries, key=lambda item: str(item.get("path") or "")):
+            if not isinstance(entry, dict):
+                continue
+            rel_path = str(entry.get("path") or "")
+            path = bundle_dir / "kernel" / rel_path
+            if path.is_file():
+                parts.append(path.read_bytes())
+    if not parts:
+        raise ValueError("bundle missing lean environment files for hash computation")
     return _hash_byte_parts(parts)
 
 

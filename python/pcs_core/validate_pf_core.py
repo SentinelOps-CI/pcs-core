@@ -115,6 +115,12 @@ def _validate_pfcore_trace(data: dict[str, Any]) -> list[str]:
     from pcs_core.pf_core_runtime import validate_event_sequence_order
 
     errors.extend(validate_event_sequence_order(data))
+    required_mode = data.get("required_certificate_mode")
+    if required_mode is not None:
+        from pcs_core.pf_core_lean_codegen import CERTIFICATE_MODES
+
+        if not isinstance(required_mode, str) or required_mode not in CERTIFICATE_MODES:
+            errors.append(f"root: invalid required_certificate_mode {required_mode!r}")
     return errors
 
 
