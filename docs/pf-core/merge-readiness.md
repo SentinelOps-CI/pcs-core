@@ -15,12 +15,14 @@ HEAD evidence recorded after executing the six-step PF-Core critical issues plan
 
 Post-plan local verification re-run on working tree (2026-06-29): pytest `-k pf_core` 287 passed; `pcs conformance run --suite pf-core --release-grade` OK; `cargo test pf_core` 19 passed; `npm test` 28 passed.
 
+Remaining-work local sweep (2026-06-29, HEAD `2012a1d` + local edits): full release-grade matrix green; WorkflowProfile `formalization.pf_core.required_certificate_mode` wired; PCS `witnessResultHashesAdmissibleD` codegen for computation fixture; adversarial fixture READMEs added; `run-release-verify.sh` isolated bundle + invalid-fixture steps added.
+
 ## Six-step critical issues plan (2026-06-29)
 
 | Step | Status | Evidence |
 |------|--------|----------|
 | 1. Latest-head evidence | **done** | `git fetch origin`; HEAD `c121103`; CI + Release chain URLs above; local conformance release-grade OK |
-| 2. TraceSafeRCertificate by policy | **done** | `required_certificate_mode` on `PFCoreTrace.v0`; `resolve_certificate_mode` prefers trace policy; release-grade lean-check rejects tool-use traces resolving to `TraceSafeCertificate` only; Rust/TS parity |
+| 2. TraceSafeRCertificate by policy | **done** | `required_certificate_mode` on `PFCoreTrace.v0`; `WorkflowProfile.v0` `formalization.pf_core.required_certificate_mode` for tool-use; `resolve_certificate_mode` prefers trace policy then profile; release-grade lean-check rejects tool-use traces resolving to `TraceSafeCertificate` only; Rust/TS parity via `workflow_id` |
 | 3. Fully self-contained bundles | **done** | `bundle-release` copies `lean-toolchain`, `lean/lakefile.lean`, `lean/lake-manifest.json`, kernel tree, proof, trace, cert; `validate-bundle` hashes from bundled contents only; isolated temp-dir test |
 | 4. Release-only CertifyEdge | **done** | `.github/workflows/pf-core-release-gate.yml` requires live/stub attestation on `v*` tags; dev CI keeps mock (`mock://` rejected on release path) |
 | 5. Adversarial certificate-mode fixtures | **done** | Six mode-specific invalid fixtures under `examples/pf-core-invalid/certificate_mode_*`; wired via `check_pf_core_invalid_fixtures` and release-grade conformance |
@@ -44,9 +46,9 @@ PF-Core provides machine-checkable trace certificates for a bounded, catalog-dri
 ## Honest deferrals
 
 - Full global non-interference under adversarial schedulers.
-- PCS computation witness full `witnessResultHashesAdmissible` codegen.
+- PCS computation witness multi-artifact `witnessResultHashesAdmissible` codegen beyond declared single-artifact digest set.
 - PCS tool-use Lean codegen does not discharge PF-Core `TraceSafeR` / resource-scope kernel proofs.
 - Live CertifyEdge production deployment beyond stub/CLI matrix.
-- Rust/TS do not emit `LeanKernelChecked` certificates (Python lean-check only).
+- Rust/TS do not emit `LeanKernelChecked` certificates (Python lean-check only); Rust/TS resolve tool-use mode via `workflow_id` parity, not full WorkflowProfile JSON loader.
 
 Reference: `docs/pf-core/claim-boundary.md`, `docs/pf-core/current-gap-audit.md`, `docs/pf-core/release-checklist.md`.
