@@ -51,5 +51,15 @@
     "unknown_authorization_status"
   ],
   "limitations_notice": "This artifact is a proof-carrying tool-use simulation result. It is not a guarantee of operational safety for a deployed agent.",
-  "signature_or_digest": "sha256:02de75f38beeb2bcf81d69a2f8913f5ff5eba1287ca380f9efc4d3d7e418b410"
+  "formalization": {
+    "trust_kernel": "pf-core",
+    "required_obligations": [
+      "traceSafeRD"
+    ],
+    "formalization_scope": "trust_envelope_only",
+    "pf_core": {
+      "required_certificate_mode": "TraceSafeRCertificate"
+    }
+  },
+  "signature_or_digest": "sha256:d8950f0a4b33bc4dd228a6294fa7e879f63258b08b66894b034805340c967291"
 }
