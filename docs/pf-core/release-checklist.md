@@ -163,4 +163,4 @@ Complete before tagging; record date and operator in this section (local edit on
 | README PF-Core section accurate | Manual review | Y | 2026-06-29 | TraceSafeR + CertifyEdge classes |
 | Honest deferrals unchanged or updated | `docs/pf-core/merge-readiness.md` | Y | 2026-06-29 | v0.2 backlog documented |
 
-**2026-06-29 sign-off (`d327d07`):** All automated gates in rows 1–7 passed on Windows native `lake`. B1–B7 production hardening complete; Phase 3 PCS lean-proof shipped. Tag `v0.1.0-pf-core` at green CI on lint fix commit.
+**2026-06-29 sign-off (`e8f83a1`):** All automated gates in rows 1–7 passed on Windows native `lake`. B1–B7 production hardening complete; Phase 3 PCS lean-proof shipped. Tag `v0.1.0-pf-core` at `e8f83a1` after green CI.

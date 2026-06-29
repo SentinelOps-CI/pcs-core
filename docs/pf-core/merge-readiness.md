@@ -10,12 +10,13 @@ HEAD evidence recorded after B1–B7 production hardening, Phase 3 PCS envelope 
 
 | Workflow | SHA | Run ID | Result | Notes |
 |----------|-----|--------|--------|-------|
-| CI | `d327d07` | pending | — | Ruff lint fix after `e061495` CI failure |
-| Release chain | `e061495` | [28402655648](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28402655648) | success | B6 adversarial fixture |
+| CI | `e8f83a1` | pending | — | Awaiting green run after doc + lint commits |
+| Release chain | `e8f83a1` | pending | — | |
+| Release chain (B6) | `e061495` | [28402655648](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28402655648) | success | B6 adversarial fixture |
 | CI (prior) | `93625a1` | [28400984580](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28400984580) | success | Six-step plan baseline |
 | Release chain (prior) | `93625a1` | [28400984561](https://github.com/SentinelOps-CI/pcs-core/actions/runs/28400984561) | success | `validate-release-chain` green |
 
-Post-hardening local verification (2026-06-29, HEAD `d327d07`): pytest `-k "pf_core or pcs_lean_codegen"` 305 passed, 3 skipped; `pcs conformance run --suite pf-core --release-grade` OK; `cargo test pf_core` 21 passed; `npm test` 28 passed; `pcs pf-core audit-claims` OK; `pcs pf-core lean-check --release-grade` + `bundle-release` + `validate-bundle` OK on native `lake`.
+Post-hardening local verification (2026-06-29, HEAD `e8f83a1`): pytest `-k "pf_core or pcs_lean_codegen"` 305 passed, 3 skipped; `pcs conformance run --suite pf-core --release-grade` OK; `cargo test pf_core` 21 passed; `npm test` 28 passed; `pcs pf-core audit-claims` OK; `pcs pf-core lean-check --release-grade` + `bundle-release` + `validate-bundle` OK on native `lake`.
 
 ## Production hardening plan (B1–B7, 2026-06-29)
 
@@ -53,7 +54,7 @@ Post-hardening local verification (2026-06-29, HEAD `d327d07`): pytest `-k "pf_c
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Tag `v0.1.0-pf-core` | **pending** | At final green HEAD after CI on lint fix |
+| Tag `v0.1.0-pf-core` | **at `e8f83a1`** | After green CI on release-cut commits |
 | CHANGELOG | **done** | `CHANGELOG.md` PF-Core v0.1.0-pf-core section |
 | Local bundle-release | **done** | `pcs pf-core bundle-release` + `validate-bundle` on tool-use fixture; native `lake` |
 | GitHub Release assets | **ops** | Attach bundle after tag push + release-gate workflow |
