@@ -149,6 +149,19 @@ PF-Core v0.1 proves **projection-based, trace-record, scheduler-agnostic** bound
 
 **Do not claim** full global NI, covert-channel absence, or scheduler independence until the extensions above are formalized and proved without `sorry`.
 
+## v0.2+ research milestones (post-v0.1.0-pf-core; document only)
+
+These items remain **open research** tracked for a future release. They do **not** change the v0.1 bounded claim until corresponding Lean proofs, adversarial fixtures, and CI subchecks land:
+
+| Milestone | Deliverable | Gate |
+|-----------|-------------|------|
+| Full global cross-tenant NI | Extend adversary model in this document + new lemmas in `NonInterference.lean` / `Observational.lean` | No claim upgrade without proof + fixture + conformance subcheck |
+| Full JSON contract Lean discharge | Extend `ContractDecide.lean` for policy/evidence/role refs currently runtime-only | Same |
+| Write footprint ↔ effect linkage | Derived theorem from `ActionAdmissible` + `KnownCapabilityEffect` for full catalog | Same |
+| Live provability-fabric-core orchestration | Beyond `scripts/run-pf-core-adapter-ci.sh` hash-vector pin | Same |
+| PCS tool-use Lean discharge of PF-Core TraceSafeR | Remains separate path (`pcs pf-core lean-check`); no merged claim | Same |
+| Agent runtime / MCP / NL policy | Out of scope per `docs/pf-core/mission.md` | Permanent deferral unless scope changes |
+
 ## v0.2+ research milestones (deferred)
 
 These items require new Lean proofs, adversarial fixtures, and CI subchecks before any public claim upgrade. Track in `current-gap-audit.md`.

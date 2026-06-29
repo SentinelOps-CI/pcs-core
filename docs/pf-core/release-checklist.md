@@ -17,7 +17,7 @@ Pre-release verification for PF-Core in `pcs-core`. Run from repository root unl
 | Lean job: `pcs pf-core lean-check` | Concrete trace proof + `LeanKernelChecked` path on fixture |
 | Lean job: `validate-contracts` | Contract runtime checker on `contract_checked/` |
 | `pcs pf-core bundle-release` / `validate-bundle` | Release bundle manifest with trace, certificate, proof, kernel hashes |
-| `.github/workflows/pf-core-release-gate.yml` | Live CertifyEdge required (no mock fallback) on main/tags |
+| `.github/workflows/pf-core-release-gate.yml` | Live CertifyEdge required (mock/stub rejected; staging stub via `PF_CORE_CERTIFYEDGE_ALLOW_STUB=1`) on main/tags |
 | `python scripts/gen_pf_core_catalog.py` in CI | Generated catalog artifacts match `schemas/pf_core.catalog.json` |
 | `scripts/pf-core-release-grade-local.{ps1,sh}` | Full local release-grade matrix: pytest sweep, catalog drift, audit-lean-no-sorry, PFCore+PCS lake, lean-check (`TraceSafeRCertificate`), bundle kernel manifest, CertifyEdge mock+stub |
 | `pf-core-adapter` job on `main` | `continue-on-error: false` — adapter parity blocks main |
@@ -110,8 +110,8 @@ Workflow file: `.github/workflows/pf-core-release-gate.yml`
 1. Open GitHub → Actions → **PF-Core Release Gate** → **Run workflow** (branch: `main`, or select a release candidate branch).
 2. Alternatively, push tag `v0.1.x` only after local `scripts/pf-core-release-grade-local.{ps1,sh}` and release-chain validation pass.
 2. The job installs `python/` and runs CertifyEdge with `PF_CORE_CERTIFYEDGE_REQUIRE_LIVE=1` and `--require-live`.
-3. Live CLI resolution order: `secrets.PF_CORE_CERTIFYEDGE_CLI` → `certifyedge` on PATH → `scripts/certifyedge-stub.py`.
-4. Success criteria: `/tmp/PFCoreCertificate.certifyedge.release.json` validates; attestation is not `mock://`; `checker` and `checker_version` present.
+3. Live CLI resolution order: `secrets.PF_CORE_CERTIFYEDGE_CLI` → `certifyedge` on PATH. No automatic stub fallback on the release path.
+4. Success criteria: `/tmp/PFCoreCertificate.certifyedge.release.json` validates; attestation is not `mock://`; `stub://` rejected unless `PF_CORE_CERTIFYEDGE_ALLOW_STUB=1`; `checker` and `checker_version` present.
 
 Local equivalent (stub format contract):
 
