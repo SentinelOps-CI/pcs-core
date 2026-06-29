@@ -456,8 +456,20 @@ theorem concrete_tool_use_release_admissible_prop :
     )
 
 
-def _computation_theorems_block() -> str:
-    return """
+def _computation_theorems_block(*, artifact_hashes: list[str]) -> str:
+    artifact_list = hash_list_to_lean(artifact_hashes)
+    return f"""
+def concreteArtifactHashes : List Hash := {artifact_list}
+
+theorem concrete_witness_result_hashes_admissible :
+    witnessResultHashesAdmissibleD concreteComputationWitness.resultHashes
+      concreteArtifactHashes = true := by
+  decide
+
+theorem concrete_witness_result_hashes_admissible_prop :
+    witnessResultHashesAdmissible concreteComputationWitness concreteArtifactHashes :=
+  (witnessResultHashesAdmissibleD_sound _ _).mp concrete_witness_result_hashes_admissible
+
 theorem concrete_witness_result_hash_listed :
     witnessResultHashListedD concreteComputationWitness.resultHashes
       concreteResultArtifactHash = true := by
@@ -486,12 +498,14 @@ theorem concrete_signed_bundle_admissible_prop :
   (signedBundleAdmissibleD_sound _ _).mp concrete_signed_bundle_admissible
 
 theorem concrete_computation_release_admissible_prop :
-    concreteResultArtifactHash ∈ concreteComputationWitness.resultHashes ∧
+    witnessResultHashesAdmissible concreteComputationWitness concreteArtifactHashes ∧
+      concreteResultArtifactHash ∈ concreteComputationWitness.resultHashes ∧
       VerificationAdmitsBundle concreteVerification concreteCertifiedBundleHash ∧
       SignedBundleAdmissible concreteSignedInputHash
         concreteVerification.verifiedInputBundleHash :=
-  And.intro concrete_witness_result_hash_listed_prop
-    (And.intro concrete_verification_admits_bundle_prop concrete_signed_bundle_admissible_prop)
+  And.intro concrete_witness_result_hashes_admissible_prop
+    (And.intro concrete_witness_result_hash_listed_prop
+      (And.intro concrete_verification_admits_bundle_prop concrete_signed_bundle_admissible_prop))
 """.strip()
 
 
@@ -520,12 +534,16 @@ def generate_proof_obligation_file(
     elif workflow_id == "scientific_computation.reproducibility_v0":
         imports = "import PCS.ComputationWitness\nimport PCS.ReleaseChainCheck"
         disclaimer = (
-            "This discharges computation witness result-hash listing plus verification/signed "
-            "bundle obligations. Full witness admissibility over all result hashes is not yet "
-            "codegen-backed. It does **not** imply PF-Core trace safety or `LeanKernelChecked`."
+            "This discharges computation witness result-hash admissibility (declared artifact "
+            "digest set) plus verification/signed bundle obligations. Multi-artifact witness "
+            "sets beyond the release fixture remain a documented deferral. It does **not** imply "
+            "PF-Core trace safety or `LeanKernelChecked`."
         )
+        comp_values = computation_values_from_obligations(obligations_doc, release_dir=release_dir)
         values_body = generate_computation_lean(obligations_doc, release_dir=release_dir)
-        theorems = _computation_theorems_block()
+        theorems = _computation_theorems_block(
+            artifact_hashes=[str(comp_values["result_artifact_sha256"])],
+        )
         eval_line = ""
     else:
         imports = "import PCS.ReleaseChainCheck"
