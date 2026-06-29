@@ -114,13 +114,25 @@ _LEAN_IDENT_RE = re.compile(r"[^a-zA-Z0-9_]")
 _THEOREM_SIGNATURE_RE = re.compile(r"theorem (\w+) : (.+) :=", re.DOTALL)
 
 
+def _workflow_certificate_mode_from_catalog(workflow_id: str) -> str | None:
+    from pcs_core.pf_core_catalog import WORKFLOW_CERTIFICATE_MODES
+
+    for entry in WORKFLOW_CERTIFICATE_MODES:
+        if entry.get("workflow_id") == workflow_id:
+            mode = entry.get("required_certificate_mode")
+            if isinstance(mode, str) and mode.strip():
+                return mode.strip()
+    return None
+
+
 def resolve_certificate_mode(
     trace: Mapping[str, Any],
     *,
     trace_path: Path | None = None,
     certificate_mode: str | None = None,
+    release_grade: bool = False,
 ) -> str:
-    """Pick certificate mode: CLI override, trace policy, example fallback, or legacy default."""
+    """Pick certificate mode: CLI override, trace policy, workflow map, or legacy default."""
     if certificate_mode:
         if certificate_mode not in CERTIFICATE_MODES:
             raise ValueError(f"unknown certificate_mode {certificate_mode!r}")
@@ -141,7 +153,18 @@ def resolve_certificate_mode(
                     f"unknown workflow profile required_certificate_mode {profile_mode!r}"
                 )
             return profile_mode
-    if trace_path is not None and (trace_path.parent / "tool_use_trace.json").is_file():
+        catalog_mode = _workflow_certificate_mode_from_catalog(workflow_id)
+        if catalog_mode:
+            if catalog_mode not in CERTIFICATE_MODES:
+                raise ValueError(
+                    f"unknown catalog required_certificate_mode {catalog_mode!r}"
+                )
+            return catalog_mode
+    if (
+        not release_grade
+        and trace_path is not None
+        and (trace_path.parent / "tool_use_trace.json").is_file()
+    ):
         return TOOL_USE_DEFAULT_CERTIFICATE_MODE
     return DEFAULT_CERTIFICATE_MODE
 
@@ -861,9 +884,17 @@ def generate_proof_obligation_file(
     *,
     trace_path: Path | None = None,
     certificate_mode: str | None = None,
+    release_grade: bool = False,
 ) -> Path:
     """Write a `.lean` file proving concrete trace/event (and optional handoff) safety."""
-    mode = resolve_certificate_mode(trace, trace_path=trace_path, certificate_mode=certificate_mode)
+    mode = resolve_certificate_mode(
+        trace,
+        trace_path=trace_path,
+        certificate_mode=certificate_mode,
+        release_grade=release_grade,
+    )
+    if release_grade and is_tool_use_trace(trace, trace_path=trace_path):
+        mode = TOOL_USE_DEFAULT_CERTIFICATE_MODE
 
     module = generated_module_name(trace)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -956,6 +987,9 @@ Trust-boundary hooks (tenant isolation, cross-tenant safety, observational NI) a
 discharged via proved links from `TraceSafe`. `TraceSafeRCertificate` additionally
 discharges `concrete_trace_safe_r*` and per-event `concrete_action_resource_scope_*`.
 Base `TraceSafe` / `ActionAdmissible` omit pattern discharge; `TraceSafeR` refines them.
+
+Release-grade tool-use lean-check treats `TraceSafeRCertificate` as the sole supported
+`LeanKernelChecked` path (refinement to base `TraceSafe` via `traceSafeR_implies_traceSafe`).
 -/
 
 namespace PFCore.Generated.{module}

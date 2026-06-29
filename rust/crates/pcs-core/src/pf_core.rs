@@ -3,7 +3,9 @@ use std::collections::HashSet;
 use serde_json::{Map, Value};
 
 use crate::hash::canonical_hash;
-use crate::pf_core_catalog::{CAPABILITY_CATALOG, EFFECT_KINDS, TOOL_NAME_MAP};
+use crate::pf_core_catalog::{
+    CAPABILITY_CATALOG, EFFECT_KINDS, TOOL_NAME_MAP, WORKFLOW_CERTIFICATE_MODES,
+};
 
 pub const GENESIS_HASH: &str =
     "sha256:0000000000000000000000000000000000000000000000000000000000000000";
@@ -281,7 +283,6 @@ const RUNTIME_RESOURCE_PATTERN_SCOPE: &str = "resource_pattern_scope";
 const LEAN_RESOURCE_WITHIN_CAPABILITY_PATTERN: &str = "resource_within_capability_pattern";
 
 const DEFAULT_CERTIFICATE_MODE: &str = "TraceSafeCertificate";
-const TOOL_USE_WORKFLOW_PROFILE_ID: &str = "agent_tool_use.safety_v0";
 const TOOL_USE_DEFAULT_CERTIFICATE_MODE: &str = "TraceSafeRCertificate";
 
 const CERTIFICATE_MODES: &[&str] = &[
@@ -358,10 +359,20 @@ pub fn resolve_tool_mapping(
     ))
 }
 
+fn workflow_certificate_mode(workflow_id: &str) -> Option<&'static str> {
+    for (id, mode) in WORKFLOW_CERTIFICATE_MODES {
+        if *id == workflow_id {
+            return Some(mode);
+        }
+    }
+    None
+}
+
 pub fn resolve_certificate_mode_default(
     certificate: &Value,
     trace: Option<&Value>,
     trace_path: Option<&str>,
+    release_grade: bool,
 ) -> String {
     if let Some(mode) = certificate
         .get("certificate_mode")
@@ -379,18 +390,20 @@ pub fn resolve_certificate_mode_default(
             return required.to_string();
         }
         if let Some(workflow_id) = trace.get("workflow_id").and_then(|v| v.as_str()) {
-            if workflow_id == TOOL_USE_WORKFLOW_PROFILE_ID {
-                return TOOL_USE_DEFAULT_CERTIFICATE_MODE.to_string();
+            if let Some(mode) = workflow_certificate_mode(workflow_id) {
+                return mode.to_string();
             }
         }
     }
-    if let Some(path) = trace_path {
-        let trace_dir = std::path::Path::new(path).parent();
-        if trace_dir
-            .map(|dir| dir.join("tool_use_trace.json").is_file())
-            .unwrap_or(false)
-        {
-            return TOOL_USE_DEFAULT_CERTIFICATE_MODE.to_string();
+    if !release_grade {
+        if let Some(path) = trace_path {
+            let trace_dir = std::path::Path::new(path).parent();
+            if trace_dir
+                .map(|dir| dir.join("tool_use_trace.json").is_file())
+                .unwrap_or(false)
+            {
+                return TOOL_USE_DEFAULT_CERTIFICATE_MODE.to_string();
+            }
         }
     }
     DEFAULT_CERTIFICATE_MODE.to_string()
@@ -802,6 +815,25 @@ pub fn validate_pfcore_certificate_semantics(certificate: &Value) -> Vec<String>
                     errors.push(format!(
                         "root: certificate_mode obligations missing passed proofs for {missing_mode:?}"
                     ));
+                }
+            }
+            if cert_mode == "ContractCheckedCertificate"
+                && certificate.get("lean_proof_checked") == Some(&Value::Bool(true))
+            {
+                if let Some(runtime) = certificate
+                    .get("contract_semantics_checked")
+                    .and_then(|v| v.get("runtime"))
+                    .and_then(|v| v.as_array())
+                {
+                    for item in runtime {
+                        if let Some(item_str) = item.as_str() {
+                            if item_str.starts_with("missing_contract:") {
+                                errors.push(format!(
+                                    "root: ContractCheckedCertificate cannot claim lean_proof_checked with unresolved contract ref {item_str:?}"
+                                ));
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -1703,7 +1735,49 @@ mod tests {
             &certificate,
             Some(&trace),
             Some(trace_path.to_str().expect("utf8")),
+            false,
         );
         assert_eq!(mode, TOOL_USE_DEFAULT_CERTIFICATE_MODE);
+    }
+
+    #[test]
+    fn pf_core_workflow_catalog_mode_without_sibling_file() {
+        let trace = serde_json::json!({
+            "workflow_id": "agent_tool_use.safety_v0",
+        });
+        let mode =
+            resolve_certificate_mode_default(&serde_json::json!({}), Some(&trace), None, false);
+        assert_eq!(mode, TOOL_USE_DEFAULT_CERTIFICATE_MODE);
+    }
+
+    #[test]
+    fn pf_core_release_grade_skips_sibling_heuristic() {
+        let trace_path =
+            repo_root().join("examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json");
+        let trace = load_json(trace_path.clone());
+        let sibling_mode = resolve_certificate_mode_default(
+            &serde_json::json!({}),
+            Some(&trace),
+            Some(trace_path.to_str().expect("utf8")),
+            false,
+        );
+        assert_eq!(sibling_mode, TOOL_USE_DEFAULT_CERTIFICATE_MODE);
+        let stripped = serde_json::json!({
+            "trace_id": "trace-no-workflow",
+        });
+        let non_release = resolve_certificate_mode_default(
+            &serde_json::json!({}),
+            Some(&stripped),
+            Some(trace_path.to_str().expect("utf8")),
+            false,
+        );
+        assert_eq!(non_release, TOOL_USE_DEFAULT_CERTIFICATE_MODE);
+        let release_mode = resolve_certificate_mode_default(
+            &serde_json::json!({}),
+            Some(&stripped),
+            Some(trace_path.to_str().expect("utf8")),
+            true,
+        );
+        assert_eq!(release_mode, DEFAULT_CERTIFICATE_MODE);
     }
 }

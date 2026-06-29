@@ -93,5 +93,11 @@
       "tool_category": "lab",
       "capability_id": "cap:lab-release"
     }
+  ],
+  "workflow_certificate_modes": [
+    {
+      "workflow_id": "agent_tool_use.safety_v0",
+      "required_certificate_mode": "TraceSafeRCertificate"
+    }
   ]
 }

@@ -72,3 +72,10 @@ TOOL_NAME_MAP: dict[tuple[str, str], tuple[str, str, str]] = {
     ("mcp.invoke", "mcp"): ("cap:mcp-invoke", "mcp.invoke", "mcp:*"),
     ("lab.release", "lab"): ("cap:lab-release", "lab.release", "lab:*"),
 }
+
+WORKFLOW_CERTIFICATE_MODES: list[dict[str, str]] = [
+    {
+        "workflow_id": "agent_tool_use.safety_v0",
+        "required_certificate_mode": "TraceSafeRCertificate",
+    },
+]

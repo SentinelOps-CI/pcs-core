@@ -91,6 +91,47 @@ def test_release_grade_rejects_trace_safe_certificate_on_tool_use() -> None:
     assert "CertificateModePolicyViolation" in codes
 
 
+def test_release_grade_skips_sibling_tool_use_heuristic(tmp_path: Path) -> None:
+    trace = dict(_load(FILE_READ))
+    trace.pop("workflow_id", None)
+    trace.pop("required_certificate_mode", None)
+    trace_file = tmp_path / "pfcore_trace.json"
+    trace_file.write_text(json.dumps(trace), encoding="utf-8")
+    (tmp_path / "tool_use_trace.json").write_text("{}", encoding="utf-8")
+    assert (
+        resolve_certificate_mode(trace, trace_path=trace_file, release_grade=False)
+        == "TraceSafeRCertificate"
+    )
+    assert (
+        resolve_certificate_mode(trace, trace_path=trace_file, release_grade=True)
+        == "TraceSafeCertificate"
+    )
+
+
+def test_release_grade_tool_use_without_policy_fails_lean_check(tmp_path: Path) -> None:
+    from pcs_core.lean_check import run_pfcore_lean_check
+    from pcs_core.pf_core_runtime import compute_trace_hash
+
+    trace = dict(_load(FILE_READ))
+    trace.pop("required_certificate_mode", None)
+    trace["workflow_id"] = "custom.agent.v0"
+    trace.pop("trace_hash", None)
+    trace.pop("signature_or_digest", None)
+    trace["trace_hash"] = compute_trace_hash(trace)
+    trace["signature_or_digest"] = trace["trace_hash"]
+    trace_file = tmp_path / "pfcore_trace.json"
+    trace_file.write_text(json.dumps(trace), encoding="utf-8")
+    tool_use_src = REPO / "examples" / "pf-core-valid" / "tool_use_trace_compiled" / "tool_use_trace.json"
+    (tmp_path / "tool_use_trace.json").write_text(
+        tool_use_src.read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+    code, result = run_pfcore_lean_check(trace_file, release_grade=True, skip_build=True)
+    assert code != 0
+    codes = [issue.get("code") for issue in result.get("issues", [])]
+    assert "CertificateModePolicyViolation" in codes
+
+
 def test_trace_safe_r_certificate_requires_resource_scope_theorems(tmp_path: Path) -> None:
     trace = _load(VALID_TRACE)
     proof_path = generate_proof_obligation_file(

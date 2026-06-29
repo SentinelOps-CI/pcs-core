@@ -5,6 +5,7 @@ import {
   CAPABILITY_CATALOG,
   EFFECT_KINDS,
   TOOL_NAME_MAP,
+  WORKFLOW_CERTIFICATE_MODES,
 } from "./pfCoreCatalog.js";
 
 export {
@@ -12,6 +13,7 @@ export {
   EFFECT_KINDS,
   ROLE_CAPABILITY_MAP,
   TOOL_NAME_MAP,
+  WORKFLOW_CERTIFICATE_MODES,
 } from "./pfCoreCatalog.js";
 
 export const GENESIS_HASH =
@@ -357,7 +359,6 @@ export function validateContractSemanticsChecked(
 }
 
 const DEFAULT_CERTIFICATE_MODE = "TraceSafeCertificate";
-const TOOL_USE_WORKFLOW_PROFILE_ID = "agent_tool_use.safety_v0";
 const TOOL_USE_DEFAULT_CERTIFICATE_MODE = "TraceSafeRCertificate";
 
 const CERTIFICATE_MODES = new Set([
@@ -431,10 +432,20 @@ export function resolveToolMapping(
   return mapping;
 }
 
+function workflowCertificateMode(workflowId: string): string | undefined {
+  for (const entry of WORKFLOW_CERTIFICATE_MODES) {
+    if (entry.workflow_id === workflowId) {
+      return entry.required_certificate_mode;
+    }
+  }
+  return undefined;
+}
+
 export function resolveCertificateModeDefault(
   certificate: Record<string, unknown>,
   tracePath?: string,
   trace?: Record<string, unknown>,
+  releaseGrade = false,
 ): string {
   const explicit = certificate.certificate_mode;
   if (typeof explicit === "string" && CERTIFICATE_MODES.has(explicit)) {
@@ -445,10 +456,17 @@ export function resolveCertificateModeDefault(
     return required;
   }
   const workflowId = trace?.workflow_id;
-  if (workflowId === TOOL_USE_WORKFLOW_PROFILE_ID) {
-    return TOOL_USE_DEFAULT_CERTIFICATE_MODE;
+  if (typeof workflowId === "string") {
+    const catalogMode = workflowCertificateMode(workflowId);
+    if (catalogMode && CERTIFICATE_MODES.has(catalogMode)) {
+      return catalogMode;
+    }
   }
-  if (tracePath && existsSync(join(dirname(tracePath), "tool_use_trace.json"))) {
+  if (
+    !releaseGrade &&
+    tracePath &&
+    existsSync(join(dirname(tracePath), "tool_use_trace.json"))
+  ) {
     return TOOL_USE_DEFAULT_CERTIFICATE_MODE;
   }
   return DEFAULT_CERTIFICATE_MODE;
@@ -696,6 +714,23 @@ export function validatePfcoreCertificateSemantics(
           errors.push(
             `root: certificate_mode obligations missing passed proofs for ${JSON.stringify(missingMode)}`,
           );
+        }
+      }
+      const certModeChecked = String(certificate.certificate_mode ?? DEFAULT_CERTIFICATE_MODE);
+      if (certModeChecked === "ContractCheckedCertificate" && certificate.lean_proof_checked === true) {
+        const semantics = certificate.contract_semantics_checked;
+        if (semantics && typeof semantics === "object" && !Array.isArray(semantics)) {
+          const runtime = (semantics as Record<string, unknown>).runtime;
+          if (Array.isArray(runtime)) {
+            for (const item of runtime) {
+              const itemStr = String(item);
+              if (itemStr.startsWith("missing_contract:")) {
+                errors.push(
+                  `root: ContractCheckedCertificate cannot claim lean_proof_checked with unresolved contract ref ${JSON.stringify(itemStr)}`,
+                );
+              }
+            }
+          }
         }
       }
     } else {

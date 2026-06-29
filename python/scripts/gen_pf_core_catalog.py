@@ -52,6 +52,21 @@ def validate_catalog(catalog: dict) -> None:
         if key in seen:
             raise ValueError(f"duplicate tool_map key {key!r}")
         seen.add(key)
+    workflow_modes = catalog.get("workflow_certificate_modes")
+    if workflow_modes is not None:
+        if not isinstance(workflow_modes, list):
+            raise ValueError("catalog.workflow_certificate_modes must be a list")
+        seen_workflows: set[str] = set()
+        for entry in workflow_modes:
+            if not isinstance(entry, dict):
+                raise ValueError("catalog.workflow_certificate_modes entries must be objects")
+            workflow_id = str(entry.get("workflow_id") or "")
+            mode = str(entry.get("required_certificate_mode") or "")
+            if not workflow_id or not mode:
+                raise ValueError(f"invalid workflow_certificate_modes entry: {entry!r}")
+            if workflow_id in seen_workflows:
+                raise ValueError(f"duplicate workflow_certificate_modes workflow_id {workflow_id!r}")
+            seen_workflows.add(workflow_id)
 
 
 def _py_repr(value: object) -> str:
@@ -86,6 +101,20 @@ def generate_python(catalog: dict, out_path: Path) -> str:
             f"{_py_repr(next(c['resource_pattern'] for c in caps if c['capability_id'] == cap_id))}),"
         )
     effect_lines = ",\n    ".join(_py_repr(e) for e in effect_kinds)
+    workflow_modes = catalog.get("workflow_certificate_modes") or []
+    workflow_lines = []
+    for entry in workflow_modes:
+        workflow_lines.append(
+            f"    {{"
+            f'"workflow_id": {_py_repr(entry["workflow_id"])}, '
+            f'"required_certificate_mode": {_py_repr(entry["required_certificate_mode"])}'
+            f"}},"
+        )
+    workflow_block = (
+        "[\n" + "\n".join(workflow_lines) + "\n]"
+        if workflow_lines
+        else "[]"
+    )
     source = f'''"""Generated PF-Core catalog (do not edit by hand)."""
 
 from __future__ import annotations
@@ -105,6 +134,8 @@ ROLE_CAPABILITY_MAP: dict[str, list[str]] = {{
 TOOL_NAME_MAP: dict[tuple[str, str], tuple[str, str, str]] = {{
 {chr(10).join(tool_lines)}
 }}
+
+WORKFLOW_CERTIFICATE_MODES: list[dict[str, str]] = {workflow_block}
 '''
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(source, encoding="utf-8")
@@ -173,6 +204,20 @@ def generate_rust(catalog: dict, out_path: Path) -> str:
             "),"
         )
     effect_items = ", ".join(f'"{e}"' for e in effect_kinds)
+    workflow_modes = catalog.get("workflow_certificate_modes") or []
+    workflow_entries = []
+    for entry in workflow_modes:
+        workflow_entries.append(
+            f'        ("{entry["workflow_id"]}", "{entry["required_certificate_mode"]}"),'
+        )
+    workflow_block = ""
+    if workflow_entries:
+        workflow_block = f"""
+
+pub const WORKFLOW_CERTIFICATE_MODES: &[(&str, &str)] = &[
+{chr(10).join(workflow_entries)}
+];
+"""
     source = f"""//! Generated PF-Core catalog (do not edit by hand).
 
 pub const EFFECT_KINDS: &[&str] = &[{effect_items}];
@@ -187,8 +232,7 @@ pub const ROLE_CAPABILITY_MAP: &[(&str, &[&str])] = &[
 
 pub const TOOL_NAME_MAP: &[(&str, &str, &str, &str, &str)] = &[
 {chr(10).join(tool_entries)}
-];
-"""
+];{workflow_block}"""
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(source, encoding="utf-8")
     return source
@@ -220,6 +264,23 @@ def generate_typescript(catalog: dict, out_path: Path) -> str:
             f"{_py_repr(cap['resource_pattern'])}],"
         )
     effect_items = ", ".join(_py_repr(e) for e in effect_kinds)
+    workflow_modes = catalog.get("workflow_certificate_modes") or []
+    workflow_lines = []
+    for entry in workflow_modes:
+        workflow_lines.append(
+            f"  {{ workflow_id: {_py_repr(entry['workflow_id'])}, "
+            f"required_certificate_mode: {_py_repr(entry['required_certificate_mode'])} }},"
+        )
+    workflow_block = ""
+    if workflow_lines:
+        workflow_block = (
+            "\n\nexport const WORKFLOW_CERTIFICATE_MODES: ReadonlyArray<{\n"
+            "  workflow_id: string;\n"
+            "  required_certificate_mode: string;\n"
+            "}> = [\n"
+            + "\n".join(workflow_lines)
+            + "\n];"
+        )
     source = f"""/** Generated PF-Core catalog (do not edit by hand). */
 
 export const EFFECT_KINDS = new Set<string>([{effect_items}]);
@@ -237,7 +298,7 @@ export const ROLE_CAPABILITY_MAP: Record<string, string[]> = {{
 
 export const TOOL_NAME_MAP: Record<string, [string, string, string]> = {{
 {chr(10).join(tool_lines)}
-}};
+}};{workflow_block}
 """
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(source, encoding="utf-8")

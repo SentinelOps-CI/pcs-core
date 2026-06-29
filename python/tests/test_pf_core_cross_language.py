@@ -454,3 +454,26 @@ def test_codegen_emits_trace_safe_r_obligations_on_valid_trace(tmp_path: Path) -
     text = proof_path.read_text(encoding="utf-8")
     assert "theorem concrete_trace_safe_r" in text
     assert "traceSafeRD" in text
+
+
+def test_workflow_catalog_certificate_mode_without_sibling_file(tmp_path: Path) -> None:
+    from pcs_core.pf_core_lean_codegen import resolve_certificate_mode
+
+    trace = dict(_load_json(REPO / "examples/pf-core-valid/file_read_allowed/trace.json"))
+    trace["workflow_id"] = "agent_tool_use.safety_v0"
+    trace.pop("required_certificate_mode", None)
+    trace_file = tmp_path / "pfcore_trace.json"
+    trace_file.write_text(json.dumps(trace), encoding="utf-8")
+    assert (
+        resolve_certificate_mode(trace, trace_path=trace_file, release_grade=False)
+        == "TraceSafeRCertificate"
+    )
+    assert (
+        resolve_certificate_mode(trace, trace_path=trace_file, release_grade=True)
+        == "TraceSafeRCertificate"
+    )
+
+
+def test_valid_tool_use_trace_has_required_certificate_mode() -> None:
+    trace = _load_json(VALID_TRACE)
+    assert trace.get("required_certificate_mode") == "TraceSafeRCertificate"

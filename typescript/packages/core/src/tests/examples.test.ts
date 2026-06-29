@@ -400,6 +400,10 @@ test("pf-core audit invalid vectors parity", () => {
       "certificate_mode_effectframecertificate_missing_obligations/certificate.json",
       "certificate_mode obligations",
     ],
+    [
+      "certificate_mode_contractcheckedcertificate_missing_contract_file/certificate.json",
+      "ContractCheckedCertificate cannot claim lean_proof_checked",
+    ],
   ];
   for (const [relative, needle] of certificateCases) {
     const certificate = JSON.parse(
@@ -419,6 +423,13 @@ test("pf-core generated tool_map parity", () => {
   const tracePath = join(examplesDir, "pf-core-valid/tool_use_trace_compiled/pfcore_trace.json");
   const trace = JSON.parse(readFileSync(tracePath, "utf8")) as Record<string, unknown>;
   assert.equal(resolveCertificateModeDefault({}, tracePath, trace), "TraceSafeRCertificate");
+  const catalogTrace = {
+    workflow_id: "agent_tool_use.safety_v0",
+  } as Record<string, unknown>;
+  assert.equal(
+    resolveCertificateModeDefault({}, undefined, catalogTrace),
+    "TraceSafeRCertificate",
+  );
 });
 
 test("shared hash vectors match test_vectors/hash fixtures", () => {

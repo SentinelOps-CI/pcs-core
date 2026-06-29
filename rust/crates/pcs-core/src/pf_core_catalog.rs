@@ -84,3 +84,6 @@ pub const TOOL_NAME_MAP: &[(&str, &str, &str, &str, &str)] = &[
         "lab:*",
     ),
 ];
+
+pub const WORKFLOW_CERTIFICATE_MODES: &[(&str, &str)] =
+    &[("agent_tool_use.safety_v0", "TraceSafeRCertificate")];

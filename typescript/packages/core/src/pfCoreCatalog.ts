@@ -35,3 +35,10 @@ export const TOOL_NAME_MAP: Record<string, [string, string, string]> = {
   'mcp.invoke|mcp': ['cap:mcp-invoke', 'mcp.invoke', 'mcp:*'],
   'lab.release|lab': ['cap:lab-release', 'lab.release', 'lab:*'],
 };
+
+export const WORKFLOW_CERTIFICATE_MODES: ReadonlyArray<{
+  workflow_id: string;
+  required_certificate_mode: string;
+}> = [
+  { workflow_id: 'agent_tool_use.safety_v0', required_certificate_mode: 'TraceSafeRCertificate' },
+];
