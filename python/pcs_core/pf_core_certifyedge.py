@@ -133,7 +133,9 @@ def certifyedge_status() -> dict[str, object]:
         "allow_stub_env": certifyedge_allow_stub(),
         "env_contract": {
             "PF_CORE_CERTIFYEDGE_MODE": "auto | live | mock (default: auto)",
-            "PF_CORE_CERTIFYEDGE_CLI": "optional explicit path to certifyedge binary or stub script",
+            "PF_CORE_CERTIFYEDGE_CLI": (
+                "optional explicit path to certifyedge binary or stub script"
+            ),
             "PF_CORE_CERTIFYEDGE_MOCK": "1 forces mock mode (alias: PCS_CERTIFYEDGE_MOCK)",
             "PF_CORE_CERTIFYEDGE_REQUIRE_LIVE": "1 fails when live CLI absent (release gate)",
             "PF_CORE_CERTIFYEDGE_ALLOW_STUB": "1 allows format stub on require-live (staging only)",
@@ -229,7 +231,11 @@ def run_certifyedge_check(
             rejected = _reject_release_attestation("mock", require_live=True)
             assert rejected is not None
             return CertificateCheckResult(
-                **{**rejected.__dict__, "property_id": property_id, "checker_version": checker_version}
+                **{
+                    **rejected.__dict__,
+                    "property_id": property_id,
+                    "checker_version": checker_version,
+                }
             )
 
     if mode == "mock":
@@ -237,7 +243,11 @@ def run_certifyedge_check(
             rejected = _reject_release_attestation("mock", require_live=True)
             assert rejected is not None
             return CertificateCheckResult(
-                **{**rejected.__dict__, "property_id": property_id, "checker_version": checker_version}
+                **{
+                    **rejected.__dict__,
+                    "property_id": property_id,
+                    "checker_version": checker_version,
+                }
             )
         print(
             "WARNING: CertifyEdge mock mode (PF_CORE_CERTIFYEDGE_MODE=mock or "
@@ -454,7 +464,8 @@ def write_certifyedge_certificate(
             pass
         else:
             raise RuntimeError(
-                f"{attestation_class} attestation rejected when require_live: {result.attestation_ref}"
+                f"{attestation_class} attestation rejected when require_live: "
+                f"{result.attestation_ref}"
             )
     errors = validate_schema(cert, "PFCoreCertificate.v0")
     if errors:

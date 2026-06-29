@@ -11,11 +11,11 @@ import pytest
 from pcs_core.lean_check import run_pfcore_lean_check
 from pcs_core.pf_core_certifyedge import (
     CERTIFYEDGE_INSTALL_DOC,
-    classify_attestation_ref,
     certifyedge_cli_available,
     certifyedge_mock_enabled,
     certifyedge_mode,
     certifyedge_status,
+    classify_attestation_ref,
     run_certifyedge_check,
     write_certifyedge_certificate,
 )
@@ -253,17 +253,13 @@ def test_certifyedge_stub_rejected_on_release_path(monkeypatch: pytest.MonkeyPat
     monkeypatch.setenv("PF_CORE_CERTIFYEDGE_MODE", "live")
     monkeypatch.setenv("PF_CORE_CERTIFYEDGE_CLI", str(stub))
     monkeypatch.delenv("PF_CORE_CERTIFYEDGE_ALLOW_STUB", raising=False)
-    result = run_certifyedge_check(
-        LABTRUST_TRACE, "qc_release.temporal.safety", require_live=True
-    )
+    result = run_certifyedge_check(LABTRUST_TRACE, "qc_release.temporal.safety", require_live=True)
     assert not result.ok
     assert result.attestation_class == "stub"
     assert "stub" in result.message.lower()
 
     monkeypatch.setenv("PF_CORE_CERTIFYEDGE_ALLOW_STUB", "1")
-    allowed = run_certifyedge_check(
-        LABTRUST_TRACE, "qc_release.temporal.safety", require_live=True
-    )
+    allowed = run_certifyedge_check(LABTRUST_TRACE, "qc_release.temporal.safety", require_live=True)
     assert allowed.ok
     assert allowed.attestation_class == "stub"
 

@@ -121,7 +121,9 @@ def test_release_grade_tool_use_without_policy_fails_lean_check(tmp_path: Path) 
     trace["signature_or_digest"] = trace["trace_hash"]
     trace_file = tmp_path / "pfcore_trace.json"
     trace_file.write_text(json.dumps(trace), encoding="utf-8")
-    tool_use_src = REPO / "examples" / "pf-core-valid" / "tool_use_trace_compiled" / "tool_use_trace.json"
+    tool_use_src = (
+        REPO / "examples" / "pf-core-valid" / "tool_use_trace_compiled" / "tool_use_trace.json"
+    )
     (tmp_path / "tool_use_trace.json").write_text(
         tool_use_src.read_text(encoding="utf-8"),
         encoding="utf-8",
