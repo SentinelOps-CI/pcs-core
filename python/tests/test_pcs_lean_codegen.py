@@ -110,6 +110,7 @@ def test_generate_computation_proof_file(tmp_path: Path) -> None:
     doc = extract_proof_obligations_from_release(COMPUTATION)
     path = generate_proof_obligation_file(doc, tmp_path, release_dir=COMPUTATION)
     text = path.read_text(encoding="utf-8")
+    assert "concrete_witness_result_hashes_admissible_prop" in text
     assert "concrete_witness_result_hash_listed_prop" in text
     assert "concrete_computation_release_admissible_prop" in text
 
