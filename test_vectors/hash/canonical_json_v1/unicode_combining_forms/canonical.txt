@@ -1,0 +1,1 @@
+{"artifact_type":"CanonicalProbe.v0","schema_version":"v0","text":"café"}

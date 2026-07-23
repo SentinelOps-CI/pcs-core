@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 from typing import Any
 
 # v0 compatibility field: integrity digest mistaken historically for a signature.
@@ -31,9 +32,19 @@ PLACEHOLDER_DIGEST = f"sha256:{'0' * 64}"
 SAFE_INTEGER_MIN = -9007199254740991
 SAFE_INTEGER_MAX = 9007199254740991
 
+# Normalized rejection codes shared with Rust and TypeScript release hashing.
+REJECTION_FLOAT_PROHIBITED = "float_prohibited"
+REJECTION_INTEGER_OUT_OF_RANGE = "integer_out_of_range"
+REJECTION_NEGATIVE_ZERO = "negative_zero"
+
 
 class CanonicalizationError(ValueError):
     """Raised when a value cannot be represented under Canonical JSON v1 rules."""
+
+    def __init__(self, code: str, message: str, *, path: str = "$") -> None:
+        self.code = code
+        self.path = path
+        super().__init__(message)
 
 
 def domain_separated_signing_message(
@@ -58,23 +69,33 @@ def domain_separated_signing_message(
 def assert_canonical_number_policy(value: Any, *, path: str = "$") -> None:
     """Enforce Canonical JSON v1 number policy (strict / release hashing).
 
-    Floats are prohibited. Integers outside the safe-integer range are prohibited.
-    Callers that must carry non-integer decimals should store them as normalized
-    decimal strings rather than JSON numbers.
+    Floats and negative zero are prohibited. Integers outside the safe-integer
+    range are prohibited. Callers that must carry non-integer decimals should
+    store them as normalized decimal strings rather than JSON numbers.
     """
     if isinstance(value, bool):
         return
     if isinstance(value, int):
         if value < SAFE_INTEGER_MIN or value > SAFE_INTEGER_MAX:
             raise CanonicalizationError(
+                REJECTION_INTEGER_OUT_OF_RANGE,
                 f"{path}: integer {value} outside safe-integer range "
-                f"[{SAFE_INTEGER_MIN}, {SAFE_INTEGER_MAX}]"
+                f"[{SAFE_INTEGER_MIN}, {SAFE_INTEGER_MAX}]",
+                path=path,
             )
         return
     if isinstance(value, float):
+        if value == 0.0 and math.copysign(1.0, value) < 0.0:
+            raise CanonicalizationError(
+                REJECTION_NEGATIVE_ZERO,
+                f"{path}: negative zero is prohibited under Canonical JSON v1",
+                path=path,
+            )
         raise CanonicalizationError(
+            REJECTION_FLOAT_PROHIBITED,
             f"{path}: float values are prohibited under Canonical JSON v1; "
-            "use a normalized decimal string instead"
+            "use a normalized decimal string instead",
+            path=path,
         )
     if isinstance(value, dict):
         for key, child in value.items():
@@ -125,6 +146,24 @@ def canonical_hash(
         canonical_json_bytes(data, enforce_number_policy=enforce_number_policy)
     ).hexdigest()
     return f"sha256:{digest}"
+
+
+def canonical_hash_legacy(data: dict[str, Any]) -> str:
+    """Hash without the strict number policy (Phase 0 / legacy digest compatibility)."""
+    return canonical_hash(data, enforce_number_policy=False)
+
+
+def canonical_hash_release(data: dict[str, Any]) -> str:
+    """Hash with the strict number policy always enforced (release integrity envelopes)."""
+    return canonical_hash(data, enforce_number_policy=True)
+
+
+def try_canonical_hash_release(data: dict[str, Any]) -> tuple[str | None, str | None]:
+    """Return ``(digest, None)`` or ``(None, rejection_code)`` for cross-language vectors."""
+    try:
+        return canonical_hash_release(data), None
+    except CanonicalizationError as exc:
+        return None, exc.code
 
 
 def attach_artifact_digest(
