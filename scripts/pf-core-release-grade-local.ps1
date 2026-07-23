@@ -50,6 +50,14 @@ Step "PF-Core catalog drift check" {
         (Join-Path $root "lean\PFCore\Catalog.lean") `
         (Join-Path $root "rust\crates\pcs-core\src\pf_core_catalog.rs") `
         (Join-Path $root "typescript\packages\core\src\pfCoreCatalog.ts")
+    $action = Join-Path $root "lean\PFCore\Action.lean"
+    if (Select-String -Path $action -Pattern '\("cap:file-read", Effect.read\)' -Quiet) {
+        throw "hand-maintained knownCapabilityEffectCatalog entries found in Action.lean"
+    }
+    $codegen = Join-Path $root "python\pcs_core\pf_core_lean_codegen.py"
+    if (Select-String -Path $codegen -Pattern 'EFFECT_KIND_TO_LEAN: dict\[str, str\] = \{' -Quiet) {
+        throw "manual EFFECT_KIND_TO_LEAN table found in pf_core_lean_codegen.py"
+    }
 }
 
 Step "pf-core audit-lean-no-sorry" { pcs pf-core audit-lean-no-sorry }
