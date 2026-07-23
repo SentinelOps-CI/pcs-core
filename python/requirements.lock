@@ -8,7 +8,7 @@ jsonschema-specifications==2025.9.1
 referencing==0.36.2
 rpds-py==0.30.0
 PyNaCl==1.6.2
-cffi==1.17.1
+cffi==2.1.0
 pycparser==2.22
 
 # jsonschema[format-nongpl] — required so FormatChecker registers asserted formats
