@@ -1,0 +1,20 @@
+{
+  "schema_version": "v0",
+  "witness_id": "witness-sci-comp-repro-001",
+  "workflow_id": "scientific_computation.reproducibility_v0",
+  "dataset_hash": "sha256:84c9037231eef6a1742c1d6d0a043878b4de8395397c168026450d8ca9e647e3",
+  "environment_hash": "",
+  "run_receipt_hash": "sha256:9c74749d2ad46c6a60394db676e5527929f9b7bef9a012439d6d14b26d960828",
+  "result_hashes": [
+    "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  ],
+  "code_repo": "https://github.com/example/scientific-computation-runner",
+  "code_commit": "e555555555555555555555555555555555555555",
+  "checker": "certifyedge",
+  "checker_version": "0.1.0",
+  "status": "CertificateChecked",
+  "violations": [],
+  "source_repo": "https://github.com/fraware/CertifyEdge",
+  "source_commit": "b222222222222222222222222222222222222222",
+  "signature_or_digest": "sha256:c0ed0650ce1b7d6c6c7cd0250dce462b923b780b24336215bd81447deb10cf20"
+}
