@@ -30,7 +30,8 @@ RESEARCH_HELPER_THEOREMS = frozenset(
 )
 
 ROLE_MAP_KEYS_PATTERN = re.compile(
-    r"def runtimeRoleMap\s*:\s*RoleMap\s*:=\s*\{\s*entries\s*:=\s*\[(.*?)\]\s*\}",
+    r"def runtimeRoleMapEntries\s*:\s*List\s*\(String\s*×\s*List\s*String\)\s*:=\s*"
+    r"\[\s*(.*?)\s*\]\s*\n\n/-- Tool name",
     re.DOTALL,
 )
 ROLE_ENTRY_PATTERN = re.compile(r'\(\s*"([^"]+)"\s*,')
@@ -43,9 +44,9 @@ def _lean_source(name: str) -> str:
 
 
 def _extract_runtime_role_map_keys() -> set[str]:
-    text = _lean_source("RoleMap.lean")
+    text = _lean_source("Catalog.lean")
     match = ROLE_MAP_KEYS_PATTERN.search(text)
-    assert match, "runtimeRoleMap entries block not found in RoleMap.lean"
+    assert match, "runtimeRoleMapEntries block not found in Catalog.lean"
     return set(ROLE_ENTRY_PATTERN.findall(match.group(1)))
 
 
@@ -82,8 +83,8 @@ def test_runtime_role_map_keys_match_python() -> None:
 
 
 def test_runtime_role_map_capability_values_match_python() -> None:
-    """Audit capability lists per role via static parse of runtimeRoleMap entries."""
-    text = _lean_source("RoleMap.lean")
+    """Audit capability lists per role via static parse of Catalog.runtimeRoleMapEntries."""
+    text = _lean_source("Catalog.lean")
     match = ROLE_MAP_KEYS_PATTERN.search(text)
     assert match
     entries_blob = match.group(1)

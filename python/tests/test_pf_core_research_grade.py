@@ -51,6 +51,9 @@ RESEARCH_MODULES = (
     "Compositional.lean",
     "NonInterference.lean",
     "ContractDecide.lean",
+    "ObservedEffect.lean",
+    "DenyClosed.lean",
+    "PairedExecution.lean",
 )
 
 
@@ -170,9 +173,10 @@ def test_generated_proof_compiles_with_extended_catalog() -> None:
     from pcs_core.lean_check import pfcore_generated_dir, run_lean_concrete_proof
 
     trace = json.loads(VALID_TRACE.read_text(encoding="utf-8"))
-    proof_path = generate_proof_obligation_file(
+    generated = generate_proof_obligation_file(
         trace, pfcore_generated_dir(), trace_path=VALID_TRACE
     )
+    proof_path = generated.path
     ok, detail = run_lean_concrete_proof(proof_path, skip_build=False)
     if not ok and ("lake unavailable" in detail or "timed out" in detail.lower()):
         pytest.skip(detail)

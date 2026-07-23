@@ -58,7 +58,8 @@ def test_trace_to_lean_generates_kernel_constructs() -> None:
 
 def test_generate_proof_obligation_file_writes_theorem(tmp_path: Path) -> None:
     trace = _load(VALID_TRACE)
-    proof_path = generate_proof_obligation_file(trace, tmp_path, trace_path=VALID_TRACE)
+    generated = generate_proof_obligation_file(trace, tmp_path, trace_path=VALID_TRACE)
+    proof_path = generated.path
     text = proof_path.read_text(encoding="utf-8")
     assert "theorem concrete_trace_safe" in text
     assert "theorem concrete_event_safe_" in text
@@ -71,11 +72,13 @@ def test_generate_proof_obligation_file_writes_theorem(tmp_path: Path) -> None:
 
 
 def test_empty_trace_codegen(tmp_path: Path) -> None:
+    from pcs_core.pf_core_lean_codegen import CertificateModeEvidenceMissing
+
     trace = _load(EMPTY_TRACE)
     source = trace_to_lean(trace)
     assert "Trace.empty" in source
-    proof_path = generate_proof_obligation_file(trace, tmp_path)
-    assert "theorem concrete_trace_safe" in proof_path.read_text(encoding="utf-8")
+    with pytest.raises(CertificateModeEvidenceMissing, match="TraceSafeCertificate requires"):
+        generate_proof_obligation_file(trace, tmp_path, certificate_mode="TraceSafeCertificate")
 
 
 def test_invalid_trace_fails_before_lean_proof() -> None:
@@ -133,7 +136,8 @@ def test_concrete_lean_proof_passes_for_valid_trace() -> None:
     from pcs_core.lean_check import pfcore_generated_dir
 
     trace = _load(VALID_TRACE)
-    proof_path = generate_proof_obligation_file(trace, pfcore_generated_dir())
+    generated = generate_proof_obligation_file(trace, pfcore_generated_dir())
+    proof_path = generated.path
     ok, detail = run_lean_concrete_proof(proof_path, skip_build=False)
     assert ok, detail
 
