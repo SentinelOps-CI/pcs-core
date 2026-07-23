@@ -22,7 +22,7 @@
     },
     "result_artifact.json": {
       "artifact_type": "ResultArtifact.v0",
-      "sha256": "sha256:a2b8d26f9d0e056e7fd963156021a88b43c764c84357e2ff8ae70cd2c2d99acc"
+      "sha256": "sha256:b3f437010792f1f1f70ade9912374a1795c1458bf35309d6e1f888d875d09f3c"
     }
   },
   "expected_outputs": {
@@ -35,5 +35,5 @@
     "dataset_hash": "sha256:84c9037231eef6a1742c1d6d0a043878b4de8395397c168026450d8ca9e647e3"
   },
   "status": "Validated",
-  "signature_or_digest": "sha256:00a3731d61029e4ae124bd4503e3eae35eb7b1c271cf3f5f3930cfe2a89e137f"
+  "signature_or_digest": "sha256:c16aa7c4b90a2400e24ee945277e816b82a4fde2cf6ba8ce1fd3257f3fb4528d"
 }

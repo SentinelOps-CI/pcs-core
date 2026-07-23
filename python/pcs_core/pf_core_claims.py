@@ -6,6 +6,8 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
+from pcs_core.asset_resolver import lean_root as resolve_lean_root
+from pcs_core.asset_resolver import pf_core_kernel_root
 from pcs_core.lean_catalog import (
     LEAN_THEOREM_CATALOG,
     PF_CORE_THEOREM_CATALOG,
@@ -140,7 +142,9 @@ def audit_boundary() -> list[BoundaryIssue]:
         "PFCoreTrace.v0",
         "PFCoreContract.v0",
         "PFCoreHandoff.v0",
+        "PFCoreEffectFrame.v0",
         "PFCoreCertificate.v0",
+        "PFCoreTheoremManifest.v0",
         "PFCoreRuntimeObservation.v0",
     }
     missing_registry = expected - registry_types
@@ -172,20 +176,23 @@ def audit_boundary() -> list[BoundaryIssue]:
 
 
 def _lean_sources() -> list[Path]:
-    lean_dir = repo_root() / "lean"
-    if not lean_dir.is_dir():
+    lean_dir = resolve_lean_root()
+    if lean_dir is None or not lean_dir.is_dir():
         return []
     return sorted(lean_dir.rglob("*.lean"))
 
 
 def _collect_lean_theorem_names(*, pfcore_only: bool = False) -> set[str]:
     names: set[str] = set()
-    lean_dir = repo_root() / "lean"
-    if not lean_dir.is_dir():
+    lean_dir = resolve_lean_root()
+    if lean_dir is None or not lean_dir.is_dir():
         return names
     sources = sorted(lean_dir.rglob("*.lean"))
     if pfcore_only:
-        pfcore = lean_dir / "PFCore"
+        try:
+            pfcore = pf_core_kernel_root()
+        except FileNotFoundError:
+            pfcore = lean_dir / "PFCore"
         sources = sorted(pfcore.glob("*.lean")) if pfcore.is_dir() else []
     for path in sources:
         try:
@@ -211,7 +218,10 @@ def audit_lean_catalog() -> list[str]:
             )
 
     pfcore_theorems = _collect_lean_theorem_names(pfcore_only=True)
-    pfcore_dir = repo_root() / "lean" / "PFCore"
+    try:
+        pfcore_dir = pf_core_kernel_root()
+    except FileNotFoundError:
+        pfcore_dir = (resolve_lean_root() or Path()) / "PFCore"
     if not pfcore_dir.is_dir():
         errors.append(f"PF-Core Lean directory missing: {PF_CORE_TRUSTED_LEAN_DIR}/")
     elif not pfcore_theorems:

@@ -10,6 +10,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from pcs_core.asset_resolver import lean_root as resolve_lean_root
+from pcs_core.asset_resolver import resolver_report
 from pcs_core.paths import package_dir, repo_root
 
 CAPABILITY_KEYS = (
@@ -39,12 +41,9 @@ def _jsonschema_available() -> bool:
 
 def _lean_checkout_dir() -> Path | None:
     """Locate Lean project sources (checkout or wheel-bundled verifier assets)."""
-    bundled = package_dir() / "lean"
-    if (bundled / "lakefile.lean").is_file():
-        return bundled
-    checkout = repo_root() / "lean"
-    if (checkout / "lakefile.lean").is_file():
-        return checkout
+    root = resolve_lean_root()
+    if root is not None and (root / "lakefile.lean").is_file():
+        return root
     return None
 
 
@@ -150,6 +149,7 @@ def detect_capabilities() -> dict[str, Any]:
             "dev format checks only and are not release attestations."
         )
 
+    assets = resolver_report()
     return {
         "product": product,
         "version": _package_version(),
@@ -159,6 +159,9 @@ def detect_capabilities() -> dict[str, Any]:
         "paths": {
             "package_dir": str(package_dir()),
             "lean_dir": str(lean_root) if lean_root else None,
+            "distribution_root": assets.get("distribution_root"),
+            "pins_dir": assets.get("pins_dir"),
+            "catalog_dir": assets.get("catalog_dir"),
             "schemas_available": schema_ok,
         },
         "notes": notes,
