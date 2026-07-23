@@ -1,4 +1,6 @@
 import PFCore.Basic
+import PFCore.Effect
+import PFCore.Hash
 import PFCore.Catalog
 import PFCore.Principal
 import PFCore.Capability
@@ -21,3 +23,6 @@ import PFCore.EffectFrame
 import PFCore.State
 import PFCore.Observational
 import PFCore.ResourcePattern
+import PFCore.ObservedEffect
+import PFCore.DenyClosed
+import PFCore.PairedExecution

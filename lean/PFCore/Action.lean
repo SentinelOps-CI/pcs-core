@@ -1,4 +1,6 @@
 import PFCore.Capability
+import PFCore.Catalog
+import PFCore.Effect
 import PFCore.Resource
 
 /-!
@@ -6,12 +8,6 @@ import PFCore.Resource
 -/
 
 namespace PFCore
-
-/-- Effect kinds for tool actions (closed enum plus custom labels). -/
-inductive Effect where
-  | read | write | network | externalMessage | codeExecution | stateChange
-  | custom : String → Effect
-deriving Repr, DecidableEq
 
 /-- Tool invocation with capability requirement and resource footprint. -/
 structure Action where
@@ -45,11 +41,11 @@ theorem actionWithinTenantD_sound (p : Principal) (a : Action) :
 /-- Effect is from the closed PF-Core catalog (custom only for documented labels). -/
 def EffectKnown (e : Effect) : Prop :=
   match e with
-  | Effect.custom label => label = "lab.release"
+  | Effect.custom label => label ∈ Catalog.knownCustomEffectLabels
   | _ => True
 
 def effectKnownD : Effect → Bool
-  | Effect.custom label => decide (label = "lab.release")
+  | Effect.custom label => decide (label ∈ Catalog.knownCustomEffectLabels)
   | _ => true
 
 theorem effectKnownD_sound (e : Effect) : effectKnownD e = true ↔ EffectKnown e := by
@@ -77,15 +73,9 @@ theorem capabilityMatchesEffectsD_sound (a : Action) :
     capabilityMatchesEffectsD a = true ↔ CapabilityMatchesEffects a := by
   simp [capabilityMatchesEffectsD, CapabilityMatchesEffects, decide_eq_true_iff]
 
-/-- Catalog pairs mapping capability ids to canonical embedded effects. -/
+/-- Catalog pairs mapping capability ids to canonical embedded effects (generated). -/
 def knownCapabilityEffectCatalog : List (String × Effect) :=
-  [("cap:file-read", Effect.read),
-    ("cap:file-write", Effect.write),
-    ("cap:network", Effect.network),
-    ("cap:email-send", Effect.externalMessage),
-    ("cap:handoff", Effect.stateChange),
-    ("cap:mcp-invoke", Effect.codeExecution),
-    ("cap:lab-release", Effect.custom "lab.release")]
+  Catalog.knownCapabilityEffectCatalog
 
 /-- Catalog capability id maps to its canonical embedded effect label. -/
 def KnownCapabilityEffect (cap : String) (eff : Effect) : Prop :=
@@ -116,7 +106,7 @@ theorem knownCapabilityEffectD_sound (cap : String) (eff : Effect) :
 theorem knownCapabilityEffect_file_write (cap : String) (eff : Effect) :
     cap = "cap:file-write" → KnownCapabilityEffect cap eff → eff = Effect.write := by
   intro hcap h
-  simp [KnownCapabilityEffect, knownCapabilityEffectCatalog, hcap] at h
+  simp [KnownCapabilityEffect, knownCapabilityEffectCatalog, Catalog.knownCapabilityEffectCatalog, hcap] at h
   exact h
 
 /-- Structural action preconditions before allowance. -/
