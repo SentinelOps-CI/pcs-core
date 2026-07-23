@@ -24,7 +24,7 @@ Extend PF-Core from per-trace concrete proofs to compositional theorems that pre
 
 ## Out of scope for this roadmap phase
 
-- Full global non-interference across tenants — **Partial**: `TenantIsolation` + `TraceCrossTenantSafe`; covert channels and timing not claimed ([non-interference.md](non-interference.md))
+- Full global non-interference across tenants — **Partial**: `TenantIsolation` + `TraceCrossTenantSafe` + `TenantProjectionIsolation`; paired-execution NI / covert channels / timing not claimed ([non-interference.md](non-interference.md), [runtime-semantics.md](runtime-semantics.md))
 - Full JSON contract field encoding in Lean — **Partial**: `require_role` lean discharge; policy/evidence refs runtime-only
 
 See [non-interference.md](non-interference.md) and [assumptions.md](assumptions.md) for current deferrals.
@@ -49,4 +49,8 @@ See [non-interference.md](non-interference.md) and [assumptions.md](assumptions.
 | `handoff_preserves_trace_safe_strong` | Handoff + frames + trace safety | **Proved** (`State.lean`) |
 | `handoff_composition_global` | Multi-hop handoff authority bounded by first source | **Proved** (`Compositional.lean`) |
 | `traceSafe_implies_tenant_isolation` | Allowed events in safe traces stay tenant-scoped | **Proved** (`NonInterference.lean`) |
-| `traceSafe_implies_low_events_tenant_scoped` | Low-projected events in safe traces are tenant-scoped | **Proved** (`Observational.lean`; not full global NI) |
+| `traceSafe_implies_low_events_tenant_scoped` | Low-projected events in safe traces are tenant-scoped | **Proved** (`Observational.lean`; not paired-execution NI) |
+| `traceSafe_implies_tenant_projection_isolation` | Single-trace observational isolation | **Proved** (`Observational.lean`; user-facing name for prior observational NI) |
+| `accepted_transition_no_undeclared_sensitive_observation` | Observed sensitive effects stay in declared frame under instrumentation | **Proved** (`ObservedEffect.lean`; assumes `TrustedInstrumentation`) |
+| `eventSafeDenyClosed_implies_eventSafe` | Deny-closed refinement of `EventSafe` | **Proved** (`DenyClosed.lean`) |
+| `PairedExecutionNonInterference` | Paired executions + scheduler + timing | **Scaffolding only** (`PairedExecution.lean`; not proved) |
