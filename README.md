@@ -137,6 +137,7 @@ Further orientation lives in [docs/README.md](docs/README.md).
 | Command | What it does |
 |---------|----------------|
 | `pcs validate <file>` | Schema and semantic validation |
+| `pcs capabilities` | Honest report of validator/verifier backends |
 | `pcs hash <file>` | Canonical `sha256:` digest |
 | `pcs validate-release-chain <dir>` | Consistency checks across a release tree |
 | `pcs schema check` | Validates all JSON schemas in `schemas/` |
@@ -248,7 +249,7 @@ Open a [GitHub issue](https://github.com/SentinelOps-CI/pcs-core/issues) for que
 
 ## Using pcs-core in your project
 
-Pin this repository at tag **`v0.1.0`** through a submodule, a vendor copy, or a package install from `python/`. Validate every artifact with `pcs validate` before publication or import. Compute digests with `pcs hash` using the canonical algorithm documented in [docs/hash-canonicalization.md](docs/hash-canonicalization.md). Mirror `schemas/` and fail continuous integration when the mirror drifts from the pinned revision, following [docs/downstream-schema-sync.md](docs/downstream-schema-sync.md). Run the conformance suites that match your workflow, for example `pcs conformance run --suite <name>`.
+Pin this repository at tag **`v0.1.0`** through a submodule, a vendor copy, or a package install from `python/`. Run `pcs capabilities` after install to confirm schema validation is available and that Lean/CertifyEdge are only claimed when present. Validate every artifact with `pcs validate` before publication or import. Compute digests with `pcs hash` using the canonical algorithm documented in [docs/hash-canonicalization.md](docs/hash-canonicalization.md). Mirror `schemas/` and fail continuous integration when the mirror drifts from the pinned revision, following [docs/downstream-schema-sync.md](docs/downstream-schema-sync.md). Run the conformance suites that match your workflow, for example `pcs conformance run --suite <name>`. Packaging details are in [docs/distribution.md](docs/distribution.md).
 
 ---
 
