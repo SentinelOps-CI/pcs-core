@@ -3,6 +3,10 @@ name: Release
 # Unified release / technical-preview gate. Does not push tags.
 # PCS_RELEASE_MODE=release requires live external attestation + pinned CertifyEdge.
 # PCS_RELEASE_MODE=preview allows absence notice with explicit disclosure.
+#
+# Quality gates are split into blocking jobs (mandatory CI matrix). Bundle /
+# attestation / provenance remain in unified-release-gate so concurrent
+# provenance work is not clobbered.
 
 on:
   push:
@@ -21,10 +25,275 @@ on:
 
 permissions:
   contents: read
+  id-token: write
+  attestations: write
+  actions: read
 
 jobs:
-  unified-release-gate:
+  python-tests:
+    name: Python full tests
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+      - name: Install + pytest + technical gates
+        run: |
+          cd python
+          pip install -c requirements.lock -e ".[dev,quality]"
+          pcs capabilities
+          ruff check pcs_core tests
+          ruff format --check pcs_core tests
+          pytest -q
+          pcs schema check
+          pcs pf-core audit-claims
+          pcs pf-core audit-boundary
+          pcs pf-core audit-lean-catalog
+          pcs pf-core audit-lean-no-sorry
+          pcs examples check
+          pcs validate-release-chain ../examples/labtrust-release/
+          pcs validate-release-chain ../examples/tool-use-release/
+          pcs validate-release-chain ../examples/computation-release/
+          pcs conformance run --suite all
+          python -m pcs_core.hash_vectors --verify
+          pcs shared-hash-vectors verify
+          python scripts/gen_pf_core_catalog.py
+          git diff --exit-code \
+            ../python/pcs_core/pf_core_catalog.py \
+            ../lean/PFCore/Catalog.lean \
+            ../rust/crates/pcs-core/src/pf_core_catalog.rs \
+            ../typescript/packages/core/src/pfCoreCatalog.ts
+
+  python-typecheck:
+    name: Python full-package typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+      - name: Pyright full package
+        run: |
+          cd python
+          pip install -c requirements.lock -e ".[dev,quality]"
+          pyright pcs_core
+
+  python-coverage:
+    name: Python branch coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+      - name: Branch coverage
+        run: |
+          cd python
+          pip install -c requirements.lock -e ".[dev,quality]"
+          coverage run -m pytest -q
+          coverage report --fail-under=0
+          coverage report \
+            --include='pcs_core/external_attestation.py,pcs_core/pf_core_bundle.py,pcs_core/pf_core_certifyedge.py,pcs_core/safe_paths.py,pcs_core/hash.py,pcs_core/artifact_integrity.py,pcs_core/certifyedge_pin.py' \
+            --fail-under=70
+
+  rust:
+    name: Rust fmt/clippy/tests/fuzz-smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: dtolnay/rust-toolchain@4d407b29186a635f0cc27475ef0bc0ae605a8866 # 1.86
+        with:
+          components: rustfmt, clippy
+      - name: Rust quality
+        run: |
+          cd rust
+          cargo fmt --check
+          cargo clippy --locked --all-targets -- -D warnings
+          cargo test --locked
+          cargo test --locked proptest_digest_hex_shape
+
+  typescript:
+    name: TypeScript lint/tests/property-vectors
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+      - name: TypeScript quality
+        run: |
+          cd typescript
+          npm ci
+          npm run lint
+          npm test
+          npm run test:hash-vectors -w @pcs/core
+
+  lean-pcs:
+    name: Lean PCS build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Install elan (checksum verified)
+        run: bash scripts/install-elan-verified.sh
+      - name: lake build PCS
+        run: |
+          export PATH="$HOME/.elan/bin:$PATH"
+          cd lean
+          lake build PCS
+
+  lean-pf-core:
+    name: Lean PF-Core build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Install elan (checksum verified)
+        run: bash scripts/install-elan-verified.sh
+      - name: lake build PFCore
+        run: |
+          export PATH="$HOME/.elan/bin:$PATH"
+          cd lean
+          lake build PFCore
+
+  certificate-mode-e2e:
+    name: Certificate-mode end-to-end
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+      - name: Certificate mode suites
+        run: |
+          cd python
+          pip install -c requirements.lock -e ".[dev]"
+          pytest -q \
+            tests/test_pf_core_certificate_mode_status.py \
+            tests/test_pf_core_certificate_mode_codegen.py \
+            tests/test_pf_core_certificate_mode_resolution_vectors.py \
+            tests/test_pf_core_handoff_evidence.py \
+            tests/test_pf_core_contract_evidence.py \
+            tests/test_pf_core_effect_frame_evidence.py \
+            tests/test_pf_core_transition_evidence.py \
+            tests/test_pf_core_compositional.py
+
+  cross-language-differential:
+    name: Cross-language differential
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+      - uses: dtolnay/rust-toolchain@4d407b29186a635f0cc27475ef0bc0ae605a8866 # 1.86
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+      - name: Differential suites
+        run: |
+          cd python
+          pip install -c requirements.lock -e ".[dev]"
+          pytest -q \
+            tests/test_pf_core_cross_language.py \
+            tests/test_pf_core_phase4_differential.py \
+            tests/test_pf_core_hash_vector_parity.py \
+            tests/test_canonical_hash_release.py
+          pcs conformance run --suite pf-core-cross-language
+          cd ../rust && cargo test --locked pf_core
+          cd ../typescript && npm ci && npm test && npm run test:hash-vectors -w @pcs/core
+
+  semantic-projection-replay:
+    name: Semantic-projection replay
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+      - name: Install elan (checksum verified)
+        run: bash scripts/install-elan-verified.sh
+      - name: Projection replay
+        run: |
+          export PATH="$HOME/.elan/bin:$PATH"
+          cd python
+          pip install -c requirements.lock -e ".[dev]"
+          pytest -q \
+            tests/test_pcs_projection_binding.py \
+            tests/test_phase3_envelope_binding.py \
+            tests/test_pf_core_phase4_tcb.py \
+            tests/test_pf_core_bundle.py
+
+  theorem-manifest-replay:
+    name: Theorem-manifest replay
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+      - name: Install elan (checksum verified)
+        run: bash scripts/install-elan-verified.sh
+      - name: Theorem manifest
+        run: |
+          export PATH="$HOME/.elan/bin:$PATH"
+          cd python
+          pip install -c requirements.lock -e ".[dev]"
+          pytest -q tests/test_pf_core_theorem_manifest_binding.py
+
+  scientific-payload-mutation:
+    name: Scientific payload mutation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+      - name: Payload mutation tests
+        run: |
+          cd python
+          pip install -c requirements.lock -e ".[dev]"
+          pytest -q \
+            tests/test_result_artifact_payload.py \
+            tests/test_computation_validate.py \
+            tests/test_computation_release_chain.py
+
+  signature-key-revocation:
+    name: Signature and key-revocation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+      - name: Integrity + pin tests
+        run: |
+          cd python
+          pip install -c requirements.lock -e ".[dev]"
+          pytest -q \
+            tests/test_artifact_integrity.py \
+            tests/test_certifyedge_pin.py \
+            tests/test_external_attestation.py
+
+  unified-release-gate:
+    name: Preview/stable release assemble
+    runs-on: ubuntu-latest
+    needs:
+      - python-tests
+      - python-typecheck
+      - python-coverage
+      - rust
+      - typescript
+      - lean-pcs
+      - lean-pf-core
+      - certificate-mode-e2e
+      - cross-language-differential
+      - semantic-projection-replay
+      - theorem-manifest-replay
+      - scientific-payload-mutation
+      - signature-key-revocation
+    outputs:
+      release_mode: ${{ steps.resolve_mode.outputs.mode }}
+      provenance_status: ${{ steps.finalize_prov.outputs.status }}
     env:
       PCS_RELEASE_MODE: ${{ github.event.inputs.release_mode || 'release' }}
     steps:
@@ -32,19 +301,15 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.12"
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: "22"
-      - uses: dtolnay/rust-toolchain@4d407b29186a635f0cc27475ef0bc0ae605a8866 # 1.86
-        with:
-          components: rustfmt, clippy
       - name: Resolve release mode
+        id: resolve_mode
         run: |
           MODE="${PCS_RELEASE_MODE:-release}"
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             MODE="${{ github.event.inputs.release_mode }}"
           fi
           echo "PCS_RELEASE_MODE=${MODE}" >> "$GITHUB_ENV"
+          echo "mode=${MODE}" >> "$GITHUB_OUTPUT"
           echo "Resolved PCS_RELEASE_MODE=${MODE}"
       - name: Verify tag matches VERSION (tag pushes only)
         if: startsWith(github.ref, 'refs/tags/')
@@ -68,7 +333,17 @@ jobs:
             echo "FAIL: CertifyEdge provision required in release mode"
             exit 1
           fi
-          if [ -x .tools/certifyedge/certifyedge ]; then
+          if [ -f .tools/certifyedge/provision.env ]; then
+            set -a
+            # shellcheck source=/dev/null
+            . .tools/certifyedge/provision.env
+            set +a
+            {
+              echo "PF_CORE_CERTIFYEDGE_CLI=${PF_CORE_CERTIFYEDGE_CLI}"
+              echo "PCS_CERTIFYEDGE_PROVISION_ENV=${PWD}/.tools/certifyedge/provision.env"
+              echo "PCS_CERTIFYEDGE_TRUST_GRADE=${PCS_CERTIFYEDGE_TRUST_GRADE:-}"
+            } >> "$GITHUB_ENV"
+          elif [ -x .tools/certifyedge/certifyedge ]; then
             echo "PF_CORE_CERTIFYEDGE_CLI=${PWD}/.tools/certifyedge/certifyedge" >> "$GITHUB_ENV"
           fi
       - name: Install Python package
@@ -76,48 +351,12 @@ jobs:
           cd python
           pip install -c requirements.lock -e ".[dev,quality]"
           pcs capabilities
-      - name: Quality - Ruff + Pyright + pytest + coverage threshold
+      - name: Org/infra release gates (fail-closed in release)
         run: |
-          cd python
-          ruff check pcs_core tests
-          ruff format --check pcs_core tests
-          pyright pcs_core/external_attestation.py pcs_core/safe_paths.py pcs_core/pf_core_certifyedge.py
-          coverage run -m pytest -q
-          coverage report --include='pcs_core/external_attestation.py,pcs_core/pf_core_bundle.py,pcs_core/pf_core_certifyedge.py,pcs_core/safe_paths.py,pcs_core/hash.py' --fail-under=70
-      - name: Technical gates - schemas, catalogs, release chains, vectors
-        run: |
-          cd python
-          pcs schema check
-          pcs pf-core audit-claims
-          pcs pf-core audit-boundary
-          pcs pf-core audit-lean-catalog
-          pcs pf-core audit-lean-no-sorry
-          pcs examples check
-          pcs validate-release-chain ../examples/labtrust-release/
-          pcs validate-release-chain ../examples/tool-use-release/
-          pcs validate-release-chain ../examples/computation-release/
-          pcs conformance run --suite all
-          python -m pcs_core.hash_vectors --verify
-          pcs shared-hash-vectors verify
-          python scripts/gen_pf_core_catalog.py
-          git diff --exit-code \
-            ../python/pcs_core/pf_core_catalog.py \
-            ../lean/PFCore/Catalog.lean \
-            ../rust/crates/pcs-core/src/pf_core_catalog.rs \
-            ../typescript/packages/core/src/pfCoreCatalog.ts
-      - name: Rust quality gate
-        run: |
-          cd rust
-          cargo fmt --check
-          cargo clippy --locked --all-targets -- -D warnings
-          cargo test --locked
-      - name: TypeScript quality gate
-        run: |
-          cd typescript
-          npm ci
-          npm run lint
-          npm test
-      - name: Lean kernels + proof binding
+          # After provision.env is sourced (when pin ready). Preview may pass while
+          # CertifyEdge remains unpinned and TrustedKeyRegistry is unset.
+          pcs release check-gates --mode "${PCS_RELEASE_MODE}"
+      - name: Lean kernels + proof binding + release-grade conformance
         run: |
           export PATH="$HOME/.elan/bin:$PATH"
           cd lean
@@ -126,7 +365,8 @@ jobs:
           cd ../python
           pcs pf-core lean-check \
             --trace ../examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json \
-            --out /tmp/pfcore-release-cert.json
+            --out /tmp/pfcore-release-cert.json \
+            --result-out /tmp/pfcore-release-lean-check.json
           pcs pf-core verify-proof-binding \
             --certificate /tmp/pfcore-release-cert.json \
             --trace ../examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json
@@ -137,19 +377,42 @@ jobs:
           test -f dist/sbom/pcs-core.cdx.json
       - name: Assemble bundle + external attestation gate
         env:
-          PF_CORE_CERTIFYEDGE_CLI: ${{ secrets.PF_CORE_CERTIFYEDGE_CLI }}
+          # Optional last-resort override — only applied when non-empty (never blank out provision.env).
+          PF_CORE_CERTIFYEDGE_CLI_SECRET: ${{ secrets.PF_CORE_CERTIFYEDGE_CLI }}
         run: |
           cd python
+          if [ -n "${PF_CORE_CERTIFYEDGE_CLI_SECRET:-}" ] && [ -f "${PF_CORE_CERTIFYEDGE_CLI_SECRET}" ]; then
+            export PF_CORE_CERTIFYEDGE_CLI="${PF_CORE_CERTIFYEDGE_CLI_SECRET}"
+            echo "Using non-empty PF_CORE_CERTIFYEDGE_CLI secret override"
+          fi
           mkdir -p ../dist/release-bundle
           pcs pf-core bundle-release \
             --trace ../examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json \
             --cert /tmp/pfcore-release-cert.json \
+            --lean-check-result /tmp/pfcore-release-lean-check.json \
             --out ../dist/release-bundle
           pcs pf-core validate-bundle ../dist/release-bundle
+          python3 - <<'PY'
+          import json, sys
+          from pathlib import Path
+          manifest = json.loads(Path("../dist/release-bundle/manifest.json").read_text(encoding="utf-8"))
+          lean_rel = manifest.get("lean_check_result_path")
+          if not lean_rel:
+              raise SystemExit("FAIL: preview/release bundle missing lean_check_result_path")
+          lean_path = Path("../dist/release-bundle") / lean_rel
+          if not lean_path.is_file():
+              raise SystemExit(f"FAIL: lean-check result missing at {lean_path}")
+          pin = Path("../dist/release-bundle/certifyedge_pin.json")
+          if not pin.is_file():
+              raise SystemExit("FAIL: release bundle missing certifyedge_pin.json")
+          print(f"OK lean-check-result bound in bundle: {lean_rel}")
+          print(f"OK certifyedge pin record in bundle: {pin.name}")
+          PY
           if [ "${PCS_RELEASE_MODE}" = "release" ]; then
             if [ -z "${PF_CORE_CERTIFYEDGE_CLI:-}" ] || [ ! -f "${PF_CORE_CERTIFYEDGE_CLI}" ]; then
               if command -v certifyedge >/dev/null 2>&1; then
                 export PF_CORE_CERTIFYEDGE_CLI="$(command -v certifyedge)"
+                echo "WARNING: using unpinned certifyedge on PATH (untrusted_development)"
               fi
             fi
             export PF_CORE_CERTIFYEDGE_MODE=live
@@ -178,6 +441,86 @@ jobs:
         run: |
           echo "Create an annotated GPG/SSH-signed tag matching VERSION after gates pass."
           echo "This workflow does not create or push tags."
+
+      - name: Build release provenance binding
+        run: |
+          set -euo pipefail
+          pip install build >/dev/null
+          export PCS_PROVENANCE_BUNDLE_DIR="${GITHUB_WORKSPACE}/dist/release-bundle"
+          export PCS_PROVENANCE_SBOM_DIR="${GITHUB_WORKSPACE}/dist/sbom"
+          export PCS_PROVENANCE_BUILD_SBOM=0
+          if [ "${PCS_RELEASE_MODE}" = "release" ] && [ "${{ vars.PCS_PROVENANCE_ALLOW_GATED }}" != "true" ]; then
+            export PCS_PROVENANCE_REQUIRE_SIGNED=1
+          else
+            export PCS_PROVENANCE_REQUIRE_SIGNED=0
+          fi
+          bash scripts/build-release-provenance.sh dist/provenance
+          test -f dist/provenance/ReleaseProvenanceBinding.v0.json
+          test -f dist/provenance/subjects-attest.sha256
+
+      - name: Attest build provenance (immutable subjects)
+        id: attest_prov
+        continue-on-error: true
+        uses: actions/attest-build-provenance@96278af6caaf10aea03fd8d33a09a777ca52d62f # v3.2.0
+        with:
+          subject-checksums: dist/provenance/subjects-attest.sha256
+
+      - name: Attest SBOM
+        id: attest_sbom
+        continue-on-error: true
+        uses: actions/attest-sbom@115c3be05ff3974bcbd596578934b3f9ce39bf68 # v2.2.0
+        with:
+          subject-path: dist/provenance/sbom/pcs-core.cdx.json
+          sbom-path: dist/provenance/sbom/pcs-core.cdx.json
+
+      - name: Finalize provenance attestation status
+        id: finalize_prov
+        run: |
+          set -euo pipefail
+          PROV_OK="${{ steps.attest_prov.outcome }}"
+          SBOM_OK="${{ steps.attest_sbom.outcome }}"
+          IDS="${{ steps.attest_prov.outputs.attestation-id }}"
+          URLS="${{ steps.attest_prov.outputs.attestation-url }}"
+          if [ -n "${{ steps.attest_sbom.outputs.attestation-id }}" ]; then
+            if [ -n "${IDS}" ]; then IDS="${IDS},"; fi
+            IDS="${IDS}${{ steps.attest_sbom.outputs.attestation-id }}"
+          fi
+          if [ -n "${{ steps.attest_sbom.outputs.attestation-url }}" ]; then
+            if [ -n "${URLS}" ]; then URLS="${URLS},"; fi
+            URLS="${URLS}${{ steps.attest_sbom.outputs.attestation-url }}"
+          fi
+          if [ "${PROV_OK}" = "success" ]; then
+            bash scripts/finalize-provenance-attestation.sh dist/provenance signed "" "${IDS}" "${URLS}"
+          else
+            REASON="actions/attest-build-provenance failed (outcome=${PROV_OK}; sbom_outcome=${SBOM_OK}). "
+            REASON+="Common causes: private repository without GitHub Enterprise Cloud, "
+            REASON+="missing id-token/attestations permissions, or org policy blocking Sigstore OIDC."
+            bash scripts/finalize-provenance-attestation.sh dist/provenance gated "${REASON}" "" ""
+          fi
+          if [ "${{ vars.PCS_PROVENANCE_ALLOW_GATED }}" = "true" ]; then
+            export PCS_PROVENANCE_ALLOW_GATED=true
+          fi
+          STATUS="$(python3 -c "import json; print(json.load(open('dist/provenance/ReleaseProvenanceBinding.v0.json'))['attestation']['status'])")"
+          echo "status=${STATUS}" >> "$GITHUB_OUTPUT"
+          if [ "${PCS_RELEASE_MODE}" = "release" ] && [ "${STATUS}" != "signed" ]; then
+            if [ "${PCS_PROVENANCE_ALLOW_GATED:-}" = "true" ]; then
+              echo "WARN: release mode allowing gated provenance via PCS_PROVENANCE_ALLOW_GATED"
+            else
+              echo "FAIL: stable release requires signed provenance (status=${STATUS})"
+              exit 1
+            fi
+          fi
+          # Re-run unified gate checker against the finalized provenance package.
+          python3 scripts/check-release-gates.py --mode "${PCS_RELEASE_MODE}" \
+            --provenance-dir dist/provenance
+
+      - name: Attest sealed provenance binding
+        if: ${{ steps.finalize_prov.outputs.status == 'signed' }}
+        continue-on-error: true
+        uses: actions/attest-build-provenance@96278af6caaf10aea03fd8d33a09a777ca52d62f # v3.2.0
+        with:
+          subject-path: dist/provenance/ReleaseProvenanceBinding.v0.json
+
       - name: Upload local release artifacts (dry-run assembly)
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -185,4 +528,43 @@ jobs:
           path: |
             dist/release-bundle/
             dist/sbom/
+            dist/provenance/
           retention-days: 30
+
+  provenance-consumer:
+    name: Consumer provenance verify
+    needs: unified-release-gate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      attestations: read
+      actions: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          sparse-checkout: |
+            scripts
+            python
+            schemas
+            catalog
+            pins
+          sparse-checkout-cone-mode: true
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+      - name: Install validator package
+        run: |
+          cd python
+          pip install -c requirements.lock -e "."
+      - name: Download release artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: pcs-core-release-bundle-${{ needs.unified-release-gate.outputs.release_mode }}
+          path: /tmp/pcs-release
+      - name: Verify provenance package as clean consumer
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PCS_PROVENANCE_REQUIRE_SIGNED: ${{ needs.unified-release-gate.outputs.provenance_status == 'signed' && '1' || '0' }}
+        run: |
+          test -d /tmp/pcs-release/provenance
+          bash scripts/verify-release-provenance.sh /tmp/pcs-release/provenance
