@@ -2,7 +2,9 @@
 
 PCS Draft 2020-12 schemas declare `"format"` keywords. In Python, `Draft202012Validator`
 is constructed with `jsonschema.FormatChecker` so those formats are **assertions**, not
-annotations.
+annotations. The Python package depends on `jsonschema[format-nongpl]` so checkers for
+`date-time`, `uri`, `duration`, and `hostname` are registered at import time (bare
+`jsonschema` omits them and raises on asserted-format construction).
 
 ## Asserted formats
 

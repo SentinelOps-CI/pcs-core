@@ -27,7 +27,27 @@ ASSERTED_FORMATS: frozenset[str] = frozenset(
     }
 )
 
-_FORMAT_CHECKER = FormatChecker(formats=sorted(ASSERTED_FORMATS))
+
+def _build_asserted_format_checker() -> FormatChecker:
+    """Build a FormatChecker limited to ASSERTED_FORMATS.
+
+    jsonschema only registers optional formats (date-time, uri, …) when the
+    corresponding format extras are installed. Constructing FormatChecker with
+    unknown names raises KeyError; fail with an actionable message instead.
+    """
+    available = FormatChecker.checkers
+    missing = sorted(fmt for fmt in ASSERTED_FORMATS if fmt not in available)
+    if missing:
+        raise RuntimeError(
+            "jsonschema format checkers unavailable for: "
+            + ", ".join(missing)
+            + ". Install pcs-core dependencies including "
+            "jsonschema[format-nongpl] (see python/pyproject.toml)."
+        )
+    return FormatChecker(formats=sorted(ASSERTED_FORMATS))
+
+
+_FORMAT_CHECKER = _build_asserted_format_checker()
 
 
 class DetectionMode(str, Enum):
