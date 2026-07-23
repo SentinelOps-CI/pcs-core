@@ -179,12 +179,16 @@ def _witness_body(
         "schema_version": "v0",
         "witness_id": WITNESS_ID,
         "workflow_id": COMPUTATION_WORKFLOW_ID,
-        "dataset_hash": dataset_hash or dataset["aggregate_hash"],
-        "environment_hash": environment_hash or receipt_body_digest(environment),
-        "run_receipt_hash": run_receipt_hash or receipt_body_digest(run_receipt),
+        "dataset_hash": dataset["aggregate_hash"] if dataset_hash is None else dataset_hash,
+        "environment_hash": (
+            receipt_body_digest(environment) if environment_hash is None else environment_hash
+        ),
+        "run_receipt_hash": (
+            receipt_body_digest(run_receipt) if run_receipt_hash is None else run_receipt_hash
+        ),
         "result_hashes": result_hashes
         if result_hashes is not None
-        else [str(result["sha256"]), str(run_receipt["stdout_hash"])],
+        else [str(result["sha256"])],
         "code_repo": RUNNER_REPO,
         "code_commit": code_commit if code_commit is not None else run_receipt["code_commit"],
         "checker": "certifyedge",
@@ -728,6 +732,110 @@ def main() -> int:
         )
         return ds, env, run_doc, res, _with_digest(wit)
 
+    def _invalid_witness_undeclared_extra_result() -> tuple[dict[str, Any], ...]:
+        ds, env, run_doc, res, _ = _valid_train()
+        wit = _witness_body(
+            dataset=ds,
+            environment=env,
+            run_receipt=run_doc,
+            result=res,
+            result_hashes=[
+                str(res["sha256"]),
+                "sha256:" + "b" * 64,
+            ],
+        )
+        return ds, env, run_doc, res, _with_digest(wit)
+
+    def _invalid_manifest_result_absent_from_witness() -> tuple[dict[str, Any], ...]:
+        ds, env, run_doc, res, _ = _valid_train()
+        wit = _witness_body(
+            dataset=ds,
+            environment=env,
+            run_receipt=run_doc,
+            result=res,
+            result_hashes=["sha256:" + "c" * 64],
+        )
+        return ds, env, run_doc, res, _with_digest(wit)
+
+    def _invalid_result_file_hash_ne_manifest() -> tuple[dict[str, Any], ...]:
+        ds, env, run_doc, res, _ = _valid_train()
+        # Tamper payload sha256 but keep the prior signature_or_digest so digests diverge.
+        tampered = dict(res)
+        prior_digest = tampered["signature_or_digest"]
+        tampered["sha256"] = "sha256:" + "d" * 64
+        tampered["signature_or_digest"] = prior_digest
+        wit = _witness_body(
+            dataset=ds,
+            environment=env,
+            run_receipt=run_doc,
+            result=tampered,
+            result_hashes=[str(tampered["sha256"])],
+        )
+        return ds, env, run_doc, tampered, _with_digest(wit)
+
+    def _invalid_duplicate_result_hash() -> tuple[dict[str, Any], ...]:
+        ds, env, run_doc, res, _ = _valid_train()
+        # Duplicate declared digests are encoded by repeating the result sha in a
+        # companion artifact list on the witness side; extraction sees one ResultArtifact
+        # but obligation evaluation rejects duplicate declared lists when injected.
+        wit = _witness_body(
+            dataset=ds,
+            environment=env,
+            run_receipt=run_doc,
+            result=res,
+            result_hashes=[str(res["sha256"]), str(res["sha256"])],
+        )
+        return ds, env, run_doc, res, _with_digest(wit)
+
+    def _invalid_empty_declared_nonempty_witness() -> tuple[dict[str, Any], ...]:
+        # Represented as a witness with results but a result artifact whose sha256 is
+        # stripped so declared extraction fails / empty declared is forced at validation.
+        ds, env, run_doc, res, _ = _valid_train()
+        empty_result = dict(res)
+        empty_result["sha256"] = "sha256:" + "0" * 64
+        empty_result = _with_digest(empty_result)
+        wit = _witness_body(
+            dataset=ds,
+            environment=env,
+            run_receipt=run_doc,
+            result=res,
+            result_hashes=[str(res["sha256"])],
+        )
+        return ds, env, run_doc, empty_result, _with_digest(wit)
+
+    def _invalid_missing_dataset_hash() -> tuple[dict[str, Any], ...]:
+        ds, env, run_doc, res, _ = _valid_train()
+        wit = _witness_body(
+            dataset=ds,
+            environment=env,
+            run_receipt=run_doc,
+            result=res,
+            dataset_hash="",
+        )
+        return ds, env, run_doc, res, _with_digest(wit)
+
+    def _invalid_missing_environment_hash() -> tuple[dict[str, Any], ...]:
+        ds, env, run_doc, res, _ = _valid_train()
+        wit = _witness_body(
+            dataset=ds,
+            environment=env,
+            run_receipt=run_doc,
+            result=res,
+            environment_hash="",
+        )
+        return ds, env, run_doc, res, _with_digest(wit)
+
+    def _invalid_missing_run_receipt_hash() -> tuple[dict[str, Any], ...]:
+        ds, env, run_doc, res, _ = _valid_train()
+        wit = _witness_body(
+            dataset=ds,
+            environment=env,
+            run_receipt=run_doc,
+            result=res,
+            run_receipt_hash="",
+        )
+        return ds, env, run_doc, res, _with_digest(wit)
+
     for case_name, builder in {
         "dataset_hash_mismatch": _invalid_dataset_hash_mismatch,
         "result_hash_mismatch": _invalid_result_hash_mismatch,
@@ -735,6 +843,14 @@ def main() -> int:
         "nonzero_exit_code": _invalid_nonzero_exit_code,
         "environment_digest_mismatch": _invalid_environment_digest_mismatch,
         "rejected_computation_witness": _invalid_rejected_witness,
+        "witness_undeclared_extra_result": _invalid_witness_undeclared_extra_result,
+        "manifest_result_absent_from_witness": _invalid_manifest_result_absent_from_witness,
+        "result_file_hash_ne_payload": _invalid_result_file_hash_ne_manifest,
+        "duplicate_result_hash": _invalid_duplicate_result_hash,
+        "empty_declared_nonempty_witness": _invalid_empty_declared_nonempty_witness,
+        "missing_dataset_hash": _invalid_missing_dataset_hash,
+        "missing_environment_hash": _invalid_missing_environment_hash,
+        "missing_run_receipt_hash": _invalid_missing_run_receipt_hash,
     }.items():
         _write_invalid_case(case_name, builder)
 
