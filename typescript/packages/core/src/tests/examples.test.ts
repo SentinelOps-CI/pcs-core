@@ -22,6 +22,8 @@ import {
   validateObservationalNonInterference,
   validateObservationalNonInterferenceAllPairs,
   validateTenantIsolation,
+  validateEventSafeDenyClosed,
+  validateObservedEffectsAgree,
   validateTraceContracts,
   resolveCertificateModeDefault,
   resolveToolMapping,
@@ -450,5 +452,42 @@ test("shared hash vectors match test_vectors/hash fixtures", () => {
     const data = load(inputPath.replace(/^examples\//, ""));
     assert.equal(Buffer.from(canonicalJsonBytes(data)).toString("utf8"), vector.canonical_json);
     assert.equal(canonicalHash(data), vector.expected_digest);
+  }
+});
+
+test("validateEventSafeDenyClosed rejects deny writes", () => {
+  const allowed = load("pf-core-valid/file_read_allowed/trace.json") as Record<string, unknown>;
+  assert.deepEqual(validateEventSafeDenyClosed(allowed), []);
+  const events = allowed.events as Array<Record<string, unknown>>;
+  const event = events[0];
+  event.decision = "deny";
+  (event.action as Record<string, unknown>).writes = [{ uri: "file:///tmp/x", tenant: "t" }];
+  (event.action as Record<string, unknown>).effects = [{ effect_kind: "file.write" }];
+  const errors = validateEventSafeDenyClosed(allowed);
+  assert.ok(errors.some((e) => e.includes("EventSafeDenyClosed")));
+});
+
+test("validateObservedEffectsAgree parity cases", () => {
+  const action = {
+    effects: [{ effect_kind: "file.read" }],
+    reads: [{ uri: "file:///a", tenant: "t" }],
+    writes: [],
+  };
+  assert.deepEqual(
+    validateObservedEffectsAgree(action, [
+      { kind: "file.read", resource: { uri: "file:///a" } },
+    ]),
+    [],
+  );
+  assert.ok(validateObservedEffectsAgree(action, [{ kind: "file.write" }]).length > 0);
+});
+
+test("property digests have sha256 shape", () => {
+  // Lightweight property loop (fast-check optional; avoid hard dep for offline/TLS-restricted installs).
+  for (let i = 0; i < 32; i += 1) {
+    const payload = { n: i, blob: "x".repeat(i % 17) };
+    const digest = canonicalHash(payload);
+    assert.ok(digest.startsWith("sha256:"));
+    assert.equal(digest.length, 71);
   }
 });

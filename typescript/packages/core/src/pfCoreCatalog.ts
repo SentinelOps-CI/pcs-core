@@ -2,6 +2,16 @@
 
 export const EFFECT_KINDS = new Set<string>(['file.read', 'file.write', 'network.egress', 'email.send', 'handoff.delegate', 'mcp.invoke', 'lab.release']);
 
+export const EFFECT_KIND_TO_LEAN: Record<string, string> = {
+  'file.read': 'Effect.read',
+  'file.write': 'Effect.write',
+  'network.egress': 'Effect.network',
+  'email.send': 'Effect.externalMessage',
+  'handoff.delegate': 'Effect.stateChange',
+  'mcp.invoke': 'Effect.codeExecution',
+  'lab.release': 'Effect.custom "lab.release"',
+};
+
 export const CAPABILITY_CATALOG: Record<
   string,
   { capability_id: string; effect_kind: string; resource_pattern: string }

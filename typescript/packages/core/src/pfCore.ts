@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { canonicalHash, canonicalJsonBytes } from "./hash.js";
@@ -418,6 +419,24 @@ const MODE_OBLIGATION_THEOREMS: Record<string, readonly string[]> = {
   ],
 };
 
+/** Stable hash of a generated theorem-name inventory (sorted, newline-joined). */
+function theoremInventoryHash(theoremNames: Iterable<string>): string {
+  const sorted = [...theoremNames].sort();
+  const digest = createHash("sha256").update(sorted.join("\n"), "utf8").digest("hex");
+  return `sha256:${digest}`;
+}
+
+function isGeneratedModuleTheorem(kind: string, theorem: string): boolean {
+  return (
+    kind === "CertificateMode" ||
+    kind === "ConcreteTraceSafe" ||
+    kind === "ConcreteTraceSafeProp" ||
+    kind === "ConcreteAllowedEventsAllowed" ||
+    theorem.startsWith("concrete_") ||
+    theorem.startsWith("frame_")
+  );
+}
+
 export function resolveToolMapping(
   toolName: string,
   toolCategory: string,
@@ -694,6 +713,23 @@ export function validatePfcoreCertificateSemantics(
         errors.push(`root: invalid certificate_mode ${JSON.stringify(certMode)}`);
       } else {
         const modeRequired = new Set(MODE_OBLIGATION_THEOREMS[certMode] ?? []);
+        modeRequired.add("concrete_certificate_mode_witness");
+        let inventory: Set<string> | null = null;
+        const inventoryRaw = certificate.theorem_inventory;
+        if (Array.isArray(inventoryRaw)) {
+          inventory = new Set(
+            inventoryRaw.filter((item): item is string => typeof item === "string"),
+          );
+          const inventoryHash = certificate.theorem_inventory_hash;
+          const expectedHash = theoremInventoryHash(inventory);
+          if (typeof inventoryHash !== "string" || inventoryHash !== expectedHash) {
+            errors.push("root: theorem_inventory_hash does not match theorem_inventory");
+          }
+        } else {
+          errors.push(
+            "root: lean_proof_checked requires theorem_inventory for certificate_mode evidence",
+          );
+        }
         if (Array.isArray(certificate.obligations)) {
           for (const item of certificate.obligations) {
             if (
@@ -714,6 +750,50 @@ export function validatePfcoreCertificateSemantics(
           errors.push(
             `root: certificate_mode obligations missing passed proofs for ${JSON.stringify(missingMode)}`,
           );
+        }
+        if (inventory && Array.isArray(certificate.obligations)) {
+          const generatedPassed = new Set<string>();
+          for (const item of certificate.obligations) {
+            if (
+              !item ||
+              typeof item !== "object" ||
+              Array.isArray(item) ||
+              (item as Record<string, unknown>).passed !== true ||
+              typeof (item as Record<string, unknown>).theorem !== "string"
+            ) {
+              continue;
+            }
+            const theorem = String((item as Record<string, unknown>).theorem);
+            const kind = String((item as Record<string, unknown>).kind ?? "");
+            if (isGeneratedModuleTheorem(kind, theorem)) {
+              generatedPassed.add(theorem);
+            }
+          }
+          const forged = [...generatedPassed].filter((theorem) => !inventory!.has(theorem)).sort();
+          if (forged.length > 0) {
+            errors.push(
+              `root: passed obligations absent from theorem_inventory: ${JSON.stringify(forged)}`,
+            );
+          }
+        }
+        const witness = certificate.certificate_mode_witness;
+        if (!witness || typeof witness !== "object" || Array.isArray(witness)) {
+          errors.push("root: lean_proof_checked requires certificate_mode_witness");
+        } else {
+          const witnessObj = witness as Record<string, unknown>;
+          if (String(witnessObj.theorem ?? "") !== "concrete_certificate_mode_witness") {
+            errors.push(
+              "root: certificate_mode_witness.theorem must be concrete_certificate_mode_witness",
+            );
+          }
+          if (!String(witnessObj.proposition ?? "").trim()) {
+            errors.push("root: certificate_mode_witness.proposition must be non-empty");
+          }
+          if (inventory && !inventory.has("concrete_certificate_mode_witness")) {
+            errors.push(
+              "root: concrete_certificate_mode_witness missing from theorem_inventory",
+            );
+          }
         }
       }
       const certModeChecked = String(certificate.certificate_mode ?? DEFAULT_CERTIFICATE_MODE);
@@ -1334,6 +1414,123 @@ export function validateTenantIsolation(trace: Record<string, unknown>): string[
       errors.push(
         `TenantIsolation: cross-tenant resource access at ${base} (principal tenant ${JSON.stringify(tenant)})`,
       );
+    }
+  }
+  return errors;
+}
+
+const DENY_PATH_FORBIDDEN_EFFECTS = new Set([
+  "file.write",
+  "network.egress",
+  "email.send",
+  "mcp.invoke",
+  "handoff.delegate",
+]);
+
+function actionEffectKinds(action: Record<string, unknown>): string[] {
+  const effects = action.effects;
+  if (!Array.isArray(effects)) {
+    return [];
+  }
+  const kinds: string[] = [];
+  for (const item of effects) {
+    if (item && typeof item === "object" && !Array.isArray(item)) {
+      const kind = String((item as Record<string, unknown>).effect_kind ?? "");
+      if (kind) {
+        kinds.push(kind);
+      }
+    } else if (typeof item === "string" && item) {
+      kinds.push(item);
+    }
+  }
+  return kinds;
+}
+
+/** Mirror Python ``validate_event_safe_deny_closed`` / Lean ``EventSafeDenyClosed``. */
+export function validateEventSafeDenyClosed(trace: Record<string, unknown>): string[] {
+  const errors: string[] = [];
+  const events = trace.events;
+  if (!Array.isArray(events)) {
+    return ["TraceInvalid: events must be an array"];
+  }
+  for (let index = 0; index < events.length; index += 1) {
+    const event = events[index];
+    if (!event || typeof event !== "object" || Array.isArray(event)) {
+      continue;
+    }
+    const eventObj = event as Record<string, unknown>;
+    if (String(eventObj.decision ?? "") !== "deny") {
+      continue;
+    }
+    const base = `events[${index}]`;
+    const action = eventObj.action;
+    if (!action || typeof action !== "object" || Array.isArray(action)) {
+      errors.push(`EventSafeDenyClosed: ${base} missing action`);
+      continue;
+    }
+    const actionObj = action as Record<string, unknown>;
+    const writes = actionObj.writes;
+    if (Array.isArray(writes) && writes.length > 0) {
+      errors.push(`EventSafeDenyClosed: ${base} deny event declares non-empty writes`);
+    }
+    for (const kind of actionEffectKinds(actionObj)) {
+      if (DENY_PATH_FORBIDDEN_EFFECTS.has(kind)) {
+        errors.push(
+          `EventSafeDenyClosed: ${base} deny event declares forbidden effect_kind ${JSON.stringify(kind)}`,
+        );
+      }
+    }
+  }
+  return errors;
+}
+
+/** Mirror Python ``validate_observed_effects_agree`` / Lean ``ObservationsAgree``. */
+export function validateObservedEffectsAgree(
+  action: Record<string, unknown>,
+  observations: Array<Record<string, unknown>>,
+): string[] {
+  const declared = new Set(actionEffectKinds(action));
+  const reads = Array.isArray(action.reads) ? action.reads : [];
+  const writes = Array.isArray(action.writes) ? action.writes : [];
+  const readUris = new Set(
+    reads
+      .filter((item) => item && typeof item === "object" && !Array.isArray(item))
+      .map((item) => String((item as Record<string, unknown>).uri ?? ""))
+      .filter(Boolean),
+  );
+  const writeUris = new Set(
+    writes
+      .filter((item) => item && typeof item === "object" && !Array.isArray(item))
+      .map((item) => String((item as Record<string, unknown>).uri ?? ""))
+      .filter(Boolean),
+  );
+  const errors: string[] = [];
+  for (let index = 0; index < observations.length; index += 1) {
+    const obs = observations[index];
+    if (!obs || typeof obs !== "object" || Array.isArray(obs)) {
+      errors.push(`ObservedEffect: observations[${index}] must be an object`);
+      continue;
+    }
+    const kind = String(obs.kind ?? obs.effect_kind ?? "");
+    if (!kind) {
+      errors.push(`ObservedEffect: observations[${index}] missing kind`);
+      continue;
+    }
+    if (!declared.has(kind)) {
+      errors.push(
+        `ObservedEffect: observations[${index}] kind ${JSON.stringify(kind)} not in declared action effects`,
+      );
+    }
+    const resource = obs.resource;
+    if (resource && typeof resource === "object" && !Array.isArray(resource)) {
+      const uri = String((resource as Record<string, unknown>).uri ?? "");
+      if (uri && !readUris.has(uri) && !writeUris.has(uri)) {
+        errors.push(
+          `ObservedEffect: observations[${index}] resource ${JSON.stringify(uri)} absent from declared reads/writes`,
+        );
+      }
+    } else if (resource != null) {
+      errors.push(`ObservedEffect: observations[${index}].resource must be object or null`);
     }
   }
   return errors;
