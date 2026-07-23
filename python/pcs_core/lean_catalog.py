@@ -55,6 +55,9 @@ PF_CORE_OBLIGATION_KIND_THEOREM: dict[str, str] = {
     "TraceSafeDImpliesTenantIsolationD": "traceSafeD_implies_tenantIsolationD",
     "TraceSafeDImpliesTraceCrossTenantSafeD": "traceSafeD_implies_traceCrossTenantSafeD",
     "TraceSafeDImpliesNonInterferenceD": "traceSafeD_implies_nonInterferenceD",
+    "TraceSafeDImpliesTenantProjectionIsolationD": (
+        "traceSafeD_implies_tenantProjectionIsolationD"
+    ),
     "ActionResourcesWithinCapabilityPattern": "actionResourcesWithinCapabilityPatternD_sound",
     "ActionAdmissibleWithResourcePattern": "actionAdmissibleWithResourcePatternD_sound",
     "TraceSafeR": "traceSafeRD_sound",
@@ -62,7 +65,17 @@ PF_CORE_OBLIGATION_KIND_THEOREM: dict[str, str] = {
     "TraceSafeRImpliesTraceSafe": "traceSafeR_implies_traceSafe",
     "TraceSafeAppend": "traceSafe_append",
     "TraceAppendPreservesNonInterference": "trace_append_preserves_non_interference",
+    "TraceAppendPreservesTenantProjectionIsolation": (
+        "trace_append_preserves_tenant_projection_isolation"
+    ),
     "ContractPreRoleAlignedCapability": "contractPre_role_aligned_capability",
+    "ObservedSensitiveEffectsInFrame": "observed_sensitive_effects_in_frame",
+    "AcceptedTransitionNoUndeclaredSensitiveObservation": (
+        "accepted_transition_no_undeclared_sensitive_observation"
+    ),
+    "EventSafeDenyClosedImpliesEventSafe": "eventSafeDenyClosed_implies_eventSafe",
+    "TraceSafeDenyClosedImpliesTraceSafe": "traceSafeDenyClosed_implies_traceSafe",
+    "TraceSafeImpliesTenantProjectionIsolation": ("traceSafe_implies_tenant_projection_isolation"),
 }
 
 PF_CORE_SOUNDNESS_THEOREMS = frozenset(
@@ -118,12 +131,33 @@ PF_CORE_SOUNDNESS_THEOREMS = frozenset(
         "traceSafeD_implies_tenantIsolationD",
         "traceSafeD_implies_traceCrossTenantSafeD",
         "nonInterferenceD_sound",
+        "tenantProjectionIsolationD_sound",
         "traceSafeD_implies_nonInterferenceD",
+        "traceSafeD_implies_tenantProjectionIsolationD",
+        "traceSafe_implies_tenant_projection_isolation",
+        "trace_append_preserves_tenant_projection_isolation",
         "deny_event_not_low",
         "deny_event_is_high",
         "handoffSafe_requires_same_tenant",
         "handoffSafe_forbids_distinct_tenant",
         "event_deny_implies_crossTenantDenied",
+        "observedEffectAgreesD_sound",
+        "observationsAgreeD_sound",
+        "observed_sensitive_effects_in_frame",
+        "accepted_transition_no_undeclared_sensitive_observation",
+        "accepted_transition_no_undeclared_write_observation",
+        "eventSafeDenyClosedD_sound",
+        "eventSafeDenyClosed_implies_eventSafe",
+        "denyPathClosedD_sound",
+        "traceSafeDenyClosedD_sound",
+        "traceSafeDenyClosed_implies_traceSafe",
+        "denyClosedBundleD_sound",
+        "denyReasonConsistentD_sound",
+        "noToolInvocationAfterDenialD_sound",
+        "noDelegatedAuthorityOnDenyD_sound",
+        "low_output_equivalent_refl",
+        "low_equivalent_states_refl",
+        "tenant_projection_isolation_of_trace_safe",
     }
 )
 
