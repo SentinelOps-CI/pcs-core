@@ -6,7 +6,9 @@ This document states what PF-Core **proves** about tenant isolation versus what 
 
 PF-Core does **not** claim global non-interference across tenants, covert channels, or arbitrary compositional invariants. The Lean modules `lean/PFCore/NonInterference.lean` and `lean/PFCore/Observational.lean` formalize **conservative tenant isolation and observational projection** aligned with runtime checks.
 
-**User-facing name:** The proved single-trace observational property is **`TenantProjectionIsolation`**. Prefer that name in documentation and claims. The Lean abbreviation `NonInterference` is a compatibility alias only. Paired-execution **`NonInterference`** is reserved for a future schema/kernel version (`lean/PFCore/PairedExecution.lean`); it is **not proved**.
+**User-facing name:** The proved single-trace observational property is **`TenantProjectionIsolation`**. Prefer that name in documentation and claims. The Lean abbreviation `NonInterference` is a compatibility alias only. Paired-execution **`PairedExecutionNonInterference`** is scaffolding only (`lean/PFCore/PairedExecution.lean`); it is **not proved**.
+
+**Claim boundary (C3):** No stable certificate or public claim may use the bare phrase “non-interference” without naming which formal predicate is meant (`TenantProjectionIsolation` vs `PairedExecutionNonInterference`).
 
 **Observational equivalence does not imply covert channels are absent.** Two traces may agree on low projections while differing on denied events, cross-tenant attempts, timing, or side channels not recorded in PF-Core events.
 

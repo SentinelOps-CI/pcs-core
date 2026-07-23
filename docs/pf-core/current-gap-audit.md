@@ -79,17 +79,18 @@ Summary of gaps between the PF-Core vision and the current `pcs-core` repository
 | H2 — `TenantIsolation` + `TraceCrossTenantSafe` | Partial | `traceSafe_implies_tenant_isolation`; covert channels / timing open |
 | H3 — `runtimeRoleMap` Python parity | Done | `RoleMap.lean` + `test_pf_core_research.py` |
 | H4 — Research catalog tests | Done | `test_pf_core_research.py`, `test_pf_core_research_grade.py`, catalog updates |
-| H5 — Effect frames | Done | `EffectFrame.lean`; write exclusion under explicit footprint alignment |
+| H5 — Effect frames | Done | `EffectFrame.lean` + independent `PFCoreEffectFrame.v0` certificate binding (PR4); write exclusion under explicit footprint alignment |
 | H6 — Contract refinement | Done | `ContractRefinement`, `contract_refinement_preserves_trace_safe` |
 | H7 — Replay claim boundary | Done | `replay_preserves_claim_boundary` in `pf_core_replay.py` |
 
 ## Remaining research (deferred)
 
-1. **Paired-execution / full global cross-tenant non-interference** — `TenantProjectionIsolation` proved for single recorded traces; covert channels, timing, scheduler adversaries, and `PairedExecutionNonInterference` remain open (`non-interference.md`, `runtime-semantics.md`).
-2. **Write footprint ↔ effect linkage** — `WriteFootprintRequiresWriteEffect` explicit; derived from `ActionAdmissible` + `KnownCapabilityEffect` for catalog capabilities.
-3. **Resource-pattern scope in Lean** — Partial: `ResourcePattern.lean` (`TraceSafeR`, `ActionAdmissibleWithResourcePattern`); Python/Rust/TS runtime deciders (`trace_safe_rd` / trace hash-chain `validate_resource_scope`); optional codegen `concrete_trace_safe_r*` when allow events pass pattern scope; base `TraceSafe` kernel unchanged.
-4. **Full provability-fabric-core live adapter orchestration** — hash parity covered natively via adapter CI script.
-5. **Full agent runtime, MCP, NL policy, model safety** — out of scope.
+1. **Paired-execution / full global cross-tenant non-interference** — `TenantProjectionIsolation` proved for single recorded traces; covert channels, timing, scheduler adversaries, and `PairedExecutionNonInterference` remain open (`non-interference.md`, `runtime-semantics.md`). Bare “non-interference” claims must name the formal predicate.
+2. **DenyClosedCertificate** — declared-footprint `EventSafeDenyClosed` proved; post-deny runtime effect closure not yet evidenced; mode scaffolded/disabled.
+3. **Write footprint ↔ effect linkage** — `WriteFootprintRequiresWriteEffect` explicit; derived from `ActionAdmissible` + `KnownCapabilityEffect` for catalog capabilities.
+4. **Resource-pattern scope in Lean** — Done for A11 parity: Lean separates `ActionAdmissible` vs `ActionAdmissibleWithResourcePattern`; Python/Rust/TS base deciders exclude pattern scope; refined `*SafeR` include it. Shared vector: TraceSafe=true, TraceSafeR=false when URI is outside pattern.
+5. **Full provability-fabric-core live adapter orchestration** — hash parity covered natively via adapter CI script.
+6. **Full agent runtime, MCP, NL policy, model safety** — out of scope.
 
 ## External audit remediation (2026-06)
 
@@ -127,7 +128,7 @@ Summary of gaps between the PF-Core vision and the current `pcs-core` repository
 |------|--------|-------|
 | I1 — `pfcore_kernel_hash` + full `lean_environment_hash` | Done | PF-Core `*.lean` bytes + toolchain + lake files |
 | I2 — Event sequence order validator | Done | `validate_event_sequence_order`; wired to validate-trace / lean-check |
-| I3 — Release bundle CLI | Done | `bundle-release`, `validate-bundle`, manifest hashes |
+| I3 — Release bundle CLI | Done | `bundle-release`, `validate-bundle`, `verify-bundle`; closed projection/evidence manifests |
 | I4 — Compositional `certificate_mode` | Done | Six modes; `--certificate-mode` on lean-check; codegen obligations |
 | I5 — Resource pattern Lean subset | Done | `ResourceWithinCapabilityPattern` in `ResourcePattern.lean` |
 | I6 — Release gates | Done | `pf-core-release-gate.yml`; adapter blocking on main |
@@ -236,6 +237,151 @@ Summary of gaps between the PF-Core vision and the current `pcs-core` repository
 | 6.1 CertifyEdge provision from pin | Done | `pins/certifyedge.json` status=`unpinned`; `verify-certifyedge-pin.py` + `provision-certifyedge.sh` fail closed in release |
 | 6.2 Bundle-bound ExternalAttestation.v0 | Done | Schema + `pcs pf-core attest-bundle`; digests vs ed25519 modes explicit |
 | 6.3 Unified release/preview gates | Done | `release.yml` + `pf-core-release-gate.yml` + `scripts/release-gate.sh`; preview absence notice |
+
+## PR14 — Authenticated integrity + CertifyEdge pin (B6 + B7)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| ArtifactIntegrity.v1 Ed25519 ops | Done | `pcs_core/artifact_integrity.py` (PyNaCl); domain-separated `PCS:<type>:<ver>:<digest>` |
+| TrustedKeyRegistry.v0 | Done | Schema + validity intervals + revocation; `PCS_TRUSTED_KEY_REGISTRY` |
+| Signature timestamp policy | Done | future skew + max age + key validity window |
+| Release-root signature verify | Done | `verify_release_root_signatures` for stable artifact types |
+| ExternalAttestation ed25519_signed | Done | Real sign/verify when seed + registry configured; digest-bound remains default |
+| CertifyEdge pin machinery | Done | `provision.env` (path/digest/version/pin/strategy/trust grade); workflows source it |
+| Fail-closed unpinned release | Done | `pins/certifyedge.json` remains `status=unpinned` (no fake production digest) |
+| Dev fixture | Done | `dev_fixture` + `scripts/certifyedge-dev-fixture.py` for preview/tests only |
+| Bundle pin record | Done | `certifyedge_pin.json` copied into release bundles |
+| Arbitrary checker classification | Done | `trust_grade=untrusted_development` when digest ≠ pin |
+
+### Remaining honest deferrals (post PR14)
+
+- Org production ed25519 signing keys / published `TrustedKeyRegistry.v0` allowlist (operators must provision; pcs-core does not ship private keys).
+- Real CertifyEdge OCI/binary/source pin (`status=pinned` with immutable digest) — blocked on upstream publishable artifact.
+- External `CertificateChecked` remains preview until a production CertifyEdge pin exists.
+- SLSA / consumer provenance verification remains PR15.
+## PR1 — Release execution + claim-surface policy (B0 + A0)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| A0 mode status table | Done | `schemas/pf_core.certificate_mode_status.json`; TraceSafeR=`release_candidate`; TraceSafe=`legacy`; Handoff/Contract/EffectFrame/FramePreserved=`disabled`; Compositional=`experimental`; external CertificateChecked=`preview` |
+| Disabled modes fail closed | Done | Public `pcs pf-core lean-check` + `--release-grade` reject `allowed_issuance=false` |
+| lean-check artifact paths | Done | Deterministic paths printed/returned for certificate, LeanCheckResult, proof, projection/manifest placeholders |
+| Release workflow lean-check-result | Done | `release.yml` + `pf-core-release-gate.yml` pass `--result-out` into `bundle-release --lean-check-result` |
+| Preview dispatch path | Done | lean-check → bundle-release → validate-bundle → absence/attest → upload |
+
+### Remaining honest deferrals (post PR1)
+
+- Specialized modes remain disabled until evidence-fidelity PRs complete enablement (handoff, contract, effect frame, transitions repaired; public enablement deferred).
+- External CertificateChecked remains preview until CertifyEdge pin (PR 14).
+- Semantic projection and theorem manifest artifacts are written during lean-check and required in LeanKernelChecked closed bundles (`verify-bundle`).
+
+## PR2 — Handoff evidence repair (A1 + A2)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| A1 `PFCoreResolvedEvidence` | Done | Single resolve in lean-check; threaded into projection/codegen/certificate |
+| Explicit `evidence_selection.handoff_ids` | Done | Sibling auto-scan rejected for `HandoffSafeCertificate` |
+| Projected `delegated_capabilities` | Done | Required non-empty; catalog-validated; Lean binds projected ID sequence |
+| Public status | Disabled | Issuable only with `--allow-non-public-modes` until enablement pass |
+
+## PR3 — Contract evidence repair (A3)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Projection `semantics_layer` | Done | Replaces `field_semantics`; materialized per-field records after defaults |
+| Per-field records | Done | section, field, normalized_value, effective_layer + lean theorem / runtime check id / out-of-scope rationale |
+| Explicit `evidence_selection.contract_ids` | Done | Required for `ContractCheckedCertificate`; no sibling auto-pick |
+| Certificate binding | Done | selected_contract_ids, contract_source_file_digests, contract_evidence_digest, contract_theorem_names; projection IDs must match |
+| Canonical fixture e2e | Done | `examples/pf-core-valid/contract_checked/` via public CLI + `--allow-non-public-modes` + semantic validation |
+| Public status | Disabled | Kept disabled for public RC consistency; issuance works with `--allow-non-public-modes` |
+
+### Remaining honest deferrals (post PR3)
+
+- `ContractCheckedCertificate` / `HandoffSafeCertificate` remain disabled for public RC until an enablement pass.
+- Effect-frame and frame-preserved modes remain disabled for public RC (redesign landed; enablement deferred).
+- External CertificateChecked remains preview until CertifyEdge pin (PR 14).
+
+## PR4 — Effect-frame redesign (A4)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| `PFCoreEffectFrame.v0` schema + artifact | Done | frame_id, allowed_effect_kinds, resource_constraints, workflow/contract scope, source_policy_ref, provenance, integrity digest; `frame_scope_policy=global` |
+| Non-tautological codegen | Done | `actionEffectsInFrameD concreteAction concreteDeclaredFrame = true`; frame emitted from independent artifact (never `action.effects`) |
+| v0 multi-event policy | Done | One global frame per trace (documented on schema + fixture README) |
+| Certificate path + digest | Done | `effect_frame_id`, `effect_frame_path`, `effect_frame_digest` on `PFCoreCertificate.v0` |
+| Resolved evidence wiring | Done | `evidence_selection.effect_frame_id` required for `EffectFrameCertificate` |
+| Adversarial extra-effect fail | Done | Action with undeclared effect omitted from frame → resolution/codegen fail |
+| Public status | Disabled | Kept disabled for public RC; issuance works with `--allow-non-public-modes` |
+
+### Remaining honest deferrals (post PR4)
+
+- `EffectFrameCertificate` / `ContractCheckedCertificate` / `HandoffSafeCertificate` remain disabled for public RC until an enablement pass.
+- Frame-preserved mode remains disabled pending PR5 transition redesign.
+- External CertificateChecked remains preview until CertifyEdge pin (PR 14).
+
+## PR5 — Transition-certificate redesign (A5)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Explicit `stepState` witnesses | Done | Allow: `stepState pre = some post`; deny: identity; no `applyEvent` fallback in codegen |
+| FramePreserved obligations | Done | Valid initial; allow applications; deny identity; frameValid at each post-state; resource/active-principal/tenant/capability-frame update equalities |
+| Resolved evidence wiring | Done | `initial_state` + `transition_states` + `transition_chain_digest` on certificate |
+| Cross-tenant no-op reject | Done | Sequential cross-tenant allow fixture rejected (`stepState` none) |
+| Public status | Disabled | Kept disabled for public RC; issuance works with `--allow-non-public-modes` |
+
+### Remaining honest deferrals (post PR5)
+
+- Specialized modes remain disabled for public RC until an enablement pass.
+- External CertificateChecked remains preview until CertifyEdge pin (PR 14).
+- Compositional redesign (A6) landed as experimental: `CompositionalSafeExtension` + codegen operational application; still not `release_candidate`.
+- `DenyClosedCertificate` remains scaffolded/disabled (declared-footprint `EventSafeDenyClosed` only).
+- `TrustedInstrumentation` is attested-execution (not mere `ObservationsAgree`); authenticity still assumption-discharged.
+- Paired-execution NI remains unproved scaffolding (`PairedExecutionNonInterference`).
+
+## PR6 — Theorem manifest and proof binding (A7 + A8)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| `PFCoreTheoremManifest.v0` | Done | Structured IR with normalized propositions; distinct from inventory hash |
+| Extended `verify-proof-binding` | Done | Schema/integrity, digests, names, propositions, witness, projection replay, evidence digests |
+
+## PR7 — Closed semantic-projection bundle (A9 + A10)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Always write `PFCoreSemanticProjection.v0.json` | Done | Written during lean-check whenever codegen produced a projection |
+| Closed release manifest fields | Done | `semantic_projection_*`, `theorem_manifest_*`, `evidence_manifest_*`, `lean_check_result_*` path+hash |
+| `evidence/` + `PFCoreEvidenceManifest.v0` | Done | Selected contract/handoff/effect-frame/policy artifacts + per-file digests |
+| `pcs pf-core verify-bundle` | Done | Manifest/digest checks, projection replay, theorem reconstruct, toolchain select, bundled-kernel compile, attestation, digest-bound result |
+| `validate-bundle` vs `verify-bundle` | Done | validate=structural; stable releases require verify-bundle |
+
+### Remaining honest deferrals (post PR7)
+
+- Specialized modes remain disabled for public RC until an enablement pass.
+- External CertificateChecked remains preview until CertifyEdge pin (PR 14).
+- Mandatory PCS projection binding (PR9) remains ahead.
+
+## PR8 — Base/refined cross-language decider parity (A11)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Base `action_admissible_d` excludes resource pattern | Done | Python/Rust/TS mirrors Lean `ActionAdmissible` |
+| Refined `action_admissible_with_resource_pattern_d` combines both | Done | Distinct event/trace deciders (`*Safe` vs `*SafeR`) |
+| Shared differential vector | Done | `examples/pf-core-invalid/resource_scope_violation`: TraceSafe=true, TraceSafeR=false in Lean/Python/Rust/TS |
+
+## PR15 — Real release provenance (B8)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Replace provenance stub | Done | `actions/attest-build-provenance` + `actions/attest-sbom` (SHA-pinned) |
+| `ReleaseProvenanceBinding.v0` | Done | Binds commit, workflow/builder, lockfiles, verifier image digest, wheels, SBOM, bundle root |
+| Consumer verification job | Done | `release-provenance.yml` + `release.yml` download artifact → `scripts/verify-release-provenance.sh` (+ `gh attestation verify` when signed) |
+| Fail-closed gated honesty | Done | `attestation.status=gated` + `PROVENANCE_ATTESTATION_GATED.json` when org/plan blocks signing; stable requires signed unless `PCS_PROVENANCE_ALLOW_GATED` |
+
+### Remaining honest deferrals (post PR15)
+
+- Signed attestations still require GitHub artifact-attestation availability (public repos OK on current plans; private needs GHEC). Until org enables them, set `PCS_PROVENANCE_ALLOW_GATED=true` only as a temporary bridge — do not claim SLSA-attested releases while gated.
+- OCI cosign image signing remains a separate org-infra gap (see `docs/distribution.md` / `docs/security-governance.md`).
 
 ## Phase 7 — Verification quality (2026-07)
 

@@ -98,6 +98,32 @@ Successful lean-check writes a certificate with matching `claim_class`, `assumpt
 
 **Release-grade tool-use policy:** Under `pcs pf-core lean-check --release-grade`, tool-use traces must resolve to `TraceSafeRCertificate` (via `required_certificate_mode`, WorkflowProfile, or catalog `workflow_certificate_modes`). The sibling `tool_use_trace.json` heuristic is disabled. Successful `LeanKernelChecked` certificates require passed `concrete_trace_safe_r` and `concrete_trace_safe_r_prop` obligations; base `traceSafeD` alone is insufficient. Base `TraceSafeCertificate` remains for legacy / non–tool-use traces only. Refinement to base `TraceSafe` is documented via `traceSafeR_implies_traceSafe`.
 
+### Public certificate-mode claim surface (A0)
+
+Authoritative machine-readable table: [`schemas/pf_core.certificate_mode_status.json`](../../schemas/pf_core.certificate_mode_status.json).
+
+| Mode / claim | Status | `allowed_issuance` | Notes |
+|--------------|--------|--------------------|-------|
+| `TraceSafeRCertificate` | `release_candidate` | true | Sole RC for tool-use `LeanKernelChecked` |
+| `TraceSafeCertificate` | `legacy` | true | Non–tool-use / legacy only |
+| `HandoffSafeCertificate` | `disabled` | false | Fail closed on public CLI and `--release-grade` |
+| `ContractCheckedCertificate` | `disabled` | false | Evidence repair landed; public issuance still fail-closed until enablement pass (`--allow-non-public-modes`) |
+| `EffectFrameCertificate` | `disabled` | false | Evidence redesign landed; public issuance still fail-closed (`--allow-non-public-modes`) |
+| `FramePreservedCertificate` | `disabled` | false | Transition redesign landed; public issuance still fail-closed (`--allow-non-public-modes`) |
+| `CompositionalExtensionCertificate` | `experimental` | true | A6 substantive predicate (`CompositionalSafeExtension`); not `--release-grade` |
+| External `CertificateChecked` | `preview` | true | Until CertifyEdge pin |
+
+Scaffolded (not in `CERTIFICATE_MODES` issuance surface; see status table `scaffolded_modes`):
+
+| Mode / claim | Status | Notes |
+|--------------|--------|-------|
+| `TracePrefixSafeCertificate` | `experimental` alias | Prefix-only `TracePrefixSafe` / `TraceSafe` chaining — narrower than A6 |
+| `DenyClosedCertificate` | `disabled` | Runtime evidence insufficient for post-deny effect closure; use `EventSafeDenyClosed` declared-footprint refinement only |
+
+Issuance of disabled modes fails closed under the default public `pcs pf-core lean-check` CLI and under `--release-grade`. Codegen/fixture paths may still exercise disabled modes for conformance.
+
+Non-interference claim boundary: prefer **`TenantProjectionIsolation`** (proved, single-trace observational). Do not use bare “non-interference” without naming the formal predicate; `PairedExecutionNonInterference` remains unproved scaffolding.
+
 Reference: `lean/PFCore/ResourcePattern.lean`, Python `resource_matches_pattern`.
 
 ### Mapping guidance for PF-Core certificates

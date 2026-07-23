@@ -175,10 +175,11 @@ PF-Core is the trace-safety kernel in `pcs-core`: Python deciders aligned with L
 
 | Topic | Detail |
 |-------|--------|
-| Tool-use certificate mode | **`TraceSafeRCertificate`** is the sole release-grade `LeanKernelChecked` path for tool-use traces: set `required_certificate_mode` on the trace, resolve via catalog `workflow_certificate_modes`, or `WorkflowProfile` policy. Release-grade mode resolution skips the sibling-file heuristic; base `TraceSafeCertificate` is legacy/non–tool-use only. |
+| Public claim surface | Machine-readable status in [`schemas/pf_core.certificate_mode_status.json`](schemas/pf_core.certificate_mode_status.json): **`TraceSafeRCertificate`** = sole `release_candidate` for tool-use; **`TraceSafeCertificate`** = `legacy` (non–tool-use); **HandoffSafe / ContractChecked / EffectFrame / FramePreserved** = `disabled` (fail closed on public CLI and `--release-grade`; handoff/contract/effect-frame/transition evidence repaired but public enablement deferred); **CompositionalExtensionCertificate** = `experimental` (A6 `CompositionalSafeExtension`); scaffolded **TracePrefixSafeCertificate** / **DenyClosedCertificate** are not issuable; external **CertificateChecked** = `preview`. |
+| Tool-use certificate mode | Release-grade tool-use must resolve to `TraceSafeRCertificate` via `required_certificate_mode`, catalog `workflow_certificate_modes`, or `WorkflowProfile`. Sibling-file heuristic is skipped under `--release-grade`. |
 | Capability catalog | `catalog/pf_core.catalog.json` is the single source; `python/scripts/gen_pf_core_catalog.py` generates Python, Rust, TypeScript, and Lean maps (no manual `TOOL_NAME_MAP` drift). |
-| Release bundles | `pcs pf-core bundle-release` copies trace, certificate, proof, **`lean-toolchain`**, **`lean/lakefile.lean`**, **`lean/lake-manifest.json`**, and a **`kernel/`** tree; `kernel_manifest.json` lists per-file `sha256:` digests. `validate-bundle` checks the bundle alone (hashes from bundled contents only). |
-| CertifyEdge | Three attestation classes: **live** (release gate), **stub** (`stub://`, format validation / staging with explicit flag), **mock** (`mock://`, dev CI only). Release path rejects mock; stub requires `PF_CORE_CERTIFYEDGE_ALLOW_STUB=1` when `require_live`. |
+| Release bundles | `pcs pf-core bundle-release` copies trace, certificate, optional **LeanCheckResult** (`--lean-check-result`), proof, **semantic projection**, **theorem manifest**, selected **evidence/** artifacts + `evidence_manifest.json`, **`lean-toolchain`**, **`lean/lakefile.lean`**, **`lean/lake-manifest.json`**, and a **`kernel/`** tree; `kernel_manifest.json` lists per-file `sha256:` digests. `validate-bundle` is the lower-cost structural check; **stable releases must run `verify-bundle`** (projection replay, theorem reconstruction, Lean compile against the bundled kernel). Preview/release workflows pass `--result-out` from lean-check into `--lean-check-result`. |
+| CertifyEdge | Three attestation classes: **live** (release gate), **stub** (`stub://`, format validation / staging with explicit flag), **mock** (`mock://`, dev CI only). Release path rejects mock; stub requires `PF_CORE_CERTIFYEDGE_ALLOW_STUB=1` when `require_live`. External `CertificateChecked` remains **preview** until CertifyEdge is pinned. |
 
 ### PF-Core quick start
 
@@ -194,13 +195,15 @@ pcs pf-core bundle-release \
   --cert /tmp/pfcore-cert.json \
   --out /tmp/pfcore-bundle
 pcs pf-core validate-bundle /tmp/pfcore-bundle
+# Stable releases must also independently verify:
+pcs pf-core verify-bundle /tmp/pfcore-bundle
 
 # Full local release-grade matrix (pytest, lake PFCore+PCS, conformance, CertifyEdge mock+stub)
 powershell -File scripts/pf-core-release-grade-local.ps1   # Windows
 bash scripts/pf-core-release-grade-local.sh                # Linux / macOS
 ```
 
-Further PF-Core docs: [docs/pf-core/merge-readiness.md](docs/pf-core/merge-readiness.md), [docs/pf-core/release-checklist.md](docs/pf-core/release-checklist.md), [docs/pf-core/claim-boundary.md](docs/pf-core/claim-boundary.md).
+Further PF-Core docs: [docs/pf-core/merge-readiness.md](docs/pf-core/merge-readiness.md), [docs/pf-core/release-checklist.md](docs/pf-core/release-checklist.md), [docs/pf-core/operator-release-gates.md](docs/pf-core/operator-release-gates.md), [docs/pf-core/claim-boundary.md](docs/pf-core/claim-boundary.md).
 
 PF-Core provides machine-checkable trace certificates for a bounded, catalog-driven, resource-pattern-scoped subset of agentic tool-use traces. It does not claim global AI safety, full contract discharge in the Lean kernel, or operational guarantees for deployed agents outside the stated catalog and claim class.
 

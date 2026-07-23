@@ -1,21 +1,23 @@
-# PF-Core runtime semantics (Phase 5)
+# PF-Core runtime semantics (Phase 5 + Workstream C)
 
-This document states the Phase 5 execution-observation and deny-path model, and
-how it relates to proved Lean predicates versus trusted instrumentation.
+This document states the execution-observation and deny-path model, and how it
+relates to proved Lean predicates versus trusted instrumentation.
 
 ## Scope
 
 Phases 0–4 establish declared capabilities, declared effects, effect frames, and
-trace safety. Phase 5 adds:
+trace safety. Phase 5 / Workstream C adds:
 
 | Item | Lean | Status |
 |------|------|--------|
-| Observed effects | `ObservedEffect`, `TrustedInstrumentation` | **Proved** undeclared-sensitive observation lemmas under instrumentation assumption |
-| Deny-path closedness | `EventSafeDenyClosed` | **Proved** refinement of `EventSafe` (optional) |
-| Tenant projection isolation | `TenantProjectionIsolation` | **Proved** (renamed observational property) |
+| Observed effects | `ObservedEffect`, separated soundness/completeness/attribution/authenticity | **Proved** undeclared-sensitive observation lemmas under observation soundness |
+| Attested execution | `AttestedExecution` / `TrustedInstrumentation` | **Defined**; authenticity is an assumption switch, not proved from producer logs |
+| Deny-path closedness | `EventSafeDenyClosed` | **Proved** refinement of `EventSafe` (declared footprint only) |
+| `DenyClosedCertificate` | scaffolded | **Disabled** — runtime evidence insufficient for post-deny effect closure |
+| Tenant projection isolation | `TenantProjectionIsolation` | **Proved** (single-trace observational) |
 | Paired-execution NI | `PairedExecutionNonInterference` | **Scaffolding only** — not proved; not a release claim |
 
-## 5.1 Observed effects and instrumentation
+## 5.1 Observed effects and instrumentation (C1)
 
 ```lean
 structure ObservedEffect where
@@ -24,8 +26,19 @@ structure ObservedEffect where
   resultDigest : Option Hash
 ```
 
-Agreement (`ObservationsAgree` / `TrustedInstrumentation`) requires every
-observed kind (and optional resource) to lie in the declared action footprint.
+### Separated predicates
+
+| Predicate | Meaning |
+|-----------|---------|
+| `ObservationSoundness` / `ObservationsAgree` | Every observation agrees with the declared action footprint |
+| `ObservationCompleteness` | Every frame-sensitive *actual* effect appears in observations |
+| `EffectAttribution` | Observations are attributed to the given action |
+| `InstrumentationAuthenticity` | TCB / attestation assumption (`authenticated = true`) |
+| `AttestedExecution` | Conjunction of the four above on an `InstrumentationContext` |
+| `TrustedInstrumentation` | **Definitionally** `AttestedExecution` — **not** mere `ObservationsAgree` |
+
+Agreement alone never establishes trust. Lemma
+`observation_soundness_not_trusted_without_authenticity` records that shape.
 
 **Trusted-boundary assumption:** Observation faithfulness is **not** proved from
 untrusted producer logs. Discharge requires:
@@ -33,18 +46,21 @@ untrusted producer logs. Discharge requires:
 - trusted runtime instrumentation in the TCB, or
 - an external attestation that binds observation digests to the transition.
 
-Documented in `assumptions.md`. Primary lemma:
+Documented in `assumptions.md`. Primary lemmas:
 
-`accepted_transition_no_undeclared_sensitive_observation`
+- `accepted_transition_no_undeclared_sensitive_observation` (needs soundness)
+- `attested_execution_no_undeclared_sensitive_observation` (full trusted context)
 
-Under `TrustedInstrumentation` and `ActionEffectsInFrame`, an accepted allow
+Under observation soundness and `ActionEffectsInFrame`, an accepted allow
 transition cannot carry an observed `write`, `network`, `externalMessage`,
 `codeExecution`, or `stateChange` absent from the declared frame.
 
 Runtime mirror: `pcs_core.pf_core_runtime.validate_observed_effects_agree`
-(callers must still attest instrumentation).
+mirrors **`ObservationsAgree` / `ObservationSoundness` only**. Callers must still
+attest instrumentation authenticity separately before claiming
+`TrustedInstrumentation`.
 
-## 5.2 Deny-path closedness
+## 5.2 Deny-path closedness (C2)
 
 Base `EventSafe` treats deny as vacuously safe. Optional refinement:
 
@@ -64,9 +80,15 @@ Optional bundle properties (`DenyClosedBundle`):
 `TraceSafeDenyClosed` refines `TraceSafe` (`traceSafeDenyClosed_implies_traceSafe`).
 Base `EventSafe` / `TraceSafe` remain unchanged.
 
+**`DenyClosedCertificate`:** scaffolded and **disabled**. Declared-footprint
+refinement is proved; post-deny runtime closure of tool/mutation/network/message/
+code/release/state/delegation effects is **not** yet supported by runtime evidence.
+Do not issue a public deny-closed certificate claim. See
+`schemas/pf_core.certificate_mode_status.json` `scaffolded_modes`.
+
 Runtime mirror: `validate_event_safe_deny_closed`.
 
-## 5.3 Naming: TenantProjectionIsolation vs NonInterference
+## 5.3 Naming: TenantProjectionIsolation vs NonInterference (C3)
 
 | Name | Meaning | Status |
 |------|---------|--------|
@@ -75,15 +97,19 @@ Runtime mirror: `validate_event_safe_deny_closed`.
 | `PairedExecutionNonInterference` | Paired executions + scheduler + timing assumptions | **Unproved scaffolding** |
 
 User-facing material must prefer **TenantProjectionIsolation** for the current
-property. Reserve **NonInterference** for a future paired-execution theorem
-family. CLI flag `--non-interference` remains for compatibility and checks
+property. No stable certificate or public claim may use the bare phrase
+“non-interference” without naming which formal predicate is meant.
+
+CLI flag `--non-interference` remains for compatibility and checks
 `TenantProjectionIsolation`.
 
 See `non-interference.md` and `lean/PFCore/PairedExecution.lean`.
 
 ## What is not claimed
 
-- Completeness of observations without trusted instrumentation / attestation
+- Completeness of observations without authenticity / attestation
+- That `ObservationsAgree` equals `TrustedInstrumentation`
 - Paired-execution non-interference under adversarial schedulers
 - Covert channels or timing leaks
-- Automatic deny-path suppression without deny-closed certificates
+- Automatic deny-path suppression / `DenyClosedCertificate` without runtime evidence
+- Full post-deny effect freedom beyond declared footprints

@@ -20,16 +20,18 @@ Expect `certificate_mode: TraceSafeRCertificate`, `claim_class: LeanKernelChecke
 
 ## Release bundle
 
-After lean-check writes a certificate:
+After lean-check writes a certificate (and LeanCheckResult via `--result-out`):
 
 ```bash
 pcs pf-core bundle-release \
   --trace examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json \
   --cert /tmp/pfcore-cert.json \
+  --lean-check-result /tmp/lean-check.json \
   --out /tmp/pfcore-bundle
 pcs pf-core validate-bundle /tmp/pfcore-bundle
+pcs pf-core verify-bundle /tmp/pfcore-bundle
 ```
 
-The bundle includes `lean-toolchain`, `lean/lakefile.lean`, `lean/lake-manifest.json`, `kernel_manifest.json`, and a self-contained `kernel/` copy for hash validation without the source checkout.
+`validate-bundle` is the lower-cost structural check. Stable releases must run `verify-bundle` (projection replay, theorem reconstruction, Lean compile against the bundled kernel). The closed bundle includes semantic projection, theorem/evidence manifests, `lean-toolchain`, lake project files, `kernel_manifest.json`, and a self-contained `kernel/` tree.
 
 See [docs/pf-core/claim-boundary.md](../../docs/pf-core/claim-boundary.md) for claim classes.
