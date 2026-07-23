@@ -527,10 +527,11 @@ def cmd_pf_core_lean_check(
     skip_lean_proof: bool,
     certificate_mode: str | None,
     release_grade: bool = False,
+    allow_non_public_modes: bool = False,
 ) -> int:
     from pcs_core.lean_check import run_pfcore_lean_check
 
-    code, _result = run_pfcore_lean_check(
+    code, result = run_pfcore_lean_check(
         trace,
         out_path=out,
         result_out_path=result_out,
@@ -538,10 +539,49 @@ def cmd_pf_core_lean_check(
         skip_lean_proof=skip_lean_proof,
         certificate_mode=certificate_mode,
         release_grade=release_grade,
+        allow_non_public_modes=allow_non_public_modes,
     )
+    paths = result.get("artifact_paths") if isinstance(result, dict) else None
+    if isinstance(paths, dict) and paths:
+        print("PF-Core lean-check artifact paths:")
+        for key in (
+            "certificate",
+            "lean_check_result",
+            "generated_proof",
+            "semantic_projection",
+            "theorem_manifest",
+        ):
+            if key in paths:
+                print(f"  {key}: {paths[key]}")
     if code == 0:
         dest = out or trace.with_name("PFCoreCertificate.v0.json")
         print(f"OK PF-Core lean-check {trace} -> {dest}")
+    return code
+
+
+def cmd_release_check_gates(
+    *,
+    mode: str | None,
+    pin: Path | None,
+    registry: Path | None,
+    release_root: Path | None,
+    provenance_dir: Path | None,
+    require_oci_publish: bool,
+    as_json: bool,
+) -> int:
+    from pcs_core.release_gates import run_release_gate_check
+
+    code, text = run_release_gate_check(
+        mode=mode,
+        pin_path=pin,
+        registry_path=registry,
+        release_root=release_root,
+        provenance_dir=provenance_dir,
+        require_oci_publish=require_oci_publish,
+        as_json=as_json,
+    )
+    stream = sys.stdout if code == 0 or as_json else sys.stderr
+    stream.write(text)
     return code
 
 
@@ -572,6 +612,33 @@ def cmd_pf_core_validate_bundle(path: Path) -> int:
             print(f"FAIL {issue.code}: {issue.message}", file=sys.stderr)
         return 1
     print(f"OK PF-Core release bundle {path}")
+    return 0
+
+
+def cmd_pf_core_verify_bundle(
+    path: Path,
+    *,
+    skip_lean_compile: bool = False,
+    result_out: Path | None = None,
+) -> int:
+    from pcs_core.pf_core_bundle import verify_bundle
+
+    result = verify_bundle(
+        path,
+        skip_lean_compile=skip_lean_compile,
+        result_out=result_out,
+    )
+    if result.result_path:
+        print(f"verification result: {result.result_path}")
+    if not result.ok:
+        print(f"FAIL PF-Core verify-bundle {path}", file=sys.stderr)
+        for issue in result.issues:
+            print(f"  - {issue.code}: {issue.message}", file=sys.stderr)
+        return 1
+    print(f"OK PF-Core verify-bundle {path}")
+    for check in result.checks:
+        detail = f" ({check.detail})" if check.detail else ""
+        print(f"  {check.check_id}: {check.status}{detail}")
     return 0
 
 
@@ -827,12 +894,30 @@ def main(argv: list[str] | None = None) -> int:
         "--certificate-mode",
         type=str,
         default=None,
-        help="Compositional certificate mode for generated Lean obligations",
+        help=(
+            "Certificate mode for generated Lean obligations. Public claim surface is "
+            "schemas/pf_core.certificate_mode_status.json: TraceSafeRCertificate=release_candidate "
+            "(sole tool-use RC); TraceSafeCertificate=legacy; CompositionalExtensionCertificate="
+            "experimental; HandoffSafe/ContractChecked/EffectFrame/FramePreserved=disabled "
+            "(handoff/contract/effect-frame/transition evidence repaired; public enablement deferred; "
+            "fail closed). External CertificateChecked is preview."
+        ),
     )
     pf_core_lean.add_argument(
         "--release-grade",
         action="store_true",
-        help="Enforce release-grade certificate mode policy for tool-use traces",
+        help=(
+            "Enforce release-grade policy: tool-use requires TraceSafeRCertificate; "
+            "disabled/experimental modes fail closed"
+        ),
+    )
+    pf_core_lean.add_argument(
+        "--allow-non-public-modes",
+        action="store_true",
+        help=(
+            "Allow issuance of disabled/preview modes for fixture and codegen tests. "
+            "Not for public release-candidate issuance."
+        ),
     )
     pf_core_bundle = pf_core_sub.add_parser(
         "bundle-release",
@@ -849,8 +934,31 @@ def main(argv: list[str] | None = None) -> int:
     )
     pf_core_sub.add_parser(
         "validate-bundle",
-        help="Validate PF-Core release bundle manifest and hashes",
+        help=(
+            "Structural PF-Core release bundle check (manifests + digests). "
+            "Stable releases must also run verify-bundle."
+        ),
     ).add_argument("path", type=Path)
+    pf_core_verify_bundle = pf_core_sub.add_parser(
+        "verify-bundle",
+        help=(
+            "Independently verify a closed PF-Core release bundle: digest checks, "
+            "projection replay, theorem reconstruction, Lean compile against bundled "
+            "kernel, and attestation when required. Required for stable releases."
+        ),
+    )
+    pf_core_verify_bundle.add_argument("path", type=Path)
+    pf_core_verify_bundle.add_argument(
+        "--skip-lean-compile",
+        action="store_true",
+        help="Skip bundled-kernel Lean compile (not valid for stable release verification)",
+    )
+    pf_core_verify_bundle.add_argument(
+        "--result-out",
+        type=Path,
+        default=None,
+        help="Write PFCoreBundleVerificationResult.v0 JSON (default: inside bundle dir)",
+    )
     pf_core_sub.add_parser(
         "audit-lean-no-sorry",
         help="Scan lean/PFCore/ for sorry/admit/axiom/unsafe",
@@ -1093,6 +1201,59 @@ def main(argv: list[str] | None = None) -> int:
     p_benchmark_run.add_argument("--json", action="store_true", help="Emit BenchmarkReport.v0 JSON")
     p_benchmark_run.add_argument("--out", type=Path, default=None, help="Write report JSON to path")
 
+    release_parser = sub.add_parser(
+        "release",
+        help="Stable/preview release infrastructure gates",
+    )
+    release_sub = release_parser.add_subparsers(dest="release_cmd", required=True)
+    p_release_gates = release_sub.add_parser(
+        "check-gates",
+        help=(
+            "Fail-closed org/infra gates (CertifyEdge pin, TrustedKeyRegistry, "
+            "provenance gated policy, certificate-mode policy)"
+        ),
+    )
+    p_release_gates.add_argument(
+        "--mode",
+        choices=("release", "preview", "dev"),
+        default=None,
+        help="Override PCS_RELEASE_MODE (default: env or preview)",
+    )
+    p_release_gates.add_argument(
+        "--pin",
+        type=Path,
+        default=None,
+        help="Path to pins/certifyedge.json",
+    )
+    p_release_gates.add_argument(
+        "--registry",
+        type=Path,
+        default=None,
+        help="TrustedKeyRegistry.v0 JSON (else PCS_TRUSTED_KEY_REGISTRY)",
+    )
+    p_release_gates.add_argument(
+        "--release-root",
+        type=Path,
+        default=None,
+        help="Optional release/bundle root for ArtifactIntegrity signature verify",
+    )
+    p_release_gates.add_argument(
+        "--provenance-dir",
+        type=Path,
+        default=None,
+        help="Optional provenance package dir",
+    )
+    p_release_gates.add_argument(
+        "--require-oci-publish",
+        action="store_true",
+        help="Fail release mode when PCS_VERIFIER_OCI_DIGEST is unset",
+    )
+    p_release_gates.add_argument(
+        "--json",
+        action="store_true",
+        help="Emit ReleaseGateCheckReport.v0 JSON",
+    )
+
     args = parser.parse_args(argv)
 
     if args.command == "capabilities":
@@ -1173,6 +1334,7 @@ def main(argv: list[str] | None = None) -> int:
             args.skip_lean_proof,
             args.certificate_mode,
             args.release_grade,
+            args.allow_non_public_modes,
         )
     if args.command == "pf-core" and args.pf_core_cmd == "bundle-release":
         return cmd_pf_core_bundle_release(
@@ -1183,6 +1345,12 @@ def main(argv: list[str] | None = None) -> int:
         )
     if args.command == "pf-core" and args.pf_core_cmd == "validate-bundle":
         return cmd_pf_core_validate_bundle(args.path)
+    if args.command == "pf-core" and args.pf_core_cmd == "verify-bundle":
+        return cmd_pf_core_verify_bundle(
+            args.path,
+            skip_lean_compile=args.skip_lean_compile,
+            result_out=args.result_out,
+        )
     if args.command == "pf-core" and args.pf_core_cmd == "audit-lean-no-sorry":
         return cmd_pf_core_audit_lean_no_sorry()
     if args.command == "pf-core" and args.pf_core_cmd == "replay-trace":
@@ -1265,6 +1433,16 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_benchmark_normalize(args.dialect, args.out)
     if args.command == "benchmark" and args.benchmark_cmd == "run":
         return cmd_benchmark_run(args.suite, json_output=args.json, out_path=args.out)
+    if args.command == "release" and args.release_cmd == "check-gates":
+        return cmd_release_check_gates(
+            mode=args.mode,
+            pin=args.pin,
+            registry=args.registry,
+            release_root=args.release_root,
+            provenance_dir=args.provenance_dir,
+            require_oci_publish=args.require_oci_publish,
+            as_json=args.json,
+        )
 
     parser.print_help()
     return 2

@@ -1,4 +1,8 @@
-"""Resolve repo and schema paths for dev checkouts and installed wheels."""
+"""Resolve repo and schema paths for dev checkouts and installed wheels.
+
+Lean roots, kernel sources, generated proofs, pins, and catalogs are resolved
+by :mod:`pcs_core.asset_resolver` (authoritative for verifier assets).
+"""
 
 from __future__ import annotations
 

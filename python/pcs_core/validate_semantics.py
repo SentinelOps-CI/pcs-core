@@ -85,6 +85,11 @@ def validate_semantics(data: dict[str, Any], artifact_type: str) -> list[str]:
     if artifact_type == "MigrationReport.v0":
         return errors
 
+    if artifact_type == "ReleaseProvenanceBinding.v0":
+        # Nested attestation.status / bundle.status are not ArtifactStatus enums.
+        _check_source_commits(data, "", errors)
+        return errors
+
     if artifact_type == "ReleaseManifest.v0":
         errors.extend(validate_release_manifest_semantics(data))
         return errors
@@ -134,26 +139,9 @@ def validate_semantics(data: dict[str, Any], artifact_type: str) -> list[str]:
         return errors
 
     if artifact_type == "PCSProjectionManifest.v0":
-        for index, entry in enumerate(data.get("entries") or []):
-            if not isinstance(entry, dict):
-                errors.append(f"PCSProjectionManifest.v0.entries[{index}] must be an object")
-                continue
-            value = entry.get("normalized_value")
-            if not isinstance(value, str) or not value.strip():
-                errors.append(
-                    f"PCSProjectionManifest.v0.entries[{index}].normalized_value must be non-empty",
-                )
-            elif "unknown" in value.lower():
-                errors.append(
-                    f"PCSProjectionManifest.v0.entries[{index}].normalized_value "
-                    "must not contain an unknown placeholder",
-                )
-            ident = entry.get("lean_identifier")
-            if isinstance(ident, str) and "unknown" in ident.lower():
-                errors.append(
-                    f"PCSProjectionManifest.v0.entries[{index}].lean_identifier "
-                    "must not contain an unknown placeholder",
-                )
+        from pcs_core.pcs_projection import validate_projection_manifest_structure
+
+        errors.extend(validate_projection_manifest_structure(data))
         return errors
 
     if artifact_type == "LeanCheckResult.v0":
@@ -273,6 +261,19 @@ def validate_semantics(data: dict[str, Any], artifact_type: str) -> list[str]:
     if artifact_type == "LeanCheckResult.v0":
         errors.extend(_validate_lean_check_result(data))
 
+    if artifact_type == "ArtifactIntegrity.v1":
+        from pcs_core.artifact_integrity import validate_artifact_integrity_semantics
+
+        errors.extend(validate_artifact_integrity_semantics(data))
+
+    if artifact_type == "TrustedKeyRegistry.v0":
+        from pcs_core.artifact_integrity import IntegrityError, load_trusted_key_registry
+
+        try:
+            load_trusted_key_registry(data)
+        except IntegrityError as exc:
+            errors.append(str(exc))
+
     if artifact_type in _PF_CORE_ARTIFACT_TYPES and artifact_type not in {
         "PFCoreTrace.v0",
         "PFCoreCertificate.v0",
@@ -283,6 +284,7 @@ def validate_semantics(data: dict[str, Any], artifact_type: str) -> list[str]:
         "PFCoreReleaseBundleManifest.v0",
         "PFCoreKernelManifest.v0",
         "PFCoreSemanticProjection.v0",
+        "PFCoreTheoremManifest.v0",
     }:
         _validate_pfcore_claim_class(
             data, "root", errors, allowed=PF_CORE_CLAIM_CLASSES, artifact_kind="pf-core"
@@ -380,6 +382,19 @@ def validate_file(
                 f"Validation failed for {artifact_type}",
                 errors=ref_errors,
             )
+    if artifact_type == "ProofObligation.v0":
+        from pcs_core.pcs_projection import validate_proof_obligation_projection
+
+        release_root = path.parent
+        if (release_root / "release_manifest.v0.json").is_file() or (
+            release_root / "ReleaseManifest.v0.json"
+        ).is_file():
+            replay_errors = validate_proof_obligation_projection(data, release_dir=release_root)
+            if replay_errors:
+                raise ValidationError(
+                    f"Validation failed for {artifact_type}",
+                    errors=replay_errors,
+                )
     return artifact_type
 
 
