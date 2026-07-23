@@ -2,6 +2,22 @@
 
 Exact statements from `lean/PFCore/` trusted modules.
 
+## Public certificate-mode claim surface
+
+Public posture is governed by [`schemas/pf_core.certificate_mode_status.json`](../../../schemas/pf_core.certificate_mode_status.json):
+
+| Mode | Status |
+|------|--------|
+| `TraceSafeRCertificate` | `release_candidate` (sole tool-use RC) |
+| `TraceSafeCertificate` | `legacy` |
+| `HandoffSafeCertificate`, `ContractCheckedCertificate`, `EffectFrameCertificate`, `FramePreservedCertificate` | `disabled` |
+| `CompositionalExtensionCertificate` | `experimental` (A6 `CompositionalSafeExtension`; not RC) |
+| External `CertificateChecked` | `preview` |
+
+Scaffolded only (not public issuance): `TracePrefixSafeCertificate` (prefix-only), `DenyClosedCertificate` (disabled — insufficient runtime evidence).
+
+Disabled modes are not public issuance claims. Theorems below remain in the kernel; specialized certificates stay disabled for public RC (evidence repaired for handoff/contract/effect-frame/transitions; enablement deferred). Issuable via `--allow-non-public-modes` for tests.
+
 ## Trace safety (`lean/PFCore/Theorems.lean`)
 
 ### `allowed_event_has_allowed_action`
@@ -126,6 +142,22 @@ Python deciders in `lean_check.py` mirror:
 
 ## Compositional trust (`lean/PFCore/Compositional.lean`)
 
+### `CompositionalSafeExtension` (A6)
+
+Safe prefix + `EventSafe` + successful `Applies` + preserved `FrameValid` frames.
+
+```lean
+def CompositionalSafeExtension (tr : Trace) (ev : Event) (s s' : State) : Prop :=
+  TraceSafe tr ∧ EventSafe ev ∧ Applies ev s s' ∧ FrameValid s ∧ FrameValid s'
+
+theorem compositional_safe_extension_yields_safe_extended_trace
+    (tr : Trace) (ev : Event) (s s' : State)
+    (h : CompositionalSafeExtension tr ev s s') :
+    TraceSafe (Trace.cons tr ev)
+```
+
+Prefix-only chaining is `TracePrefixSafe` (alias of `TraceSafe`); experimental certificate alias `TracePrefixSafeCertificate`.
+
 ### `safe_extension_preserves_trace_safe`
 
 Appending an `EventSafe` event to a `TraceSafe` trace yields `TraceSafe`.
@@ -225,6 +257,12 @@ theorem safe_extension_preserves_trace_safe_strong (tr : Trace) (ev : Event)
 ```
 
 ## Effect frames (`lean/PFCore/EffectFrame.lean`)
+
+Certificate mode `EffectFrameCertificate` (disabled for public RC; `--allow-non-public-modes`
+for fixtures) binds an independently declared `PFCoreEffectFrame.v0` artifact. Generated
+proofs discharge `actionEffectsInFrameD concreteAction concreteDeclaredFrame = true` where
+`concreteDeclaredFrame` is emitted from the frame artifact (not `action.effects`). v0 policy:
+one global frame per multi-event trace.
 
 ### `effect_frame_prevents_undeclared_writes`
 

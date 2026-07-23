@@ -1,0 +1,132 @@
+{
+  "schema_version": "v0",
+  "artifact_type": "PFCoreTheoremManifest.v0",
+  "generated_module_name": "Trace_7c586dc277783547",
+  "proof_file_hash": "sha256:01cc51ba95448670180e3e9fd0b410f4a56b4d0d0c7e370cc8350e98ea41a55b",
+  "semantic_projection_hash": "sha256:5115f144cd79dc0b8037ca2b3a016f552ac5de59fd1d9ef85e0ac7c357bbbf44",
+  "certificate_mode": "CompositionalExtensionCertificate",
+  "final_witness_theorem": "concrete_certificate_mode_witness",
+  "final_witness_proposition": "frameValidD compositionalState_0 = true \u2227 stepState compositionalState_0 ev_file_read_1 = some compositionalState_1 \u2227 frameValidD compositionalState_1 = true \u2227 TraceSafe (Trace.cons (Trace.empty) ev_file_read_1)",
+  "theorems": [
+    {
+      "theorem_name": "concrete_event_safe_ev_file_read_1",
+      "normalized_proposition": "eventSafeD ev_file_read_1 = true",
+      "theorem_category": "event_safety",
+      "generation_node": "codegen.event.ev-file-read-1.safe",
+      "evidence_artifact_ids": [
+        "ev-file-read-1"
+      ],
+      "certificate_mode_role": "supporting",
+      "proposition_hash": "sha256:5e7661b2b93d905f2710e98fa5a1eaa155a6bfc3e78a09826eb6e56ee0727001"
+    },
+    {
+      "theorem_name": "concrete_trace_safe",
+      "normalized_proposition": "traceSafeD trace_file_read_1 = true",
+      "theorem_category": "trace_safety",
+      "generation_node": "codegen.trace_safety.concrete_trace_safe",
+      "evidence_artifact_ids": [],
+      "certificate_mode_role": "required",
+      "proposition_hash": "sha256:2b265aab2dab409c87f17cbabbdd1d0374d1838b5a88eb9215fcafa8fcbcf9aa"
+    },
+    {
+      "theorem_name": "concrete_trace_safe_prop",
+      "normalized_proposition": "TraceSafe trace_file_read_1",
+      "theorem_category": "trace_safety",
+      "generation_node": "codegen.trace_safety.concrete_trace_safe_prop",
+      "evidence_artifact_ids": [],
+      "certificate_mode_role": "required",
+      "proposition_hash": "sha256:3f7f9779e4e160397aff7cfd213fef0fc6138e81cd8481fb43b40490fba7355c"
+    },
+    {
+      "theorem_name": "concrete_allowed_events_allowed",
+      "normalized_proposition": "\u2200 ev, EventIn ev trace_file_read_1 \u2192 ev.decision = Decision.allow \u2192 ActionAllowed ev.principal ev.action",
+      "theorem_category": "trace_safety",
+      "generation_node": "codegen.trace_safety.concrete_allowed_events_allowed",
+      "evidence_artifact_ids": [],
+      "certificate_mode_role": "required",
+      "proposition_hash": "sha256:b12dfe62ab9fc6156a376cb111bba751eff7b3688cf225f84f271d6c1fb1b624"
+    },
+    {
+      "theorem_name": "compositional_frame_valid_initial",
+      "normalized_proposition": "frameValidD compositionalState_0 = true",
+      "theorem_category": "compositional",
+      "generation_node": "codegen.mode.CompositionalExtensionCertificate.compositional_frame_valid_initial",
+      "evidence_artifact_ids": [],
+      "certificate_mode_role": "required",
+      "proposition_hash": "sha256:24898eea1bc12fb1f7561ea6989e6a315791576947873b1f5ab15b541e3370ac"
+    },
+    {
+      "theorem_name": "compositional_step_applies_ev_file_read_1",
+      "normalized_proposition": "stepState compositionalState_0 ev_file_read_1 = some compositionalState_1",
+      "theorem_category": "compositional",
+      "generation_node": "codegen.mode.CompositionalExtensionCertificate.compositional_step_applies_ev_file_read_1",
+      "evidence_artifact_ids": [],
+      "certificate_mode_role": "required",
+      "proposition_hash": "sha256:5969b5e1e4e260bae8ba56bf22846efd3f9c80177b20c5b53b6d80499e0caf8d"
+    },
+    {
+      "theorem_name": "compositional_frame_valid_after_ev_file_read_1",
+      "normalized_proposition": "frameValidD compositionalState_1 = true",
+      "theorem_category": "compositional",
+      "generation_node": "codegen.mode.CompositionalExtensionCertificate.compositional_frame_valid_after_ev_file_read_1",
+      "evidence_artifact_ids": [],
+      "certificate_mode_role": "required",
+      "proposition_hash": "sha256:eca0b045bbed98b1d349ca2f86ab30b66661e193e4635f7345d41bbf129d4e39"
+    },
+    {
+      "theorem_name": "concrete_compositional_extension_ev_file_read_1",
+      "normalized_proposition": "TraceSafe (Trace.cons (Trace.empty) ev_file_read_1)",
+      "theorem_category": "compositional",
+      "generation_node": "codegen.mode.CompositionalExtensionCertificate.concrete_compositional_extension_ev_file_read_1",
+      "evidence_artifact_ids": [],
+      "certificate_mode_role": "required",
+      "proposition_hash": "sha256:e8ccd636a966f5ddb01af83e6032c72e85b4f03a6f83bdd87a56da77af8c939e"
+    },
+    {
+      "theorem_name": "concrete_compositional_extension",
+      "normalized_proposition": "frameValidD compositionalState_0 = true \u2227 stepState compositionalState_0 ev_file_read_1 = some compositionalState_1 \u2227 frameValidD compositionalState_1 = true \u2227 TraceSafe (Trace.cons (Trace.empty) ev_file_read_1)",
+      "theorem_category": "mode_aggregate",
+      "generation_node": "codegen.mode.CompositionalExtensionCertificate.concrete_compositional_extension",
+      "evidence_artifact_ids": [],
+      "certificate_mode_role": "aggregate",
+      "proposition_hash": "sha256:456e0556f4ea83a7c1a0af1739d5520f948dad92784f56771d557f47836805a2"
+    },
+    {
+      "theorem_name": "concrete_tenant_isolation_prop",
+      "normalized_proposition": "TenantIsolation trace_file_read_1",
+      "theorem_category": "trust_boundary",
+      "generation_node": "codegen.trust_boundary.concrete_tenant_isolation_prop",
+      "evidence_artifact_ids": [],
+      "certificate_mode_role": "supporting",
+      "proposition_hash": "sha256:0bcc2c4a4425c73869898a9abdbc7ea0ecd08f1b07cbf47ba85fa54430980892"
+    },
+    {
+      "theorem_name": "concrete_trace_cross_tenant_safe_prop",
+      "normalized_proposition": "TraceCrossTenantSafe trace_file_read_1",
+      "theorem_category": "trust_boundary",
+      "generation_node": "codegen.trust_boundary.concrete_trace_cross_tenant_safe_prop",
+      "evidence_artifact_ids": [],
+      "certificate_mode_role": "supporting",
+      "proposition_hash": "sha256:ae6ae8326fa35a7bb2e201293419fe53f1c1bc4b6cfc83940cc277ce362ade08"
+    },
+    {
+      "theorem_name": "concrete_non_interference_prop",
+      "normalized_proposition": "TenantProjectionIsolation tenantLow tenantHigh trace_file_read_1",
+      "theorem_category": "trust_boundary",
+      "generation_node": "codegen.trust_boundary.concrete_non_interference_prop",
+      "evidence_artifact_ids": [],
+      "certificate_mode_role": "supporting",
+      "proposition_hash": "sha256:3caa5e86613e7e750f01e6761abdd3f8d3d490c86ba0561d3ad3da9ff57bde0d"
+    },
+    {
+      "theorem_name": "concrete_certificate_mode_witness",
+      "normalized_proposition": "frameValidD compositionalState_0 = true \u2227 stepState compositionalState_0 ev_file_read_1 = some compositionalState_1 \u2227 frameValidD compositionalState_1 = true \u2227 TraceSafe (Trace.cons (Trace.empty) ev_file_read_1)",
+      "theorem_category": "mode_witness",
+      "generation_node": "codegen.witness.concrete_certificate_mode_witness",
+      "evidence_artifact_ids": [],
+      "certificate_mode_role": "final_witness",
+      "proposition_hash": "sha256:456e0556f4ea83a7c1a0af1739d5520f948dad92784f56771d557f47836805a2"
+    }
+  ],
+  "theorem_manifest_digest": "sha256:16c83bd58394569bfc9a74d6c7df05b4bf6b8be85f0182649e54ba6a87ecd636"
+}
