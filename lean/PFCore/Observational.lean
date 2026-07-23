@@ -11,6 +11,12 @@ It does **not** claim full global non-interference, absence of covert channels, 
 indistinguishability under arbitrary adversaries. Projections retain only **allowed**
 events whose principal tenant matches the observer tenant; denied and cross-tenant
 events are classified as high-sensitivity and omitted from the low view.
+
+**Naming:** The proved single-trace observational property is
+`TenantProjectionIsolation`. Prefer that name in user-facing material. The Lean
+abbreviation `NonInterference` is a **compatibility alias** only; paired-execution
+`NonInterference` is reserved for a future schema/kernel version (see
+`PairedExecution.lean`).
 -/
 
 namespace PFCore
@@ -172,20 +178,28 @@ def HighTenantEvent (tenantHigh : String) (ev : Event) : Prop :=
   ev.principal.tenant = tenantHigh
 
 /--
-**Meaning:** Conservative trace-level non-interference for distinct tenants: the
-`TraceProjection tenantLow` view excludes every `HighTenantEvent tenantHigh`, and every
-projected event is `LowEvent tenantLow`. When `tenantLow = tenantHigh` the predicate is
-vacuously satisfied (same-tenant observation only).
+**Meaning:** Conservative single-trace **tenant projection isolation** for distinct
+tenants: the `TraceProjection tenantLow` view excludes every
+`HighTenantEvent tenantHigh`, and every projected event is `LowEvent tenantLow`.
+When `tenantLow = tenantHigh` the predicate is vacuously satisfied.
 
-**Trusted use:** Research-grade partial NI vocabulary linked to tenant isolation lemmas.
+**Trusted use:** User-facing name for the proved observational bound (not paired-
+execution non-interference).
 
 **Does not imply:** Covert channels, timing leaks, deny-side information flow, handoff
-across tenants, or indistinguishability under schedulers not recorded in PF-Core events.
+across tenants, paired executions, or indistinguishability under schedulers not
+recorded in PF-Core events.
 -/
-def NonInterference (tenantLow tenantHigh : String) (tr : Trace) : Prop :=
+def TenantProjectionIsolation (tenantLow tenantHigh : String) (tr : Trace) : Prop :=
   tenantLow = tenantHigh ∨
     ((∀ ev, ev ∈ TraceProjection tenantLow tr → LowEvent tenantLow ev) ∧
       (∀ ev, EventIn ev tr → HighTenantEvent tenantHigh ev → HighEvent tenantLow ev))
+
+/--
+Compatibility alias for `TenantProjectionIsolation`. Prefer the latter name.
+Reserved: a future paired-execution theorem family may reclaim `NonInterference`.
+-/
+abbrev NonInterference := TenantProjectionIsolation
 
 def listAllLowEventD (tenantLow : String) : List Event → Bool
   | [] => true
@@ -198,12 +212,15 @@ def highTenantEventsHighForLowTraceD (tenantLow tenantHigh : String) (tr : Trace
     highTenantEventsHighForLowTraceD tenantLow tenantHigh tr' &&
       (if ev.principal.tenant == tenantHigh then ! lowEventD tenantLow ev else true)
 
-def nonInterferenceD (tenantLow tenantHigh : String) (tr : Trace) : Bool :=
+def tenantProjectionIsolationD (tenantLow tenantHigh : String) (tr : Trace) : Bool :=
   if tenantLow == tenantHigh then
     true
   else
     listAllLowEventD tenantLow (TraceProjection tenantLow tr) &&
       highTenantEventsHighForLowTraceD tenantLow tenantHigh tr
+
+/-- Compatibility alias for `tenantProjectionIsolationD`. -/
+abbrev nonInterferenceD := tenantProjectionIsolationD
 
 /--
 **Meaning:** `listAllLowEventD` reflects universal low-event membership on a list.
@@ -281,15 +298,17 @@ theorem highTenantEventsHighForLowTraceD_sound (tenantLow tenantHigh : String) (
         exact ⟨fun e hIn hHigh => h e (Or.inr hIn) hHigh, rfl⟩
 
 /--
-**Meaning:** Non-interference decider matches conservative `NonInterference` Prop.
+**Meaning:** Tenant-projection isolation decider matches `TenantProjectionIsolation`.
 
-**Trusted use:** Runtime `--non-interference` / generated `concrete_non_interference_prop` alignment.
+**Trusted use:** Runtime `--non-interference` / generated `concrete_non_interference_prop`
+alignment (CLI flag name retained for compatibility).
 
-**Does not imply:** Full global non-interference, covert channels, or timing leaks.
+**Does not imply:** Paired-execution non-interference, covert channels, or timing leaks.
 -/
-theorem nonInterferenceD_sound (tenantLow tenantHigh : String) (tr : Trace) :
-    nonInterferenceD tenantLow tenantHigh tr = true ↔ NonInterference tenantLow tenantHigh tr := by
-  simp only [nonInterferenceD, NonInterference]
+theorem tenantProjectionIsolationD_sound (tenantLow tenantHigh : String) (tr : Trace) :
+    tenantProjectionIsolationD tenantLow tenantHigh tr = true ↔
+      TenantProjectionIsolation tenantLow tenantHigh tr := by
+  simp only [tenantProjectionIsolationD, TenantProjectionIsolation]
   by_cases hEq : tenantLow == tenantHigh
   · rw [if_pos hEq]
     have ht : tenantLow = tenantHigh := (beq_iff_eq).mp hEq
@@ -313,6 +332,11 @@ theorem nonInterferenceD_sound (tenantLow tenantHigh : String) (tr : Trace) :
       | inl heq => exact absurd heq hne
       | inr hp => exact hp
 
+/-- Compatibility alias for `tenantProjectionIsolationD_sound`. -/
+theorem nonInterferenceD_sound (tenantLow tenantHigh : String) (tr : Trace) :
+    nonInterferenceD tenantLow tenantHigh tr = true ↔ NonInterference tenantLow tenantHigh tr :=
+  tenantProjectionIsolationD_sound tenantLow tenantHigh tr
+
 theorem traceProjection_low_only (tenantLow : String) (tr : Trace) :
     (∀ ev, ev ∈ TraceProjection tenantLow tr → LowEvent tenantLow ev) := by
   intro ev hMem
@@ -334,77 +358,110 @@ theorem high_tenant_events_high_for_low_observer
   exact high_tenant_event_not_low_for_distinct_observer tenantLow tenantHigh ev hDiff hHigh
 
 /--
-**Meaning:** Distinct-tenant non-interference holds for every trace (projection definition).
+**Meaning:** Distinct-tenant projection isolation holds for every trace (definitional).
 
-**Trusted use:** Base case for observational NI; high-tenant events never enter low projection.
+**Trusted use:** Base case for observational isolation; high-tenant events never enter
+low projection.
 
 **Does not imply:** Cross-trace indistinguishability or absence of covert channels.
 -/
-theorem non_interference_definitional (tenantLow tenantHigh : String) (tr : Trace)
+theorem tenant_projection_isolation_definitional (tenantLow tenantHigh : String) (tr : Trace)
     (hDiff : tenantLow ≠ tenantHigh) :
-    NonInterference tenantLow tenantHigh tr := by
+    TenantProjectionIsolation tenantLow tenantHigh tr := by
   right
   constructor
   · exact traceProjection_low_only tenantLow tr
   · intro ev hIn hHigh
     exact high_tenant_events_high_for_low_observer tenantLow tenantHigh tr hDiff ev hIn hHigh
 
-theorem non_interference_same_tenant (tenant : String) (tr : Trace) :
-    NonInterference tenant tenant tr := by
+/-- Compatibility alias. -/
+theorem non_interference_definitional (tenantLow tenantHigh : String) (tr : Trace)
+    (hDiff : tenantLow ≠ tenantHigh) :
+    NonInterference tenantLow tenantHigh tr :=
+  tenant_projection_isolation_definitional tenantLow tenantHigh tr hDiff
+
+theorem tenant_projection_isolation_same_tenant (tenant : String) (tr : Trace) :
+    TenantProjectionIsolation tenant tenant tr := by
   left; rfl
 
+theorem non_interference_same_tenant (tenant : String) (tr : Trace) :
+    NonInterference tenant tenant tr :=
+  tenant_projection_isolation_same_tenant tenant tr
+
 /--
-**Meaning:** `TraceSafe` plus distinct tenants yields conservative non-interference.
+**Meaning:** `TraceSafe` yields `TenantProjectionIsolation` for any tenant pair.
 
-**Trusted use:** Primary partial global-NI link from trace safety (allowed in-tenant / deny).
+**Trusted use:** Primary observational isolation link from trace safety.
 
-**Does not imply:** Full information-flow NI, timing, or handoff across tenants.
+**Does not imply:** Paired-execution NI, timing, or handoff across tenants.
 -/
-theorem traceSafe_implies_non_interference (tenantLow tenantHigh : String) (tr : Trace)
-    (_hTrace : TraceSafe tr) :
-    NonInterference tenantLow tenantHigh tr := by
+theorem traceSafe_implies_tenant_projection_isolation
+    (tenantLow tenantHigh : String) (tr : Trace) (_hTrace : TraceSafe tr) :
+    TenantProjectionIsolation tenantLow tenantHigh tr := by
   by_cases hEq : tenantLow = tenantHigh
   · left; exact hEq
-  · exact non_interference_definitional tenantLow tenantHigh tr hEq
+  · exact tenant_projection_isolation_definitional tenantLow tenantHigh tr hEq
+
+/-- Compatibility alias for `traceSafe_implies_tenant_projection_isolation`. -/
+theorem traceSafe_implies_non_interference (tenantLow tenantHigh : String) (tr : Trace)
+    (hTrace : TraceSafe tr) :
+    NonInterference tenantLow tenantHigh tr :=
+  traceSafe_implies_tenant_projection_isolation tenantLow tenantHigh tr hTrace
 
 /--
-**Meaning:** `traceSafeD` implies the non-interference decider (conservative observational NI).
+**Meaning:** `traceSafeD` implies the tenant-projection isolation decider.
 
-**Trusted use:** Linking Lean kernel deciders to observational NI certificates.
+**Trusted use:** Linking Lean kernel deciders to observational isolation certificates.
 
-**Does not imply:** Full global non-interference or covert-channel freedom.
+**Does not imply:** Paired-execution non-interference or covert-channel freedom.
 -/
+theorem traceSafeD_implies_tenantProjectionIsolationD
+    (tenantLow tenantHigh : String) (tr : Trace) (h : traceSafeD tr = true) :
+    tenantProjectionIsolationD tenantLow tenantHigh tr = true :=
+  (tenantProjectionIsolationD_sound tenantLow tenantHigh tr).mpr
+    (traceSafe_implies_tenant_projection_isolation tenantLow tenantHigh tr
+      ((traceSafeD_sound tr).mp h))
+
 theorem traceSafeD_implies_nonInterferenceD (tenantLow tenantHigh : String) (tr : Trace)
     (h : traceSafeD tr = true) :
     nonInterferenceD tenantLow tenantHigh tr = true :=
-  (nonInterferenceD_sound tenantLow tenantHigh tr).mpr
-    (traceSafe_implies_non_interference tenantLow tenantHigh tr
-      ((traceSafeD_sound tr).mp h))
+  traceSafeD_implies_tenantProjectionIsolationD tenantLow tenantHigh tr h
 
 /--
-**Meaning:** `TraceSafe` yields both `TenantIsolation` and conservative `NonInterference`.
+**Meaning:** `TraceSafe` yields both `TenantIsolation` and `TenantProjectionIsolation`.
 
-**Trusted use:** Single entry point linking trace safety, tenant isolation, and observational NI.
+**Trusted use:** Single entry point linking trace safety and observational isolation.
 
-**Does not imply:** Full global non-interference or covert-channel freedom.
+**Does not imply:** Paired-execution non-interference or covert-channel freedom.
 -/
+theorem traceSafe_implies_tenant_isolation_and_projection_isolation
+    (tenantLow tenantHigh : String) (tr : Trace) (hTrace : TraceSafe tr) :
+    TenantIsolation tr ∧ TenantProjectionIsolation tenantLow tenantHigh tr :=
+  ⟨traceSafe_implies_tenant_isolation tr hTrace,
+    traceSafe_implies_tenant_projection_isolation tenantLow tenantHigh tr hTrace⟩
+
 theorem traceSafe_implies_tenant_isolation_and_non_interference
     (tenantLow tenantHigh : String) (tr : Trace) (hTrace : TraceSafe tr) :
     TenantIsolation tr ∧ NonInterference tenantLow tenantHigh tr :=
-  ⟨traceSafe_implies_tenant_isolation tr hTrace,
-    traceSafe_implies_non_interference tenantLow tenantHigh tr hTrace⟩
+  traceSafe_implies_tenant_isolation_and_projection_isolation tenantLow tenantHigh tr hTrace
 
 /--
-**Meaning:** `TenantIsolation` implies non-interference for distinct tenants.
+**Meaning:** `TenantIsolation` implies projection isolation for distinct tenants.
 
-**Trusted use:** Link observational NI to runtime `--tenant-isolation` alignment.
+**Trusted use:** Link observational isolation to runtime `--tenant-isolation` alignment.
 
 **Does not imply:** Denied cross-tenant events are side-channel free.
 -/
-theorem tenantIsolation_implies_non_interference (tenantLow tenantHigh : String) (tr : Trace)
+theorem tenantIsolation_implies_tenant_projection_isolation
+    (tenantLow tenantHigh : String) (tr : Trace)
     (hDiff : tenantLow ≠ tenantHigh) (_hTI : TenantIsolation tr) :
+    TenantProjectionIsolation tenantLow tenantHigh tr :=
+  tenant_projection_isolation_definitional tenantLow tenantHigh tr hDiff
+
+theorem tenantIsolation_implies_non_interference (tenantLow tenantHigh : String) (tr : Trace)
+    (hDiff : tenantLow ≠ tenantHigh) (hTI : TenantIsolation tr) :
     NonInterference tenantLow tenantHigh tr :=
-  non_interference_definitional tenantLow tenantHigh tr hDiff
+  tenantIsolation_implies_tenant_projection_isolation tenantLow tenantHigh tr hDiff hTI
 
 /--
 **Meaning:** `TraceCrossTenantSafe` supports NI by ensuring cross-tenant allows are denied.
@@ -433,20 +490,29 @@ theorem low_projection_eq_observational (tenantLow : String) (tr1 tr2 : Trace)
   h
 
 /--
-**Meaning:** Under `NonInterference`, matching low projections on distinct traces yields
-observational equivalence for the low tenant.
+**Meaning:** Under `TenantProjectionIsolation`, matching low projections on distinct
+traces yields observational equivalence for the low tenant.
 
-**Trusted use:** Partial observational NI: low view depends only on low-visible events.
+**Trusted use:** Partial observational isolation: low view depends only on low-visible events.
 
 **Does not imply:** Existence of alternative high traces or scheduler independence.
 -/
-theorem non_interference_observational_equivalence (tenantLow tenantHigh : String)
-    (tr1 tr2 : Trace)
-    (_hNI1 : NonInterference tenantLow tenantHigh tr1)
-    (_hNI2 : NonInterference tenantLow tenantHigh tr2)
+theorem tenant_projection_isolation_observational_equivalence
+    (tenantLow tenantHigh : String) (tr1 tr2 : Trace)
+    (_hNI1 : TenantProjectionIsolation tenantLow tenantHigh tr1)
+    (_hNI2 : TenantProjectionIsolation tenantLow tenantHigh tr2)
     (hProj : TraceProjection tenantLow tr1 = TraceProjection tenantLow tr2) :
     ObservationallyEquivalentForTenant tenantLow tr1 tr2 :=
   low_projection_eq_observational tenantLow tr1 tr2 hProj
+
+theorem non_interference_observational_equivalence (tenantLow tenantHigh : String)
+    (tr1 tr2 : Trace)
+    (hNI1 : NonInterference tenantLow tenantHigh tr1)
+    (hNI2 : NonInterference tenantLow tenantHigh tr2)
+    (hProj : TraceProjection tenantLow tr1 = TraceProjection tenantLow tr2) :
+    ObservationallyEquivalentForTenant tenantLow tr1 tr2 :=
+  tenant_projection_isolation_observational_equivalence tenantLow tenantHigh tr1 tr2
+    hNI1 hNI2 hProj
 
 /--
 **Meaning:** Low projection of an appended trace equals append of low projections.
@@ -468,22 +534,30 @@ theorem traceProjection_append (tenant : String) (tr1 tr2 : Trace) :
     · simp [TraceProjection, hlow, lowEventD_sound, ih]
 
 /--
-**Meaning:** Sequential composition preserves conservative `NonInterference`.
+**Meaning:** Sequential composition preserves `TenantProjectionIsolation`.
 
-**Trusted use:** Compositional partial global NI for distinct tenant pairs.
+**Trusted use:** Compositional observational isolation for distinct tenant pairs.
 
-**Does not imply:** Full global non-interference, timing leaks, or covert channels.
+**Does not imply:** Paired-execution NI, timing leaks, or covert channels.
 -/
-theorem trace_append_preserves_non_interference (tenantLow tenantHigh : String) (tr1 tr2 : Trace)
-    (_h1 : NonInterference tenantLow tenantHigh tr1)
-    (_h2 : NonInterference tenantLow tenantHigh tr2) :
-    NonInterference tenantLow tenantHigh (Trace.append tr1 tr2) := by
+theorem trace_append_preserves_tenant_projection_isolation
+    (tenantLow tenantHigh : String) (tr1 tr2 : Trace)
+    (_h1 : TenantProjectionIsolation tenantLow tenantHigh tr1)
+    (_h2 : TenantProjectionIsolation tenantLow tenantHigh tr2) :
+    TenantProjectionIsolation tenantLow tenantHigh (Trace.append tr1 tr2) := by
   by_cases hEq : tenantLow = tenantHigh
   · exact Or.inl hEq
   · have hDiff : tenantLow ≠ tenantHigh := by
       intro heq
       exact hEq heq
-    exact non_interference_definitional tenantLow tenantHigh (Trace.append tr1 tr2) hDiff
+    exact tenant_projection_isolation_definitional tenantLow tenantHigh
+      (Trace.append tr1 tr2) hDiff
+
+theorem trace_append_preserves_non_interference (tenantLow tenantHigh : String) (tr1 tr2 : Trace)
+    (h1 : NonInterference tenantLow tenantHigh tr1)
+    (h2 : NonInterference tenantLow tenantHigh tr2) :
+    NonInterference tenantLow tenantHigh (Trace.append tr1 tr2) :=
+  trace_append_preserves_tenant_projection_isolation tenantLow tenantHigh tr1 tr2 h1 h2
 
 /--
 **Meaning:** `TraceSafe` on both components yields NI on their append (compositional link).
