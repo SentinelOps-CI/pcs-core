@@ -47,6 +47,31 @@ const ARTIFACT_SCHEMAS: &[(&str, &str)] = &[
         "PFCoreRuntimeObservation.v0.schema.json",
     ),
     ("PFCoreCertificate.v0", "PFCoreCertificate.v0.schema.json"),
+    (
+        "PFCoreSemanticProjection.v0",
+        "PFCoreSemanticProjection.v0.schema.json",
+    ),
+    (
+        "PCSBridgeCertificate.v0",
+        "PCSBridgeCertificate.v0.schema.json",
+    ),
+    (
+        "PFCoreKernelManifest.v0",
+        "PFCoreKernelManifest.v0.schema.json",
+    ),
+    (
+        "PFCoreReleaseBundleManifest.v0",
+        "PFCoreReleaseBundleManifest.v0.schema.json",
+    ),
+    ("ArtifactIntegrity.v1", "ArtifactIntegrity.v1.schema.json"),
+    (
+        "FormatAssertionProbe.v0",
+        "FormatAssertionProbe.v0.schema.json",
+    ),
+    (
+        "ExternalAttestation.v0",
+        "ExternalAttestation.v0.schema.json",
+    ),
     ("ReleaseManifest.v0", "ReleaseManifest.v0.schema.json"),
     ("HandoffManifest.v0", "HandoffManifest.v0.schema.json"),
     (
@@ -137,10 +162,16 @@ const EXPLICIT_ARTIFACT_TYPES: &[&str] = &[
     "PFCoreHandoff.v0",
     "PFCoreRuntimeObservation.v0",
     "PFCoreCertificate.v0",
+    "PFCoreSemanticProjection.v0",
     "LeanCheckResult.v0",
     "ToolUseTrace.v0",
     "PCSBridgeCertificate.v0",
     "ClaimArtifact.v0",
+    "PFCoreKernelManifest.v0",
+    "PFCoreReleaseBundleManifest.v0",
+    "ArtifactIntegrity.v1",
+    "FormatAssertionProbe.v0",
+    "ExternalAttestation.v0",
 ];
 
 fn explicit_artifact_type(value: &str) -> Option<&'static str> {
