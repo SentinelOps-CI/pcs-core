@@ -9,7 +9,7 @@ description = "Proof-Carrying Science canonical artifact types and validation"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.10"
-jsonschema = "0.26"
+jsonschema = "0.48"
 
 [dev-dependencies]
 walkdir = "2"
