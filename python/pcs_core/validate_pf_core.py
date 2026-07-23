@@ -48,15 +48,20 @@ def _validate_pfcore_claim_class(
             errors.append(f"{path}: invalid claim_class {claim_class!r} for {artifact_kind}")
         return
     if claim_class == "LeanKernelChecked" and not data.get("proof_ref"):
-        errors.append(
-            f"{path}: claim_class LeanKernelChecked requires proof_ref (ClaimClassOverclaim)"
-        )
+        # Certificates carry proof refs; release-bundle manifests only mirror claim_class
+        # and bind proof via proof_path / lean_check_result_path instead.
+        if artifact_kind in {"certificate", "pf-core"}:
+            errors.append(
+                f"{path}: claim_class LeanKernelChecked requires proof_ref (ClaimClassOverclaim)"
+            )
     if claim_class == "LeanKernelChecked" and not data.get("proof_term_ref"):
-        errors.append(
-            f"{path}: claim_class LeanKernelChecked requires proof_term_ref (ClaimClassOverclaim)"
-        )
+        if artifact_kind in {"certificate", "pf-core"}:
+            errors.append(
+                f"{path}: claim_class LeanKernelChecked requires proof_term_ref (ClaimClassOverclaim)"
+            )
     if claim_class == "LeanKernelChecked" and data.get("lean_proof_checked") is not True:
-        errors.append(f"{path}: claim_class LeanKernelChecked requires lean_proof_checked=true")
+        if artifact_kind in {"certificate", "pf-core"}:
+            errors.append(f"{path}: claim_class LeanKernelChecked requires lean_proof_checked=true")
 
 
 def _validate_direct_trace_action_semantics(trace: dict[str, Any]) -> list[str]:
@@ -146,13 +151,57 @@ def _validate_pfcore_certificate(data: dict[str, Any]) -> list[str]:
         if not isinstance(build, dict) or build.get("ok") is not True:
             errors.append("root: lean_proof_checked requires lean_build_status.ok=true")
         theorems = data.get("theorems_checked")
-        if isinstance(theorems, list):
+        theorem_status = None
+        try:
+            from pcs_core.lean_check import normalize_theorem_status_fields
+
+            theorem_status = normalize_theorem_status_fields(data)
+        except Exception:
+            theorem_status = None
+        if theorem_status is not None:
+            concrete_set = set(theorem_status["concrete_theorems_generated"]) | set(
+                theorem_status["concrete_theorems_compiled"]
+            )
+            # Prefer split fields; fall back to legacy theorems_checked.
+            if concrete_set or (
+                isinstance(data.get("concrete_theorems_generated"), list)
+                or isinstance(data.get("concrete_theorems_compiled"), list)
+            ):
+                missing = PF_CORE_CONCRETE_PROOF_THEOREMS - concrete_set
+                if missing:
+                    errors.append(
+                        f"root: lean_proof_checked concrete_theorems_* missing {sorted(missing)!r}"
+                    )
+            elif isinstance(theorems, list):
+                theorem_set = {str(item) for item in theorems}
+                missing = PF_CORE_CONCRETE_PROOF_THEOREMS - theorem_set
+                if missing:
+                    errors.append(
+                        f"root: lean_proof_checked theorems_checked missing {sorted(missing)!r}"
+                    )
+        elif isinstance(theorems, list):
             theorem_set = {str(item) for item in theorems}
             missing = PF_CORE_CONCRETE_PROOF_THEOREMS - theorem_set
             if missing:
                 errors.append(
                     f"root: lean_proof_checked theorems_checked missing {sorted(missing)!r}"
                 )
+        projection_hash = data.get("semantic_projection_hash")
+        if (
+            lean_proof_checked
+            and isinstance(data.get("theorem_inventory"), list)
+            and (not isinstance(projection_hash, str) or not projection_hash.startswith("sha256:"))
+        ):
+            errors.append("root: lean_proof_checked requires semantic_projection_hash")
+        manifest_hash = data.get("theorem_manifest_hash")
+        inventory_hash_field = data.get("theorem_inventory_hash")
+        if (
+            lean_proof_checked
+            and isinstance(manifest_hash, str)
+            and isinstance(inventory_hash_field, str)
+            and manifest_hash != inventory_hash_field
+        ):
+            errors.append("root: theorem_manifest_hash must equal theorem_inventory_hash")
         obligations = data.get("obligations")
         if isinstance(obligations, list):
             required = {
@@ -181,13 +230,30 @@ def _validate_pfcore_certificate(data: dict[str, Any]) -> list[str]:
         if not isinstance(kernel_hash, str) or not kernel_hash.startswith("sha256:"):
             errors.append("root: claim_class LeanKernelChecked requires pfcore_kernel_hash")
         cert_mode = str(data.get("certificate_mode") or "TraceSafeCertificate")
-        from pcs_core.pf_core_lean_codegen import CERTIFICATE_MODES, MODE_OBLIGATION_THEOREMS
+        from pcs_core.pf_core_lean_codegen import (
+            CERTIFICATE_MODES,
+            MODE_OBLIGATION_THEOREMS,
+            theorem_inventory_hash,
+        )
 
         if cert_mode not in CERTIFICATE_MODES:
             errors.append(f"root: invalid certificate_mode {cert_mode!r}")
         elif lean_proof_checked:
             mode_required = set(MODE_OBLIGATION_THEOREMS.get(cert_mode, frozenset()))
+            mode_required.add("concrete_certificate_mode_witness")
             obligations = data.get("obligations")
+            inventory_raw = data.get("theorem_inventory")
+            inventory: set[str] | None = None
+            if isinstance(inventory_raw, list):
+                inventory = {str(item) for item in inventory_raw if isinstance(item, str)}
+                inventory_hash = data.get("theorem_inventory_hash")
+                expected_hash = theorem_inventory_hash(frozenset(inventory))
+                if not isinstance(inventory_hash, str) or inventory_hash != expected_hash:
+                    errors.append("root: theorem_inventory_hash does not match theorem_inventory")
+            else:
+                errors.append(
+                    "root: lean_proof_checked requires theorem_inventory for certificate_mode evidence"
+                )
             if isinstance(obligations, list):
                 for item in obligations:
                     if not isinstance(item, dict):
@@ -206,6 +272,47 @@ def _validate_pfcore_certificate(data: dict[str, Any]) -> list[str]:
                     errors.append(
                         "root: certificate_mode obligations missing passed proofs for "
                         f"{sorted(missing_mode)!r}"
+                    )
+                if inventory is not None:
+                    # Only generated-module theorems must appear in theorem_inventory.
+                    # Kernel catalog soundness lemmas from runtime deciders are excluded.
+                    generated_passed = {
+                        str(item.get("theorem"))
+                        for item in obligations
+                        if isinstance(item, dict)
+                        and item.get("passed") is True
+                        and (
+                            str(item.get("kind") or "")
+                            in {
+                                "CertificateMode",
+                                "ConcreteTraceSafe",
+                                "ConcreteTraceSafeProp",
+                                "ConcreteAllowedEventsAllowed",
+                            }
+                            or str(item.get("theorem") or "").startswith("concrete_")
+                            or str(item.get("theorem") or "").startswith("frame_")
+                        )
+                    }
+                    forged = generated_passed - inventory
+                    if forged:
+                        errors.append(
+                            "root: passed obligations absent from theorem_inventory: "
+                            f"{sorted(forged)!r}"
+                        )
+            witness = data.get("certificate_mode_witness")
+            if not isinstance(witness, dict):
+                errors.append("root: lean_proof_checked requires certificate_mode_witness")
+            else:
+                if str(witness.get("theorem") or "") != "concrete_certificate_mode_witness":
+                    errors.append(
+                        "root: certificate_mode_witness.theorem must be "
+                        "concrete_certificate_mode_witness"
+                    )
+                if not str(witness.get("proposition") or "").strip():
+                    errors.append("root: certificate_mode_witness.proposition must be non-empty")
+                if inventory is not None and "concrete_certificate_mode_witness" not in inventory:
+                    errors.append(
+                        "root: concrete_certificate_mode_witness missing from theorem_inventory"
                     )
         if cert_mode == "ContractCheckedCertificate" and lean_proof_checked:
             semantics_obj = data.get("contract_semantics_checked")
@@ -543,5 +650,33 @@ def check_pf_core_invalid_fixtures() -> None:
                     f"Expected {case_dir} to fail with {expected_error!r}, got {errors!r}"
                 )
             continue
+
+        if must_fail_at == "certificate_mode_prerequisites":
+            from pcs_core.pf_core_lean_codegen import (
+                CertificateModeEvidenceMissing,
+                generate_proof_obligation_file,
+            )
+
+            trace_path = case_dir / "trace.json"
+            trace = json.loads(trace_path.read_text(encoding="utf-8"))
+            mode = str(manifest.get("certificate_mode") or "")
+            if not mode:
+                raise ValidationError(
+                    f"{case_dir}: certificate_mode_prerequisites requires certificate_mode"
+                )
+            try:
+                generate_proof_obligation_file(
+                    trace,
+                    case_dir / "_codegen_out",
+                    trace_path=trace_path,
+                    certificate_mode=mode,
+                )
+            except CertificateModeEvidenceMissing as exc:
+                if expected_error not in str(exc):
+                    raise ValidationError(
+                        f"Expected {case_dir} to fail with {expected_error!r}, got {exc!r}"
+                    ) from exc
+                continue
+            raise ValidationError(f"Expected {case_dir} to fail at {must_fail_at}")
 
         raise ValidationError(f"Unknown must_fail_at {must_fail_at!r} in {case_dir}")

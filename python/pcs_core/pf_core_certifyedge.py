@@ -68,8 +68,12 @@ def classify_attestation_ref(ref: str | None) -> AttestationClass | None:
 def certifyedge_mode() -> CertifyEdgeMode:
     """Resolved CertifyEdge execution mode from ``PF_CORE_CERTIFYEDGE_*`` env vars."""
     raw = os.environ.get("PF_CORE_CERTIFYEDGE_MODE", "").strip().lower()
-    if raw in {"mock", "live", "auto"}:
-        return raw
+    if raw == "mock":
+        return "mock"
+    if raw == "live":
+        return "live"
+    if raw == "auto":
+        return "auto"
     if _truthy_env("PF_CORE_CERTIFYEDGE_MOCK") or _truthy_env(_LEGACY_MOCK_ENV):
         return "mock"
     return "auto"
