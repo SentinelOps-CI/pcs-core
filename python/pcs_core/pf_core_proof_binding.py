@@ -7,10 +7,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Mapping
 
-from pcs_core.lean_check import compute_proof_term_hash
-from pcs_core.paths import repo_root
+from pcs_core.lean_check import compute_proof_term_hash, pfcore_generated_dir
 from pcs_core.pf_core_lean_codegen import compute_lean_environment_hash, compute_pfcore_kernel_hash
 from pcs_core.pf_core_runtime import compute_trace_hash
+from pcs_core.safe_paths import UnsafePathError, resolve_contained_file, strip_repo_generated_prefix
 
 
 @dataclass(frozen=True)
@@ -37,14 +37,14 @@ class ProofBindingResult:
         }
 
 
-def _resolve_repo_path(ref: str) -> Path:
-    path = Path(ref)
-    if path.is_file():
-        return path.resolve()
-    candidate = repo_root() / ref.replace("\\", "/")
-    if candidate.is_file():
-        return candidate.resolve()
-    return path
+def _resolve_generated_proof_path(ref: str) -> Path:
+    """Resolve a proof_term_ref strictly under lean/PFCore/Generated/."""
+    relative = strip_repo_generated_prefix(ref)
+    return resolve_contained_file(
+        pfcore_generated_dir(),
+        relative,
+        allowed_suffixes=frozenset({".lean"}),
+    )
 
 
 def verify_proof_binding(
@@ -142,14 +142,17 @@ def verify_proof_binding(
 
     resolved_proof: Path | None = None
     if proof_ref:
-        resolved_proof = _resolve_repo_path(proof_ref)
-        result.proof_path = resolved_proof
-        if not resolved_proof.is_file():
-            result.issues.append(
-                ProofBindingIssue(
-                    "ProofFileMissing", f"generated proof not found: {resolved_proof}"
+        try:
+            resolved_proof = _resolve_generated_proof_path(proof_ref)
+            result.proof_path = resolved_proof
+        except UnsafePathError as exc:
+            result.issues.append(ProofBindingIssue("ProofPathUnsafe", str(exc)))
+            resolved_proof = None
+        if resolved_proof is None:
+            if not any(issue.code == "ProofPathUnsafe" for issue in result.issues):
+                result.issues.append(
+                    ProofBindingIssue("ProofFileMissing", f"generated proof not found: {proof_ref}")
                 )
-            )
         elif cert_proof_hash.startswith("sha256:"):
             actual_proof_hash = compute_proof_term_hash(resolved_proof)
             if actual_proof_hash != cert_proof_hash:

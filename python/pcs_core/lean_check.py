@@ -21,7 +21,7 @@ from pcs_core.lean_catalog import (
     PF_CORE_LEAN_KERNEL_THEOREM_CATALOG,
     PF_CORE_THEOREM_CATALOG,
 )
-from pcs_core.paths import repo_root
+from pcs_core.paths import package_dir, repo_root
 from pcs_core.pf_core_contract import (
     DEFAULT_TRACE_SAFE_CONTRACT_ID,
     default_trace_safe_contract_hash,
@@ -29,6 +29,7 @@ from pcs_core.pf_core_contract import (
 )
 from pcs_core.pf_core_contract_semantics import build_contract_semantics_checked
 from pcs_core.pf_core_lean_codegen import (
+    CertificateModeEvidenceMissing,
     certificate_mode_obligations,
     collect_contracts_for_trace,
     compute_lean_environment_hash,
@@ -37,6 +38,7 @@ from pcs_core.pf_core_lean_codegen import (
     generate_proof_obligation_file,
     proof_term_ref_from_path,
     resolve_certificate_mode,
+    theorem_inventory_hash,
     validate_contracts_before_codegen,
 )
 from pcs_core.pf_core_runtime import (
@@ -94,6 +96,9 @@ def print_lean_check_disclaimer(*, stream=None) -> None:
 
 
 def lean_dir() -> Path:
+    bundled = package_dir() / "lean"
+    if (bundled / "lakefile.lean").is_file():
+        return bundled
     return repo_root() / "lean"
 
 
@@ -106,8 +111,48 @@ def pfcore_generated_dir() -> Path:
 
 
 def pfcore_theorems_checked(*, lean_kernel: bool = False) -> list[str]:
+    """Legacy v0 field: kernel catalog, optionally unioned with concrete proof names."""
     catalog = PF_CORE_LEAN_KERNEL_THEOREM_CATALOG if lean_kernel else PF_CORE_THEOREM_CATALOG
     return sorted(catalog)
+
+
+def pfcore_theorem_status(
+    *,
+    lean_kernel: bool = False,
+    concrete_generated: frozenset[str] | set[str] | list[str] | None = None,
+    concrete_compiled: frozenset[str] | set[str] | list[str] | None = None,
+) -> dict[str, list[str]]:
+    """Distinguish kernel theorem availability from concrete generation/compilation."""
+    generated = sorted(str(name) for name in (concrete_generated or []))
+    compiled = sorted(str(name) for name in (concrete_compiled or []))
+    return {
+        "kernel_theorems_available": sorted(PF_CORE_THEOREM_CATALOG),
+        "concrete_theorems_generated": generated,
+        "concrete_theorems_compiled": compiled if lean_kernel else [],
+    }
+
+
+def normalize_theorem_status_fields(data: Mapping[str, Any]) -> dict[str, list[str]]:
+    """v0 compatibility: derive split fields from legacy ``theorems_checked`` when needed."""
+    kernel = data.get("kernel_theorems_available")
+    generated = data.get("concrete_theorems_generated")
+    compiled = data.get("concrete_theorems_compiled")
+    if isinstance(kernel, list) and isinstance(generated, list) and isinstance(compiled, list):
+        return {
+            "kernel_theorems_available": [str(item) for item in kernel],
+            "concrete_theorems_generated": [str(item) for item in generated],
+            "concrete_theorems_compiled": [str(item) for item in compiled],
+        }
+    legacy = data.get("theorems_checked")
+    legacy_set = {str(item) for item in legacy} if isinstance(legacy, list) else set()
+    kernel_names = sorted(legacy_set & PF_CORE_THEOREM_CATALOG) or sorted(PF_CORE_THEOREM_CATALOG)
+    concrete = sorted(legacy_set - PF_CORE_THEOREM_CATALOG)
+    lean_checked = bool(data.get("lean_proof_checked"))
+    return {
+        "kernel_theorems_available": kernel_names,
+        "concrete_theorems_generated": concrete if lean_checked else [],
+        "concrete_theorems_compiled": concrete if lean_checked else [],
+    }
 
 
 def pfcore_concrete_proof_theorems() -> list[str]:
@@ -563,6 +608,11 @@ def build_pfcore_certificate(
     lean_environment_hash: str | None = None,
     pfcore_kernel_hash: str | None = None,
     certificate_mode: str | None = None,
+    theorem_inventory: frozenset[str] | set[str] | list[str] | None = None,
+    theorem_inventory_hash: str | None = None,
+    certificate_mode_witness: dict[str, str] | None = None,
+    semantic_projection_hash: str | None = None,
+    concrete_theorems_compiled: frozenset[str] | set[str] | list[str] | None = None,
 ) -> dict[str, Any]:
     events = _trace_events(trace)
     trace_hash = str(trace.get("trace_hash") or compute_trace_hash(dict(trace)))
@@ -601,6 +651,20 @@ def build_pfcore_certificate(
                     default_contract_ref = None
                     break
 
+    inventory_list = (
+        sorted(str(name) for name in theorem_inventory) if theorem_inventory is not None else []
+    )
+    compiled_list = (
+        sorted(str(name) for name in concrete_theorems_compiled)
+        if concrete_theorems_compiled is not None
+        else (inventory_list if lean_proof_checked else [])
+    )
+    theorem_status = pfcore_theorem_status(
+        lean_kernel=lean_proof_checked,
+        concrete_generated=inventory_list,
+        concrete_compiled=compiled_list,
+    )
+
     cert: dict[str, Any] = {
         "schema_version": "v0",
         "artifact_type": "PFCoreCertificate.v0",
@@ -612,6 +676,9 @@ def build_pfcore_certificate(
         "checker": checker,
         "checker_version": checker_version,
         "assumption_refs": list(PF_CORE_ASSUMPTION_REFS),
+        # Split availability vs execution (Phase 4.3).
+        **theorem_status,
+        # Legacy v0 compat reader field (fixed catalogs, not live inventory).
         "theorems_checked": pfcore_theorems_checked(lean_kernel=lean_proof_checked),
         "obligations": obligations,
         "lean_build_status": lean_build_status(
@@ -632,6 +699,18 @@ def build_pfcore_certificate(
         cert["pfcore_kernel_hash"] = pfcore_kernel_hash
     if certificate_mode:
         cert["certificate_mode"] = certificate_mode
+    if theorem_inventory is not None:
+        cert["theorem_inventory"] = inventory_list
+        from pcs_core.pf_core_lean_codegen import theorem_inventory_hash as _inventory_hash
+
+        inventory_hash = theorem_inventory_hash or _inventory_hash(frozenset(inventory_list))
+        cert["theorem_inventory_hash"] = inventory_hash
+        # Dedicated theorem-manifest hash bound to the generated inventory.
+        cert["theorem_manifest_hash"] = inventory_hash
+    if certificate_mode_witness:
+        cert["certificate_mode_witness"] = certificate_mode_witness
+    if semantic_projection_hash:
+        cert["semantic_projection_hash"] = semantic_projection_hash
     if default_contract_ref:
         cert["default_contract_ref"] = default_contract_ref
     if proof_ref:
@@ -676,6 +755,19 @@ def build_lean_check_result(
         "issues": [{"code": i.code, "message": i.message, "path": i.path} for i in issues],
         "obligations": obligations,
         "assumption_refs": list(PF_CORE_ASSUMPTION_REFS),
+        **pfcore_theorem_status(
+            lean_kernel=bool(certificate and certificate.get("lean_proof_checked")),
+            concrete_generated=(
+                certificate.get("concrete_theorems_generated")
+                if isinstance(certificate, dict)
+                else None
+            ),
+            concrete_compiled=(
+                certificate.get("concrete_theorems_compiled")
+                if isinstance(certificate, dict)
+                else None
+            ),
+        ),
         "theorems_checked": pfcore_theorems_checked(
             lean_kernel=bool(certificate and certificate.get("lean_proof_checked"))
         ),
@@ -735,53 +827,77 @@ def run_pfcore_lean_check(
     proof_detail = "skipped" if skip_lean_proof or skip_build else "not-run"
     proof_term_ref: str | None = None
     proof_term_hash: str | None = None
+    semantic_projection_hash: str | None = None
+    generated_proof = None
+    inventory: frozenset[str] = frozenset()
+    inventory_hash: str | None = None
+    mode_witness: dict[str, str] | None = None
+    compiled_theorems: frozenset[str] = frozenset()
 
     if not issues and not no_sorry_errors and not skip_lean_proof:
         try:
-            proof_path = generate_proof_obligation_file(
+            generated_proof = generate_proof_obligation_file(
                 data,
                 pfcore_generated_dir(),
                 trace_path=trace_path,
                 certificate_mode=mode,
                 release_grade=release_grade,
             )
+            proof_path = generated_proof.path
+            inventory = generated_proof.theorem_names
+            inventory_hash = theorem_inventory_hash(inventory)
+            semantic_projection_hash = generated_proof.semantic_projection_hash
+            mode_witness = {
+                "theorem": generated_proof.mode_witness_theorem,
+                "proposition": generated_proof.mode_witness_proposition,
+            }
+            # Re-verify required ⊆ generated before invoking Lean.
+            required = certificate_mode_obligations(generated_proof.certificate_mode, events)
+            missing_required = required - inventory
+            if missing_required:
+                raise CertificateModeEvidenceMissing(
+                    f"required theorems absent from generated inventory: {sorted(missing_required)}"
+                )
             proof_term_ref = proof_term_ref_from_path(proof_path)
             proof_term_hash = compute_proof_term_hash(proof_path)
-            obligations.append(
-                {
-                    "kind": "ConcreteTraceSafe",
-                    "theorem": "concrete_trace_safe",
-                    "passed": False,
-                    "proof_ref": proof_term_ref,
-                }
+            base_theorems = (
+                "concrete_trace_safe",
+                "concrete_trace_safe_prop",
+                "concrete_allowed_events_allowed",
             )
-            obligations.append(
-                {
-                    "kind": "ConcreteTraceSafeProp",
-                    "theorem": "concrete_trace_safe_prop",
-                    "passed": False,
-                    "proof_ref": proof_term_ref,
-                }
-            )
-            obligations.append(
-                {
-                    "kind": "ConcreteAllowedEventsAllowed",
-                    "theorem": "concrete_allowed_events_allowed",
-                    "passed": False,
-                    "proof_ref": proof_term_ref,
-                }
-            )
+            for theorem in base_theorems:
+                obligations.append(
+                    {
+                        "kind": "ConcreteTraceSafe"
+                        if theorem == "concrete_trace_safe"
+                        else (
+                            "ConcreteTraceSafeProp"
+                            if theorem == "concrete_trace_safe_prop"
+                            else "ConcreteAllowedEventsAllowed"
+                        ),
+                        "theorem": theorem,
+                        "passed": False,
+                        "proof_ref": proof_term_ref,
+                    }
+                )
             if not skip_build:
                 proof_ok, proof_detail = run_lean_concrete_proof(proof_path, skip_build=False)
                 for entry in obligations[-3:]:
-                    entry["passed"] = proof_ok
+                    if entry.get("theorem") in inventory:
+                        entry["passed"] = proof_ok
                 if proof_ok:
-                    for theorem in certificate_mode_obligations(mode, events):
-                        if theorem in {
-                            "concrete_trace_safe",
-                            "concrete_trace_safe_prop",
-                            "concrete_allowed_events_allowed",
-                        }:
+                    # Secondary integrity check: required mode theorems must still appear
+                    # in the on-disk module (tamper detection). Primary inventory remains
+                    # the construction-time GeneratedLeanProof.theorem_names set.
+                    source_text = proof_path.read_text(encoding="utf-8")
+                    for theorem in sorted(required):
+                        if not re.search(rf"(?m)^theorem\s+{re.escape(theorem)}\b", source_text):
+                            raise CertificateModeEvidenceMissing(
+                                f"required theorem {theorem!r} absent from generated proof file"
+                            )
+                    # Mark ONLY theorem names present in the generated inventory.
+                    for theorem in sorted(inventory):
+                        if theorem in base_theorems:
                             continue
                         obligations.append(
                             {
@@ -791,6 +907,15 @@ def run_pfcore_lean_check(
                                 "proof_ref": proof_term_ref,
                             }
                         )
+                    compiled_theorems = frozenset(
+                        str(entry.get("theorem"))
+                        for entry in obligations
+                        if isinstance(entry, dict)
+                        and entry.get("passed") is True
+                        and str(entry.get("theorem") or "") in inventory
+                    )
+        except CertificateModeEvidenceMissing as exc:
+            issues.append(PFCoreLeanCheckIssue("CertificateModeEvidenceMissing", str(exc)))
         except OSError as exc:
             issues.append(PFCoreLeanCheckIssue("LeanCodegenFailed", str(exc)))
         except ValueError as exc:
@@ -903,7 +1028,12 @@ def run_pfcore_lean_check(
         proof_term_hash=proof_term_hash,
         lean_environment_hash=lean_environment_hash,
         pfcore_kernel_hash=pfcore_kernel_hash,
-        certificate_mode=mode,
+        certificate_mode=mode if generated_proof is None else generated_proof.certificate_mode,
+        theorem_inventory=inventory if inventory else None,
+        theorem_inventory_hash=inventory_hash,
+        certificate_mode_witness=mode_witness,
+        semantic_projection_hash=semantic_projection_hash,
+        concrete_theorems_compiled=compiled_theorems if compiled_theorems else None,
     )
     from pcs_core.validate import ValidationError, validate_artifact
 

@@ -1,10 +1,14 @@
 """Generate concrete Lean terms and proof obligations from PFCoreTrace.v0.
 
-Role expansion alignment: runtime ``ROLE_CAPABILITY_MAP`` in ``pf_core_runtime.py``
-must stay in sync with Lean ``runtimeRoleMap`` in ``lean/PFCore/RoleMap.lean``.
-Codegen emits principals with explicit ``capabilities`` (already expanded); it does
-not reference ``runtimeRoleMap`` directly. Parity is enforced by
-``tests/test_pf_core_research.py`` and ``pcs pf-core audit-lean-catalog``.
+Role expansion alignment: runtime ``ROLE_CAPABILITY_MAP`` (generated from
+``catalog/pf_core.catalog.json``) must stay in sync with Lean
+``Catalog.runtimeRoleMapEntries`` / ``runtimeRoleMap``. Codegen emits principals with
+explicit ``capabilities`` (already expanded); it does not reference ``runtimeRoleMap``
+directly. Parity is enforced by ``tests/test_pf_core_research.py`` and
+``pcs pf-core audit-lean-catalog``.
+
+Effect-kind → Lean constructors come from generated ``EFFECT_KIND_TO_LEAN`` in
+``pf_core_catalog.py`` (single source in ``scripts/gen_pf_core_catalog.py``).
 """
 
 from __future__ import annotations
@@ -12,6 +16,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -23,6 +28,25 @@ from pcs_core.pf_core_contract import (
     validate_trace_contracts,
 )
 from pcs_core.pf_core_runtime import is_tool_use_trace
+
+
+@dataclass(frozen=True)
+class GeneratedLeanProof:
+    """Inventory of a generated PF-Core Lean proof module."""
+
+    path: Path
+    theorem_names: frozenset[str]
+    certificate_mode: str
+    evidence_files: tuple[Path, ...]
+    mode_witness_theorem: str = "concrete_certificate_mode_witness"
+    mode_witness_proposition: str = ""
+    semantic_projection_hash: str | None = None
+    semantic_projection: Mapping[str, Any] | None = None
+
+
+class CertificateModeEvidenceMissing(ValueError):
+    """Raised when a certificate mode lacks required evidence or theorems."""
+
 
 DEFAULT_CERTIFICATE_MODE = "TraceSafeCertificate"
 TOOL_USE_DEFAULT_CERTIFICATE_MODE = "TraceSafeRCertificate"
@@ -98,16 +122,6 @@ MODE_OBLIGATION_THEOREMS: dict[str, frozenset[str]] = {
             "concrete_contract_checked",
         }
     ),
-}
-
-EFFECT_KIND_TO_LEAN: dict[str, str] = {
-    "file.read": "Effect.read",
-    "file.write": "Effect.write",
-    "network.egress": "Effect.network",
-    "email.send": "Effect.externalMessage",
-    "handoff.delegate": "Effect.stateChange",
-    "mcp.invoke": "Effect.codeExecution",
-    "lab.release": 'Effect.custom "lab.release"',
 }
 
 _LEAN_IDENT_RE = re.compile(r"[^a-zA-Z0-9_]")
@@ -192,13 +206,108 @@ def certificate_mode_obligations(
     """Static + per-allow-event obligations for a certificate mode."""
     base = MODE_OBLIGATION_THEOREMS.get(mode, frozenset())
     if mode != "TraceSafeRCertificate":
-        return base
+        return base | {"concrete_certificate_mode_witness"}
     resource_scope = frozenset(
         f"concrete_action_resource_scope_{lean_ident('ev', str(event.get('event_id') or index))}"
         for index, event in enumerate(events)
         if str(event.get("decision") or "") == "allow"
     )
-    return base | resource_scope
+    return base | resource_scope | {"concrete_certificate_mode_witness"}
+
+
+def theorem_inventory_hash(theorem_names: frozenset[str] | set[str]) -> str:
+    """Stable hash of the generated theorem-name inventory."""
+    payload = "\n".join(sorted(theorem_names)).encode("utf-8")
+    return f"sha256:{hashlib.sha256(payload).hexdigest()}"
+
+
+def register_theorem_name(inventory: set[str], name: str) -> str:
+    """Register a theorem name constructed at emit time; return the name."""
+    if not name or not name.isidentifier():
+        raise ValueError(f"invalid theorem name for inventory: {name!r}")
+    inventory.add(name)
+    return name
+
+
+def verify_certificate_mode_prerequisites(
+    mode: str,
+    *,
+    events: list[Mapping[str, Any]],
+    handoffs: list[Mapping[str, Any]],
+    contracts: Mapping[str, Mapping[str, Any]],
+    contract_theorems: list[str],
+) -> None:
+    """Fail closed when a certificate mode lacks required evidence."""
+    if mode == "HandoffSafeCertificate":
+        if not handoffs:
+            raise CertificateModeEvidenceMissing(
+                "HandoffSafeCertificate requires ≥1 validated handoff artifact"
+            )
+    elif mode == "ContractCheckedCertificate":
+        if not contracts:
+            raise CertificateModeEvidenceMissing(
+                "ContractCheckedCertificate requires ≥1 resolved contract"
+            )
+        if not contract_theorems:
+            raise CertificateModeEvidenceMissing(
+                "ContractCheckedCertificate requires ≥1 generated contract theorem"
+            )
+    elif mode == "FramePreservedCertificate":
+        if not events:
+            raise CertificateModeEvidenceMissing(
+                "FramePreservedCertificate requires ≥1 event and concrete initial state"
+            )
+        first = events[0]
+        principal = first.get("principal") if isinstance(first, Mapping) else None
+        if not isinstance(principal, dict):
+            raise CertificateModeEvidenceMissing(
+                "FramePreservedCertificate requires concrete initial state (event principal)"
+            )
+    elif mode == "EffectFrameCertificate":
+        if not events:
+            raise CertificateModeEvidenceMissing("EffectFrameCertificate requires ≥1 event")
+    elif mode == "CompositionalExtensionCertificate":
+        if not events:
+            raise CertificateModeEvidenceMissing(
+                "CompositionalExtensionCertificate requires ≥1 event"
+            )
+    elif mode == "TraceSafeCertificate":
+        if not events:
+            raise CertificateModeEvidenceMissing("TraceSafeCertificate requires ≥1 event")
+    elif mode == "TraceSafeRCertificate":
+        if not events:
+            raise CertificateModeEvidenceMissing(
+                "TraceSafeRCertificate requires ≥1 event with resource-pattern evidence"
+            )
+        for index, event in enumerate(events):
+            if not isinstance(event, Mapping):
+                continue
+            if str(event.get("decision") or "") != "allow":
+                continue
+            action = event.get("action")
+            if not isinstance(action, dict) or not action_resources_within_capability_pattern_d(
+                action
+            ):
+                event_id = str(event.get("event_id") or index)
+                raise CertificateModeEvidenceMissing(
+                    "TraceSafeRCertificate missing resource-pattern evidence for allow event "
+                    f"{event_id!r}"
+                )
+
+
+def mode_witness_proposition_and_proof(
+    mode: str,
+    *,
+    trace_var: str,
+    aggregate_prop: str | None = None,
+    aggregate_proof: str | None = None,
+) -> tuple[str, str]:
+    """Return (proposition, proof term) for ``concrete_certificate_mode_witness``."""
+    if aggregate_prop and aggregate_proof:
+        return aggregate_prop, aggregate_proof
+    if mode == "TraceSafeRCertificate":
+        return f"TraceSafeR {trace_var}", "concrete_trace_safe_r_prop"
+    return f"TraceSafe {trace_var}", "concrete_trace_safe_prop"
 
 
 def lean_and_intro_theorem(name: str, props: list[str], proof_refs: list[str]) -> str:
@@ -235,6 +344,8 @@ def lean_ident(prefix: str, raw: str) -> str:
 
 
 def effect_kind_to_lean(effect_kind: str) -> str:
+    from pcs_core.pf_core_catalog import EFFECT_KIND_TO_LEAN
+
     mapped = EFFECT_KIND_TO_LEAN.get(effect_kind)
     if mapped is None:
         return f"Effect.custom {lean_string_literal(effect_kind)}"
@@ -464,11 +575,14 @@ def contract_specs_to_lean(contract: Mapping[str, Any], *, base_name: str) -> st
 def generate_contract_proof_obligations(
     trace: Mapping[str, Any],
     contracts: Mapping[str, Mapping[str, Any]],
+    *,
+    inventory: set[str] | None = None,
 ) -> tuple[list[str], list[str]]:
     """Return (contract Lean defs, contract proof theorems) for referenced contracts."""
     defs: list[str] = []
     theorems: list[str] = []
     seen_contracts: set[str] = set()
+    names = inventory if inventory is not None else set()
 
     trace_id = str(trace.get("trace_id") or "trace")
     trace_var = lean_ident("trace", trace_id)
@@ -487,26 +601,34 @@ def generate_contract_proof_obligations(
             if contract_id not in seen_contracts:
                 seen_contracts.add(contract_id)
                 defs.append(contract_specs_to_lean(contract, base_name=base_name))
+                theorem_name = f"concrete_trace_satisfies_{base_name}"
+                register_theorem_name(names, theorem_name)
                 theorems.append(
-                    f"theorem concrete_trace_satisfies_{base_name} : "
+                    f"theorem {theorem_name} : "
                     f"traceSatisfiesContractSpecsD {base_name}Pre {base_name}Post "
                     f"{base_name}Inv {trace_var} = true := by\n"
                     "  decide"
                 )
+            theorem_name = f"concrete_satisfies_{base_name}_{event_name}"
+            register_theorem_name(names, theorem_name)
             theorems.append(
-                f"theorem concrete_satisfies_{base_name}_{event_name} : "
+                f"theorem {theorem_name} : "
                 f"satisfiesContractSpecD {base_name}Pre {base_name}Post {event_name} = true := by\n"
                 "  decide"
             )
             if _contract_has_lean_pre_fields(contract):
+                pre_name = f"concrete_contract_pre_{base_name}_{event_name}"
+                register_theorem_name(names, pre_name)
                 theorems.append(
-                    f"theorem concrete_contract_pre_{base_name}_{event_name} : "
+                    f"theorem {pre_name} : "
                     f"contractPreD {base_name}Pre {event_name}Principal {event_name}Action = true := by\n"
                     "  decide"
                 )
             if _contract_has_lean_post_fields(contract):
+                post_name = f"concrete_contract_post_{base_name}_{event_name}"
+                register_theorem_name(names, post_name)
                 theorems.append(
-                    f"theorem concrete_contract_post_{base_name}_{event_name} : "
+                    f"theorem {post_name} : "
                     f"contractPostD {base_name}Post {event_name} = true := by\n"
                     "  decide"
                 )
@@ -683,16 +805,29 @@ def generate_mode_proof_theorems(
     certificate_mode: str,
     handoff_theorems: list[str],
     contract_theorems: list[str],
+    inventory: set[str],
     trace_path: Path | None = None,
-) -> list[str]:
-    """Return additional Lean theorems for the selected certificate mode."""
+) -> tuple[list[str], str | None, str | None]:
+    """Return mode theorems plus optional aggregate (prop, proof) for the mode witness.
+
+    Theorem names are registered into ``inventory`` at construction time.
+    Prerequisites must already be verified; missing evidence raises.
+    """
+    del trace, trace_path  # reserved for future mode-specific evidence binding
     theorems: list[str] = []
     mode = certificate_mode if certificate_mode in CERTIFICATE_MODES else DEFAULT_CERTIFICATE_MODE
+    aggregate_prop: str | None = None
+    aggregate_proof: str | None = None
 
-    if mode == "FramePreservedCertificate" and events:
+    if mode == "FramePreservedCertificate":
+        if not events:
+            raise CertificateModeEvidenceMissing(
+                "FramePreservedCertificate requires ≥1 event and concrete initial state"
+            )
         first = events[0]
         first_name = lean_ident("ev", str(first.get("event_id") or "0"))
         principal_name = f"{first_name}Principal"
+        register_theorem_name(inventory, "frame_valid_initial")
         theorems.append(
             f"theorem frame_valid_initial : frameValidD (initialState {principal_name}) = true := by\n"
             "  decide"
@@ -704,21 +839,28 @@ def generate_mode_proof_theorems(
             event_name = lean_ident("ev", str(event.get("event_id") or index))
             next_state = f"applyEvent {state_expr} {event_name}"
             step_theorem = f"frame_preserved_step_{event_name}"
+            register_theorem_name(inventory, step_theorem)
             theorems.append(
                 f"theorem {step_theorem} : frameValidD {next_state} = true := by\n  decide"
             )
             step_props.append(f"frameValidD {next_state} = true")
             step_refs.append(step_theorem)
             state_expr = next_state
+        register_theorem_name(inventory, "frame_preserved_steps")
         theorems.append(lean_and_intro_theorem("frame_preserved_steps", step_props, step_refs))
+        aggregate_prop = " ∧ ".join(step_props)
+        aggregate_proof = "frame_preserved_steps"
 
     if mode == "EffectFrameCertificate":
+        if not events:
+            raise CertificateModeEvidenceMissing("EffectFrameCertificate requires ≥1 event")
         effect_props: list[str] = []
         effect_refs: list[str] = []
         for index, event in enumerate(events):
             event_name = lean_ident("ev", str(event.get("event_id") or index))
             action_name = f"{event_name}Action"
             step_theorem = f"concrete_action_effects_in_frame_{event_name}"
+            register_theorem_name(inventory, step_theorem)
             theorems.append(
                 f"theorem {step_theorem} : "
                 f"actionEffectsInFrameD {action_name} {action_name}.effects = true := by\n"
@@ -726,16 +868,22 @@ def generate_mode_proof_theorems(
             )
             effect_props.append(f"actionEffectsInFrameD {action_name} {action_name}.effects = true")
             effect_refs.append(step_theorem)
-        if effect_props:
-            theorems.append(
-                lean_and_intro_theorem(
-                    "concrete_action_effects_in_frame",
-                    effect_props,
-                    effect_refs,
-                )
+        register_theorem_name(inventory, "concrete_action_effects_in_frame")
+        theorems.append(
+            lean_and_intro_theorem(
+                "concrete_action_effects_in_frame",
+                effect_props,
+                effect_refs,
             )
+        )
+        aggregate_prop = " ∧ ".join(effect_props) if len(effect_props) > 1 else effect_props[0]
+        aggregate_proof = "concrete_action_effects_in_frame"
 
-    if mode == "HandoffSafeCertificate" and handoff_theorems:
+    if mode == "HandoffSafeCertificate":
+        if not handoff_theorems:
+            raise CertificateModeEvidenceMissing(
+                "HandoffSafeCertificate requires ≥1 validated handoff"
+            )
         handoff_props: list[str] = []
         handoff_refs: list[str] = []
         for handoff_theorem in handoff_theorems:
@@ -745,12 +893,22 @@ def generate_mode_proof_theorems(
             theorem_name, prop_type = parsed
             handoff_props.append(prop_type)
             handoff_refs.append(theorem_name)
-        if handoff_props:
-            theorems.append(
-                lean_and_intro_theorem("concrete_handoff_safe", handoff_props, handoff_refs)
+        if not handoff_props:
+            raise CertificateModeEvidenceMissing(
+                "HandoffSafeCertificate requires ≥1 validated handoff theorem"
             )
+        register_theorem_name(inventory, "concrete_handoff_safe")
+        theorems.append(
+            lean_and_intro_theorem("concrete_handoff_safe", handoff_props, handoff_refs)
+        )
+        aggregate_prop = " ∧ ".join(handoff_props) if len(handoff_props) > 1 else handoff_props[0]
+        aggregate_proof = "concrete_handoff_safe"
 
-    if mode == "CompositionalExtensionCertificate" and events:
+    if mode == "CompositionalExtensionCertificate":
+        if not events:
+            raise CertificateModeEvidenceMissing(
+                "CompositionalExtensionCertificate requires ≥1 event"
+            )
         trace_expr = "Trace.empty"
         compositional_props: list[str] = []
         compositional_refs: list[str] = []
@@ -759,6 +917,7 @@ def generate_mode_proof_theorems(
             prev_trace = trace_expr
             trace_expr = f"Trace.cons ({prev_trace}) {event_name}"
             step_theorem = f"concrete_compositional_extension_{event_name}"
+            register_theorem_name(inventory, step_theorem)
             if index == 0:
                 theorems.append(
                     f"theorem {step_theorem} : "
@@ -778,16 +937,26 @@ def generate_mode_proof_theorems(
                 )
             compositional_props.append(f"TraceSafe {trace_expr}")
             compositional_refs.append(step_theorem)
-        if compositional_props:
-            theorems.append(
-                lean_and_intro_theorem(
-                    "concrete_compositional_extension",
-                    compositional_props,
-                    compositional_refs,
-                )
+        register_theorem_name(inventory, "concrete_compositional_extension")
+        theorems.append(
+            lean_and_intro_theorem(
+                "concrete_compositional_extension",
+                compositional_props,
+                compositional_refs,
             )
+        )
+        aggregate_prop = (
+            " ∧ ".join(compositional_props)
+            if len(compositional_props) > 1
+            else compositional_props[0]
+        )
+        aggregate_proof = "concrete_compositional_extension"
 
-    if mode == "ContractCheckedCertificate" and contract_theorems:
+    if mode == "ContractCheckedCertificate":
+        if not contract_theorems:
+            raise CertificateModeEvidenceMissing(
+                "ContractCheckedCertificate requires ≥1 generated contract theorem"
+            )
         contract_props: list[str] = []
         contract_refs: list[str] = []
         for contract_theorem in contract_theorems:
@@ -797,21 +966,39 @@ def generate_mode_proof_theorems(
             theorem_name, prop_type = parsed
             contract_props.append(prop_type)
             contract_refs.append(theorem_name)
-        if contract_props:
-            theorems.append(
-                lean_and_intro_theorem("concrete_contract_checked", contract_props, contract_refs)
+        if not contract_props:
+            raise CertificateModeEvidenceMissing(
+                "ContractCheckedCertificate requires ≥1 generated contract theorem"
             )
+        register_theorem_name(inventory, "concrete_contract_checked")
+        theorems.append(
+            lean_and_intro_theorem("concrete_contract_checked", contract_props, contract_refs)
+        )
+        aggregate_prop = (
+            " ∧ ".join(contract_props) if len(contract_props) > 1 else contract_props[0]
+        )
+        aggregate_proof = "concrete_contract_checked"
 
-    if mode == "TraceSafeRCertificate" and events:
+    if mode == "TraceSafeRCertificate":
+        if not events:
+            raise CertificateModeEvidenceMissing(
+                "TraceSafeRCertificate requires ≥1 event with resource-pattern evidence"
+            )
         if not all(
             str(event.get("decision") or "") != "allow"
             or action_resources_within_capability_pattern_d(event.get("action") or {})
             for event in events
             if isinstance(event, dict)
         ):
-            raise ValueError(
+            raise CertificateModeEvidenceMissing(
                 "TraceSafeRCertificate requires all allow events to pass resource-pattern scope"
             )
+        for name in (
+            "concrete_trace_safe_r",
+            "concrete_trace_safe_r_prop",
+            "concrete_trace_safe_r_implies_trace_safe",
+        ):
+            register_theorem_name(inventory, name)
         theorems.extend(
             [
                 f"theorem concrete_trace_safe_r : traceSafeRD {trace_var} = true := by\n  decide",
@@ -822,11 +1009,17 @@ def generate_mode_proof_theorems(
                 f"  traceSafeR_implies_traceSafe {trace_var} concrete_trace_safe_r_prop",
             ]
         )
+        aggregate_prop = f"TraceSafeR {trace_var}"
+        aggregate_proof = "concrete_trace_safe_r_prop"
 
-    return theorems
+    return theorems, aggregate_prop, aggregate_proof
 
 
-def generate_resource_scope_theorems(events: list[Mapping[str, Any]]) -> list[str]:
+def generate_resource_scope_theorems(
+    events: list[Mapping[str, Any]],
+    *,
+    inventory: set[str],
+) -> list[str]:
     """Per-allow-event resource-pattern bridge obligations (runtime trust boundary)."""
     theorems: list[str] = []
     for index, event in enumerate(events):
@@ -837,8 +1030,10 @@ def generate_resource_scope_theorems(events: list[Mapping[str, Any]]) -> list[st
             continue
         event_name = lean_ident("ev", str(event.get("event_id") or index))
         action_name = f"{event_name}Action"
+        theorem_name = f"concrete_action_resource_scope_{event_name}"
+        register_theorem_name(inventory, theorem_name)
         theorems.append(
-            f"theorem concrete_action_resource_scope_{event_name} :\n"
+            f"theorem {theorem_name} :\n"
             f"    actionResourcesWithinCapabilityPatternD {action_name}.reads "
             f"{action_name}.writes {action_name}.capability = true := by\n"
             "  decide"
@@ -862,16 +1057,25 @@ def generate_trust_boundary_theorems(
     events: list[Mapping[str, Any]],
     *,
     trace_var: str,
+    inventory: set[str],
 ) -> list[str]:
     """Conservative tenant isolation, cross-tenant safety, NI hooks (not TraceSafeR)."""
+    del events
+    names = (
+        "concrete_tenant_isolation_prop",
+        "concrete_trace_cross_tenant_safe_prop",
+        "concrete_non_interference_prop",
+    )
+    for name in names:
+        register_theorem_name(inventory, name)
     return [
         f"theorem concrete_tenant_isolation_prop : TenantIsolation {trace_var} :=\n"
         f"  traceSafe_implies_tenant_isolation {trace_var} concrete_trace_safe_prop",
         f"theorem concrete_trace_cross_tenant_safe_prop : TraceCrossTenantSafe {trace_var} :=\n"
         f"  traceSafe_implies_trace_cross_tenant_safe {trace_var} concrete_trace_safe_prop",
         f"theorem concrete_non_interference_prop (tenantLow tenantHigh : String) :\n"
-        f"    NonInterference tenantLow tenantHigh {trace_var} :=\n"
-        f"  traceSafe_implies_non_interference tenantLow tenantHigh {trace_var} "
+        f"    TenantProjectionIsolation tenantLow tenantHigh {trace_var} :=\n"
+        f"  traceSafe_implies_tenant_projection_isolation tenantLow tenantHigh {trace_var} "
         "concrete_trace_safe_prop",
     ]
 
@@ -883,8 +1087,21 @@ def generate_proof_obligation_file(
     trace_path: Path | None = None,
     certificate_mode: str | None = None,
     release_grade: bool = False,
-) -> Path:
-    """Write a `.lean` file proving concrete trace/event (and optional handoff) safety."""
+) -> GeneratedLeanProof:
+    """Write a `.lean` file proving concrete trace/event (and optional handoff) safety.
+
+    Lean terms are emitted from a hashed semantic projection of Lean-relevant fields
+    (not the full PFCoreTrace.v0 envelope). Returns a :class:`GeneratedLeanProof` whose
+    ``theorem_names`` inventory is built at construction time (not by regex-scanning the
+    emitted source as the primary mechanism).
+    """
+    from pcs_core.pf_core_semantic_projection import (
+        build_semantic_projection,
+        projection_contracts,
+        projection_handoffs,
+        projection_to_codegen_trace,
+    )
+
     mode = resolve_certificate_mode(
         trace,
         trace_path=trace_path,
@@ -894,41 +1111,70 @@ def generate_proof_obligation_file(
     if release_grade and is_tool_use_trace(trace, trace_path=trace_path):
         mode = TOOL_USE_DEFAULT_CERTIFICATE_MODE
 
+    handoffs = collect_handoffs_near_trace(trace, trace_path=trace_path)
+    contracts = collect_contracts_for_trace(trace, trace_path=trace_path)
+    projection = build_semantic_projection(
+        trace,
+        certificate_mode=mode,
+        trace_path=trace_path,
+        handoffs=handoffs,
+        contracts=contracts,
+    )
+    projection_hash = str(projection["projection_hash"])
+    codegen_trace = projection_to_codegen_trace(projection)
+    # Preserve workflow / tool-use hints used by mode policy helpers.
+    for key in ("workflow_id", "policy_hash", "contract_hash", "trace_hash"):
+        if key in trace:
+            codegen_trace[key] = trace[key]
+
     module = generated_module_name(trace)
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / f"{module}.lean"
 
-    events = trace_events(trace)
-    trace_body = trace_to_lean(trace)
-    trace_id = str(trace.get("trace_id") or "trace")
+    events = trace_events(codegen_trace)
+    inventory: set[str] = set()
+    evidence_files: list[Path] = []
+    if trace_path is not None:
+        evidence_files.append(trace_path)
+
+    trace_body = trace_to_lean(codegen_trace)
+    trace_id = str(codegen_trace.get("trace_id") or "trace")
     trace_var = lean_ident("trace", trace_id)
 
-    event_theorems = "\n".join(
-        f"theorem concrete_event_safe_{lean_ident('ev', str(event.get('event_id') or index))} : "
-        f"eventSafeD {lean_ident('ev', str(event.get('event_id') or index))} = true := by\n"
-        "  decide"
-        for index, event in enumerate(events)
-    )
-    event_theorem_block = f"{event_theorems}\n\n" if event_theorems else ""
+    event_theorem_parts: list[str] = []
+    for index, event in enumerate(events):
+        event_name = lean_ident("ev", str(event.get("event_id") or index))
+        theorem_name = f"concrete_event_safe_{event_name}"
+        register_theorem_name(inventory, theorem_name)
+        event_theorem_parts.append(
+            f"theorem {theorem_name} : eventSafeD {event_name} = true := by\n  decide"
+        )
+    event_theorem_block = ("\n".join(event_theorem_parts) + "\n\n") if event_theorem_parts else ""
 
+    projected_handoffs = projection_handoffs(projection)
     handoff_defs: list[str] = []
     handoff_theorems: list[str] = []
-    for index, handoff in enumerate(collect_handoffs_near_trace(trace, trace_path=trace_path)):
+    for index, handoff in enumerate(projected_handoffs):
         handoff_id = str(handoff.get("handoff_id") or f"handoff_{index}")
         handoff_name = lean_ident("handoff", handoff_id)
         handoff_defs.append(handoff_to_lean(handoff, name=handoff_name))
+        theorem_name = f"concrete_handoff_safe_{handoff_name}"
+        register_theorem_name(inventory, theorem_name)
         handoff_theorems.append(
-            f"theorem concrete_handoff_safe_{handoff_name} : "
-            f"handoffSafeD {handoff_name} = true := by\n"
-            "  decide"
+            f"theorem {theorem_name} : handoffSafeD {handoff_name} = true := by\n  decide"
         )
+        if trace_path is not None:
+            evidence_files.append(trace_path.parent)
+
     handoff_block = ""
     if handoff_defs:
         handoff_block = "\n\n".join(handoff_defs) + "\n\n"
         handoff_block += "\n\n".join(handoff_theorems) + "\n\n"
 
-    contracts = collect_contracts_for_trace(trace, trace_path=trace_path)
-    contract_defs, contract_theorems = generate_contract_proof_obligations(trace, contracts)
+    projected_contracts = projection_contracts(projection)
+    contract_defs, contract_theorems = generate_contract_proof_obligations(
+        codegen_trace, projected_contracts, inventory=inventory
+    )
     contract_def_block = ""
     contract_theorem_block = ""
     contract_note = ""
@@ -939,34 +1185,78 @@ def generate_proof_obligation_file(
             "-- Contract refs discharged via ContractPreSpec/PostSpec deciders "
             "(subset of PFCoreContract.v0; see docs/pf-core/contract-semantics.md).\n"
         )
-    elif trace_has_contract_refs(trace):
+    elif trace_has_contract_refs(codegen_trace):
         contract_note = (
             "-- Contract refs present but contract JSON not found alongside trace; "
             "run `pcs pf-core validate-contracts` before lean-check.\n"
         )
 
-    mode_theorems = generate_mode_proof_theorems(
-        trace,
+    verify_certificate_mode_prerequisites(
+        mode,
+        events=events,
+        handoffs=list(projected_handoffs),
+        contracts=projected_contracts,
+        contract_theorems=contract_theorems,
+    )
+
+    for name in (
+        "concrete_trace_safe",
+        "concrete_trace_safe_prop",
+        "concrete_allowed_events_allowed",
+    ):
+        register_theorem_name(inventory, name)
+
+    mode_theorems, aggregate_prop, aggregate_proof = generate_mode_proof_theorems(
+        codegen_trace,
         trace_var=trace_var,
         events=events,
         certificate_mode=mode,
         handoff_theorems=handoff_theorems,
         contract_theorems=contract_theorems,
+        inventory=inventory,
         trace_path=trace_path,
     )
     mode_theorem_block = ""
     if mode_theorems:
         mode_theorem_block = "\n\n".join(mode_theorems) + "\n\n"
 
-    trust_boundary_theorems = generate_trust_boundary_theorems(events, trace_var=trace_var)
+    trust_boundary_theorems = generate_trust_boundary_theorems(
+        events, trace_var=trace_var, inventory=inventory
+    )
     trust_boundary_block = "\n\n".join(trust_boundary_theorems) + "\n\n"
 
     resource_scope_theorems = (
-        generate_resource_scope_theorems(events) if mode == "TraceSafeRCertificate" else []
+        generate_resource_scope_theorems(events, inventory=inventory)
+        if mode == "TraceSafeRCertificate"
+        else []
     )
     resource_scope_block = ""
     if resource_scope_theorems:
         resource_scope_block = "\n\n".join(resource_scope_theorems) + "\n\n"
+
+    witness_prop, witness_proof = mode_witness_proposition_and_proof(
+        mode,
+        trace_var=trace_var,
+        aggregate_prop=aggregate_prop,
+        aggregate_proof=aggregate_proof,
+    )
+    register_theorem_name(inventory, "concrete_certificate_mode_witness")
+    witness_block = (
+        f"/-- Final certificate-mode witness for `{mode}`. -/\n"
+        f"def SelectedCertificateModePredicate : Prop :=\n"
+        f"  {witness_prop}\n\n"
+        f"theorem concrete_certificate_mode_witness :\n"
+        f"    SelectedCertificateModePredicate :=\n"
+        f"  {witness_proof}\n\n"
+    )
+
+    required = certificate_mode_obligations(mode, events)
+    missing = required - inventory
+    if missing:
+        raise CertificateModeEvidenceMissing(
+            f"certificate mode {mode} missing required theorems in generated inventory: "
+            f"{sorted(missing)}"
+        )
 
     source = f"""import PFCore.Theorems
 import PFCore.TraceCheck
@@ -980,9 +1270,10 @@ import PFCore.ResourcePattern
 
 Auto-generated by pcs-core pf-core lean-check. Do not edit by hand.
 Certificate mode: `{mode}`.
+Semantic projection hash: `{projection_hash}`.
 {contract_note.strip()}
-Trust-boundary hooks (tenant isolation, cross-tenant safety, observational NI) are
-discharged via proved links from `TraceSafe`. `TraceSafeRCertificate` additionally
+Trust-boundary hooks (tenant isolation, cross-tenant safety, TenantProjectionIsolation)
+are discharged via proved links from `TraceSafe`. `TraceSafeRCertificate` additionally
 discharges `concrete_trace_safe_r*` and per-event `concrete_action_resource_scope_*`.
 Base `TraceSafe` / `ActionAdmissible` omit pattern discharge; `TraceSafeR` refines them.
 
@@ -1006,10 +1297,29 @@ theorem concrete_allowed_events_allowed :
   fun ev hIn hAllow =>
     every_allowed_event_in_safe_trace_is_allowed {trace_var} ev concrete_trace_safe_prop hIn hAllow
 
-{event_theorem_block}{trust_boundary_block}{resource_scope_block}{contract_theorem_block}{mode_theorem_block}end PFCore.Generated.{module}
+{event_theorem_block}{trust_boundary_block}{resource_scope_block}{contract_theorem_block}{mode_theorem_block}{witness_block}end PFCore.Generated.{module}
 """
     out_path.write_text(source, encoding="utf-8")
-    return out_path
+    # Deduplicate evidence paths while preserving order.
+    seen_evidence: set[Path] = set()
+    evidence_tuple: list[Path] = []
+    for path in evidence_files:
+        resolved = path if isinstance(path, Path) else Path(path)
+        key = resolved.resolve() if resolved.exists() else resolved
+        if key in seen_evidence:
+            continue
+        seen_evidence.add(key)
+        evidence_tuple.append(resolved)
+    return GeneratedLeanProof(
+        path=out_path,
+        theorem_names=frozenset(inventory),
+        certificate_mode=mode,
+        evidence_files=tuple(evidence_tuple),
+        mode_witness_theorem="concrete_certificate_mode_witness",
+        mode_witness_proposition=witness_prop,
+        semantic_projection_hash=projection_hash,
+        semantic_projection=projection,
+    )
 
 
 def validate_contracts_before_codegen(
@@ -1086,25 +1396,35 @@ def compute_lean_environment_hash_from_bundle(
     kernel_manifest: Mapping[str, Any],
 ) -> str:
     """Hash Lean environment using only files copied into a release bundle."""
+    from pcs_core.safe_paths import UnsafePathError, resolve_contained_file
+
     parts: list[bytes] = []
     for rel in ("lean-toolchain", "lean/lean-toolchain"):
-        path = bundle_dir / rel
-        if path.is_file():
-            parts.append(path.read_bytes())
-            break
+        try:
+            path = resolve_contained_file(bundle_dir, rel)
+        except UnsafePathError:
+            continue
+        parts.append(path.read_bytes())
+        break
     for rel in ("lean/lakefile.lean", "lean/lake-manifest.json"):
-        path = bundle_dir / rel
-        if path.is_file():
-            parts.append(path.read_bytes())
+        try:
+            path = resolve_contained_file(bundle_dir, rel)
+        except UnsafePathError:
+            continue
+        parts.append(path.read_bytes())
     entries = kernel_manifest.get("files")
     if isinstance(entries, list):
+        kernel_root = bundle_dir / "kernel"
         for entry in sorted(entries, key=lambda item: str(item.get("path") or "")):
             if not isinstance(entry, dict):
                 continue
             rel_path = str(entry.get("path") or "")
-            path = bundle_dir / "kernel" / rel_path
-            if path.is_file():
-                parts.append(path.read_bytes())
+            if not rel_path:
+                continue
+            path = resolve_contained_file(
+                kernel_root, rel_path, allowed_suffixes=frozenset({".lean"})
+            )
+            parts.append(path.read_bytes())
     if not parts:
         raise ValueError("bundle missing lean environment files for hash computation")
     return _hash_byte_parts(parts)
