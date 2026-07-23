@@ -1,0 +1,7 @@
+{
+  "expected_error": "undeclared effect",
+  "must_fail_at": "lean_check",
+  "certificate_mode": "EffectFrameCertificate",
+  "artifact_file": "trace.json",
+  "artifact_type": "PFCoreTrace.v0"
+}

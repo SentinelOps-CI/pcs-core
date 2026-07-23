@@ -1,14 +1,14 @@
 {
   "schema_version": "v0",
   "artifact_type": "PFCoreTrace.v0",
-  "trace_id": "trace-file-read-1",
+  "trace_id": "trace-effect-frame-extra-effect",
   "workflow_id": "agent_tool_use.safety_v0",
   "events": [
     {
       "schema_version": "v0",
       "artifact_type": "PFCoreEvent.v0",
-      "event_id": "ev-file-read-1",
-      "trace_id": "trace-file-read-1",
+      "event_id": "ev-extra-effect-1",
+      "trace_id": "trace-effect-frame-extra-effect",
       "sequence": 0,
       "timestamp": "2026-06-18T00:00:00Z",
       "principal": {
@@ -36,6 +36,9 @@
         "effects": [
           {
             "effect_kind": "file.read"
+          },
+          {
+            "effect_kind": "file.write"
           }
         ],
         "reads": [
@@ -56,8 +59,8 @@
       "previous_event_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
       "source_repo": "https://github.com/example/agent-runtime",
       "source_commit": "abc1234567890abc1234567890abc1234567890",
-      "event_hash": "sha256:4f54951a4b008bdb24f2bb88438cff876fadd84259ad6d83e8211980303a214b",
-      "signature_or_digest": "sha256:4f54951a4b008bdb24f2bb88438cff876fadd84259ad6d83e8211980303a214b"
+      "event_hash": "sha256:0cd48d91a396223255fc91e583079516586f3eabbd9f4075c34afc5135bac048",
+      "signature_or_digest": "sha256:0cd48d91a396223255fc91e583079516586f3eabbd9f4075c34afc5135bac048"
     }
   ],
   "policy_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
@@ -69,8 +72,8 @@
   "evidence_selection": {
     "policy": "explicit_ids",
     "policy_version": "v0",
-    "effect_frame_id": "frame-file-read-global-v0"
+    "effect_frame_id": "frame-file-read-only-v0"
   },
-  "trace_hash": "sha256:1656ae88b02397bed988605261177f66b639997cebd16a9d78017578954e287d",
-  "signature_or_digest": "sha256:1656ae88b02397bed988605261177f66b639997cebd16a9d78017578954e287d"
+  "trace_hash": "sha256:17c21da0fe61750edbb6e372afb8fe3d804734c6a18bd3f53034a4b68e399e56",
+  "signature_or_digest": "sha256:17c21da0fe61750edbb6e372afb8fe3d804734c6a18bd3f53034a4b68e399e56"
 }
