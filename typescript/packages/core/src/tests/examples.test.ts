@@ -4,7 +4,20 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
-import { canonicalHash, canonicalJsonBytes } from "../hash.js";
+import {
+  CANONICALIZATION_VERSION,
+  REJECTION_FLOAT_PROHIBITED,
+  REJECTION_INTEGER_OUT_OF_RANGE,
+  REJECTION_NEGATIVE_ZERO,
+  SAFE_INTEGER_MAX,
+  SAFE_INTEGER_MIN,
+  CanonicalizationError,
+  canonicalHash,
+  canonicalHashLegacy,
+  canonicalHashRelease,
+  canonicalJsonBytes,
+  tryCanonicalHashRelease,
+} from "../hash.js";
 import {
   canonicalEventJsonBytes,
   canonicalTraceJsonBytes,
@@ -45,6 +58,7 @@ const sharedVectorsDir = join(
   dirname(fileURLToPath(import.meta.url)),
   "../../../../../test_vectors/hash",
 );
+const canonV1Dir = join(sharedVectorsDir, "canonical_json_v1");
 
 function load(rel: string): Record<string, unknown> {
   return JSON.parse(readFileSync(join(examplesDir, rel), "utf8")) as Record<string, unknown>;
@@ -342,6 +356,8 @@ test("pf-core traceSafeRD decider parity", () => {
     readFileSync(join(pfCoreInvalidExamplesDir, "resource_scope_violation/trace.json"), "utf8"),
   ) as Record<string, unknown>;
   const badEvents = bad.events as Record<string, unknown>[];
+  // A11: base TraceSafe holds; refined TraceSafeR rejects out-of-pattern URI.
+  assert.equal(traceSafeD(badEvents), true);
   assert.equal(traceSafeRD(badEvents), false);
 });
 
@@ -489,5 +505,78 @@ test("property digests have sha256 shape", () => {
     const digest = canonicalHash(payload);
     assert.ok(digest.startsWith("sha256:"));
     assert.equal(digest.length, 71);
+  }
+});
+
+test("canonicalHashLegacy aliases canonicalHash", () => {
+  const payload = { schema_version: "v0", artifact_type: "CanonicalProbe.v0", n: 1 };
+  assert.equal(canonicalHashLegacy(payload), canonicalHash(payload));
+});
+
+test("canonicalHashRelease enforces number policy with normalized codes", () => {
+  const safe = {
+    schema_version: "v0",
+    artifact_type: "CanonicalProbe.v0",
+    lo: SAFE_INTEGER_MIN,
+    hi: SAFE_INTEGER_MAX,
+  };
+  assert.equal(canonicalHashRelease(safe), canonicalHashLegacy(safe));
+
+  assert.throws(
+    () => canonicalHashRelease({ x: 1.5 }),
+    (err: unknown) =>
+      err instanceof CanonicalizationError && err.code === REJECTION_FLOAT_PROHIBITED,
+  );
+  assert.throws(
+    () => canonicalHashRelease({ x: SAFE_INTEGER_MAX + 1 }),
+    (err: unknown) =>
+      err instanceof CanonicalizationError && err.code === REJECTION_INTEGER_OUT_OF_RANGE,
+  );
+  assert.throws(
+    () => canonicalHashRelease({ x: SAFE_INTEGER_MIN - 1 }),
+    (err: unknown) =>
+      err instanceof CanonicalizationError && err.code === REJECTION_INTEGER_OUT_OF_RANGE,
+  );
+  assert.throws(
+    () => canonicalHashRelease({ x: -0 }),
+    (err: unknown) =>
+      err instanceof CanonicalizationError && err.code === REJECTION_NEGATIVE_ZERO,
+  );
+  assert.equal(tryCanonicalHashRelease({ x: 1.5 }).rejection, REJECTION_FLOAT_PROHIBITED);
+});
+
+test("canonical_json_v1 accept and release-reject vectors", () => {
+  const catalog = JSON.parse(readFileSync(join(canonV1Dir, "vectors.json"), "utf8")) as {
+    canonicalization_version: string;
+    cases: Array<{ case_id: string; expected_digest: string; canonical_json: string }>;
+    release_reject_cases: Array<{
+      case_id: string;
+      expected_rejection: string;
+      legacy_digest: string;
+    }>;
+  };
+  assert.equal(catalog.canonicalization_version, CANONICALIZATION_VERSION);
+  for (const caseRow of catalog.cases) {
+    const data = JSON.parse(
+      readFileSync(join(canonV1Dir, caseRow.case_id, "input.json"), "utf8"),
+    ) as Record<string, unknown>;
+    assert.equal(
+      Buffer.from(canonicalJsonBytes(data)).toString("utf8"),
+      caseRow.canonical_json,
+      caseRow.case_id,
+    );
+    const digest = canonicalHashLegacy(data);
+    assert.equal(digest, caseRow.expected_digest, caseRow.case_id);
+    assert.equal(canonicalHashRelease(data), digest, caseRow.case_id);
+  }
+  for (const caseRow of catalog.release_reject_cases) {
+    const data = JSON.parse(
+      readFileSync(join(canonV1Dir, caseRow.case_id, "input.json"), "utf8"),
+    ) as Record<string, unknown>;
+    const result = tryCanonicalHashRelease(data);
+    assert.equal(result.rejection, caseRow.expected_rejection, caseRow.case_id);
+    // Legacy digests for float/-0 inputs can differ under ECMAScript JSON.stringify;
+    // release mode must still share the normalized rejection code.
+    assert.ok(canonicalHashLegacy(data).startsWith("sha256:"), caseRow.case_id);
   }
 });

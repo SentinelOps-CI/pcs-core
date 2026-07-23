@@ -498,8 +498,10 @@ def _suite_lean_trust() -> tuple[list[str], list[str], int]:
                 errors.append(
                     f"{release_name}/lean_check_result.v0.json: status must be ProofChecked",
                 )
-    lean_dir = repo_root() / "lean"
-    if not (lean_dir / "lakefile.lean").is_file():
+    from pcs_core.asset_resolver import lean_root as resolve_lean_root
+
+    lean_dir = resolve_lean_root()
+    if lean_dir is None or not (lean_dir / "lakefile.lean").is_file():
         errors.append("lean/lakefile.lean missing")
     else:
         checks += 1
@@ -760,11 +762,13 @@ def _check_pf_core_generated_lean_proof(errors: list[str], checks: int) -> int:
                 ),
                 "TraceSafeRCertificate": (trace_path, None),
                 "FramePreservedCertificate": (
-                    repo_root() / "examples/pf-core-valid/file_read_allowed/trace.json",
+                    repo_root()
+                    / "examples/pf-core-valid/certificate_mode_framepreservedcertificate/trace.json",
                     None,
                 ),
                 "EffectFrameCertificate": (
-                    repo_root() / "examples/pf-core-valid/file_read_allowed/trace.json",
+                    repo_root()
+                    / "examples/pf-core-valid/certificate_mode_effectframecertificate/trace.json",
                     None,
                 ),
                 "HandoffSafeCertificate": (
@@ -795,14 +799,87 @@ def _check_pf_core_generated_lean_proof(errors: list[str], checks: int) -> int:
                 with tempfile.TemporaryDirectory(prefix=f"pfcore-mode-{mode}-") as mode_tmp:
                     work = Path(mode_tmp)
                     local_trace = work / "trace.json"
-                    local_trace.write_text(json.dumps(mode_trace), encoding="utf-8")
                     if handoff_path is not None and handoff_path.is_file():
                         shutil.copy2(handoff_path, work / "handoff.json")
+                        try:
+                            handoff_obj = json.loads(handoff_path.read_text(encoding="utf-8"))
+                        except (OSError, json.JSONDecodeError):
+                            handoff_obj = {}
+                        handoff_id = str(
+                            handoff_obj.get("handoff_id") if isinstance(handoff_obj, dict) else ""
+                        )
+                        if handoff_id:
+                            mode_trace = dict(mode_trace)
+                            mode_trace["evidence_selection"] = {
+                                "policy": "explicit_ids",
+                                "policy_version": "v0",
+                                "handoff_ids": [handoff_id],
+                            }
+                    local_trace.write_text(json.dumps(mode_trace), encoding="utf-8")
                     if mode == "ContractCheckedCertificate":
                         for sibling in fixture_path.parent.glob("*.json"):
                             if sibling.name == fixture_path.name:
                                 continue
                             shutil.copy2(sibling, work / sibling.name)
+                        mode_trace = dict(mode_trace)
+                        contract_ids: list[str] = []
+                        for sibling in fixture_path.parent.glob("*.json"):
+                            try:
+                                sibling_obj = json.loads(sibling.read_text(encoding="utf-8"))
+                            except (OSError, json.JSONDecodeError):
+                                continue
+                            if (
+                                isinstance(sibling_obj, dict)
+                                and sibling_obj.get("artifact_type") == "PFCoreContract.v0"
+                            ):
+                                cid = str(sibling_obj.get("contract_id") or "")
+                                if cid:
+                                    contract_ids.append(cid)
+                        if not contract_ids:
+                            # Fall back to event contract_refs when sibling contracts exist
+                            # under alternate naming in the copied workdir.
+                            for event in mode_trace.get("events") or []:
+                                if not isinstance(event, dict):
+                                    continue
+                                refs = event.get("contract_refs")
+                                if isinstance(refs, list):
+                                    contract_ids.extend(str(ref) for ref in refs if str(ref))
+                        if contract_ids:
+                            mode_trace["evidence_selection"] = {
+                                "policy": "explicit_ids",
+                                "policy_version": "v0",
+                                "contract_ids": sorted(set(contract_ids)),
+                            }
+                    if mode == "EffectFrameCertificate":
+                        for sibling in fixture_path.parent.glob("*.json"):
+                            if sibling.name == fixture_path.name:
+                                continue
+                            shutil.copy2(sibling, work / sibling.name)
+                        mode_trace = dict(mode_trace)
+                        frame_id = ""
+                        for sibling in fixture_path.parent.glob("*.json"):
+                            try:
+                                sibling_obj = json.loads(sibling.read_text(encoding="utf-8"))
+                            except (OSError, json.JSONDecodeError):
+                                continue
+                            if (
+                                isinstance(sibling_obj, dict)
+                                and sibling_obj.get("artifact_type") == "PFCoreEffectFrame.v0"
+                            ):
+                                frame_id = str(sibling_obj.get("frame_id") or "")
+                                if frame_id:
+                                    break
+                        selection = mode_trace.get("evidence_selection")
+                        if not isinstance(selection, dict) or not selection.get(
+                            "effect_frame_id"
+                        ):
+                            if frame_id:
+                                mode_trace["evidence_selection"] = {
+                                    "policy": "explicit_ids",
+                                    "policy_version": "v0",
+                                    "effect_frame_id": frame_id,
+                                }
+                    local_trace.write_text(json.dumps(mode_trace), encoding="utf-8")
                     try:
                         generated = generate_proof_obligation_file(
                             mode_trace,
@@ -888,6 +965,21 @@ def _suite_pf_core_cross_language() -> tuple[list[str], list[str], int]:
         tenant_errors = validate_tenant_isolation(trace)
         if not any("TenantIsolation" in err for err in tenant_errors):
             errors.append("python cross_tenant_leak vector failed")
+
+    a11_path = (
+        repo_root() / "examples" / "pf-core-invalid" / "resource_scope_violation" / "trace.json"
+    )
+    if a11_path.is_file():
+        checks += 1
+        from pcs_core.lean_check import trace_safe_d, trace_safe_rd
+
+        a11_events = json.loads(a11_path.read_text(encoding="utf-8")).get("events") or []
+        if not isinstance(a11_events, list) or not a11_events:
+            errors.append("a11 resource_scope_violation: missing events")
+        elif not trace_safe_d(a11_events):
+            errors.append("a11 resource_scope_violation: expected TraceSafe=true")
+        elif trace_safe_rd(a11_events):
+            errors.append("a11 resource_scope_violation: expected TraceSafeR=false")
 
     rust = repo_root() / "rust"
     proc = subprocess.run(
