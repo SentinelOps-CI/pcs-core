@@ -1,0 +1,7 @@
+{
+  "expected_error": "HandoffSafeCertificate requires",
+  "must_fail_at": "certificate_mode_prerequisites",
+  "artifact_file": "trace.json",
+  "artifact_type": "PFCoreTrace.v0",
+  "certificate_mode": "HandoffSafeCertificate"
+}

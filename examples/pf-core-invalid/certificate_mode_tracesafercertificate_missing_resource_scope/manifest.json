@@ -1,0 +1,7 @@
+{
+  "expected_error": "resource-pattern",
+  "must_fail_at": "certificate_mode_prerequisites",
+  "artifact_file": "trace.json",
+  "artifact_type": "PFCoreTrace.v0",
+  "certificate_mode": "TraceSafeRCertificate"
+}
