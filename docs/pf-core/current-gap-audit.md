@@ -85,7 +85,7 @@ Summary of gaps between the PF-Core vision and the current `pcs-core` repository
 
 ## Remaining research (deferred)
 
-1. **Full global cross-tenant non-interference** — conservative tenant isolation for allowed events is proved; covert channels, timing, deny-side leaks open (`non-interference.md`).
+1. **Paired-execution / full global cross-tenant non-interference** — `TenantProjectionIsolation` proved for single recorded traces; covert channels, timing, scheduler adversaries, and `PairedExecutionNonInterference` remain open (`non-interference.md`, `runtime-semantics.md`).
 2. **Write footprint ↔ effect linkage** — `WriteFootprintRequiresWriteEffect` explicit; derived from `ActionAdmissible` + `KnownCapabilityEffect` for catalog capabilities.
 3. **Resource-pattern scope in Lean** — Partial: `ResourcePattern.lean` (`TraceSafeR`, `ActionAdmissibleWithResourcePattern`); Python/Rust/TS runtime deciders (`trace_safe_rd` / trace hash-chain `validate_resource_scope`); optional codegen `concrete_trace_safe_r*` when allow events pass pattern scope; base `TraceSafe` kernel unchanged.
 4. **Full provability-fabric-core live adapter orchestration** — hash parity covered natively via adapter CI script.
@@ -211,12 +211,42 @@ Summary of gaps between the PF-Core vision and the current `pcs-core` repository
 
 ### Remaining honest deferrals (post B1–B7)
 
-- Full global cross-tenant non-interference (v0.2+ research; see `non-interference.md`).
+- Paired-execution / full global cross-tenant non-interference (v0.2+ research; see `non-interference.md`, `runtime-semantics.md`). Proved bound: `TenantProjectionIsolation`.
 - Full JSON contract Lean discharge for role/policy/evidence fields.
 - Write footprint ↔ effect linkage as derived kernel theorem.
 - Live provability-fabric-core orchestration beyond adapter hash parity.
 - Rust/TS do not emit `LeanKernelChecked` (Python lean-check authority).
 - Base `TraceSafe` kernel unchanged; release-grade tool-use requires TraceSafeR chain.
+- Restricted Lean JSON decoder for `PFCoreSemanticProjection.v0` (Phase 4 optional stretch).
+
+## Phase 5 — Runtime semantics and research completion (2026-07)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| 5.1 Observed effects + frame lemmas | Done | `ObservedEffect.lean`; `TrustedInstrumentation` assumption; `accepted_transition_no_undeclared_sensitive_observation` |
+| 5.2 Deny-path closedness | Done | `DenyClosed.lean`; `EventSafeDenyClosed` refines `EventSafe`; runtime `validate_event_safe_deny_closed` |
+| 5.3 TenantProjectionIsolation naming | Done | Proved property renamed in docs; Lean `NonInterference` kept as compatibility alias |
+| 5.3 Paired-execution NI scaffolding | Done (unproved) | `PairedExecution.lean` vocabulary + assumptions; **no** paired-execution NI claim |
+| Runtime semantics doc | Done | `docs/pf-core/runtime-semantics.md` |
+
+## Phase 6 — Production external attestation (2026-07)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| 6.1 CertifyEdge provision from pin | Done | `pins/certifyedge.json` status=`unpinned`; `verify-certifyedge-pin.py` + `provision-certifyedge.sh` fail closed in release |
+| 6.2 Bundle-bound ExternalAttestation.v0 | Done | Schema + `pcs pf-core attest-bundle`; digests vs ed25519 modes explicit |
+| 6.3 Unified release/preview gates | Done | `release.yml` + `pf-core-release-gate.yml` + `scripts/release-gate.sh`; preview absence notice |
+
+## Phase 7 — Verification quality (2026-07)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Python ruff/pyright/pytest/hypothesis/coverage | Done | CI quality step; coverage fail-under on trust-critical modules |
+| Mutation testing | Deferred | Documented in `docs/mutation-testing.md` |
+| Rust fmt/clippy/test + proptest | Done | Property digest test; fuzz scaffold in `rust/FUZZING.md` |
+| TypeScript lint/test + property loops | Done | DenyClosed / ObservedEffectsAgree parity; digest property loop |
+| Lean no-sorry + lake build | Done (existing) | Release workflow builds PCS + PFCore |
+| Cross-language deny/observed effects | Done | Python/Rust/TS |
 
 ## v0.2+ research backlog (deferred)
 
@@ -224,7 +254,7 @@ Track as separate milestones; no public claim upgrade without proofs + fixtures 
 
 | Item | Deliverable |
 |------|-------------|
-| Full global cross-tenant NI | Extend `non-interference.md` adversary model + new lemmas |
+| Full global cross-tenant NI | Extend `non-interference.md` adversary model + prove paired-execution family |
 | Full JSON contract Lean discharge | Extend `ContractDecide.lean` for policy/evidence refs |
 | Write footprint ↔ effect linkage | Derived theorem from `ActionAdmissible` + catalog |
 | Live provability-fabric-core orchestration | Beyond `scripts/run-pf-core-adapter-ci.sh` hash parity |

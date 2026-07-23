@@ -38,7 +38,8 @@ HEAD evidence recorded after closing production gaps B1–B7, PCS envelope Phase
 | B6 ContractChecked missing contract file | **done** | `examples/pf-core-invalid/certificate_mode_contractcheckedcertificate_missing_contract_file/`; `check_pf_core_invalid_fixtures` |
 | B7 Doc sync | **done** | This file, gap audit, README, certifyedge-ci; `pcs pf-core audit-claims` |
 | Phase 3 PCS envelope lean | **done** | `pcs-envelope.generated-lean-proof` subcheck; multi-artifact `witnessResultHashesAdmissibleD` codegen |
-| Phase 4 research | **documented** | v0.2 backlog in `non-interference.md` and gap audit — no claim upgrade |
+| Phase 4 TCB reduction | **done (v0)** | Full Lean catalog generation; semantic projection hash bridge; theorem availability vs execution fields; Lean JSON decoder deferred (`docs/pf-core/semantic-projection.md`) |
+| Phase 5 runtime semantics | **done (v0)** | Observed effects + instrumentation assumption; `EventSafeDenyClosed`; `TenantProjectionIsolation` naming; paired-execution NI scaffolding only (`docs/pf-core/runtime-semantics.md`) |
 
 ## Six-step critical issues plan (2026-06-29)
 
@@ -97,9 +98,10 @@ Validate the bundle in an empty temp directory (no repo checkout) before attachi
 
 ## Honest deferrals
 
-- Full global non-interference under adversarial schedulers (v0.2+ research; see `non-interference.md`).
+- Paired-execution / full global non-interference under adversarial schedulers (v0.2+ research; see `non-interference.md`, `runtime-semantics.md`). `TenantProjectionIsolation` is the proved single-trace observational bound only.
 - PCS tool-use Lean path does not discharge PF-Core `TraceSafeR` — remains separate (`pcs pf-core lean-check`).
 - Live CertifyEdge production deployment beyond CLI/secret matrix on release gate.
 - Rust/TS do not emit `LeanKernelChecked` certificates (Python lean-check only).
+- Restricted Lean JSON decoder for `PFCoreSemanticProjection.v0` (Phase 4 optional stretch; deferred).
 
 Reference: `docs/pf-core/claim-boundary.md`, `docs/pf-core/current-gap-audit.md`, `docs/pf-core/release-checklist.md`.

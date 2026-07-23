@@ -32,7 +32,7 @@ This checklist covers the **production trusted kernel** only: contract semantics
 | Semantics validator | `python/pcs_core/pf_core_contract_semantics.py` | Wired into `validate-contracts` and lean codegen |
 | Trusted boundary | `docs/pf-core/trusted-boundary.md` | PCS path is envelope-only; PF-Core kernel on `pf-core lean-check` |
 | Claim boundaries | `docs/pf-core/claim-boundary.md` | No silent upgrade between claim classes |
-| Deferred research | `docs/pf-core/non-interference.md`, `assumptions.md` | RoleMap permanent assumption documented |
+| Deferred research | `docs/pf-core/non-interference.md`, `runtime-semantics.md`, `assumptions.md` | `TenantProjectionIsolation` proved; paired-execution NI scaffolding only; RoleMap permanent assumption documented |
 | Frozen hash vectors | `python/tests/hash_vectors/pf_core/` | Python, Rust, TypeScript agree on canonical form |
 
 ## Claim class boundaries (must not overclaim)

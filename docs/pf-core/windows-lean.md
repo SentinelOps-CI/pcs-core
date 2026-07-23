@@ -12,13 +12,16 @@ PF-Core lean-check requires Lean 4 (`lake`) and optionally WSL when native tooli
 ## WSL2 setup
 
 1. Install [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install) with an Ubuntu distribution.
-2. Install elan inside WSL:
+2. Install elan inside WSL (checksum verified):
 
 ```bash
-curl -sSfL https://github.com/leanprover/elan/releases/download/v4.0.0/elan-x86_64-unknown-linux-gnu.tar.gz | tar xz
-./elan-init -y --default-toolchain none
-elan default leanprover/lean4:v4.14.0
+# From a pcs-core checkout
+bash scripts/install-elan-verified.sh
+# Or manually against pins/elan.json:
+# curl -sSfL <url> -o elan.tar.gz && echo "<sha256>  elan.tar.gz" | sha256sum -c -
 ```
+
+The CI pin lives in [`pins/elan.json`](../../pins/elan.json) (elan `4.2.3`, Lean toolchain still `leanprover/lean4:v4.14.0`).
 
 3. Clone or access the pcs-core repo from the WSL filesystem (e.g. `/mnt/c/Users/.../pcs-core`) or a Linux home checkout for best I/O performance.
 4. Build and lean-check:
