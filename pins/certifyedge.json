@@ -1,0 +1,20 @@
+{
+  "tool": "certifyedge",
+  "status": "unpinned",
+  "version": "",
+  "provision_strategy": "none",
+  "image": "",
+  "image_digest": "",
+  "binary_url": "",
+  "binary_sha256": "",
+  "source_repo": "https://github.com/fraware/CertifyEdge",
+  "source_commit": "",
+  "notes": [
+    "status=unpinned: no immutable CertifyEdge artifact is published for pcs-core yet.",
+    "Approved strategies when a digest exists: oci_digest | signed_binary | source_commit_build.",
+    "scripts/provision-certifyedge.sh and scripts/verify-certifyedge-pin.py fail closed in PCS_RELEASE_MODE=release when status!=pinned or digests are empty.",
+    "Do not invent placeholder digests that pretend to verify.",
+    "Dev/preview may use mock:// or explicit stub://; release mode requires a provisioned live binary.",
+    "Optional runner secret PF_CORE_CERTIFYEDGE_CLI remains a last-resort override only after pin verification succeeds or for documented staging with ALLOW_STUB."
+  ]
+}

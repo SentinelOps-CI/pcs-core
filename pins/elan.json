@@ -1,0 +1,9 @@
+{
+  "tool": "elan",
+  "version": "4.2.3",
+  "archive": "elan-x86_64-unknown-linux-gnu.tar.gz",
+  "url": "https://github.com/leanprover/elan/releases/download/v4.2.3/elan-x86_64-unknown-linux-gnu.tar.gz",
+  "sha256": "df0b2b3a439961ffcbb3985214365ffe40f49bc871df04dff268c7d8e21ca8b2",
+  "default_lean_toolchain": "leanprover/lean4:v4.14.0",
+  "notes": "CI and docs must verify the archive sha256 before extraction. Keep lean-toolchain pin separate."
+}
