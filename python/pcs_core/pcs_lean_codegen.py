@@ -8,6 +8,7 @@ import re
 from pathlib import Path
 from typing import Any, Mapping
 
+from pcs_core.asset_resolver import pcs_generated_root, proof_ref_from_path, require_lean_root
 from pcs_core.lean_trust import extract_proof_obligations_from_release
 from pcs_core.obligation_extraction_errors import (
     InvalidProofInputDigest,
@@ -18,7 +19,6 @@ from pcs_core.obligation_extraction_errors import (
     MissingWitnessId,
     ObligationExtractionError,
 )
-from pcs_core.paths import repo_root
 from pcs_core.pcs_projection import (
     assert_no_unknown_or_empty,
     require_sha256_digest,
@@ -430,39 +430,97 @@ def aggregate_lean_theorem_for_workflow(workflow_id: str) -> str:
         return "concrete_tool_use_release_admissible_prop"
     if workflow_id == "scientific_computation.reproducibility_v0":
         return "concrete_computation_release_admissible_prop"
-    return "concrete_release_chain_admissible_prop"
+    return "concrete_envelope_release_admissible_prop"
 
 
-def _release_chain_definitions(values: Mapping[str, Any]) -> str:
-    return "\n\n".join(
-        [
-            certificate_to_lean(
-                name="concreteCertificate",
-                certificate_id=str(values["certificate_id"]),
-                trace_hash=str(values["certificate_trace_hash"]),
-                status=str(values["certificate_status"]),
-            ),
-            runtime_receipt_to_lean(
-                name="concreteRuntimeReceipt",
-                trace_hash=str(values["runtime_trace_hash"]),
-                status=str(values.get("runtime_status") or "RuntimeObserved"),
-            ),
-            verification_result_to_lean(
-                name="concreteVerification",
-                status=str(values["verification_status"]),
-                verified_input_bundle_hash=str(values["verified_input_bundle_hash"]),
-                release_blocking_checks_passed=bool(values["release_blocking_checks_passed"]),
-            ),
-            bundle_hash_to_lean(
-                name="concreteCertifiedBundleHash",
-                bundle_hash=str(values["certified_bundle_hash"]),
-            ),
-            bundle_hash_to_lean(
-                name="concreteSignedInputHash",
-                bundle_hash=str(values["signed_input_bundle_hash"]),
-            ),
-        ],
+def _require_projection_hash(values: Mapping[str, Any]) -> str:
+    raw = values.get("pcs_projection_manifest_hash")
+    return require_sha256_digest(raw, field="pcs_projection_manifest_hash")
+
+
+def _envelope_projection_meta_definition(
+    values: Mapping[str, Any],
+    *,
+    workflow_id: str,
+    name: str = "concreteEnvelopeProjection",
+) -> str:
+    projection_hash = _require_projection_hash(values)
+    release_id = assert_no_unknown_or_empty(
+        str(values.get("release_id") or ""),
+        field="release_id",
     )
+    workflow = assert_no_unknown_or_empty(workflow_id, field="workflow_id")
+    return (
+        f"def {name} : EnvelopeProjectionMeta :=\n"
+        "  {\n"
+        f"    workflowId := {lean_string_literal(workflow)},\n"
+        f"    releaseId := {lean_string_literal(release_id)},\n"
+        f"    projectionDigest := {hash_to_lean(projection_hash)}\n"
+        "  }"
+    )
+
+
+def _release_envelope_definition(
+    values: Mapping[str, Any],
+    *,
+    workflow_id: str,
+) -> str:
+    projection_hash = _require_projection_hash(values)
+    release_id = assert_no_unknown_or_empty(
+        str(values.get("release_id") or ""),
+        field="release_id",
+    )
+    workflow = assert_no_unknown_or_empty(workflow_id, field="workflow_id")
+    return (
+        "def concreteReleaseEnvelope : ReleaseEnvelope :=\n"
+        "  {\n"
+        f"    workflowId := {lean_string_literal(workflow)},\n"
+        f"    releaseId := {lean_string_literal(release_id)},\n"
+        f"    projectionDigest := {hash_to_lean(projection_hash)},\n"
+        "    certificate := concreteCertificate,\n"
+        "    runtimeReceipt := concreteRuntimeReceipt,\n"
+        "    verification := concreteVerification,\n"
+        "    certifiedBundleHash := concreteCertifiedBundleHash,\n"
+        "    signedInputHash := concreteSignedInputHash\n"
+        "  }"
+    )
+
+
+def _release_chain_definitions(
+    values: Mapping[str, Any],
+    *,
+    workflow_id: str | None = None,
+) -> str:
+    parts = [
+        certificate_to_lean(
+            name="concreteCertificate",
+            certificate_id=str(values["certificate_id"]),
+            trace_hash=str(values["certificate_trace_hash"]),
+            status=str(values["certificate_status"]),
+        ),
+        runtime_receipt_to_lean(
+            name="concreteRuntimeReceipt",
+            trace_hash=str(values["runtime_trace_hash"]),
+            status=str(values.get("runtime_status") or "RuntimeObserved"),
+        ),
+        verification_result_to_lean(
+            name="concreteVerification",
+            status=str(values["verification_status"]),
+            verified_input_bundle_hash=str(values["verified_input_bundle_hash"]),
+            release_blocking_checks_passed=bool(values["release_blocking_checks_passed"]),
+        ),
+        bundle_hash_to_lean(
+            name="concreteCertifiedBundleHash",
+            bundle_hash=str(values["certified_bundle_hash"]),
+        ),
+        bundle_hash_to_lean(
+            name="concreteSignedInputHash",
+            bundle_hash=str(values["signed_input_bundle_hash"]),
+        ),
+    ]
+    if workflow_id is not None:
+        parts.append(_release_envelope_definition(values, workflow_id=workflow_id))
+    return "\n\n".join(parts)
 
 
 def _release_chain_theorems_block() -> str:
@@ -502,16 +560,26 @@ theorem concrete_release_chain_admissible_prop :
     ReleaseChainAdmissible concreteCertificate concreteRuntimeReceipt concreteVerification
       concreteCertifiedBundleHash concreteSignedInputHash :=
   (releaseChainAdmissibleD_sound _ _ _ _ _).mp concrete_release_chain_admissible
+
+theorem concrete_envelope_release_admissible :
+    envelopeReleaseAdmissibleD concreteReleaseEnvelope = true := by
+  decide
+
+theorem concrete_envelope_release_admissible_prop :
+    EnvelopeReleaseAdmissible concreteReleaseEnvelope :=
+  (envelopeReleaseAdmissibleD_sound _).mp concrete_envelope_release_admissible
 """.strip()
 
 
 def generate_release_chain_lean(obligations_doc: Mapping[str, Any]) -> str:
     values = release_chain_values_from_obligations(obligations_doc)
-    return _release_chain_definitions(values)
+    workflow_id = workflow_id_from_obligations(obligations_doc)
+    return _release_chain_definitions(values, workflow_id=workflow_id)
 
 
 def generate_tool_use_lean(obligations_doc: Mapping[str, Any]) -> str:
     values = tool_use_values_from_obligations(obligations_doc)
+    workflow_id = workflow_id_from_obligations(obligations_doc)
     tool_defs = "\n\n".join(
         [
             tool_use_trace_to_lean(
@@ -527,7 +595,7 @@ def generate_tool_use_lean(obligations_doc: Mapping[str, Any]) -> str:
                 policy_hash=values["tool_certificate_policy_hash"],
                 status=values["tool_certificate_status"],
             ),
-            _release_chain_definitions(values),
+            _release_chain_definitions(values, workflow_id=workflow_id),
         ],
     )
     return tool_defs
@@ -539,6 +607,7 @@ def generate_computation_lean(
     release_dir: Path | None = None,
 ) -> str:
     values = computation_values_from_obligations(obligations_doc, release_dir=release_dir)
+    workflow_id = workflow_id_from_obligations(obligations_doc)
     declared = declared_artifact_hashes_for_computation(values)
     witness_def = computation_witness_to_lean(
         name="concreteComputationWitness",
@@ -574,7 +643,10 @@ def generate_computation_lean(
             ),
         ],
     )
-    return "\n\n".join([witness_def, declared_def, result_hash_def, verification_def, bundle_defs])
+    projection_meta = _envelope_projection_meta_definition(values, workflow_id=workflow_id)
+    return "\n\n".join(
+        [witness_def, declared_def, result_hash_def, verification_def, bundle_defs, projection_meta],
+    )
 
 
 def _tool_use_theorems_block() -> str:
@@ -594,9 +666,8 @@ theorem concrete_tool_trace_hash_matches_prop :
 
 theorem concrete_tool_use_release_admissible_prop :
     toolTraceHashMatchesCertificate concreteToolUseTrace concreteToolUseCertificate ∧
-      ReleaseChainAdmissible concreteCertificate concreteRuntimeReceipt concreteVerification
-        concreteCertifiedBundleHash concreteSignedInputHash :=
-  And.intro concrete_tool_trace_hash_matches_prop concrete_release_chain_admissible_prop
+      EnvelopeReleaseAdmissible concreteReleaseEnvelope :=
+  And.intro concrete_tool_trace_hash_matches_prop concrete_envelope_release_admissible_prop
 """.rstrip()
     )
 
@@ -640,16 +711,26 @@ theorem concrete_signed_bundle_admissible_prop :
       concreteVerification.verifiedInputBundleHash :=
   (signedBundleAdmissibleD_sound _ _).mp concrete_signed_bundle_admissible
 
+theorem concrete_envelope_projection_bound :
+    envelopeProjectionBoundD concreteEnvelopeProjection = true := by
+  decide
+
+theorem concrete_envelope_projection_bound_prop :
+    EnvelopeProjectionBound concreteEnvelopeProjection :=
+  (envelopeProjectionBoundD_sound _).mp concrete_envelope_projection_bound
+
 theorem concrete_computation_release_admissible_prop :
-    witnessResultHashesAdmissible concreteComputationWitness
-      concreteDeclaredResultArtifactHashes ∧
+    EnvelopeProjectionBound concreteEnvelopeProjection ∧
+      witnessResultHashesAdmissible concreteComputationWitness
+        concreteDeclaredResultArtifactHashes ∧
       concreteResultArtifactHash ∈ concreteComputationWitness.resultHashes ∧
       VerificationAdmitsBundle concreteVerification concreteCertifiedBundleHash ∧
       SignedBundleAdmissible concreteSignedInputHash
         concreteVerification.verifiedInputBundleHash :=
-  And.intro concrete_witness_result_hashes_admissible_prop
-    (And.intro concrete_witness_result_hash_listed_prop
-      (And.intro concrete_verification_admits_bundle_prop concrete_signed_bundle_admissible_prop))
+  And.intro concrete_envelope_projection_bound_prop
+    (And.intro concrete_witness_result_hashes_admissible_prop
+      (And.intro concrete_witness_result_hash_listed_prop
+        (And.intro concrete_verification_admits_bundle_prop concrete_signed_bundle_admissible_prop)))
 """.strip()
 
 
@@ -669,16 +750,14 @@ def generate_proof_obligation_file(
     release_id = assert_no_unknown_or_empty(release_id_raw.strip(), field="release_id")
     workflow_id = workflow_id_from_obligations(obligations_doc)
     projection_hash = obligations_doc.get("pcs_projection_manifest_hash")
-    projection_meta = ""
-    if projection_hash is not None:
-        proj = require_sha256_digest(
-            projection_hash,
-            field="pcs_projection_manifest_hash",
-        )
-        projection_meta = (
-            f"\n-- pcs_projection_manifest_hash: {proj}\n"
-            f"def pcsProjectionManifestHash : String := {lean_string_literal(proj)}\n"
-        )
+    proj = require_sha256_digest(
+        projection_hash,
+        field="pcs_projection_manifest_hash",
+    )
+    projection_meta = (
+        f"\n-- pcs_projection_manifest_hash: {proj}\n"
+        f"def pcsProjectionManifestHash : String := {lean_string_literal(proj)}\n"
+    )
 
     if workflow_id == "agent_tool_use.safety_v0":
         imports = "import PCS.ToolUse\nimport PCS.ReleaseChainCheck"
@@ -704,15 +783,14 @@ def generate_proof_obligation_file(
     else:
         imports = "import PCS.ReleaseChainCheck"
         disclaimer = (
-            "This discharges ProofObligation.v0 against `PCS.ReleaseChainAdmissible` "
-            "deciders only. "
+            "This discharges ProofObligation.v0 against `PCS.EnvelopeReleaseAdmissible` "
+            "(projection-bound release envelope). "
             "It does **not** imply PF-Core trace safety or `LeanKernelChecked` assurance."
         )
         values_body = generate_release_chain_lean(obligations_doc)
         theorems = _release_chain_theorems_block()
         eval_line = """
-#eval releaseChainAdmissibleD concreteCertificate concreteRuntimeReceipt concreteVerification
-  concreteCertifiedBundleHash concreteSignedInputHash
+#eval envelopeReleaseAdmissibleD concreteReleaseEnvelope
 """.strip()
 
     source = f"""{imports}
@@ -758,18 +836,35 @@ def generate_from_release_dir(release_dir: Path, out_dir: Path) -> Path:
 
 
 def pcs_generated_dir() -> Path:
-    return repo_root() / "lean" / "PCS" / "Generated"
+    try:
+        return pcs_generated_root()
+    except FileNotFoundError:
+        from pcs_core.paths import repo_root
+
+        return repo_root() / "lean" / "PCS" / "Generated"
 
 
 def compute_lean_environment_hash() -> str:
     """Hash pinned Lean toolchain + lake manifest for PCS proof metadata."""
-    lean_root = repo_root() / "lean"
+    try:
+        lean_project = require_lean_root()
+    except FileNotFoundError:
+        from pcs_core.paths import repo_root
+
+        lean_project = repo_root() / "lean"
     parts: list[str] = []
-    toolchain = repo_root() / "lean-toolchain"
+    toolchain = lean_project / "lean-toolchain"
+    if not toolchain.is_file():
+        # Historical mis-pin: lean-toolchain lived at repo root in some trees.
+        from pcs_core.paths import repo_root
+
+        alt = repo_root() / "lean-toolchain"
+        if alt.is_file():
+            toolchain = alt
     if toolchain.is_file():
         parts.append(toolchain.read_text(encoding="utf-8"))
     for rel in ("lakefile.lean", "lake-manifest.json"):
-        path = lean_root / rel
+        path = lean_project / rel
         if path.is_file():
             parts.append(path.read_text(encoding="utf-8"))
     digest = hashlib.sha256("\n---\n".join(parts).encode("utf-8")).hexdigest()
@@ -777,8 +872,4 @@ def compute_lean_environment_hash() -> str:
 
 
 def proof_term_ref_from_path(path: Path) -> str:
-    root = repo_root()
-    try:
-        return str(path.relative_to(root)).replace("\\", "/")
-    except ValueError:
-        return str(path).replace("\\", "/")
+    return proof_ref_from_path(path)

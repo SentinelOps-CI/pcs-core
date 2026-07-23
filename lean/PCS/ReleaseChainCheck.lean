@@ -1,3 +1,4 @@
+import PCS.Projection
 import PCS.ReleaseChain
 
 /-!
@@ -70,5 +71,37 @@ theorem releaseChainAdmissibleD_sound
   simp [releaseChainAdmissibleD, ReleaseChainAdmissible,
     certificateMatchesRuntimeD_sound, verificationAdmitsBundleD_sound, signedBundleAdmissibleD_sound,
     and_assoc, and_left_comm, and_comm]
+
+def projectionDigestPresentD (digest : Hash) : Bool :=
+  decide (digest.value ≠ "")
+
+def envelopeProjectionBoundD (meta : EnvelopeProjectionMeta) : Bool :=
+  projectionDigestPresentD meta.projectionDigest &&
+    decide (meta.workflowId ≠ "") &&
+    decide (meta.releaseId ≠ "")
+
+theorem envelopeProjectionBoundD_sound (meta : EnvelopeProjectionMeta) :
+    envelopeProjectionBoundD meta = true ↔ EnvelopeProjectionBound meta := by
+  cases meta with
+  | mk workflowId releaseId projectionDigest =>
+    simp [envelopeProjectionBoundD, EnvelopeProjectionBound, projectionDigestPresentD,
+      decide_eq_true_iff, Bool.and_eq_true, and_assoc]
+
+def envelopeReleaseAdmissibleD (env : ReleaseEnvelope) : Bool :=
+  envelopeProjectionBoundD env.toProjectionMeta &&
+    releaseChainAdmissibleD
+      env.certificate
+      env.runtimeReceipt
+      env.verification
+      env.certifiedBundleHash
+      env.signedInputHash
+
+theorem envelopeReleaseAdmissibleD_sound (env : ReleaseEnvelope) :
+    envelopeReleaseAdmissibleD env = true ↔ EnvelopeReleaseAdmissible env := by
+  cases env with
+  | mk workflowId releaseId projectionDigest certificate runtimeReceipt
+      verification certifiedBundleHash signedInputHash =>
+    simp [envelopeReleaseAdmissibleD, EnvelopeReleaseAdmissible, ReleaseEnvelope.toProjectionMeta,
+      envelopeProjectionBoundD_sound, releaseChainAdmissibleD_sound]
 
 end PCS

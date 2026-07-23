@@ -10,6 +10,8 @@
     "workflow_id",
     "obligations",
     "source_artifacts",
+    "pcs_projection_manifest",
+    "pcs_projection_manifest_hash",
     "lean_module",
     "source_repo",
     "source_commit",

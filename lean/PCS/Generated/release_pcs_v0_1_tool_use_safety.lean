@@ -10,8 +10,8 @@ This discharges tool-use hash alignment plus release-chain obligations. It does 
 
 namespace PCS.Generated.release_pcs_v0_1_tool_use_safety
 
--- pcs_projection_manifest_hash: sha256:38cc472ba47be36d2e2cf6ce45761044da70b58c967d709bad5d6ffc57affc28
-def pcsProjectionManifestHash : String := "sha256:38cc472ba47be36d2e2cf6ce45761044da70b58c967d709bad5d6ffc57affc28"
+-- pcs_projection_manifest_hash: sha256:ff82279a183c8783c5fc0f63a3847202b1dc8b95eaf8da816ccf62d2d8cda354
+def pcsProjectionManifestHash : String := "sha256:ff82279a183c8783c5fc0f63a3847202b1dc8b95eaf8da816ccf62d2d8cda354"
 
 def concreteToolUseTrace : ToolUseTrace :=
   {
@@ -51,6 +51,18 @@ def concreteVerification : VerificationResult :=
 def concreteCertifiedBundleHash : Hash := Hash.ofString "8ec0f90d0af828db78c5ada9299daea96128c4737328d40d6d6c473046d4780d"
 
 def concreteSignedInputHash : Hash := Hash.ofString "8ec0f90d0af828db78c5ada9299daea96128c4737328d40d6d6c473046d4780d"
+
+def concreteReleaseEnvelope : ReleaseEnvelope :=
+  {
+    workflowId := "agent_tool_use.safety_v0",
+    releaseId := "release-pcs-v0.1-tool-use-safety",
+    projectionDigest := Hash.ofString "ff82279a183c8783c5fc0f63a3847202b1dc8b95eaf8da816ccf62d2d8cda354",
+    certificate := concreteCertificate,
+    runtimeReceipt := concreteRuntimeReceipt,
+    verification := concreteVerification,
+    certifiedBundleHash := concreteCertifiedBundleHash,
+    signedInputHash := concreteSignedInputHash
+  }
 
 theorem concrete_tool_trace_hash_matches :
     toolTraceHashMatchesCertificateD concreteToolUseTrace concreteToolUseCertificate = true := by
@@ -96,11 +108,18 @@ theorem concrete_release_chain_admissible_prop :
       concreteCertifiedBundleHash concreteSignedInputHash :=
   (releaseChainAdmissibleD_sound _ _ _ _ _).mp concrete_release_chain_admissible
 
+theorem concrete_envelope_release_admissible :
+    envelopeReleaseAdmissibleD concreteReleaseEnvelope = true := by
+  decide
+
+theorem concrete_envelope_release_admissible_prop :
+    EnvelopeReleaseAdmissible concreteReleaseEnvelope :=
+  (envelopeReleaseAdmissibleD_sound _).mp concrete_envelope_release_admissible
+
 theorem concrete_tool_use_release_admissible_prop :
     toolTraceHashMatchesCertificate concreteToolUseTrace concreteToolUseCertificate ∧
-      ReleaseChainAdmissible concreteCertificate concreteRuntimeReceipt concreteVerification
-        concreteCertifiedBundleHash concreteSignedInputHash :=
-  And.intro concrete_tool_trace_hash_matches_prop concrete_release_chain_admissible_prop
+      EnvelopeReleaseAdmissible concreteReleaseEnvelope :=
+  And.intro concrete_tool_trace_hash_matches_prop concrete_envelope_release_admissible_prop
 
 
 end PCS.Generated.release_pcs_v0_1_tool_use_safety
