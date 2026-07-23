@@ -1,0 +1,12 @@
+{
+  "schema_version": "v0",
+  "artifact_type": "CanonicalProbe.v0",
+  "events": [
+    {
+      "id": "b"
+    },
+    {
+      "id": "a"
+    }
+  ]
+}

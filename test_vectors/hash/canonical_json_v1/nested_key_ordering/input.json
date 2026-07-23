@@ -1,0 +1,10 @@
+{
+  "schema_version": "v0",
+  "artifact_type": "CanonicalProbe.v0",
+  "z": 1,
+  "a": {
+    "c": 3,
+    "b": 2
+  },
+  "m": 0
+}
