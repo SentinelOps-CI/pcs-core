@@ -43,10 +43,21 @@ def test_generated_proof_includes_per_event_theorems(tmp_path: Path) -> None:
 
 
 def test_generated_proof_documents_contract_refs_when_missing(tmp_path: Path) -> None:
-    trace = _load(CONTRACT_TRACE)
+    trace = dict(_load(CONTRACT_TRACE))
     assert trace_has_contract_refs(trace)
-    # No contract JSON alongside trace -> documents gap
-    generated = generate_proof_obligation_file(trace, tmp_path)
+    # Non-ContractChecked path: contract refs present, no sibling contract JSON.
+    trace.pop("required_certificate_mode", None)
+    trace.pop("evidence_selection", None)
+    work = tmp_path / "case"
+    work.mkdir()
+    trace_path = work / "trace.json"
+    trace_path.write_text(json.dumps(trace), encoding="utf-8")
+    generated = generate_proof_obligation_file(
+        trace,
+        tmp_path / "out",
+        trace_path=trace_path,
+        certificate_mode="TraceSafeCertificate",
+    )
     proof_path = generated.path
     text = proof_path.read_text(encoding="utf-8")
     assert "validate-contracts" in text
@@ -54,7 +65,16 @@ def test_generated_proof_documents_contract_refs_when_missing(tmp_path: Path) ->
 
 def test_generated_proof_discharges_contracts_with_json(tmp_path: Path) -> None:
     trace = _load(CONTRACT_TRACE)
-    generated = generate_proof_obligation_file(trace, tmp_path, trace_path=CONTRACT_TRACE)
+    work = tmp_path / "case"
+    work.mkdir()
+    for path in CONTRACT_TRACE.parent.glob("*.json"):
+        (work / path.name).write_text(path.read_text(encoding="utf-8"), encoding="utf-8")
+    generated = generate_proof_obligation_file(
+        trace,
+        tmp_path / "out",
+        trace_path=work / CONTRACT_TRACE.name,
+        certificate_mode="ContractCheckedCertificate",
+    )
     proof_path = generated.path
     text = proof_path.read_text(encoding="utf-8")
     assert "concrete_trace_satisfies_contract_" in text
@@ -62,7 +82,12 @@ def test_generated_proof_discharges_contracts_with_json(tmp_path: Path) -> None:
 
 def test_generated_proof_includes_handoff_when_present(tmp_path: Path) -> None:
     handoff = _load(HANDOFF_FIXTURE)
-    trace = _load(VALID_TRACE)
+    trace = dict(_load(VALID_TRACE))
+    trace["evidence_selection"] = {
+        "policy": "explicit_ids",
+        "policy_version": "v0",
+        "handoff_ids": [str(handoff["handoff_id"])],
+    }
     trace_file = tmp_path / "pfcore_trace.json"
     trace_file.write_text(json.dumps(trace), encoding="utf-8")
     (tmp_path / "handoff.json").write_text(json.dumps(handoff), encoding="utf-8")
@@ -71,6 +96,7 @@ def test_generated_proof_includes_handoff_when_present(tmp_path: Path) -> None:
     text = proof_path.read_text(encoding="utf-8")
     assert "handoffSafeD" in text
     assert "theorem concrete_handoff_safe_" in text
+    assert 'delegatedCapabilities := ["cap:handoff"]' in text
 
 
 @pytest.mark.skipif(not LAKE_AVAILABLE, reason="lake or WSL not available")

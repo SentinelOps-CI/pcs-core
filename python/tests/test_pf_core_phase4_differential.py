@@ -58,6 +58,16 @@ def test_generated_lean_theorem_result_for_valid_trace(tmp_path: Path) -> None:
     assert generated.semantic_projection_hash.startswith("sha256:")
 
 
+def test_a11_base_vs_refined_resource_pattern_differential() -> None:
+    """A11: out-of-pattern URI → TraceSafe true, TraceSafeR false."""
+    from pcs_core.lean_check import trace_safe_d, trace_safe_rd
+
+    path = INVALID_EXAMPLES / "resource_scope_violation" / "trace.json"
+    events = json.loads(path.read_text(encoding="utf-8"))["events"]
+    assert trace_safe_d(events) is True
+    assert trace_safe_rd(events) is False
+
+
 def test_lean_json_decoder_deferred_documented() -> None:
     assert "deferred" in LEAN_JSON_DECODER_STATUS
     docs = (REPO / "docs" / "pf-core" / "semantic-projection.md").read_text(encoding="utf-8")

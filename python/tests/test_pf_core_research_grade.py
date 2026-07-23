@@ -109,6 +109,9 @@ def test_contract_refinement_present() -> None:
     assert "def ContractRefinement" in text
     assert "theorem contract_refinement_preserves_trace_safe" in text
     assert "theorem handoff_composition_global" in text
+    assert "def CompositionalSafeExtension" in text
+    assert "abbrev TracePrefixSafe" in text
+    assert "theorem compositional_safe_extension_yields_safe_extended_trace" in text
 
 
 def test_tenant_isolation_present() -> None:

@@ -30,6 +30,8 @@ COMPOSITIONAL_THEOREMS = frozenset(
         "contract_invariant_preserved_by_safe_extension",
         "handoff_composition_does_not_expand_authority",
         "composed_contract_preserves_component_invariants",
+        "compositional_safe_extension_yields_safe_extended_trace",
+        "trace_prefix_safe_extension",
     }
 )
 
@@ -65,7 +67,10 @@ def test_lean_catalog_includes_compositional_and_role_map() -> None:
 
 
 def test_compositional_lean_sources_exist() -> None:
-    assert (REPO / "lean" / "PFCore" / "Compositional.lean").is_file()
+    compositional = (REPO / "lean" / "PFCore" / "Compositional.lean").read_text(encoding="utf-8")
+    assert "def CompositionalSafeExtension" in compositional
+    assert "abbrev TracePrefixSafe" in compositional
+    assert "theorem compositional_safe_extension_yields_safe_extended_trace" in compositional
     assert (REPO / "lean" / "PFCore" / "RoleMap.lean").is_file()
 
 

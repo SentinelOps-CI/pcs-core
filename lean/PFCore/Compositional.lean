@@ -2,28 +2,95 @@ import PFCore.Contract
 import PFCore.Handoff
 import PFCore.NonInterference
 import PFCore.ResourcePattern
+import PFCore.Transition
 
 /-!
 # PF-Core compositional trust (conservative extension layer)
 
-Conservative theorems for trace extension, handoff chaining, and sequential contract
-invariants. This module does not introduce full state/transition machinery; it
-composes existing kernel predicates only.
+Conservative theorems for trace extension, handoff chaining, sequential contract
+invariants, and the substantive A6 compositional-extension predicate.
+
+**Certificate naming (A6):**
+- `CompositionalExtensionCertificate` targets `CompositionalSafeExtension` → safe extended trace
+  (safe prefix + admissible extension + successful operational application + preserved frames).
+- Prefix-only `TraceSafe` chaining is the narrower claim `TracePrefixSafe` (document /
+  experimental alias `TracePrefixSafeCertificate`); it does **not** discharge operational
+  application or frame preservation.
 -/
 
 namespace PFCore
 
 /--
+Narrower claim: a trace is prefix-safe when it is `TraceSafe`.
+
+Prefer documenting certificates that only chain `TraceSafe` prefixes as
+`TracePrefixSafeCertificate`. This is **not** the A6 compositional-extension predicate.
+-/
+abbrev TracePrefixSafe : Trace → Prop := TraceSafe
+
+/--
 **Meaning:** Appending an `EventSafe` event to a `TraceSafe` trace yields `TraceSafe`.
 
-**Trusted use:** Compositional trace-safety reasoning under controlled extension;
+**Trusted use:** Prefix-safe / `TracePrefixSafe` composition under controlled extension;
 alias of `trace_safe_invariant_preserved_cons` with compositional naming.
 
-**Does not imply:** Hash-chain integrity, replay validity, or contract pre/post discharge.
+**Does not imply:** Operational `Applies`, frame preservation, hash-chain integrity,
+replay validity, or contract pre/post discharge.
 -/
 theorem safe_extension_preserves_trace_safe (tr : Trace) (ev : Event) :
     TraceSafe tr → EventSafe ev → TraceSafe (Trace.cons tr ev) :=
   trace_safe_invariant_preserved_cons tr ev
+
+/-- Prefix-safe naming for the same cons lemma. -/
+theorem trace_prefix_safe_extension (tr : Trace) (ev : Event) :
+    TracePrefixSafe tr → EventSafe ev → TracePrefixSafe (Trace.cons tr ev) :=
+  safe_extension_preserves_trace_safe tr ev
+
+/--
+**A6 compositional extension predicate:** safe prefix + admissible (`EventSafe`) extension
++ successful operational application + preserved resource/capability frames.
+
+When the contract uses `traceSafeInvariant`, contract-invariant preservation follows
+from safe extension (see `compositional_safe_extension_preserves_contract_invariant`).
+-/
+def CompositionalSafeExtension (tr : Trace) (ev : Event) (s s' : State) : Prop :=
+  TraceSafe tr ∧
+  EventSafe ev ∧
+  Applies ev s s' ∧
+  FrameValid s ∧
+  FrameValid s'
+
+/--
+**Meaning:** The A6 predicate yields a safe extended trace.
+
+**Trusted use:** `CompositionalExtensionCertificate` witness obligation.
+
+**Does not imply:** Hash-chain integrity, replay validity, handoff composition without
+separate `HandoffSafe` evidence, or arbitrary user-defined contract invariants.
+-/
+theorem compositional_safe_extension_yields_safe_extended_trace
+    (tr : Trace) (ev : Event) (s s' : State)
+    (h : CompositionalSafeExtension tr ev s s') :
+    TraceSafe (Trace.cons tr ev) := by
+  rcases h with ⟨hTr, hEv, _, _, _⟩
+  exact safe_extension_preserves_trace_safe tr ev hTr hEv
+
+/--
+**Meaning:** Under `traceSafeInvariant`, A6 extension preserves the contract invariant.
+
+**Trusted use:** Optional contract composition when resolved contract evidence is present.
+
+**Does not imply:** Custom invariants without matching `traceSafeInvariant` structure.
+-/
+theorem compositional_safe_extension_preserves_contract_invariant
+    (c : Contract) (tr : Trace) (ev : Event) (s s' : State)
+    (hInv : c.invariant = traceSafeInvariant)
+    (h : CompositionalSafeExtension tr ev s s')
+    (_hC : c.invariant tr) :
+    c.invariant (Trace.cons tr ev) := by
+  have hSafe := compositional_safe_extension_yields_safe_extended_trace tr ev s s' h
+  rw [hInv]
+  exact hSafe
 
 /--
 **Meaning:** The canonical trace-safe contract invariant is preserved when extending

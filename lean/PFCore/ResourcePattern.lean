@@ -380,7 +380,7 @@ theorem eventSafe_allow_and_scope_implies_eventSafeR (ev : Event) (h : EventSafe
 
 **Trusted use:** Runtime/codegen alignment: resource-pattern decider is stricter than kernel decider.
 
-**Does not imply:** Python `action_admissible_d` parity without catalog URI mapping.
+**Does not imply:** Reverse refinement (`traceSafeD` alone does not imply `traceSafeRD`).
 -/
 theorem traceSafeRD_implies_traceSafeD (tr : Trace) (h : traceSafeRD tr = true) :
     traceSafeD tr = true := by
@@ -396,5 +396,52 @@ theorem traceSafeRD_implies_traceSafeD (tr : Trace) (h : traceSafeRD tr = true) 
 theorem uriMatchesPattern_star (uri : String) :
     UriMatchesPattern uri "*" := by
   simp [UriMatchesPattern, globMatch, globMatchChars, globMatchCharsFuel]
+
+/-!
+## A11 differential vector — base TraceSafe vs refined TraceSafeR
+
+Shared with Python/Rust/TypeScript fixture
+`examples/pf-core-invalid/resource_scope_violation/trace.json`:
+all base admissibility conditions pass, but the read URI `/etc/passwd` lies
+outside catalog pattern `/data/*` for `cap:file-read`.
+
+Expected: `traceSafeD = true`, `traceSafeRD = false`.
+-/
+
+def a11_resource_scope_principal : Principal :=
+  {
+    id := "agent-1",
+    tenant := "tenant-a",
+    roles := ["agent"],
+    capabilities := ["cap:file-read"]
+  }
+
+def a11_resource_scope_action : Action :=
+  {
+    id := "act-1",
+    toolName := "filesystem.read",
+    capability := "cap:file-read",
+    capabilityEffect := Effect.read,
+    effects := [Effect.read],
+    reads := [{ uri := "/etc/passwd", tenant := "tenant-a", labels := [] }],
+    writes := []
+  }
+
+def a11_resource_scope_event : Event :=
+  {
+    id := "ev-file-read-1",
+    principal := a11_resource_scope_principal,
+    action := a11_resource_scope_action,
+    decision := Decision.allow
+  }
+
+def a11_resource_scope_trace : Trace :=
+  Trace.ofEvents [a11_resource_scope_event]
+
+/-- Base TraceSafe holds when only resource-pattern scope fails. -/
+example : traceSafeD a11_resource_scope_trace = true := by native_decide
+
+/-- Refined TraceSafeR rejects URI outside capability pattern. -/
+example : traceSafeRD a11_resource_scope_trace = false := by native_decide
 
 end PFCore

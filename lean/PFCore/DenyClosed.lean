@@ -12,6 +12,18 @@ record: no resource mutation, no side-effecting effect kinds, no tool invocation
 observations, no delegated authority, and optional deny-reason consistency.
 
 Base `EventSafe` / `TraceSafe` remain unchanged and compatible.
+
+## DenyClosedCertificate (Workstream C2) — scaffolded / disabled
+
+A public `DenyClosedCertificate` would require runtime evidence that after a deny
+there are no tool invocations, mutations, network/message/code/release/state, or
+delegation effects — beyond the **declared** footprint constraints proved here.
+
+v0 runtime evidence does **not** yet support that stronger claim. Do **not** issue
+`DenyClosedCertificate` as a release or experimental public claim. Keep using
+`EventSafeDenyClosed` / `DenyClosedBundle` for declared-footprint refinement only.
+See `docs/pf-core/runtime-semantics.md` and `schemas/pf_core.certificate_mode_status.json`
+(`scaffolded_modes`).
 -/
 
 namespace PFCore
