@@ -1,0 +1,80 @@
+{
+  "schema_version": "v0",
+  "artifact_type": "PFCoreCertificateModeStatus.v0",
+  "description": "Machine-readable PF-Core public claim surface. Issuance of modes with allowed_issuance=false fails closed under --release-grade and the default public CLI.",
+  "status_enum": [
+    "release_candidate",
+    "legacy",
+    "disabled",
+    "experimental",
+    "preview"
+  ],
+  "modes": [
+    {
+      "mode": "TraceSafeRCertificate",
+      "status": "release_candidate",
+      "description": "Sole release-candidate LeanKernelChecked path for tool-use traces (resource-pattern refined TraceSafeR).",
+      "allowed_issuance": true
+    },
+    {
+      "mode": "TraceSafeCertificate",
+      "status": "legacy",
+      "description": "Legacy base TraceSafe path for non-tool-use traces only; not release-grade for tool-use.",
+      "allowed_issuance": true
+    },
+    {
+      "mode": "HandoffSafeCertificate",
+      "status": "disabled",
+      "description": "Disabled pending handoff evidence fidelity repair.",
+      "allowed_issuance": false
+    },
+    {
+      "mode": "ContractCheckedCertificate",
+      "status": "disabled",
+      "description": "Contract evidence fidelity repaired (semantics_layer projection + explicit contract_ids); remains disabled for public RC until a later enablement pass. Issuable via --allow-non-public-modes.",
+      "allowed_issuance": false
+    },
+    {
+      "mode": "EffectFrameCertificate",
+      "status": "disabled",
+      "description": "Independent PFCoreEffectFrame.v0 + non-tautological frame membership repaired; remains disabled for public RC until a later enablement pass. Issuable via --allow-non-public-modes.",
+      "allowed_issuance": false
+    },
+    {
+      "mode": "FramePreservedCertificate",
+      "status": "disabled",
+      "description": "Transition redesign landed (explicit stepState witnesses; applyEvent no-ops rejected); remains disabled for public RC until a later enablement pass. Issuable via --allow-non-public-modes.",
+      "allowed_issuance": false
+    },
+    {
+      "mode": "CompositionalExtensionCertificate",
+      "status": "experimental",
+      "description": "Experimental A6 compositional extension: safe prefix + EventSafe + successful stepState + preserved FrameValid frames => TraceSafe extended trace. Not release_candidate. Prefix-only TraceSafe chaining is the narrower TracePrefixSafe claim (see scaffolded_modes).",
+      "allowed_issuance": true
+    }
+  ],
+  "scaffolded_modes": [
+    {
+      "mode": "TracePrefixSafeCertificate",
+      "status": "experimental",
+      "description": "Experimental alias for certificates that only prove each prefix is TraceSafe (no operational Applies / frame preservation). Prefer CompositionalExtensionCertificate for the A6 substantive predicate. Not in CERTIFICATE_MODES issuance surface yet.",
+      "allowed_issuance": false,
+      "formal_predicate": "TracePrefixSafe"
+    },
+    {
+      "mode": "DenyClosedCertificate",
+      "status": "disabled",
+      "description": "Scaffolded only. Runtime evidence does not yet support post-deny closure of tool/mutation/network/message/code/release/state/delegation effects beyond declared footprints (EventSafeDenyClosed). Do not ship as a public claim. Base TraceSafe unchanged.",
+      "allowed_issuance": false,
+      "formal_predicate": "EventSafeDenyClosed / DenyClosedBundle (declared footprint only)"
+    }
+  ],
+  "external_claim_classes": [
+    {
+      "claim_class": "CertificateChecked",
+      "status": "preview",
+      "description": "External CertifyEdge CertificateChecked attestation is preview until authenticated CertifyEdge pin.",
+      "allowed_issuance": true
+    }
+  ]
+}

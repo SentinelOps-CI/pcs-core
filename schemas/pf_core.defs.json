@@ -43,6 +43,17 @@
         "HandoffSafeCertificate",
         "CompositionalExtensionCertificate",
         "ContractCheckedCertificate"
+      ],
+      "description": "Issuance status is machine-readable in pf_core.certificate_mode_status.json (RC/legacy/disabled/experimental)."
+    },
+    "certificate_mode_status": {
+      "type": "string",
+      "enum": [
+        "release_candidate",
+        "legacy",
+        "disabled",
+        "experimental",
+        "preview"
       ]
     },
     "decision": {

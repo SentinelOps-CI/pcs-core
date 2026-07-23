@@ -46,7 +46,8 @@
         "HandoffSafeCertificate",
         "CompositionalExtensionCertificate",
         "ContractCheckedCertificate"
-      ]
+      ],
+      "description": "See schemas/pf_core.certificate_mode_status.json for public issuance status (RC/legacy/disabled/experimental)."
     },
     "theorem_inventory": {
       "type": "array",
@@ -112,6 +113,67 @@
       }
     },
     "default_contract_ref": { "type": "string", "minLength": 1 },
+    "selected_contract_ids": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Explicitly selected contract IDs bound via evidence_selection.contract_ids"
+    },
+    "contract_source_file_digests": {
+      "type": "object",
+      "additionalProperties": { "$ref": "common.defs.json#/$defs/hex_digest" },
+      "description": "SHA-256 digests of selected contract source files (or embedded payloads)"
+    },
+    "contract_evidence_digest": {
+      "$ref": "common.defs.json#/$defs/hex_digest",
+      "description": "Digest binding selected contracts, source digests, effective layers, and theorems"
+    },
+    "contract_theorem_names": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Concrete contract theorem names discharged for ContractCheckedCertificate"
+    },
+    "selected_handoff_ids": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Explicitly selected handoff IDs bound via evidence_selection.handoff_ids"
+    },
+    "handoff_source_file_digests": {
+      "type": "object",
+      "additionalProperties": { "$ref": "common.defs.json#/$defs/hex_digest" },
+      "description": "SHA-256 digests of selected handoff source files (or embedded payloads)"
+    },
+    "handoff_evidence_digest": {
+      "$ref": "common.defs.json#/$defs/hex_digest",
+      "description": "Digest binding selected handoffs, source digests, and theorems"
+    },
+    "handoff_theorem_names": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Concrete handoff theorem names discharged for HandoffSafeCertificate"
+    },
+    "effect_frame_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Independent PFCoreEffectFrame.v0 frame_id bound for EffectFrameCertificate"
+    },
+    "effect_frame_path": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Exact on-disk path of the declared effect-frame artifact"
+    },
+    "effect_frame_digest": {
+      "$ref": "common.defs.json#/$defs/hex_digest",
+      "description": "SHA-256 digest of the declared effect-frame artifact bytes"
+    },
+    "transition_chain_digest": {
+      "$ref": "common.defs.json#/$defs/hex_digest",
+      "description": "Digest binding FramePreservedCertificate initial + post-states and event order"
+    },
+    "transition_event_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of proved operational transitions for FramePreservedCertificate"
+    },
     "event_count": { "type": "integer", "minimum": 0 },
     "replay_match": { "type": "boolean" },
     "original_trace_hash": { "$ref": "common.defs.json#/$defs/hex_digest" },
