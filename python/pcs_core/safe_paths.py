@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import os
 import re
+import stat
 from pathlib import Path, PurePosixPath, PureWindowsPath
 
 # Conservative limit: reject absurdly long refs before filesystem work.
@@ -10,9 +12,32 @@ _MAX_REF_LENGTH = 4096
 
 _CONTROL_OR_NUL_RE = re.compile(r"[\x00-\x1f\x7f]")
 
+# Windows FILE_ATTRIBUTE_REPARSE_POINT — covers symlinks, junctions, and mounts.
+_FILE_ATTRIBUTE_REPARSE_POINT = 0x400
+
 
 class UnsafePathError(ValueError):
     """Raised when a path ref fails containment or safety checks."""
+
+
+def is_symlink_or_reparse_point(path: Path) -> bool:
+    """True if ``path`` is a symlink or Windows reparse point (junction/mount)."""
+    try:
+        if path.is_symlink():
+            return True
+    except OSError:
+        return True
+    if os.name != "nt":
+        return False
+    try:
+        st = path.lstat()
+    except OSError:
+        return True
+    attrs = getattr(st, "st_file_attributes", None)
+    if isinstance(attrs, int) and (attrs & _FILE_ATTRIBUTE_REPARSE_POINT):
+        return True
+    # Fallback: some Python builds omit st_file_attributes; treat S_IFLNK as link.
+    return stat.S_ISLNK(st.st_mode)
 
 
 def _is_windows_drive_or_unc(ref: str) -> bool:
@@ -44,7 +69,7 @@ def _has_parent_segment(ref: str) -> bool:
 
 
 def _reject_symlink_components(path: Path) -> None:
-    """Reject if any path component (including the final) is a symlink."""
+    """Reject if any path component (including the final) is a symlink/reparse point."""
     # Walk from root toward the leaf so intermediate link escapes are caught.
     parts = path.parts
     if not parts:
@@ -52,14 +77,14 @@ def _reject_symlink_components(path: Path) -> None:
     # Absolute paths: rebuild incrementally from the anchor.
     current = Path(parts[0])
     if len(parts) == 1:
-        if current.is_symlink():
-            raise UnsafePathError(f"symlink rejected: {current}")
+        if is_symlink_or_reparse_point(current):
+            raise UnsafePathError(f"symlink or reparse point rejected: {current}")
         return
     for part in parts[1:]:
         current = current / part
         try:
-            if current.is_symlink():
-                raise UnsafePathError(f"symlink rejected: {current}")
+            if is_symlink_or_reparse_point(current):
+                raise UnsafePathError(f"symlink or reparse point rejected: {current}")
         except OSError as exc:
             raise UnsafePathError(f"cannot inspect path component {current}: {exc}") from exc
 
@@ -110,14 +135,14 @@ def resolve_contained_file(
     if not root_resolved.is_dir():
         raise UnsafePathError(f"root is not a directory: {root_resolved}")
 
-    # Walk lexically under root before resolve so intermediate symlinks are visible.
+    # Walk lexically under root before resolve so intermediate symlinks/reparses are visible.
     lexical = root_resolved
     for part in pure.parts:
         lexical = lexical / part
         if reject_symlinks:
             try:
-                if lexical.is_symlink():
-                    raise UnsafePathError(f"symlink rejected: {lexical}")
+                if is_symlink_or_reparse_point(lexical):
+                    raise UnsafePathError(f"symlink or reparse point rejected: {lexical}")
             except OSError as exc:
                 raise UnsafePathError(f"cannot inspect path component {lexical}: {exc}") from exc
 
@@ -136,9 +161,9 @@ def resolve_contained_file(
 
     if not resolved.is_file():
         raise UnsafePathError(f"path is not a regular file: {ref!r}")
-    if resolved.is_symlink():
+    if is_symlink_or_reparse_point(resolved):
         # Belt-and-suspenders if is_file() followed a link on some platforms.
-        raise UnsafePathError(f"symlink rejected: {resolved}")
+        raise UnsafePathError(f"symlink or reparse point rejected: {resolved}")
 
     if allowed_suffixes:
         suffix = resolved.suffix.lower()

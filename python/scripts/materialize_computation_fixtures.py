@@ -28,6 +28,7 @@ from pcs_core.protocol_fixtures import (  # noqa: E402
     SM_REPO,
 )
 from pcs_core.registry import build_artifact_registry  # noqa: E402
+from pcs_core.release_fixtures import file_digest  # noqa: E402
 from pcs_core.validate import validate_file  # noqa: E402
 
 RUNNER_REPO = "https://github.com/example/scientific-computation-runner"
@@ -41,7 +42,10 @@ DATASET_ID = "dataset-input-001"
 ENV_ID = "env-repro-001"
 RUN_ID = "run-sci-comp-001"
 RESULT_ID = "result-metric-001"
-RESULT_SHA = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+RESULT_PAYLOAD_RELPATH = "outputs/metrics.json"
+RESULT_PAYLOAD_BYTES = b'{"metric":"accuracy","value":0.987,"seed":42}\n'
+RESULT_SHA = file_digest(RESULT_PAYLOAD_BYTES)
+RESULT_SIZE = len(RESULT_PAYLOAD_BYTES)
 
 _PLACEHOLDER_COMMITS = {
     "a" * 40: RUNNER_COMMIT,
@@ -149,9 +153,9 @@ def _result_body() -> dict[str, Any]:
         "schema_version": "v0",
         "result_id": RESULT_ID,
         "result_kind": "metric",
-        "path": "outputs/metrics.json",
+        "path": RESULT_PAYLOAD_RELPATH,
         "sha256": RESULT_SHA,
-        "size_bytes": 2048,
+        "size_bytes": RESULT_SIZE,
         "media_type": "application/json",
         "description": "Primary reproducibility metric output",
         "produced_by_run": RUN_ID,
@@ -337,8 +341,6 @@ def _write_json(path: Path, data: dict[str, Any]) -> None:
 
 
 def main() -> int:
-    from pcs_core.release_fixtures import file_digest
-
     profiles = examples_dir() / "workflow_profiles"
     release = examples_dir() / "computation-release"
     invalid_root = examples_dir() / "computation-release-invalid"
@@ -354,6 +356,9 @@ def main() -> int:
     _write_json(release / "computation_run_receipt.json", run_receipt)
     _write_json(release / "result_artifact.json", result)
     _write_json(release / "computation_witness.json", witness)
+    payload_path = release / RESULT_PAYLOAD_RELPATH
+    payload_path.parent.mkdir(parents=True, exist_ok=True)
+    payload_path.write_bytes(RESULT_PAYLOAD_BYTES)
     _write_json(
         release / "science_claim_bundle.certified.json",
         _adapt_science_bundle(
@@ -506,6 +511,16 @@ def main() -> int:
                 "responsible_component": "CertifyEdge",
             },
             {
+                "check_id": "computation_result_payload_bytes",
+                "description": "ResultArtifact payload path resolves and SHA-256/size match bytes",
+                "status": "passed",
+                "details": {},
+                "registry_check_refs": [
+                    "ResultArtifact.v0.payload_bytes_match_digest",
+                ],
+                "responsible_component": "pcs-core",
+            },
+            {
                 "check_id": "computation_code_commit_present",
                 "description": "ComputationWitness and run receipt carry non-zero code commits",
                 "status": "passed",
@@ -650,17 +665,37 @@ def main() -> int:
     def _write_invalid_case(
         case_name: str,
         builder: Callable[[], tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]],
+        *,
+        payload_bytes: bytes | None = RESULT_PAYLOAD_BYTES,
+        extra_files: dict[str, dict[str, Any] | bytes] | None = None,
     ) -> None:
         ds, env, run_doc, res, wit = builder()
         case_dir = invalid_root / case_name
         case_dir.mkdir(parents=True, exist_ok=True)
         for stale in case_dir.glob("*.json"):
             stale.unlink()
+        outputs = case_dir / "outputs"
+        if outputs.is_dir():
+            for stale_payload in outputs.rglob("*"):
+                if stale_payload.is_file():
+                    stale_payload.unlink()
         _write_json(case_dir / "dataset_receipt.json", ds)
         _write_json(case_dir / "environment_receipt.json", env)
         _write_json(case_dir / "computation_run_receipt.json", run_doc)
         _write_json(case_dir / "result_artifact.json", res)
         _write_json(case_dir / "computation_witness.json", wit)
+        if payload_bytes is not None:
+            out = case_dir / RESULT_PAYLOAD_RELPATH
+            out.parent.mkdir(parents=True, exist_ok=True)
+            out.write_bytes(payload_bytes)
+        if extra_files:
+            for rel, content in extra_files.items():
+                dest = case_dir / rel
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                if isinstance(content, bytes):
+                    dest.write_bytes(content)
+                else:
+                    _write_json(dest, content)
 
     def _invalid_dataset_hash_mismatch() -> tuple[dict[str, Any], ...]:
         ds, env, run_doc, res, _ = _valid_train()
@@ -836,6 +871,56 @@ def main() -> int:
         )
         return ds, env, run_doc, res, _with_digest(wit)
 
+    def _invalid_payload_modified() -> tuple[dict[str, Any], ...]:
+        return _valid_train()
+
+    def _invalid_payload_wrong_size() -> tuple[dict[str, Any], ...]:
+        ds, env, run_doc, res, _ = _valid_train()
+        wrong = dict(res)
+        wrong["size_bytes"] = RESULT_SIZE + 99
+        wrong = _with_digest(wrong)
+        wit = _witness_body(
+            dataset=ds,
+            environment=env,
+            run_receipt=run_doc,
+            result=wrong,
+        )
+        return ds, env, run_doc, wrong, _with_digest(wit)
+
+    def _invalid_payload_missing() -> tuple[dict[str, Any], ...]:
+        return _valid_train()
+
+    def _invalid_payload_traversal() -> tuple[dict[str, Any], ...]:
+        ds, env, run_doc, res, _ = _valid_train()
+        traversed = dict(res)
+        traversed["path"] = "../outside_metrics.json"
+        traversed = _with_digest(traversed)
+        wit = _witness_body(
+            dataset=ds,
+            environment=env,
+            run_receipt=run_doc,
+            result=traversed,
+        )
+        return ds, env, run_doc, traversed, _with_digest(wit)
+
+    def _invalid_payload_digest_mismatch_envelope() -> tuple[dict[str, Any], ...]:
+        """Valid sealed ResultArtifact JSON whose sha256 does not match on-disk bytes."""
+        ds, env, run_doc, res, _ = _valid_train()
+        wrong = dict(res)
+        wrong["sha256"] = "sha256:" + "d" * 64
+        wrong = _with_digest(wrong)
+        wit = _witness_body(
+            dataset=ds,
+            environment=env,
+            run_receipt=run_doc,
+            result=wrong,
+            result_hashes=[str(wrong["sha256"])],
+        )
+        return ds, env, run_doc, wrong, _with_digest(wit)
+
+    def _invalid_duplicate_result_declaration() -> tuple[dict[str, Any], ...]:
+        return _valid_train()
+
     for case_name, builder in {
         "dataset_hash_mismatch": _invalid_dataset_hash_mismatch,
         "result_hash_mismatch": _invalid_result_hash_mismatch,
@@ -853,6 +938,50 @@ def main() -> int:
         "missing_run_receipt_hash": _invalid_missing_run_receipt_hash,
     }.items():
         _write_invalid_case(case_name, builder)
+
+    # Payload mutation fixtures (B3).
+    _write_invalid_case(
+        "payload_modified",
+        _invalid_payload_modified,
+        payload_bytes=b'{"metric":"tampered","value":0.0}\n',
+    )
+    _write_invalid_case("payload_wrong_size", _invalid_payload_wrong_size)
+    _write_invalid_case("payload_missing", _invalid_payload_missing, payload_bytes=None)
+    _write_invalid_case(
+        "payload_traversal",
+        _invalid_payload_traversal,
+        payload_bytes=None,
+    )
+    # Symlink fixture: payload path is declared; tests replace the file with a symlink.
+    _write_invalid_case("payload_symlink", _invalid_payload_modified)
+    (invalid_root / "payload_symlink" / "README.md").write_text(
+        "Invalid symlink escape fixture.\n\n"
+        "The declared payload path is outputs/metrics.json. Tests replace that path with a "
+        "symlink (or reparse point) that points outside the release root; "
+        "verify_result_artifact_payload must reject it with payload_path_unsafe.\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    _write_invalid_case(
+        "payload_digest_mismatch_envelope",
+        _invalid_payload_digest_mismatch_envelope,
+    )
+
+    dup_second_payload = b'{"metric":"duplicate","value":0.1}\n'
+    dup_second = dict(_result_body())
+    dup_second["result_id"] = RESULT_ID  # intentional duplicate declaration
+    dup_second["path"] = "outputs/metrics_dup.json"
+    dup_second["sha256"] = file_digest(dup_second_payload)
+    dup_second["size_bytes"] = len(dup_second_payload)
+    dup_second = _with_digest(dup_second)
+    _write_invalid_case(
+        "duplicate_result_declaration",
+        _invalid_duplicate_result_declaration,
+        extra_files={
+            "result_artifact_2.json": dup_second,
+            "outputs/metrics_dup.json": dup_second_payload,
+        },
+    )
 
     sm_report = {
         "allow_legacy": False,
