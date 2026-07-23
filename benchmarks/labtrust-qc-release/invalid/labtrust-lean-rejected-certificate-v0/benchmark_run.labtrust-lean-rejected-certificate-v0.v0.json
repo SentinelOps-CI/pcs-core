@@ -3,8 +3,8 @@
   "run_id": "bench-run-labtrust-lean-rejected-certificate-v0",
   "task_id": "labtrust-qc-release-v0",
   "case_id": "labtrust-lean-rejected-certificate-v0",
-  "started_at": "2026-06-28T07:05:52Z",
-  "completed_at": "2026-06-28T07:05:52Z",
+  "started_at": "2026-07-22T22:27:58Z",
+  "completed_at": "2026-07-22T22:27:58Z",
   "commands": [
     {
       "command": "evaluate_labtrust_gallery benchmarks/labtrust-qc-release/invalid/labtrust-lean-rejected-certificate-v0/input_artifacts",
@@ -24,8 +24,8 @@
   "certificate_status": "Rejected",
   "scientific_memory_import_status": "not_applicable",
   "scientific_memory_render_status": "not_applicable",
-  "duration_ms": 4,
+  "duration_ms": 2,
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:4848b93f84b3611b9241b317b5093d3e71de131987b602427508023382163b9e"
+  "signature_or_digest": "sha256:ecbd9b52479b3c8eb73c10e777d13c605246468ff660f10fa8eca0c5daf68176"
 }
