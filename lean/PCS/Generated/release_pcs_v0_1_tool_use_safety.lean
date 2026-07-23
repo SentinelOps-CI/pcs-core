@@ -10,6 +10,9 @@ This discharges tool-use hash alignment plus release-chain obligations. It does 
 
 namespace PCS.Generated.release_pcs_v0_1_tool_use_safety
 
+-- pcs_projection_manifest_hash: sha256:38cc472ba47be36d2e2cf6ce45761044da70b58c967d709bad5d6ffc57affc28
+def pcsProjectionManifestHash : String := "sha256:38cc472ba47be36d2e2cf6ce45761044da70b58c967d709bad5d6ffc57affc28"
+
 def concreteToolUseTrace : ToolUseTrace :=
   {
     traceId := "cert-tool-use-safety-v0",

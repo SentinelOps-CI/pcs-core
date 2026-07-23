@@ -9,6 +9,9 @@ This discharges ProofObligation.v0 against `PCS.ReleaseChainAdmissible` deciders
 
 namespace PCS.Generated.release_pcs_v0_1_labtrust_qc
 
+-- pcs_projection_manifest_hash: sha256:fc43545abd89fa0795316ec4db63cfa584221af32d422323622b7e8e1b1cf9f4
+def pcsProjectionManifestHash : String := "sha256:fc43545abd89fa0795316ec4db63cfa584221af32d422323622b7e8e1b1cf9f4"
+
 def concreteCertificate : Certificate :=
   {
     certificateId := "cert-trace-a1b8ff9d-7d5f-489c-98b1-a3a630cb87d7",
