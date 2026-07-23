@@ -10,12 +10,16 @@
       "inputs": {
         "witness_id": "witness-sci-comp-repro-001",
         "witness_result_hashes": [
-          "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-          "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+          "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        ],
+        "declared_result_artifact_hashes": [
+          "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
         ],
         "result_artifact_sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         "witness_status": "CertificateChecked",
-        "run_receipt_hash": "sha256:9c74749d2ad46c6a60394db676e5527929f9b7bef9a012439d6d14b26d960828"
+        "run_receipt_hash": "sha256:9c74749d2ad46c6a60394db676e5527929f9b7bef9a012439d6d14b26d960828",
+        "dataset_hash": "sha256:84c9037231eef6a1742c1d6d0a043878b4de8395397c168026450d8ca9e647e3",
+        "environment_hash": "sha256:3739a2ed0a132d5c55dc6e7f53dabca2c7e57cbb188962a0ce670762850f4e01"
       }
     },
     {
@@ -62,5 +66,5 @@
   "lean_module": "PCS.Theorems",
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:a732eaa1158b399f7e73917689f293a58a033c9c256a7f0b7f45e84aecb5f2c5"
+  "signature_or_digest": "sha256:64f1ce1b498811b195ad97f4449b82d7aa8f0fe355637f57e0163d317b6da5f4"
 }

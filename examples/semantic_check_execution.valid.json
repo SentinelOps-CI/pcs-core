@@ -41,6 +41,26 @@
   },
   "checks": [
     {
+      "registry_ref": "ArtifactIntegrity.v1.domain_separated_signature",
+      "artifact_type": "ArtifactIntegrity.v1",
+      "check_id": "domain_separated_signature",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "ArtifactIntegrity.v1.no_signature_or_digest",
+      "artifact_type": "ArtifactIntegrity.v1",
+      "check_id": "no_signature_or_digest",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
       "registry_ref": "ArtifactRegistry.v0.entries_cover_required_artifact_types",
       "artifact_type": "ArtifactRegistry.v0",
       "check_id": "entries_cover_required_artifact_types",
@@ -261,6 +281,26 @@
       "enforcement_layer": "artifact_validate"
     },
     {
+      "registry_ref": "PCSProjectionManifest.v0.projection_entries_nonempty_values",
+      "artifact_type": "PCSProjectionManifest.v0",
+      "check_id": "projection_entries_nonempty_values",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "PCSProjectionManifest.v0.projection_hash_binds_proof_obligation",
+      "artifact_type": "PCSProjectionManifest.v0",
+      "check_id": "projection_hash_binds_proof_obligation",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
       "registry_ref": "PFCoreAction.v0.explicit_artifact_type",
       "artifact_type": "PFCoreAction.v0",
       "check_id": "explicit_artifact_type",
@@ -411,6 +451,26 @@
       "enforcement_layer": "release_chain"
     },
     {
+      "registry_ref": "PFCoreKernelManifest.v0.schema_valid",
+      "artifact_type": "PFCoreKernelManifest.v0",
+      "check_id": "schema_valid",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "PFCoreKernelManifest.v0.unique_kernel_paths",
+      "artifact_type": "PFCoreKernelManifest.v0",
+      "check_id": "unique_kernel_paths",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
       "registry_ref": "PFCorePrincipal.v0.explicit_artifact_type",
       "artifact_type": "PFCorePrincipal.v0",
       "check_id": "explicit_artifact_type",
@@ -424,6 +484,26 @@
       "registry_ref": "PFCorePrincipal.v0.schema_valid",
       "artifact_type": "PFCorePrincipal.v0",
       "check_id": "schema_valid",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "PFCoreReleaseBundleManifest.v0.explicit_artifact_type",
+      "artifact_type": "PFCoreReleaseBundleManifest.v0",
+      "check_id": "explicit_artifact_type",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "PFCoreReleaseBundleManifest.v0.schema_valid_before_path_follow",
+      "artifact_type": "PFCoreReleaseBundleManifest.v0",
+      "check_id": "schema_valid_before_path_follow",
       "severity": "release_blocking",
       "responsible_component": "pcs-core",
       "execution_required_in_release_mode": true,
@@ -821,5 +901,5 @@
       "enforcement_layer": "registry_metadata"
     }
   ],
-  "signature_or_digest": "sha256:60c6c723c87f0456bdea46f0e67ba84ead10d59bea4ee1ee4fcc18892d9ef256"
+  "signature_or_digest": "sha256:f12bfa9e0707e3782eea0b978b389506b77cb5dac179bfdc05302e8a22d8e43e"
 }
