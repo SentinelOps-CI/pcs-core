@@ -450,7 +450,8 @@ def test_codegen_emits_trace_safe_r_obligations_on_valid_trace(tmp_path: Path) -
     from pcs_core.pf_core_lean_codegen import generate_proof_obligation_file
 
     trace = _load_json(VALID_TRACE)
-    proof_path = generate_proof_obligation_file(trace, tmp_path, trace_path=VALID_TRACE)
+    generated = generate_proof_obligation_file(trace, tmp_path, trace_path=VALID_TRACE)
+    proof_path = generated.path
     text = proof_path.read_text(encoding="utf-8")
     assert "theorem concrete_trace_safe_r" in text
     assert "traceSafeRD" in text
@@ -477,3 +478,57 @@ def test_workflow_catalog_certificate_mode_without_sibling_file(tmp_path: Path) 
 def test_valid_tool_use_trace_has_required_certificate_mode() -> None:
     trace = _load_json(VALID_TRACE)
     assert trace.get("required_certificate_mode") == "TraceSafeRCertificate"
+
+
+def test_deny_closed_and_observed_effects_parity() -> None:
+    """Python / Rust / TypeScript agree on EventSafeDenyClosed + ObservationsAgree."""
+    import shutil
+    import subprocess
+
+    from pcs_core.pf_core_runtime import (
+        validate_event_safe_deny_closed,
+        validate_observed_effects_agree,
+    )
+
+    allowed = _load_json(REPO / "examples/pf-core-valid/file_read_allowed/trace.json")
+    assert validate_event_safe_deny_closed(allowed) == []
+
+    deny_bad = json.loads(json.dumps(allowed))
+    deny_bad["events"][0]["decision"] = "deny"
+    deny_bad["events"][0]["action"]["writes"] = [{"uri": "file:///tmp/x", "tenant": "tenant-a"}]
+    deny_bad["events"][0]["action"]["effects"] = [{"effect_kind": "file.write"}]
+    py_errors = validate_event_safe_deny_closed(deny_bad)
+    assert any("EventSafeDenyClosed" in e for e in py_errors)
+
+    action = {
+        "effects": [{"effect_kind": "file.read"}],
+        "reads": [{"uri": "file:///a", "tenant": "t"}],
+        "writes": [],
+    }
+    assert (
+        validate_observed_effects_agree(
+            action, [{"kind": "file.read", "resource": {"uri": "file:///a"}}]
+        )
+        == []
+    )
+    assert validate_observed_effects_agree(action, [{"kind": "file.write"}])
+
+    # Rust unit tests cover the same predicates; invoke cargo test filter when cargo present.
+    if shutil.which("cargo"):
+        proc = subprocess.run(
+            [
+                "cargo",
+                "test",
+                "-p",
+                "pcs-core",
+                "--locked",
+                "pf_core_deny_closed",
+                "--",
+                "--nocapture",
+            ],
+            cwd=REPO / "rust",
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert proc.returncode == 0, proc.stdout + proc.stderr

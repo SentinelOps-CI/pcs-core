@@ -36,6 +36,11 @@ def test_bundle_release_and_validate(tmp_path: Path) -> None:
     out_dir = tmp_path / "bundle"
     manifest_path = bundle_release(VALID_TRACE, cert_path, out_dir)
     assert manifest_path.is_file()
+    tool_versions = out_dir / "tool_versions.json"
+    assert tool_versions.is_file()
+    tools = json.loads(tool_versions.read_text(encoding="utf-8"))
+    assert tools["artifact_type"] == "PcsToolVersions.v0"
+    assert "pcs_core" in tools["tools"]
 
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     assert manifest["pfcore_kernel_hash"] == compute_pfcore_kernel_hash()

@@ -15,10 +15,14 @@ def test_observational_lean_defines_non_interference() -> None:
     path = repo_root() / "lean" / "PFCore" / "Observational.lean"
     text = path.read_text(encoding="utf-8")
     for name in (
+        "TenantProjectionIsolation",
         "NonInterference",
+        "tenantProjectionIsolationD",
         "nonInterferenceD",
+        "tenantProjectionIsolationD_sound",
         "nonInterferenceD_sound",
         "traceSafeD_implies_nonInterferenceD",
+        "traceSafe_implies_tenant_projection_isolation",
         "HighTenantEvent",
         "traceSafe_implies_non_interference",
         "tenantIsolation_implies_non_interference",
@@ -29,6 +33,7 @@ def test_observational_lean_defines_non_interference() -> None:
         "deny_event_not_in_trace_projection",
         "traceProjection_append",
         "trace_append_preserves_non_interference",
+        "trace_append_preserves_tenant_projection_isolation",
         "handoffSafe_traceSafe_non_interference",
     ):
         assert name in text, f"missing {name} in Observational.lean"
@@ -69,12 +74,14 @@ def test_non_interference_doc_mentions_limits() -> None:
     doc = repo_root() / "docs" / "pf-core" / "non-interference.md"
     text = doc.read_text(encoding="utf-8")
     for phrase in (
+        "TenantProjectionIsolation",
         "NonInterference",
         "covert channels",
         "timing",
         "handoff",
         "Adversary model extension roadmap",
         "ActionAdmissibleWithResourcePattern",
+        "PairedExecutionNonInterference",
     ):
         assert phrase.lower() in text.lower(), f"missing {phrase!r} in non-interference.md"
 
