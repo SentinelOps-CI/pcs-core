@@ -440,6 +440,68 @@ def cmd_pf_core_certifyedge_check(
     return 0
 
 
+def cmd_pf_core_attest_bundle(
+    bundle: Path,
+    property_id: str,
+    *,
+    require_live: bool = False,
+    checker_version: str = "0.1.0",
+    allow_absence: bool = False,
+) -> int:
+    """Bind live/stub/mock CertifyEdge evaluation to an exact release bundle."""
+    from pcs_core.external_attestation import (
+        attest_release_bundle,
+        write_preview_absence_notice,
+    )
+
+    try:
+        attestation, check = attest_release_bundle(
+            bundle,
+            property_id=property_id,
+            require_live=require_live,
+            checker_version=checker_version,
+            write=True,
+        )
+    except (RuntimeError, ValueError) as exc:
+        if allow_absence and not require_live:
+            notice = write_preview_absence_notice(bundle, reason=str(exc))
+            print(
+                f"WARN external attestation unavailable; wrote preview absence notice {notice}",
+                file=sys.stderr,
+            )
+            return 0
+        print(f"FAIL {exc}", file=sys.stderr)
+        return 1
+    print(
+        f"OK PF-Core attest-bundle {bundle} "
+        f"class={attestation.get('attestation_class')} "
+        f"digest={attestation.get('release_bundle_digest')} "
+        f"({check.message})"
+    )
+    return 0
+
+
+def cmd_pf_core_validate_external_attestation(
+    bundle: Path,
+    *,
+    require_live: bool = False,
+    allow_absence: bool = False,
+) -> int:
+    from pcs_core.external_attestation import validate_bundle_external_attestation
+
+    errors = validate_bundle_external_attestation(
+        bundle,
+        require_live=require_live,
+        allow_absence_notice=allow_absence,
+    )
+    if errors:
+        for err in errors:
+            print(f"FAIL {err}", file=sys.stderr)
+        return 1
+    print(f"OK PF-Core validate-external-attestation {bundle}")
+    return 0
+
+
 def cmd_pf_core_verify_proof_binding(certificate: Path, trace: Path | None) -> int:
     from pcs_core.pf_core_proof_binding import verify_proof_binding
 
@@ -573,6 +635,16 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="pcs", description="Proof-Carrying Science CLI")
     sub = parser.add_subparsers(dest="command", required=True)
 
+    p_capabilities = sub.add_parser(
+        "capabilities",
+        help="Report which validator/verifier backends are actually available",
+    )
+    p_capabilities.add_argument(
+        "--json",
+        action="store_true",
+        help="Emit machine-readable JSON",
+    )
+
     p_validate = sub.add_parser("validate", help="Validate a PCS artifact file")
     p_validate.add_argument("path", type=Path)
 
@@ -698,7 +770,10 @@ def main(argv: list[str] | None = None) -> int:
     pf_core_validate.add_argument(
         "--non-interference",
         action="store_true",
-        help="Also require conservative observational NonInterference mirror",
+        help=(
+            "Also require TenantProjectionIsolation mirror "
+            "(single-trace observational isolation; not paired-execution NI)"
+        ),
     )
     pf_core_validate.add_argument(
         "--ni-tenant-low",
@@ -844,6 +919,39 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Fail when CertifyEdge live CLI is absent (also PF_CORE_CERTIFYEDGE_REQUIRE_LIVE=1)",
     )
+    pf_core_attest = pf_core_sub.add_parser(
+        "attest-bundle",
+        help="Run CertifyEdge on a release bundle's trace and write ExternalAttestation.v0",
+    )
+    pf_core_attest.add_argument("--bundle", type=Path, required=True)
+    pf_core_attest.add_argument(
+        "--property",
+        type=str,
+        required=True,
+        help="CertifyEdge property id (e.g. qc_release.temporal.safety)",
+    )
+    pf_core_attest.add_argument("--checker-version", type=str, default="0.1.0")
+    pf_core_attest.add_argument(
+        "--require-live",
+        action="store_true",
+        help="Fail closed unless live CertifyEdge attestation is produced",
+    )
+    pf_core_attest.add_argument(
+        "--allow-absence",
+        action="store_true",
+        help="On failure without --require-live, write ABSENCE_OF_EXTERNAL_ATTESTATION.json",
+    )
+    pf_core_validate_attest = pf_core_sub.add_parser(
+        "validate-external-attestation",
+        help="Validate ExternalAttestation.v0 (or preview absence notice) in a bundle",
+    )
+    pf_core_validate_attest.add_argument("--bundle", type=Path, required=True)
+    pf_core_validate_attest.add_argument("--require-live", action="store_true")
+    pf_core_validate_attest.add_argument(
+        "--allow-absence",
+        action="store_true",
+        help="Accept ABSENCE_OF_EXTERNAL_ATTESTATION.json for technical preview",
+    )
 
     shared_hash_parser = sub.add_parser("shared-hash-vectors", help="Cross-language hash vectors")
     shared_hash_sub = shared_hash_parser.add_subparsers(dest="shared_hash_cmd", required=True)
@@ -987,6 +1095,10 @@ def main(argv: list[str] | None = None) -> int:
 
     args = parser.parse_args(argv)
 
+    if args.command == "capabilities":
+        from pcs_core.capabilities import cmd_capabilities
+
+        return cmd_capabilities(as_json=args.json)
     if args.command == "validate":
         return cmd_validate(args.path)
     if args.command == "hash":
@@ -1084,6 +1196,20 @@ def main(argv: list[str] | None = None) -> int:
             args.checker_version,
             args.attestation_ref,
             args.out,
+        )
+    if args.command == "pf-core" and args.pf_core_cmd == "attest-bundle":
+        return cmd_pf_core_attest_bundle(
+            args.bundle,
+            args.property,
+            require_live=args.require_live,
+            checker_version=args.checker_version,
+            allow_absence=args.allow_absence,
+        )
+    if args.command == "pf-core" and args.pf_core_cmd == "validate-external-attestation":
+        return cmd_pf_core_validate_external_attestation(
+            args.bundle,
+            require_live=args.require_live,
+            allow_absence=args.allow_absence,
         )
     if args.command == "pf-core" and args.pf_core_cmd == "certifyedge-check":
         return cmd_pf_core_certifyedge_check(
