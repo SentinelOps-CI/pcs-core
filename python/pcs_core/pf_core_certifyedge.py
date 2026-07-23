@@ -126,6 +126,25 @@ def certifyedge_status() -> dict[str, object]:
     mode = certifyedge_mode()
     live_cli = _find_live_certifyedge_cli()
     stub_cli = _find_format_stub()
+    trust_grade = "unpinned"
+    pin_identity = None
+    try:
+        from pcs_core.certifyedge_pin import (
+            classify_checker_trust,
+            load_certifyedge_pin,
+            load_provision_environment,
+        )
+
+        pin = load_certifyedge_pin()
+        provision = load_provision_environment()
+        trust_grade = classify_checker_trust(
+            executable=Path(live_cli) if live_cli else None,
+            pin=pin,
+            provision=provision,
+        )
+        pin_identity = pin.pin_identity
+    except Exception:
+        pass
     return {
         "available": live_cli is not None,
         "cli_path": live_cli,
@@ -135,6 +154,8 @@ def certifyedge_status() -> dict[str, object]:
         "live_required": mode == "live" or certifyedge_require_live(),
         "require_live_env": certifyedge_require_live(),
         "allow_stub_env": certifyedge_allow_stub(),
+        "trust_grade": trust_grade,
+        "pin_identity": pin_identity,
         "env_contract": {
             "PF_CORE_CERTIFYEDGE_MODE": "auto | live | mock (default: auto)",
             "PF_CORE_CERTIFYEDGE_CLI": (
@@ -143,6 +164,7 @@ def certifyedge_status() -> dict[str, object]:
             "PF_CORE_CERTIFYEDGE_MOCK": "1 forces mock mode (alias: PCS_CERTIFYEDGE_MOCK)",
             "PF_CORE_CERTIFYEDGE_REQUIRE_LIVE": "1 fails when live CLI absent (release gate)",
             "PF_CORE_CERTIFYEDGE_ALLOW_STUB": "1 allows format stub on require-live (staging only)",
+            "PCS_CERTIFYEDGE_PROVISION_ENV": "path to provision.env from provision-certifyedge.sh",
         },
         "install_doc": CERTIFYEDGE_INSTALL_DOC,
     }
