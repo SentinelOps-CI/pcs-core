@@ -1044,6 +1044,7 @@ fn action_within_tenant_d(principal: &Value, action: &Value) -> bool {
     true
 }
 
+/// Mirror Lean ``actionAdmissibleD`` (excludes resource-pattern scope).
 fn action_admissible_d(principal: &Value, action: &Value) -> bool {
     let Some(capability) = action.get("capability") else {
         return false;
@@ -1059,16 +1060,19 @@ fn action_admissible_d(principal: &Value, action: &Value) -> bool {
     if validate_action_capabilities_known(action, PATH).is_some()
         || validate_action_effects_known(action, PATH).is_some()
         || validate_action_capability_effects(action, PATH).is_some()
-        || validate_resource_scope(action, PATH).is_some()
     {
         return false;
     }
     principal_has_capability(principal, cap_id) && action_within_tenant_d(principal, action)
 }
 
-/// Mirror Lean ``actionAdmissibleWithResourcePatternD`` (kernel + catalog resource scope).
+fn action_resources_within_capability_pattern_d(action: &Value) -> bool {
+    validate_resource_scope(action, "action").is_none()
+}
+
+/// Mirror Lean ``actionAdmissibleWithResourcePatternD`` (base + resource-pattern scope).
 pub fn action_admissible_with_resource_pattern_d(principal: &Value, action: &Value) -> bool {
-    action_admissible_d(principal, action)
+    action_admissible_d(principal, action) && action_resources_within_capability_pattern_d(action)
 }
 
 /// Mirror Lean ``eventSafeD`` on allow events (deny is vacuously safe).
@@ -1881,6 +1885,8 @@ mod tests {
             .get("events")
             .and_then(|v| v.as_array())
             .expect("events array");
+        // A11: base TraceSafe holds; refined TraceSafeR rejects out-of-pattern URI.
+        assert!(trace_safe_d(bad_events));
         assert!(!trace_safe_rd(bad_events));
     }
 

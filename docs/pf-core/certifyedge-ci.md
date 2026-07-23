@@ -52,12 +52,20 @@ Preferred production path: pin an immutable CertifyEdge artifact in
 ```bash
 export PCS_RELEASE_MODE=release
 bash scripts/provision-certifyedge.sh
-export PF_CORE_CERTIFYEDGE_CLI="$PWD/.tools/certifyedge/certifyedge"
+# ALWAYS source the machine-readable env file (do not blank it with an empty secret):
+set -a && . .tools/certifyedge/provision.env && set +a
+export PF_CORE_CERTIFYEDGE_CLI
 ```
 
-Approved strategies: `oci_digest`, `signed_binary`, `source_commit_build`.
-Release mode fails closed when the pin is `unpinned` — do not invent fake digests.
+`provision.env` records executable path, binary digest, version, pin identity,
+provision strategy, and trust grade. Workflows must source this file.
 
+Approved production strategies: `oci_digest`, `signed_binary`, `source_commit_build`.
+Release mode fails closed when the pin is `unpinned` — do not invent fake digests.
+`dev_fixture` is test/preview only (`trust_grade=untrusted_development`).
+
+Arbitrary executables on PATH that do not match the pin digest are classified
+`untrusted_development` even when they exit 0.
 Fallback (documented staging only): install [CertifyEdge](https://github.com/fraware/CertifyEdge)
 per upstream instructions and set `PF_CORE_CERTIFYEDGE_CLI`.
 

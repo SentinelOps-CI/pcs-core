@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pcs.sentinelops.ci/schemas/PFCoreEvidenceManifest.v0.schema.json",
+  "title": "PFCoreEvidenceManifest.v0",
+  "description": "Closed list of selected evidence artifacts copied into a PF-Core release bundle evidence/ directory. Every file digest is recorded.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "artifact_type",
+    "evidence_selection_policy",
+    "evidence_selection_policy_version",
+    "files",
+    "evidence_manifest_digest"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "$ref": "common.defs.json#/$defs/schema_version" },
+    "artifact_type": { "const": "PFCoreEvidenceManifest.v0" },
+    "canonicalization_version": {
+      "$ref": "common.defs.json#/$defs/canonicalization_version"
+    },
+    "evidence_selection_policy": {
+      "type": "string",
+      "minLength": 1
+    },
+    "evidence_selection_policy_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "files": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/evidence_file" }
+    },
+    "evidence_manifest_digest": {
+      "$ref": "common.defs.json#/$defs/hex_digest",
+      "description": "Canonical digest of this manifest excluding evidence_manifest_digest itself"
+    }
+  },
+  "$defs": {
+    "evidence_file": {
+      "type": "object",
+      "required": ["path", "sha256", "role"],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "$ref": "common.defs.json#/$defs/relative_posix_path",
+          "description": "Path relative to the release bundle root"
+        },
+        "sha256": { "$ref": "common.defs.json#/$defs/hex_digest" },
+        "role": {
+          "type": "string",
+          "enum": [
+            "handoff",
+            "contract",
+            "effect_frame",
+            "policy",
+            "embedded"
+          ]
+        },
+        "artifact_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "artifact_type": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pcs.sentinelops.ci/schemas/PFCoreEffectFrame.v0.schema.json",
+  "title": "PFCoreEffectFrame.v0",
+  "description": "Independently declared effect frame for EffectFrameCertificate. Allowed effects are NOT derived from action.effects. v0 multi-event policy: one global frame binds every selected event (per-event/monotone frames deferred).",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "artifact_type",
+    "frame_id",
+    "allowed_effect_kinds",
+    "frame_scope_policy",
+    "source_policy_ref",
+    "signature_or_digest"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "$ref": "common.defs.json#/$defs/schema_version" },
+    "artifact_type": { "const": "PFCoreEffectFrame.v0" },
+    "frame_id": { "type": "string", "minLength": 1 },
+    "allowed_effect_kinds": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "pf_core.defs.json#/$defs/effect_kind" },
+      "description": "Closed set of effect kinds permitted by this declared frame (independent of any action.effects list)"
+    },
+    "resource_constraints": {
+      "type": "array",
+      "description": "Optional resource-pattern constraints scoped to an allowed effect kind",
+      "items": {
+        "type": "object",
+        "required": ["effect_kind", "resource_pattern"],
+        "additionalProperties": false,
+        "properties": {
+          "effect_kind": { "$ref": "pf_core.defs.json#/$defs/effect_kind" },
+          "resource_pattern": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "workflow_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional workflow scope for this frame"
+    },
+    "contract_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional contract scope for this frame"
+    },
+    "frame_scope_policy": {
+      "type": "string",
+      "const": "global",
+      "description": "v0 policy: one global frame applies to all selected events in the trace"
+    },
+    "source_policy_ref": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Reference to the source policy that declared this frame"
+    },
+    "source_repo": { "type": "string", "format": "uri" },
+    "source_commit": { "type": "string", "minLength": 7 },
+    "created_at": { "type": "string", "format": "date-time" },
+    "evidence_refs": { "$ref": "common.defs.json#/$defs/ref_list" },
+    "signature_or_digest": { "$ref": "common.defs.json#/$defs/hex_digest" }
+  }
+}

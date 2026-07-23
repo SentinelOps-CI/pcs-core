@@ -10,8 +10,8 @@ This discharges computation witness result-hash admissibility against independen
 
 namespace PCS.Generated.release_pcs_v0_1_scientific_computation
 
--- pcs_projection_manifest_hash: sha256:f391b04ad349f5a8727d1b86be96bd1e7c69d8c59064e4799d57ec326e93df10
-def pcsProjectionManifestHash : String := "sha256:f391b04ad349f5a8727d1b86be96bd1e7c69d8c59064e4799d57ec326e93df10"
+-- pcs_projection_manifest_hash: sha256:98da562ca8c2bdefebdc61f2b87413bdb3dabb0d823b328465e8d635f9939939
+def pcsProjectionManifestHash : String := "sha256:98da562ca8c2bdefebdc61f2b87413bdb3dabb0d823b328465e8d635f9939939"
 
 def concreteComputationWitness : ComputationWitness :=
   {
@@ -38,6 +38,13 @@ def concreteVerification : VerificationResult :=
 def concreteCertifiedBundleHash : Hash := Hash.ofString "5a6a675d23354d219e85daec27a89443d8648d158249e86c48b99528b4412643"
 
 def concreteSignedInputHash : Hash := Hash.ofString "5a6a675d23354d219e85daec27a89443d8648d158249e86c48b99528b4412643"
+
+def concreteEnvelopeProjection : EnvelopeProjectionMeta :=
+  {
+    workflowId := "scientific_computation.reproducibility_v0",
+    releaseId := "release-pcs-v0.1-scientific-computation",
+    projectionDigest := Hash.ofString "98da562ca8c2bdefebdc61f2b87413bdb3dabb0d823b328465e8d635f9939939"
+  }
 
 theorem concrete_witness_result_hashes_admissible :
     witnessResultHashesAdmissibleD concreteComputationWitness.resultHashes
@@ -76,16 +83,26 @@ theorem concrete_signed_bundle_admissible_prop :
       concreteVerification.verifiedInputBundleHash :=
   (signedBundleAdmissibleD_sound _ _).mp concrete_signed_bundle_admissible
 
+theorem concrete_envelope_projection_bound :
+    envelopeProjectionBoundD concreteEnvelopeProjection = true := by
+  decide
+
+theorem concrete_envelope_projection_bound_prop :
+    EnvelopeProjectionBound concreteEnvelopeProjection :=
+  (envelopeProjectionBoundD_sound _).mp concrete_envelope_projection_bound
+
 theorem concrete_computation_release_admissible_prop :
-    witnessResultHashesAdmissible concreteComputationWitness
-      concreteDeclaredResultArtifactHashes ∧
+    EnvelopeProjectionBound concreteEnvelopeProjection ∧
+      witnessResultHashesAdmissible concreteComputationWitness
+        concreteDeclaredResultArtifactHashes ∧
       concreteResultArtifactHash ∈ concreteComputationWitness.resultHashes ∧
       VerificationAdmitsBundle concreteVerification concreteCertifiedBundleHash ∧
       SignedBundleAdmissible concreteSignedInputHash
         concreteVerification.verifiedInputBundleHash :=
-  And.intro concrete_witness_result_hashes_admissible_prop
-    (And.intro concrete_witness_result_hash_listed_prop
-      (And.intro concrete_verification_admits_bundle_prop concrete_signed_bundle_admissible_prop))
+  And.intro concrete_envelope_projection_bound_prop
+    (And.intro concrete_witness_result_hashes_admissible_prop
+      (And.intro concrete_witness_result_hash_listed_prop
+        (And.intro concrete_verification_admits_bundle_prop concrete_signed_bundle_admissible_prop)))
 
 
 end PCS.Generated.release_pcs_v0_1_scientific_computation

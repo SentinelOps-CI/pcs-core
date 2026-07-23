@@ -305,6 +305,18 @@
         "certificate": {
           "$ref": "PFCoreCertificate.v0.schema.json"
         },
+        "artifact_paths": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Deterministic lean-check output paths (projection/manifest may be placeholders until later PRs).",
+          "properties": {
+            "certificate": { "type": "string", "minLength": 1 },
+            "lean_check_result": { "type": "string", "minLength": 1 },
+            "generated_proof": { "type": "string", "minLength": 1 },
+            "semantic_projection": { "type": "string", "minLength": 1 },
+            "theorem_manifest": { "type": "string", "minLength": 1 }
+          }
+        },
         "signature_or_digest": {
           "$ref": "common.defs.json#/$defs/hex_digest"
         }

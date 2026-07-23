@@ -97,15 +97,16 @@ def build_release_chain_validation_result(
     if not issues:
         result_path = base / "release_chain_validation_result.v0.json"
         profile_matches_on_disk = (
-            is_tool_use_release_directory(base) and profile_id == TOOL_USE_WORKFLOW_PROFILE_ID
-        ) or (
-            is_computation_release_directory(base) and profile_id == COMPUTATION_WORKFLOW_PROFILE_ID
-        )
-        if (
             profile_id == LABTRUST_WORKFLOW_PROFILE_ID
-            and profile_matches_on_disk
-            and result_path.is_file()
-        ):
+            or (
+                is_tool_use_release_directory(base) and profile_id == TOOL_USE_WORKFLOW_PROFILE_ID
+            )
+            or (
+                is_computation_release_directory(base)
+                and profile_id == COMPUTATION_WORKFLOW_PROFILE_ID
+            )
+        )
+        if profile_matches_on_disk and result_path.is_file():
             try:
                 on_disk = json.loads(result_path.read_text(encoding="utf-8"))
             except json.JSONDecodeError:

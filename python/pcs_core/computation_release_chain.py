@@ -274,6 +274,30 @@ def _validate_computation_release_chain_impl(directory: Path) -> list[ReleaseCha
         else:
             issues.append(_issue("schema_validation_failed", msg))
 
+    from pcs_core.computation_validate import (
+        DUPLICATE_RESULT_DECLARATION,
+        PAYLOAD_DIGEST_MISMATCH,
+        PAYLOAD_MISSING,
+        PAYLOAD_PATH_UNSAFE,
+        PAYLOAD_SIZE_MISMATCH,
+        validate_result_payloads_in_release,
+    )
+
+    for msg in validate_result_payloads_in_release(base):
+        if DUPLICATE_RESULT_DECLARATION in msg:
+            code = DUPLICATE_RESULT_DECLARATION
+        elif PAYLOAD_DIGEST_MISMATCH in msg:
+            code = PAYLOAD_DIGEST_MISMATCH
+        elif PAYLOAD_SIZE_MISMATCH in msg:
+            code = PAYLOAD_SIZE_MISMATCH
+        elif PAYLOAD_PATH_UNSAFE in msg:
+            code = PAYLOAD_PATH_UNSAFE
+        elif PAYLOAD_MISSING in msg:
+            code = PAYLOAD_MISSING
+        else:
+            code = "schema_validation_failed"
+        issues.append(_issue(code, msg, artifact=RESULT_ARTIFACT_FILE))
+
     for name in COMPUTATION_RELEASE_PCS_ARTIFACTS:
         path = base / name
         if not path.is_file():

@@ -922,6 +922,7 @@ function actionWithinTenantD(principal: Record<string, unknown>, action: Record<
   return true;
 }
 
+/** Mirror Lean `actionAdmissibleD` (excludes resource-pattern scope). */
 function actionAdmissibleD(principal: Record<string, unknown>, action: Record<string, unknown>): boolean {
   const capability = action.capability;
   if (!capability || typeof capability !== "object" || Array.isArray(capability)) {
@@ -932,20 +933,23 @@ function actionAdmissibleD(principal: Record<string, unknown>, action: Record<st
   if (
     validateActionCapabilitiesKnown(action, path) ||
     validateActionEffectsKnown(action, path) ||
-    validateActionCapabilityEffects(action, path) ||
-    validateResourceScope(action, path)
+    validateActionCapabilityEffects(action, path)
   ) {
     return false;
   }
   return principalHasCapability(principal, capId) && actionWithinTenantD(principal, action);
 }
 
-/** Mirror Lean `actionAdmissibleWithResourcePatternD` (kernel + catalog resource scope). */
+function actionResourcesWithinCapabilityPatternD(action: Record<string, unknown>): boolean {
+  return validateResourceScope(action, "action") === null;
+}
+
+/** Mirror Lean `actionAdmissibleWithResourcePatternD` (base + resource-pattern scope). */
 export function actionAdmissibleWithResourcePatternD(
   principal: Record<string, unknown>,
   action: Record<string, unknown>,
 ): boolean {
-  return actionAdmissibleD(principal, action);
+  return actionAdmissibleD(principal, action) && actionResourcesWithinCapabilityPatternD(action);
 }
 
 /** Mirror Lean `eventSafeD` on allow events (deny is vacuously safe). */

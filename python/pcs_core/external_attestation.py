@@ -66,24 +66,75 @@ def _attestation_payload_for_digest(attestation: Mapping[str, Any]) -> dict[str,
     return payload
 
 
-def seal_external_attestation(attestation: dict[str, Any]) -> dict[str, Any]:
-    """Attach digest-bound attestation_signature and signature_or_digest."""
+def seal_external_attestation(
+    attestation: dict[str, Any],
+    *,
+    private_seed: bytes | None = None,
+    key_id: str | None = None,
+    signed_at: str | None = None,
+) -> dict[str, Any]:
+    """Attach digest-bound attestation_signature and signature_or_digest.
+
+    When ``private_seed`` and ``key_id`` are provided (or authentication_mode is
+    already ``ed25519_signed`` with seed available via env), seal with a real
+    Ed25519 signature over the domain-separated content digest message.
+    """
     sealed = dict(attestation)
     sealed.setdefault("canonicalization_version", CANONICALIZATION_VERSION)
     sealed.pop("signature_or_digest", None)
-    # First seal without attestation_signature digest, then bind.
     provisional = dict(sealed)
     provisional.pop("attestation_signature", None)
     content_digest = canonical_hash(provisional)
     mode = str(sealed.get("authentication_mode") or "digest_bound")
-    if mode == "digest_bound" or "attestation_signature" not in sealed:
+
+    seed = private_seed
+    kid = key_id
+    if seed is None:
+        import os
+
+        env_seed = os.environ.get("PCS_RELEASE_SIGNING_SEED_B64", "").strip()
+        env_kid = os.environ.get("PCS_RELEASE_SIGNING_KEY_ID", "").strip()
+        if env_seed and env_kid:
+            from pcs_core.artifact_integrity import decode_key_bytes
+
+            seed = decode_key_bytes(env_seed, expected_len=32)
+            kid = kid or env_kid
+            mode = "ed25519_signed"
+
+    if mode == "ed25519_signed" and seed is not None and kid:
+        from datetime import datetime, timezone
+
+        from pcs_core.artifact_integrity import (
+            encode_key_bytes,
+            sign_ed25519,
+            signing_message_bytes,
+        )
+
+        when = signed_at or datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace(
+            "+00:00", "Z"
+        )
+        message = signing_message_bytes(
+            artifact_type="ExternalAttestation.v0",
+            schema_version="v0",
+            artifact_digest=content_digest,
+        )
+        sig = sign_ed25519(message, private_seed=seed)
+        sealed["authentication_mode"] = "ed25519_signed"
+        sealed["attestation_signature"] = {
+            "algorithm": "ed25519",
+            "key_id": kid,
+            "signed_at": when,
+            "value": encode_key_bytes(sig),
+        }
+    else:
         sealed["authentication_mode"] = "digest_bound"
         sealed["attestation_signature"] = {
             "algorithm": "sha256-digest-bound",
             "digest": content_digest,
             "note": (
                 "Digest-bound integrity only. Replace with ed25519_signed once "
-                "org CertifyEdge / release signing keys are configured."
+                "org CertifyEdge / release signing keys are configured "
+                "(PCS_RELEASE_SIGNING_SEED_B64 + PCS_RELEASE_SIGNING_KEY_ID)."
             ),
         }
     sealed["signature_or_digest"] = canonical_hash(_attestation_payload_for_digest(sealed))
@@ -181,6 +232,8 @@ def validate_external_attestation(
     expected_bundle_digest: str | None = None,
     expected_trace_digest: str | None = None,
     require_live: bool = False,
+    require_pinned_checker: bool = False,
+    key_registry: Any | None = None,
 ) -> list[str]:
     """Schema + binding validation for ExternalAttestation.v0."""
     errors = validate_schema(dict(attestation), "ExternalAttestation.v0")
@@ -233,6 +286,63 @@ def validate_external_attestation(
     elif mode == "ed25519_signed":
         if not isinstance(sig, dict) or sig.get("algorithm") != "ed25519":
             errors.append("ExternalAttestationSignatureModeMismatch: expected ed25519 envelope")
+        else:
+            from pcs_core.artifact_integrity import (
+                IntegrityError,
+                TimestampPolicy,
+                decode_key_bytes,
+                load_trusted_key_registry,
+                parse_utc_datetime,
+                resolve_trusted_key_registry,
+                signing_message_bytes,
+                verify_ed25519,
+            )
+
+            registry = key_registry
+            if registry is None:
+                registry = resolve_trusted_key_registry()
+            if registry is None:
+                errors.append(
+                    "ExternalAttestationSignatureUnverified: "
+                    "ed25519_signed requires PCS_TRUSTED_KEY_REGISTRY"
+                )
+            else:
+                if not hasattr(registry, "require"):
+                    registry = load_trusted_key_registry(registry)
+                provisional = dict(attestation)
+                provisional.pop("attestation_signature", None)
+                provisional.pop("signature_or_digest", None)
+                content_digest = canonical_hash(provisional)
+                try:
+                    key = registry.require(str(sig.get("key_id") or ""))
+                    message = signing_message_bytes(
+                        artifact_type="ExternalAttestation.v0",
+                        schema_version="v0",
+                        artifact_digest=content_digest,
+                    )
+                    verify_ed25519(
+                        message,
+                        decode_key_bytes(str(sig.get("value") or ""), expected_len=64),
+                        public_key=key.public_key_bytes,
+                    )
+                    policy_errors = TimestampPolicy().evaluate(
+                        parse_utc_datetime(str(sig.get("signed_at") or "")),
+                        key,
+                    )
+                    errors.extend(policy_errors)
+                except IntegrityError as exc:
+                    errors.append(str(exc))
+                except ValueError as exc:
+                    errors.append(f"ExternalAttestationSignatureInvalid: {exc}")
+
+    from pcs_core.certifyedge_pin import validate_attestation_against_pin
+
+    errors.extend(
+        validate_attestation_against_pin(
+            attestation,
+            require_pinned=require_pinned_checker,
+        )
+    )
 
     return errors
 
@@ -285,9 +395,42 @@ def attest_release_bundle(
         cli = _find_live_certifyedge_cli() or _find_format_stub()
     except Exception:
         cli = None
-    if cli and Path(cli).is_file() and Path(cli).suffix != ".py":
+
+    from pcs_core.certifyedge_pin import (
+        classify_checker_trust,
+        load_certifyedge_pin,
+        load_provision_environment,
+    )
+
+    provision = load_provision_environment()
+    pin = None
+    try:
+        pin = load_certifyedge_pin()
+    except Exception:
+        pin = None
+
+    trust_grade = classify_checker_trust(
+        executable=Path(cli) if cli else None,
+        pin=pin,
+        provision=provision,
+    )
+    if require_live and trust_grade == "untrusted_development":
+        raise RuntimeError(
+            "live external attestation rejected: checker trust_grade=untrusted_development "
+            "(arbitrary PATH executables and dev fixtures are not release-grade; "
+            "provision from a production pin and source provision.env)"
+        )
+
+    if provision is not None and Path(provision.executable_path).is_file():
+        checker_binary_digest = provision.binary_digest
+        issuer = f"certifyedge-binary:{checker_binary_digest}"
+        if provision.pin_identity:
+            issuer = f"{issuer};pin={provision.pin_identity}"
+    elif cli and Path(cli).is_file() and Path(cli).suffix != ".py":
         checker_binary_digest = file_sha256_digest(Path(cli))
         issuer = f"certifyedge-binary:{checker_binary_digest}"
+        if trust_grade != "pinned":
+            issuer = f"{issuer};trust_grade={trust_grade}"
     elif cli:
         checker_binary_digest = EMPTY_SHA256
         issuer = f"certifyedge-stub:{Path(cli).name}"

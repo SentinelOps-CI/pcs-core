@@ -67,6 +67,14 @@
   "claim_class": "RuntimeChecked",
   "source_repo": "https://github.com/example/agent-runtime",
   "source_commit": "abc1234567890abc1234567890abc1234567890",
-  "trace_hash": "sha256:fddb2a2f9ac45d4b7c7a4e8831080b8d9cfe9d3b9b2574871e45ee6616c8318f",
-  "signature_or_digest": "sha256:fddb2a2f9ac45d4b7c7a4e8831080b8d9cfe9d3b9b2574871e45ee6616c8318f"
+  "required_certificate_mode": "ContractCheckedCertificate",
+  "evidence_selection": {
+    "policy": "explicit_ids",
+    "policy_version": "v0",
+    "contract_ids": [
+      "contract-file-read-v0"
+    ]
+  },
+  "trace_hash": "sha256:e92959a46d789c24f5d2a29ce4cbc459635798b9be8757bf139ea35442c15fcb",
+  "signature_or_digest": "sha256:e92959a46d789c24f5d2a29ce4cbc459635798b9be8757bf139ea35442c15fcb"
 }

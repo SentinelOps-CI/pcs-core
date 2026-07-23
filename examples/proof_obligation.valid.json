@@ -8,7 +8,7 @@
       "obligation_id": "trace_hash_alignment",
       "kind": "CertificateMatchesRuntime",
       "inputs": {
-        "certificate_id": "cert-trace-02b3a7c1-35f7-4d23-85c2-dfd60aff7693",
+        "certificate_id": "cert-trace-a1b8ff9d-7d5f-489c-98b1-a3a630cb87d7",
         "certificate_trace_hash": "sha256:c3e8a3dc4ad86d533de1dfa4ae7fe2a338c2cff3c945404c96a75216524d58cd",
         "runtime_trace_hash": "sha256:c3e8a3dc4ad86d533de1dfa4ae7fe2a338c2cff3c945404c96a75216524d58cd",
         "certificate_status": "CertificateChecked"
@@ -55,8 +55,61 @@
       "artifact_type": "ScienceClaimBundle.v0"
     }
   },
+  "pcs_projection_manifest": {
+    "schema_version": "v0",
+    "artifact_type": "PCSProjectionManifest.v0",
+    "projection_id": "pcs-projection-release-pcs-v0.1-labtrust-qc",
+    "release_id": "release-pcs-v0.1-labtrust-qc",
+    "workflow_id": "labtrust.qc_release_v0.1",
+    "entries": [
+      {
+        "artifact_path": "trace_certificate.json",
+        "artifact_digest": "sha256:1fb39e4677c3a7838ec09079bf3d69684cd8fdb1d3e2f234ff333270920aaef7",
+        "json_pointer": "/certificate_id",
+        "normalized_value": "cert-trace-a1b8ff9d-7d5f-489c-98b1-a3a630cb87d7",
+        "lean_identifier": "concreteCertificate.certificateId"
+      },
+      {
+        "artifact_path": "trace_certificate.json",
+        "artifact_digest": "sha256:1fb39e4677c3a7838ec09079bf3d69684cd8fdb1d3e2f234ff333270920aaef7",
+        "json_pointer": "/trace_hash",
+        "normalized_value": "sha256:c3e8a3dc4ad86d533de1dfa4ae7fe2a338c2cff3c945404c96a75216524d58cd",
+        "lean_identifier": "concreteCertificate.traceHash"
+      },
+      {
+        "artifact_path": "runtime_receipt.json",
+        "artifact_digest": "sha256:0a421a44a1d003d4e39bee298edc329995165878bee27f5d28a9529ae8b6c027",
+        "json_pointer": "/trace_hash",
+        "normalized_value": "sha256:c3e8a3dc4ad86d533de1dfa4ae7fe2a338c2cff3c945404c96a75216524d58cd",
+        "lean_identifier": "concreteRuntimeReceipt.traceHash"
+      },
+      {
+        "artifact_path": "verification_result.json",
+        "artifact_digest": "sha256:56bbe08d69049b9a254c3e25da4abefacba71312a5ddd5fbdd0e9cbb1f598ec1",
+        "json_pointer": "/verified_input/bundle_hash",
+        "normalized_value": "sha256:bb740698a01c4e918ca0f346e5bfaed83e6665da8df84e931c0d50e03ce82ffe",
+        "lean_identifier": "concreteVerification.verifiedInputBundleHash"
+      },
+      {
+        "artifact_path": "#resolved/certified_bundle_hash",
+        "artifact_digest": "sha256:fff9a1b0327ca720db7d58be1d0e9c543579465bc50b59d171cc1c638983e363",
+        "json_pointer": "/#resolved/certified_bundle_hash",
+        "normalized_value": "sha256:bb740698a01c4e918ca0f346e5bfaed83e6665da8df84e931c0d50e03ce82ffe",
+        "lean_identifier": "concreteCertifiedBundleHash"
+      },
+      {
+        "artifact_path": "signed_science_claim_bundle.json",
+        "artifact_digest": "sha256:68e6752de71212161bb6bf7ce1ecfa91532b03315896a6f89ecdd61fd81d6fe1",
+        "json_pointer": "/signed_input_bundle_hash",
+        "normalized_value": "sha256:bb740698a01c4e918ca0f346e5bfaed83e6665da8df84e931c0d50e03ce82ffe",
+        "lean_identifier": "concreteSignedInputHash"
+      }
+    ],
+    "signature_or_digest": "sha256:4f0af951482773af4649775ec7a14d0e5334b99c8926c90c9125d164ba8cfc0e"
+  },
+  "pcs_projection_manifest_hash": "sha256:4f0af951482773af4649775ec7a14d0e5334b99c8926c90c9125d164ba8cfc0e",
   "lean_module": "PCS.Theorems",
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:c45ea66774e4090942b0aa73a2d025906022390aecb231a9a743d9651d537f4b"
+  "signature_or_digest": "sha256:bf78327732346bcfaf066fca287cc830dda0eebe22de702972ebc2a76ef33349"
 }

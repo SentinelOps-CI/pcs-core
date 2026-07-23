@@ -1,0 +1,5 @@
+{
+  "schema_version": "v0",
+  "artifact_type": "CanonicalProbe.v0",
+  "text": "a\u0000b\rb\bc\ff"
+}

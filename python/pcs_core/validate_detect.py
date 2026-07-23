@@ -115,14 +115,20 @@ ARTIFACT_SCHEMAS: dict[str, str] = {
     "PFCoreTrace.v0": "PFCoreTrace.v0.schema.json",
     "PFCoreContract.v0": "PFCoreContract.v0.schema.json",
     "PFCoreHandoff.v0": "PFCoreHandoff.v0.schema.json",
+    "PFCoreEffectFrame.v0": "PFCoreEffectFrame.v0.schema.json",
     "PFCoreRuntimeObservation.v0": "PFCoreRuntimeObservation.v0.schema.json",
     "PFCoreCertificate.v0": "PFCoreCertificate.v0.schema.json",
+    "PFCoreTheoremManifest.v0": "PFCoreTheoremManifest.v0.schema.json",
+    "PFCoreEvidenceManifest.v0": "PFCoreEvidenceManifest.v0.schema.json",
+    "PFCoreBundleVerificationResult.v0": "PFCoreBundleVerificationResult.v0.schema.json",
     "PCSBridgeCertificate.v0": "PCSBridgeCertificate.v0.schema.json",
     "PFCoreKernelManifest.v0": "PFCoreKernelManifest.v0.schema.json",
     "PFCoreReleaseBundleManifest.v0": "PFCoreReleaseBundleManifest.v0.schema.json",
     "ArtifactIntegrity.v1": "ArtifactIntegrity.v1.schema.json",
+    "TrustedKeyRegistry.v0": "TrustedKeyRegistry.v0.schema.json",
     "FormatAssertionProbe.v0": "FormatAssertionProbe.v0.schema.json",
     "ExternalAttestation.v0": "ExternalAttestation.v0.schema.json",
+    "ReleaseProvenanceBinding.v0": "ReleaseProvenanceBinding.v0.schema.json",
 }
 
 
@@ -495,12 +501,31 @@ def _detect_artifact_type_heuristic(data: dict[str, Any]) -> str | None:
     ):
         return "PFCoreReleaseBundleManifest.v0"
     if (
+        data.get("schema_version") == "v0"
+        and data.get("artifact_type") == "PFCoreEvidenceManifest.v0"
+        and isinstance(data.get("files"), list)
+    ):
+        return "PFCoreEvidenceManifest.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and data.get("artifact_type") == "PFCoreBundleVerificationResult.v0"
+        and "ok" in data
+        and "checks" in data
+    ):
+        return "PFCoreBundleVerificationResult.v0"
+    if (
         data.get("schema_version") == "v1"
         and data.get("artifact_type") == "ArtifactIntegrity.v1"
         and "artifact_digest" in data
         and "signature" in data
     ):
         return "ArtifactIntegrity.v1"
+    if (
+        data.get("schema_version") == "v0"
+        and data.get("artifact_type") == "TrustedKeyRegistry.v0"
+        and isinstance(data.get("keys"), list)
+    ):
+        return "TrustedKeyRegistry.v0"
     return None
 
 

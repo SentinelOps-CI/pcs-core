@@ -197,11 +197,20 @@ def _validate_pfcore_certificate(data: dict[str, Any]) -> list[str]:
         inventory_hash_field = data.get("theorem_inventory_hash")
         if (
             lean_proof_checked
+            and isinstance(data.get("theorem_inventory"), list)
+            and (not isinstance(manifest_hash, str) or not manifest_hash.startswith("sha256:"))
+        ):
+            errors.append("root: lean_proof_checked requires theorem_manifest_hash")
+        if (
+            lean_proof_checked
             and isinstance(manifest_hash, str)
             and isinstance(inventory_hash_field, str)
-            and manifest_hash != inventory_hash_field
+            and manifest_hash == inventory_hash_field
         ):
-            errors.append("root: theorem_manifest_hash must equal theorem_inventory_hash")
+            errors.append(
+                "root: theorem_manifest_hash must not equal theorem_inventory_hash "
+                "(manifest digests propositions and metadata, not name inventory alone)"
+            )
         obligations = data.get("obligations")
         if isinstance(obligations, list):
             required = {
@@ -326,6 +335,77 @@ def _validate_pfcore_certificate(data: dict[str, Any]) -> list[str]:
                                 "root: ContractCheckedCertificate cannot claim lean_proof_checked "
                                 f"with unresolved contract ref {item_str!r}"
                             )
+            selected_ids = data.get("selected_contract_ids")
+            if not isinstance(selected_ids, list) or not selected_ids:
+                errors.append(
+                    "root: ContractCheckedCertificate requires non-empty selected_contract_ids"
+                )
+            elif any(not isinstance(item, str) or not item.strip() for item in selected_ids):
+                errors.append("root: selected_contract_ids must be a non-empty string array")
+            digests = data.get("contract_source_file_digests")
+            if not isinstance(digests, dict) or not digests:
+                errors.append(
+                    "root: ContractCheckedCertificate requires contract_source_file_digests"
+                )
+            evidence_digest = str(data.get("contract_evidence_digest") or "").strip()
+            if not evidence_digest.startswith("sha256:"):
+                errors.append(
+                    "root: ContractCheckedCertificate requires contract_evidence_digest"
+                )
+            theorem_names = data.get("contract_theorem_names")
+            if not isinstance(theorem_names, list) or not theorem_names:
+                errors.append(
+                    "root: ContractCheckedCertificate requires concrete contract_theorem_names"
+                )
+            elif any(not isinstance(item, str) or not item.strip() for item in theorem_names):
+                errors.append("root: contract_theorem_names must be a non-empty string array")
+            elif inventory is not None:
+                missing_theorems = [
+                    name
+                    for name in theorem_names
+                    if isinstance(name, str) and name not in inventory
+                ]
+                if missing_theorems:
+                    errors.append(
+                        "root: contract_theorem_names missing from theorem_inventory: "
+                        f"{missing_theorems!r}"
+                    )
+            if (
+                isinstance(selected_ids, list)
+                and selected_ids
+                and isinstance(semantics_obj, dict)
+            ):
+                lean_items = semantics_obj.get("lean")
+                runtime_items = semantics_obj.get("runtime")
+                referenced_ids: set[str] = set()
+                for bucket in (lean_items, runtime_items):
+                    if not isinstance(bucket, list):
+                        continue
+                    for item in bucket:
+                        text = str(item)
+                        if text.startswith("missing_contract:"):
+                            continue
+                        if "." in text and not text.startswith("resource_"):
+                            referenced_ids.add(text.split(".", 1)[0])
+                selected_set = {str(item) for item in selected_ids if isinstance(item, str)}
+                unresolved = sorted(referenced_ids - selected_set)
+                if unresolved:
+                    errors.append(
+                        "root: ContractCheckedCertificate has unresolved contract refs "
+                        f"outside selected_contract_ids: {unresolved!r}"
+                    )
+        if cert_mode == "EffectFrameCertificate" and lean_proof_checked:
+            frame_id = str(data.get("effect_frame_id") or "").strip()
+            if not frame_id:
+                errors.append("root: EffectFrameCertificate requires effect_frame_id")
+            frame_path = str(data.get("effect_frame_path") or "").strip()
+            if not frame_path:
+                errors.append("root: EffectFrameCertificate requires effect_frame_path")
+            frame_digest = str(data.get("effect_frame_digest") or "").strip()
+            if not frame_digest.startswith("sha256:"):
+                errors.append(
+                    "root: EffectFrameCertificate requires effect_frame_digest"
+                )
         default_ref = str(data.get("default_contract_ref") or "")
         semantics = data.get("contract_semantics_checked")
         has_semantics = isinstance(semantics, dict) and (

@@ -431,7 +431,7 @@ def test_contract_semantics_checked_resource_obligations_parity() -> None:
 
 
 def test_trace_safe_rd_decider_parity() -> None:
-    """Python lean_check TraceSafeR decider matches TraceSafe on catalog-valid traces."""
+    """Python lean_check TraceSafeR is stricter than TraceSafe on out-of-pattern URI."""
     from pcs_core.lean_check import trace_safe_d, trace_safe_rd
 
     trace = _load_json(VALID_TRACE)
@@ -443,6 +443,8 @@ def test_trace_safe_rd_decider_parity() -> None:
     bad_path = REPO / "examples" / "pf-core-invalid" / "resource_scope_violation" / "trace.json"
     bad = _load_json(bad_path)
     bad_events = bad["events"]
+    # A11: base conditions pass; resource URI outside pattern → TraceSafe true, TraceSafeR false.
+    assert trace_safe_d(bad_events)
     assert not trace_safe_rd(bad_events)
 
 

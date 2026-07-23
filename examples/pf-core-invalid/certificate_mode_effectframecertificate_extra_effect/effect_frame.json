@@ -1,0 +1,21 @@
+{
+  "schema_version": "v0",
+  "artifact_type": "PFCoreEffectFrame.v0",
+  "frame_id": "frame-file-read-only-v0",
+  "allowed_effect_kinds": [
+    "file.read"
+  ],
+  "resource_constraints": [
+    {
+      "effect_kind": "file.read",
+      "resource_pattern": "/data/*"
+    }
+  ],
+  "workflow_id": "agent_tool_use.safety_v0",
+  "frame_scope_policy": "global",
+  "source_policy_ref": "policy:agent_tool_use.safety_v0#effect-frame",
+  "source_repo": "https://github.com/example/agent-runtime",
+  "source_commit": "abc1234567890abc1234567890abc1234567890",
+  "evidence_refs": [],
+  "signature_or_digest": "sha256:f88d613f466d78deb05482c2d413dde67ecc8e509eb291fabd106ce7fa27f9f5"
+}

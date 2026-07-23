@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pcs.sentinelops.ci/schemas/PFCoreTheoremManifest.v0.schema.json",
+  "title": "PFCoreTheoremManifest.v0",
+  "description": "Structured theorem inventory for a generated PF-Core proof module. Digests normalized propositions and metadata; distinct from theorem_inventory_hash (name-only).",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "artifact_type",
+    "generated_module_name",
+    "proof_file_hash",
+    "semantic_projection_hash",
+    "certificate_mode",
+    "final_witness_theorem",
+    "final_witness_proposition",
+    "theorems",
+    "theorem_manifest_digest"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "$ref": "common.defs.json#/$defs/schema_version" },
+    "artifact_type": { "const": "PFCoreTheoremManifest.v0" },
+    "generated_module_name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Lean module suffix, e.g. Trace_<digest16>"
+    },
+    "proof_file_hash": {
+      "$ref": "common.defs.json#/$defs/hex_digest",
+      "description": "SHA-256 of the generated .lean proof file bytes"
+    },
+    "semantic_projection_hash": {
+      "$ref": "common.defs.json#/$defs/hex_digest",
+      "description": "Bound PFCoreSemanticProjection.v0 projection_hash"
+    },
+    "certificate_mode": {
+      "type": "string",
+      "enum": [
+        "TraceSafeCertificate",
+        "TraceSafeRCertificate",
+        "FramePreservedCertificate",
+        "EffectFrameCertificate",
+        "HandoffSafeCertificate",
+        "CompositionalExtensionCertificate",
+        "ContractCheckedCertificate"
+      ]
+    },
+    "final_witness_theorem": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Usually concrete_certificate_mode_witness"
+    },
+    "final_witness_proposition": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Normalized proposition of the final mode witness"
+    },
+    "theorems": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/theorem_entry" }
+    },
+    "theorem_manifest_digest": {
+      "$ref": "common.defs.json#/$defs/hex_digest",
+      "description": "Canonical digest of this manifest excluding theorem_manifest_digest itself"
+    }
+  },
+  "$defs": {
+    "theorem_entry": {
+      "type": "object",
+      "required": [
+        "theorem_name",
+        "normalized_proposition",
+        "theorem_category",
+        "generation_node",
+        "evidence_artifact_ids",
+        "certificate_mode_role",
+        "proposition_hash"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "theorem_name": { "type": "string", "minLength": 1 },
+        "normalized_proposition": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Whitespace-normalized Lean proposition"
+        },
+        "theorem_category": {
+          "type": "string",
+          "enum": [
+            "trace_safety",
+            "event_safety",
+            "trust_boundary",
+            "resource_scope",
+            "handoff_safety",
+            "contract",
+            "effect_frame",
+            "transition",
+            "compositional",
+            "mode_aggregate",
+            "mode_witness"
+          ]
+        },
+        "generation_node": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Structured codegen node id (source of the theorem)"
+        },
+        "source_span": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["start_line", "end_line"],
+          "properties": {
+            "start_line": { "type": "integer", "minimum": 1 },
+            "end_line": { "type": "integer", "minimum": 1 },
+            "path": { "type": "string", "minLength": 1 }
+          },
+          "description": "Optional source span when available; generation_node is authoritative"
+        },
+        "evidence_artifact_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Evidence artifact IDs (event/handoff/contract/frame ids) bound into this theorem"
+        },
+        "certificate_mode_role": {
+          "type": "string",
+          "enum": ["required", "supporting", "aggregate", "final_witness"]
+        },
+        "proposition_hash": {
+          "$ref": "common.defs.json#/$defs/hex_digest",
+          "description": "SHA-256 of the normalized proposition string"
+        }
+      }
+    }
+  }
+}

@@ -9,11 +9,18 @@ import json
 from pathlib import Path
 
 pins = Path("pins")
-for name in ("elan.json", "certifyedge.json", "github-actions.json"):
+for name in ("elan.json", "certifyedge.json", "github-actions.json", "python-base-image.json"):
     path = pins / name
     assert path.is_file(), path
     data = json.loads(path.read_text(encoding="utf-8"))
     assert isinstance(data, dict), name
+
+base = json.loads((pins / "python-base-image.json").read_text(encoding="utf-8"))
+assert base["index_digest"].startswith("sha256:")
+assert base["dockerfile_from"].endswith(base["index_digest"])
+df = Path("docker/verifier/Dockerfile").read_text(encoding="utf-8")
+assert base["index_digest"] in df
+assert "USER pcs" in df
 
 elan = json.loads((pins / "elan.json").read_text(encoding="utf-8"))
 assert len(elan["sha256"]) == 64
@@ -32,6 +39,10 @@ assert Path(".github/CODEOWNERS").is_file()
 assert Path(".github/dependabot.yml").is_file()
 assert Path(".github/workflows/codeql.yml").is_file()
 assert Path(".github/workflows/release-provenance.yml").is_file()
+assert Path("scripts/build-release-provenance.sh").is_file()
+assert Path("scripts/verify-release-provenance.sh").is_file()
+assert Path("scripts/finalize-provenance-attestation.sh").is_file()
+assert Path("schemas/ReleaseProvenanceBinding.v0.schema.json").is_file()
 print("OK phase2 scaffolding checks")
 PY
 

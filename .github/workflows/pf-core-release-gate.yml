@@ -1,7 +1,12 @@
 ﻿name: PF-Core Release Gate
 
 # Live CertifyEdge + pin verification. Tag/release path is fail-closed.
-# Preview path may be exercised via workflow_dispatch with release_mode=preview.
+# Preview path (workflow_dispatch release_mode=preview): lean-check → bundle-release
+# → validate-bundle → absence-notice/attest → upload.
+#
+# Part of the mandatory CI matrix: preview path also runs on every PR via
+# ci.yml `preview-release`; stable live checker is org-gated
+# (pins/certifyedge.json + secrets.PF_CORE_CERTIFYEDGE_CLI).
 
 on:
   workflow_dispatch:
@@ -31,6 +36,8 @@ jobs:
         run: |
           MODE="${{ github.event.inputs.release_mode || 'release' }}"
           echo "PCS_RELEASE_MODE=${MODE}" >> "$GITHUB_ENV"
+      - name: Install elan (checksum verified)
+        run: bash scripts/install-elan-verified.sh
       - name: Verify CertifyEdge pin
         run: python3 scripts/verify-certifyedge-pin.py --mode "${PCS_RELEASE_MODE}"
       - name: Provision CertifyEdge
@@ -42,7 +49,20 @@ jobs:
           if [ "${PCS_RELEASE_MODE}" = "release" ] && [ $status -ne 0 ]; then
             exit 1
           fi
-          if [ -x .tools/certifyedge/certifyedge ]; then
+          if [ -f .tools/certifyedge/provision.env ]; then
+            # shellcheck disable=SC1091
+            set -a
+            # Source machine-readable provision env (path, digest, version, pin, strategy).
+            # Do not let an empty repository secret overwrite a provisioned path.
+            # shellcheck source=/dev/null
+            . .tools/certifyedge/provision.env
+            set +a
+            {
+              echo "PF_CORE_CERTIFYEDGE_CLI=${PF_CORE_CERTIFYEDGE_CLI}"
+              echo "PCS_CERTIFYEDGE_PROVISION_ENV=${PWD}/.tools/certifyedge/provision.env"
+              echo "PCS_CERTIFYEDGE_TRUST_GRADE=${PCS_CERTIFYEDGE_TRUST_GRADE:-}"
+            } >> "$GITHUB_ENV"
+          elif [ -x .tools/certifyedge/certifyedge ]; then
             echo "PF_CORE_CERTIFYEDGE_CLI=${PWD}/.tools/certifyedge/certifyedge" >> "$GITHUB_ENV"
           fi
       - name: Install pcs-core
@@ -50,19 +70,28 @@ jobs:
           cd python
           pip install -c requirements.lock -e ".[dev,quality]"
           pcs capabilities
+      - name: Org/infra release gates
+        run: pcs release check-gates --mode "${PCS_RELEASE_MODE}"
       - name: CertifyEdge live attestation bound to release bundle (release mode)
         if: env.PCS_RELEASE_MODE == 'release'
         env:
-          PF_CORE_CERTIFYEDGE_CLI: ${{ secrets.PF_CORE_CERTIFYEDGE_CLI }}
           PF_CORE_CERTIFYEDGE_REQUIRE_LIVE: "1"
+          # Optional last-resort override — only applied when non-empty.
+          PF_CORE_CERTIFYEDGE_CLI_SECRET: ${{ secrets.PF_CORE_CERTIFYEDGE_CLI }}
         run: |
           cd python
+          if [ -n "${PF_CORE_CERTIFYEDGE_CLI_SECRET:-}" ] && [ -f "${PF_CORE_CERTIFYEDGE_CLI_SECRET}" ]; then
+            export PF_CORE_CERTIFYEDGE_CLI="${PF_CORE_CERTIFYEDGE_CLI_SECRET}"
+            echo "Using non-empty PF_CORE_CERTIFYEDGE_CLI secret override"
+          fi
           CLI="${PF_CORE_CERTIFYEDGE_CLI:-}"
           if [ -n "${CLI}" ] && [ -f "${CLI}" ]; then
             echo "Using PF_CORE_CERTIFYEDGE_CLI=${CLI}"
           elif command -v certifyedge >/dev/null 2>&1; then
             CLI="$(command -v certifyedge)"
-            echo "Using certifyedge on PATH: ${CLI}"
+            echo "WARNING: using unpinned certifyedge on PATH: ${CLI}"
+            echo "Arbitrary PATH executables are untrusted_development even if exit 0."
+            export PF_CORE_CERTIFYEDGE_CLI="${CLI}"
           else
             echo "FAIL: release gate requires live CertifyEdge CLI after pin provision."
             echo "Pin digest in pins/certifyedge.json (status=pinned) or set runner secret."
@@ -71,22 +100,24 @@ jobs:
           fi
           export PF_CORE_CERTIFYEDGE_CLI="${CLI}"
           export PF_CORE_CERTIFYEDGE_MODE=live
-          # Build a lean certificate when lake available; otherwise fail closed for release.
-          if command -v lake >/dev/null 2>&1 || [ -x "$HOME/.elan/bin/lake" ]; then
-            export PATH="$HOME/.elan/bin:$PATH"
-            pcs pf-core lean-check \
-              --trace ../examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json \
-              --out /tmp/pfcore-release-cert.json
-            TRACE=../examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json
-            CERT=/tmp/pfcore-release-cert.json
-          else
-            # Bundle still requires a valid certificate artifact; use fixture cert only if lean unavailable
-            # is unacceptable for release — fail closed.
+          export PATH="$HOME/.elan/bin:$PATH"
+          if ! command -v lake >/dev/null 2>&1; then
             echo "FAIL: lake required to produce LeanKernelChecked certificate for release bundle"
             exit 1
           fi
+          pcs pf-core lean-check \
+            --trace ../examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json \
+            --out /tmp/pfcore-release-cert.json \
+            --result-out /tmp/pfcore-release-lean-check.json
+          TRACE=../examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json
+          CERT=/tmp/pfcore-release-cert.json
+          LEAN_CHECK_RESULT=/tmp/pfcore-release-lean-check.json
           rm -rf /tmp/pfcore-release-bundle
-          pcs pf-core bundle-release --trace "${TRACE}" --cert "${CERT}" --out /tmp/pfcore-release-bundle
+          pcs pf-core bundle-release \
+            --trace "${TRACE}" \
+            --cert "${CERT}" \
+            --lean-check-result "${LEAN_CHECK_RESULT}" \
+            --out /tmp/pfcore-release-bundle
           pcs pf-core validate-bundle /tmp/pfcore-release-bundle
           pcs pf-core attest-bundle \
             --bundle /tmp/pfcore-release-bundle \
@@ -99,6 +130,7 @@ jobs:
           pcs validate /tmp/pfcore-release-bundle/external_attestation.json
           python3 - <<'PY'
           import json, sys
+          from pathlib import Path
           att = json.load(open("/tmp/pfcore-release-bundle/external_attestation.json", encoding="utf-8"))
           assert att["attestation_class"] == "live", att
           assert att["result"] == "CertificateChecked", att
@@ -108,28 +140,66 @@ jobs:
               "attestation_signature", "issuer_identity",
           ):
               assert att.get(key), f"missing {key}"
-          print("OK live ExternalAttestation.v0 bound to release bundle")
+          manifest = json.loads(
+              Path("/tmp/pfcore-release-bundle/manifest.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          lean_rel = manifest.get("lean_check_result_path")
+          assert lean_rel, "missing lean_check_result_path"
+          assert (Path("/tmp/pfcore-release-bundle") / lean_rel).is_file(), lean_rel
+          print("OK live ExternalAttestation.v0 bound to release bundle with lean-check-result")
           PY
-      - name: Preview mode absence-or-attestation gate
+      - name: Preview lean-check → bundle → validate → absence/attest → upload prep
         if: env.PCS_RELEASE_MODE == 'preview'
         run: |
           cd python
-          PF_CORE_CERTIFYEDGE_MODE=mock pcs pf-core certifyedge-check \
-            --trace ../examples/pf-core-valid/labtrust_replay/trace.json \
-            --property qc_release.temporal.safety \
-            --out /tmp/pfcore-preview-cert.json
+          export PATH="$HOME/.elan/bin:$PATH"
+          if ! command -v lake >/dev/null 2>&1; then
+            echo "FAIL: preview path requires lake for lean-check → bundle with lean-check-result"
+            exit 1
+          fi
+          pcs pf-core lean-check \
+            --trace ../examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json \
+            --out /tmp/pfcore-preview-cert.json \
+            --result-out /tmp/pfcore-preview-lean-check.json
           rm -rf /tmp/pfcore-preview-bundle
+          mkdir -p /tmp/pfcore-preview-bundle
           pcs pf-core bundle-release \
-            --trace ../examples/pf-core-valid/labtrust_replay/trace.json \
+            --trace ../examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json \
             --cert /tmp/pfcore-preview-cert.json \
+            --lean-check-result /tmp/pfcore-preview-lean-check.json \
             --out /tmp/pfcore-preview-bundle
+          pcs pf-core validate-bundle /tmp/pfcore-preview-bundle
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path("/tmp/pfcore-preview-bundle")
+          manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+          lean_rel = manifest.get("lean_check_result_path")
+          if not lean_rel:
+              raise SystemExit("FAIL: preview bundle missing lean_check_result_path")
+          if not (root / lean_rel).is_file():
+              raise SystemExit(f"FAIL: lean-check result missing at {lean_rel}")
+          print(f"OK preview lean-check-result in bundle: {lean_rel}")
+          PY
           pcs pf-core attest-bundle \
             --bundle /tmp/pfcore-preview-bundle \
             --property qc_release.temporal.safety \
-            --allow-absence
+            --allow-absence || true
           pcs pf-core validate-external-attestation \
             --bundle /tmp/pfcore-preview-bundle \
             --allow-absence
+          pcs pf-core validate-bundle /tmp/pfcore-preview-bundle
+          mkdir -p ../dist/pf-core-preview-bundle
+          cp -a /tmp/pfcore-preview-bundle/. ../dist/pf-core-preview-bundle/
+      - name: Upload preview release bundle
+        if: env.PCS_RELEASE_MODE == 'preview'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: pcs-core-pf-core-preview-bundle
+          path: dist/pf-core-preview-bundle/
+          retention-days: 14
       - name: Reject mock-only CertifyEdge as release attestation
         run: |
           cd python

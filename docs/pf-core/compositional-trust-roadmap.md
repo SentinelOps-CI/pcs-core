@@ -6,7 +6,8 @@ Extend PF-Core from per-trace concrete proofs to compositional theorems that pre
 
 | Theorem | Intent | Status |
 |---------|--------|--------|
-| `safe_extension_preserves_trace_safe` | Appending an `EventSafe` event to a `TraceSafe` trace yields `TraceSafe` | **Proved** (`lean/PFCore/Compositional.lean`; alias of `trace_safe_invariant_preserved_cons`) |
+| `safe_extension_preserves_trace_safe` | Appending an `EventSafe` event to a `TraceSafe` trace yields `TraceSafe` | **Proved** (`lean/PFCore/Compositional.lean`; alias of `trace_safe_invariant_preserved_cons`; also `TracePrefixSafe`) |
+| `compositional_safe_extension_yields_safe_extended_trace` | A6: safe prefix + EventSafe + Applies + FrameValid ⇒ TraceSafe extended | **Proved** (`Compositional.lean`; experimental `CompositionalExtensionCertificate`) |
 | `handoff_composition_does_not_expand_authority` | Chained `HandoffSafe` records do not expand authority beyond the first source when the second hop stays within the first delegation envelope | **Proved** (`lean/PFCore/Compositional.lean`) |
 | `contract_invariant_preserved_by_safe_extension` | Trace-safe contract invariant preserved under `EventSafe` extension | **Proved** (`lean/PFCore/Compositional.lean`) |
 | `composed_contract_preserves_component_invariants` | `Contract.seq` invariant splits/joins component invariants | **Proved** (`lean/PFCore/Compositional.lean`) |
@@ -51,6 +52,6 @@ See [non-interference.md](non-interference.md) and [assumptions.md](assumptions.
 | `traceSafe_implies_tenant_isolation` | Allowed events in safe traces stay tenant-scoped | **Proved** (`NonInterference.lean`) |
 | `traceSafe_implies_low_events_tenant_scoped` | Low-projected events in safe traces are tenant-scoped | **Proved** (`Observational.lean`; not paired-execution NI) |
 | `traceSafe_implies_tenant_projection_isolation` | Single-trace observational isolation | **Proved** (`Observational.lean`; user-facing name for prior observational NI) |
-| `accepted_transition_no_undeclared_sensitive_observation` | Observed sensitive effects stay in declared frame under instrumentation | **Proved** (`ObservedEffect.lean`; assumes `TrustedInstrumentation`) |
-| `eventSafeDenyClosed_implies_eventSafe` | Deny-closed refinement of `EventSafe` | **Proved** (`DenyClosed.lean`) |
+| `accepted_transition_no_undeclared_sensitive_observation` | Observed sensitive effects stay in declared frame under observation soundness | **Proved** (`ObservedEffect.lean`; `TrustedInstrumentation` = attested execution, not mere agree) |
+| `eventSafeDenyClosed_implies_eventSafe` | Deny-closed refinement of `EventSafe` | **Proved** (`DenyClosed.lean`; `DenyClosedCertificate` scaffolded/disabled) |
 | `PairedExecutionNonInterference` | Paired executions + scheduler + timing | **Scaffolding only** (`PairedExecution.lean`; not proved) |

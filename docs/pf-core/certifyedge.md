@@ -11,8 +11,15 @@ PF-Core integrates the external [CertifyEdge](https://github.com/fraware/Certify
 | `PF_CORE_CERTIFYEDGE_MOCK` | `1`, `true`, `yes` | unset | Forces mock mode (same as `MODE=mock`) |
 | `PF_CORE_CERTIFYEDGE_REQUIRE_LIVE` | `1`, `true`, `yes` | unset | Fail when live CLI absent (`--require-live` alias) |
 | `PF_CORE_CERTIFYEDGE_ALLOW_STUB` | `1`, `true`, `yes` | unset | Allow format stub on `require_live` (staging only) |
+| `PCS_CERTIFYEDGE_PROVISION_ENV` | path | `.tools/certifyedge/provision.env` | Machine-readable provision output |
 
 Legacy alias: `PCS_CERTIFYEDGE_MOCK=1` (still honored).
+
+Provisioning (`scripts/provision-certifyedge.sh`) always writes `provision.env` with executable
+path, binary digest, version, pin identity, strategy, and `trust_grade`
+(`pinned` | `untrusted_development` | `unpinned`). Workflows must source that file and must
+not overwrite `PF_CORE_CERTIFYEDGE_CLI` with an empty secret. Arbitrary PATH checkers that
+do not match the pin digest remain `untrusted_development` even when exit 0.
 
 ### Modes
 

@@ -14,6 +14,7 @@ from pcs_core.pf_core_contract_semantics import (
     build_contract_semantics_checked,
     default_semantics_layer_for_contract,
     field_semantics_layer,
+    materialize_contract_semantics_layer,
     resolve_semantics_layer,
     validate_semantics_layer,
 )
@@ -34,6 +35,7 @@ __all__ = [
     "load_contract",
     "load_contracts",
     "load_contracts_from_dir",
+    "materialize_contract_semantics_layer",
     "resolve_semantics_layer",
     "trace_has_contract_binding",
     "validate_event_against_contract",

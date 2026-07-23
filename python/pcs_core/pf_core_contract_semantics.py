@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+import re
 from dataclasses import dataclass
 from typing import Any, Mapping
 
@@ -163,6 +165,120 @@ def field_semantics_layer(contract: Mapping[str, Any], *, section: str, field: s
     """Return discharge layer for a contract field (section is used for documentation only)."""
     _ = section
     return resolve_semantics_layer(contract).get(field, DEFAULT_FIELD_LAYERS.get(field, "runtime"))
+
+
+_LEAN_IDENT_RE = re.compile(r"[^a-zA-Z0-9_]")
+
+OUT_OF_SCOPE_RATIONALES: dict[str, str] = {
+    "require_capability": "Marked out_of_scope; not discharged by Lean or runtime checkers",
+    "require_effect": "Marked out_of_scope; not discharged by Lean or runtime checkers",
+    "require_tenant_match": "Marked out_of_scope; not discharged by Lean or runtime checkers",
+    "require_role": "Not mapped to Lean ContractDecide; runtime role membership only",
+    "require_policy_ref": "Not mapped to Lean ContractDecide; runtime contract_refs membership only",
+    "require_evidence_ref": "Not mapped to Lean ContractDecide; runtime evidence_refs membership only",
+    "require_decision": "Marked out_of_scope; not discharged by Lean or runtime checkers",
+    "require_event_safe": "Marked out_of_scope; not discharged by Lean or runtime checkers",
+    "require_trace_safe": "Marked out_of_scope; not discharged by Lean or runtime checkers",
+}
+
+
+def _lean_ident(prefix: str, raw: str) -> str:
+    slug = _LEAN_IDENT_RE.sub("_", raw).strip("_")
+    if not slug or slug[0].isdigit():
+        slug = f"{prefix}_{slug or 'x'}"
+    return slug
+
+
+def runtime_check_id(contract_id: str, *, section: str, field: str) -> str:
+    """Stable runtime check identifier recorded on certificates and projections."""
+    return f"{contract_id}.{section}.{field}"
+
+
+def lean_theorem_for_contract_field(
+    contract_id: str,
+    *,
+    section: str,
+    field: str,
+    event_id: str | None,
+) -> str | None:
+    """Deterministic Lean theorem name that discharges a lean-layer contract field."""
+    _ = field
+    base = _lean_ident("contract", contract_id)
+    if section == "invariant":
+        return f"concrete_trace_satisfies_{base}"
+    if event_id is None:
+        return None
+    event_name = _lean_ident("ev", event_id)
+    if section == "pre":
+        return f"concrete_contract_pre_{base}_{event_name}"
+    if section == "post":
+        return f"concrete_contract_post_{base}_{event_name}"
+    return None
+
+
+def normalize_contract_field_value(value: Any) -> str | bool | None:
+    """Normalize an active contract field value for projection records."""
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value
+    if isinstance(value, (int, float)):
+        return str(value)
+    return json.dumps(value, sort_keys=True, separators=(",", ":"))
+
+
+def materialize_contract_semantics_layer(
+    contract: Mapping[str, Any],
+    *,
+    contract_id: str,
+    referencing_event_ids: list[str] | tuple[str, ...] | None = None,
+    effective_layers: Mapping[str, str] | None = None,
+) -> list[dict[str, Any]]:
+    """Materialize effective semantics_layer records after defaults are applied.
+
+    Each active contract field records section, field name, normalized value,
+    effective layer, and the applicable Lean theorem / runtime check id /
+    out-of-scope rationale.
+    """
+    layers = dict(effective_layers) if effective_layers is not None else resolve_semantics_layer(contract)
+    event_ids = [str(item) for item in (referencing_event_ids or []) if str(item)]
+    primary_event = event_ids[0] if event_ids else None
+    records: list[dict[str, Any]] = []
+    for field, section in sorted(
+        contract_fields_in_use(contract).items(),
+        key=lambda item: (item[1], item[0]),
+    ):
+        block = contract.get(section)
+        raw_value = block.get(field) if isinstance(block, Mapping) else None
+        layer = layers.get(field, DEFAULT_FIELD_LAYERS.get(field, "runtime"))
+        record: dict[str, Any] = {
+            "section": section,
+            "field": field,
+            "normalized_value": normalize_contract_field_value(raw_value),
+            "effective_layer": layer,
+        }
+        if layer == "lean":
+            theorem = lean_theorem_for_contract_field(
+                contract_id,
+                section=section,
+                field=field,
+                event_id=primary_event,
+            )
+            if theorem:
+                record["lean_theorem"] = theorem
+        elif layer == "runtime":
+            record["runtime_check_id"] = runtime_check_id(
+                contract_id, section=section, field=field
+            )
+        elif layer == "out_of_scope":
+            record["out_of_scope_rationale"] = OUT_OF_SCOPE_RATIONALES.get(
+                field,
+                "Field marked out_of_scope for this contract",
+            )
+        records.append(record)
+    return records
 
 
 def _trace_events(trace: Mapping[str, Any]) -> list[dict[str, Any]]:

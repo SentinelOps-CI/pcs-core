@@ -992,6 +992,13 @@
           "responsible_component": "scientific-computation demo producer",
           "execution_required_in_release_mode": true,
           "allowed_to_skip": false
+        },
+        {
+          "check_id": "payload_bytes_match_digest",
+          "severity": "release_blocking",
+          "responsible_component": "pcs-core",
+          "execution_required_in_release_mode": true,
+          "allowed_to_skip": false
         }
       ],
       "consumer_repos": [
@@ -2119,6 +2126,49 @@
       "canonical_hash_required": true,
       "release_mode_required": false
     },
+    "PFCoreEffectFrame.v0": {
+      "artifact_type": "PFCoreEffectFrame.v0",
+      "schema": "schemas/PFCoreEffectFrame.v0.schema.json",
+      "schema_owner": "pcs-core",
+      "runtime_producer": "pcs-core",
+      "allowed_runtime_producers": [
+        "pcs-core",
+        "AgentRuntime"
+      ],
+      "producer": "pcs-core",
+      "allowed_statuses": [
+        "Draft",
+        "Validated",
+        "Deprecated"
+      ],
+      "required_release_fields": [
+        "schema_version",
+        "artifact_type",
+        "signature_or_digest"
+      ],
+      "semantic_checks": [
+        {
+          "check_id": "explicit_artifact_type",
+          "severity": "release_blocking",
+          "responsible_component": "pcs-core",
+          "execution_required_in_release_mode": true,
+          "allowed_to_skip": false
+        },
+        {
+          "check_id": "schema_valid",
+          "severity": "release_blocking",
+          "responsible_component": "pcs-core",
+          "execution_required_in_release_mode": true,
+          "allowed_to_skip": false
+        }
+      ],
+      "consumer_repos": [
+        "pcs-core",
+        "AgentRuntime"
+      ],
+      "canonical_hash_required": true,
+      "release_mode_required": false
+    },
     "PFCoreTrace.v0": {
       "artifact_type": "PFCoreTrace.v0",
       "schema": "schemas/PFCoreTrace.v0.schema.json",
@@ -2264,6 +2314,138 @@
       ],
       "canonical_hash_required": true,
       "release_mode_required": true
+    },
+    "PFCoreTheoremManifest.v0": {
+      "artifact_type": "PFCoreTheoremManifest.v0",
+      "schema": "schemas/PFCoreTheoremManifest.v0.schema.json",
+      "schema_owner": "pcs-core",
+      "runtime_producer": "pcs-core",
+      "allowed_runtime_producers": [
+        "pcs-core"
+      ],
+      "producer": "pcs-core",
+      "allowed_statuses": [
+        "Draft",
+        "Validated",
+        "Deprecated"
+      ],
+      "required_release_fields": [
+        "schema_version",
+        "artifact_type",
+        "generated_module_name",
+        "proof_file_hash",
+        "semantic_projection_hash",
+        "certificate_mode",
+        "final_witness_theorem",
+        "final_witness_proposition",
+        "theorems",
+        "theorem_manifest_digest"
+      ],
+      "semantic_checks": [
+        {
+          "check_id": "schema_valid",
+          "severity": "release_blocking",
+          "responsible_component": "pcs-core",
+          "execution_required_in_release_mode": true,
+          "allowed_to_skip": false
+        },
+        {
+          "check_id": "manifest_digest_matches",
+          "severity": "release_blocking",
+          "responsible_component": "pcs-core",
+          "execution_required_in_release_mode": true,
+          "allowed_to_skip": false
+        }
+      ],
+      "consumer_repos": [
+        "pcs-core"
+      ],
+      "canonical_hash_required": true,
+      "release_mode_required": false
+    },
+    "PFCoreEvidenceManifest.v0": {
+      "artifact_type": "PFCoreEvidenceManifest.v0",
+      "schema": "schemas/PFCoreEvidenceManifest.v0.schema.json",
+      "schema_owner": "pcs-core",
+      "runtime_producer": "pcs-core",
+      "allowed_runtime_producers": [
+        "pcs-core"
+      ],
+      "producer": "pcs-core",
+      "allowed_statuses": [
+        "Draft",
+        "Validated",
+        "Deprecated"
+      ],
+      "required_release_fields": [
+        "schema_version",
+        "artifact_type",
+        "evidence_selection_policy",
+        "evidence_selection_policy_version",
+        "files",
+        "evidence_manifest_digest"
+      ],
+      "semantic_checks": [
+        {
+          "check_id": "schema_valid",
+          "severity": "release_blocking",
+          "responsible_component": "pcs-core",
+          "execution_required_in_release_mode": true,
+          "allowed_to_skip": false
+        },
+        {
+          "check_id": "manifest_digest_matches",
+          "severity": "release_blocking",
+          "responsible_component": "pcs-core",
+          "execution_required_in_release_mode": true,
+          "allowed_to_skip": false
+        }
+      ],
+      "consumer_repos": [
+        "pcs-core"
+      ],
+      "canonical_hash_required": true,
+      "release_mode_required": true
+    },
+    "PFCoreBundleVerificationResult.v0": {
+      "artifact_type": "PFCoreBundleVerificationResult.v0",
+      "schema": "schemas/PFCoreBundleVerificationResult.v0.schema.json",
+      "schema_owner": "pcs-core",
+      "runtime_producer": "pcs-core",
+      "allowed_runtime_producers": [
+        "pcs-core"
+      ],
+      "producer": "pcs-core",
+      "allowed_statuses": [
+        "Draft",
+        "Validated",
+        "Deprecated"
+      ],
+      "required_release_fields": [
+        "schema_version",
+        "artifact_type",
+        "ok",
+        "bundle_dir",
+        "verifier",
+        "verifier_version",
+        "checks",
+        "issues",
+        "signature_or_digest"
+      ],
+      "semantic_checks": [
+        {
+          "check_id": "schema_valid",
+          "severity": "release_blocking",
+          "responsible_component": "pcs-core",
+          "execution_required_in_release_mode": true,
+          "allowed_to_skip": false
+        }
+      ],
+      "consumer_repos": [
+        "pcs-core"
+      ],
+      "canonical_hash_required": true,
+      "release_mode_required": false
     },
     "PFCoreRuntimeObservation.v0": {
       "artifact_type": "PFCoreRuntimeObservation.v0",
@@ -2419,6 +2601,13 @@
           "responsible_component": "pcs-core",
           "execution_required_in_release_mode": true,
           "allowed_to_skip": false
+        },
+        {
+          "check_id": "closed_evidence_digests",
+          "severity": "release_blocking",
+          "responsible_component": "pcs-core",
+          "execution_required_in_release_mode": true,
+          "allowed_to_skip": false
         }
       ],
       "consumer_repos": [
@@ -2471,5 +2660,5 @@
       "release_mode_required": false
     }
   },
-  "signature_or_digest": "sha256:571c5e466142a4173e66a1bb3ece88652994a01a47a5af369e8a8b4a99c30f30"
+  "signature_or_digest": "sha256:523658c76a705ef3dc3e4c277bc5624bdcedc770d773f18ca33127ed568967fa"
 }

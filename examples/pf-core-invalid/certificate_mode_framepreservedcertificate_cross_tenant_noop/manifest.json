@@ -1,0 +1,5 @@
+{
+  "expected_error": "stepState failed",
+  "expected_error_alt": "applyEvent no-op rejected",
+  "certificate_mode": "FramePreservedCertificate"
+}

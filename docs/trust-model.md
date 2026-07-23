@@ -64,9 +64,24 @@ PCS:<artifact_type>:<schema_version>:<artifact_digest>
 | Concern | Policy |
 |---------|--------|
 | Trust root | Downstream verifiers pin an allowlist of ed25519 public keys by `key_id` (file or HSM). pcs-core does not ship production private keys. |
+| Registry | `TrustedKeyRegistry.v0` (`schemas/TrustedKeyRegistry.v0.schema.json`); load via `PCS_TRUSTED_KEY_REGISTRY` or `pcs_core.artifact_integrity`. |
 | Rotation | Publish a new `key_id` before retiring the old key. Artifacts must carry the `key_id` used at `signed_at`. Overlap windows are verifier policy. |
-| Revocation | Maintain a revocation list of `key_id` values (and optional digest denylist). Revoked keys must not verify new artifacts; historical artifacts signed before revocation may be accepted only under explicit audit policy. |
+| Revocation | Set `revoked_at` on the key entry. Revoked keys must not verify signatures with `signed_at >= revoked_at`. |
+| Validity | Keys carry `valid_from` / optional `valid_until`; `signed_at` must fall inside the interval. |
+| Timestamp policy | Reject future `signed_at` (small skew allowed) and optionally reject signatures older than `max_age`. |
 | Algorithm agility | v1 fixes `algorithm` to `ed25519`. Future algorithms require a new schema version. |
+
+Operational Python API: `pcs_core.artifact_integrity` (`sign_artifact`, `verify_artifact_signature`,
+`verify_release_root_signatures`). Stable releases authenticate PCS/PF-Core manifests,
+PF-Core certificates, Lean-check results, external attestations, and publication bundles.
+Digest-only integrity remains valid for development and explicitly labeled previews.
+Operator steps to publish `TrustedKeyRegistry.v0` and close stable gates:
+[pf-core/operator-release-gates.md](pf-core/operator-release-gates.md).
+
+Signing seed for local/CI experiments (never commit production seeds):
+
+- `PCS_RELEASE_SIGNING_SEED_B64` — 32-byte ed25519 seed (base64url)
+- `PCS_RELEASE_SIGNING_KEY_ID` — matching `key_id` in the trusted registry
 
 ## Staleness
 

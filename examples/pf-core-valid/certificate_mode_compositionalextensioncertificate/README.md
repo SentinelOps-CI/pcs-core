@@ -1,7 +1,13 @@
 # Valid CompositionalExtensionCertificate fixture
 
-Valid PF-Core trace exercising **`CompositionalExtensionCertificate`** certificate-mode codegen obligations.
+Valid PF-Core trace exercising **`CompositionalExtensionCertificate`** certificate-mode
+codegen obligations (A6).
 
-Compositional trace extension safety.
+Obligations: safe prefix + EventSafe extension + successful `stepState` application +
+preserved `FrameValid` frames ⇒ `TraceSafe` extended trace (`CompositionalSafeExtension`).
+Prefix-only `TraceSafe` chaining is the narrower `TracePrefixSafe` claim.
 
-Regenerate via `python/scripts/gen_certificate_mode_fixtures.py` when certificate-mode obligations change.
+Status: `experimental` (not `release_candidate`).
+
+Regenerate via `python/scripts/gen_certificate_mode_fixtures.py` when certificate-mode
+obligations change.

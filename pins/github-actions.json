@@ -23,6 +23,18 @@
     "actions/upload-artifact": {
       "ref": "v4.6.2",
       "sha": "ea165f8d65b6e75b540449e92b4886f43607fa02"
+    },
+    "actions/download-artifact": {
+      "ref": "v4.3.0",
+      "sha": "d3f86a106a0bac45b974a628896c90dbdf5c8093"
+    },
+    "actions/attest-build-provenance": {
+      "ref": "v3.2.0",
+      "sha": "96278af6caaf10aea03fd8d33a09a777ca52d62f"
+    },
+    "actions/attest-sbom": {
+      "ref": "v2.2.0",
+      "sha": "115c3be05ff3974bcbd596578934b3f9ce39bf68"
     }
   },
   "notes": "Workflows pin uses: owner/action@<sha> # <ref>. Dependabot/Renovate may refresh these SHAs."

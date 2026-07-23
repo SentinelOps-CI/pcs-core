@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pcs.sentinelops.ci/schemas/TrustedKeyRegistry.v0.schema.json",
+  "title": "TrustedKeyRegistry.v0",
+  "description": "Allowlist of ed25519 public keys for ArtifactIntegrity.v1 verification. pcs-core does not ship production private keys.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "artifact_type",
+    "keys"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "$ref": "common.defs.json#/$defs/schema_version" },
+    "artifact_type": { "const": "TrustedKeyRegistry.v0" },
+    "canonicalization_version": {
+      "$ref": "common.defs.json#/$defs/canonicalization_version"
+    },
+    "registry_id": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "keys": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "type": "object",
+        "required": [
+          "key_id",
+          "algorithm",
+          "public_key",
+          "valid_from"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "key_id": { "type": "string", "minLength": 1, "maxLength": 256 },
+          "algorithm": { "const": "ed25519" },
+          "public_key": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Base64url (no padding) or standard base64 encoding of the 32-byte ed25519 public key."
+          },
+          "valid_from": { "$ref": "common.defs.json#/$defs/iso8601_datetime" },
+          "valid_until": { "$ref": "common.defs.json#/$defs/iso8601_datetime" },
+          "revoked_at": { "$ref": "common.defs.json#/$defs/iso8601_datetime" },
+          "purposes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "release_signing",
+                "external_attestation",
+                "publication_bundle",
+                "development"
+              ]
+            },
+            "uniqueItems": true
+          },
+          "note": { "type": "string" }
+        }
+      }
+    },
+    "signature_or_digest": { "$ref": "common.defs.json#/$defs/hex_digest" }
+  }
+}

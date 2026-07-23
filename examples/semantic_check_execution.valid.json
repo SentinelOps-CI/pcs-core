@@ -321,6 +321,16 @@
       "enforcement_layer": "release_chain"
     },
     {
+      "registry_ref": "PFCoreBundleVerificationResult.v0.schema_valid",
+      "artifact_type": "PFCoreBundleVerificationResult.v0",
+      "check_id": "schema_valid",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
       "registry_ref": "PFCoreCapability.v0.explicit_artifact_type",
       "artifact_type": "PFCoreCapability.v0",
       "check_id": "explicit_artifact_type",
@@ -411,6 +421,26 @@
       "enforcement_layer": "release_chain"
     },
     {
+      "registry_ref": "PFCoreEffectFrame.v0.explicit_artifact_type",
+      "artifact_type": "PFCoreEffectFrame.v0",
+      "check_id": "explicit_artifact_type",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "PFCoreEffectFrame.v0.schema_valid",
+      "artifact_type": "PFCoreEffectFrame.v0",
+      "check_id": "schema_valid",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
       "registry_ref": "PFCoreEvent.v0.explicit_artifact_type",
       "artifact_type": "PFCoreEvent.v0",
       "check_id": "explicit_artifact_type",
@@ -423,6 +453,26 @@
     {
       "registry_ref": "PFCoreEvent.v0.schema_valid",
       "artifact_type": "PFCoreEvent.v0",
+      "check_id": "schema_valid",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "PFCoreEvidenceManifest.v0.manifest_digest_matches",
+      "artifact_type": "PFCoreEvidenceManifest.v0",
+      "check_id": "manifest_digest_matches",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "PFCoreEvidenceManifest.v0.schema_valid",
+      "artifact_type": "PFCoreEvidenceManifest.v0",
       "check_id": "schema_valid",
       "severity": "release_blocking",
       "responsible_component": "pcs-core",
@@ -484,6 +534,16 @@
       "registry_ref": "PFCorePrincipal.v0.schema_valid",
       "artifact_type": "PFCorePrincipal.v0",
       "check_id": "schema_valid",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "PFCoreReleaseBundleManifest.v0.closed_evidence_digests",
+      "artifact_type": "PFCoreReleaseBundleManifest.v0",
+      "check_id": "closed_evidence_digests",
       "severity": "release_blocking",
       "responsible_component": "pcs-core",
       "execution_required_in_release_mode": true,
@@ -573,6 +633,26 @@
     {
       "registry_ref": "PFCoreRuntimeObservation.v0.schema_valid",
       "artifact_type": "PFCoreRuntimeObservation.v0",
+      "check_id": "schema_valid",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "PFCoreTheoremManifest.v0.manifest_digest_matches",
+      "artifact_type": "PFCoreTheoremManifest.v0",
+      "check_id": "manifest_digest_matches",
+      "severity": "release_blocking",
+      "responsible_component": "pcs-core",
+      "execution_required_in_release_mode": true,
+      "allowed_to_skip": false,
+      "enforcement_layer": "release_chain"
+    },
+    {
+      "registry_ref": "PFCoreTheoremManifest.v0.schema_valid",
+      "artifact_type": "PFCoreTheoremManifest.v0",
       "check_id": "schema_valid",
       "severity": "release_blocking",
       "responsible_component": "pcs-core",
@@ -901,5 +981,5 @@
       "enforcement_layer": "registry_metadata"
     }
   ],
-  "signature_or_digest": "sha256:f12bfa9e0707e3782eea0b978b389506b77cb5dac179bfdc05302e8a22d8e43e"
+  "signature_or_digest": "sha256:7b9c38850357c43e738cb5f876367f5a7fbc68e1c51d7b6077d8a218199cb700"
 }

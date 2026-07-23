@@ -1,0 +1,44 @@
+{
+  "schema_version": "v0",
+  "artifact_type": "PFCoreSemanticProjection.v0",
+  "trace_id": "trace-file-read-1",
+  "certificate_mode": "CompositionalExtensionCertificate",
+  "events": [
+    {
+      "sequence": 0,
+      "event_id": "ev-file-read-1",
+      "decision": "allow",
+      "principal": {
+        "principal_id": "agent-1",
+        "tenant": "tenant-a",
+        "roles": [
+          "agent"
+        ],
+        "capabilities": [
+          "cap:file-read",
+          "cap:email-send",
+          "cap:handoff",
+          "cap:mcp-invoke"
+        ]
+      },
+      "action": {
+        "action_id": "act-1",
+        "tool_name": "filesystem.read",
+        "capability_id": "cap:file-read",
+        "capability_effect_kind": "file.read",
+        "resource_pattern": "/data/*",
+        "effects": [
+          "file.read"
+        ],
+        "reads": [
+          {
+            "uri": "/data/report.txt",
+            "tenant": "tenant-a"
+          }
+        ],
+        "writes": []
+      }
+    }
+  ],
+  "projection_hash": "sha256:5115f144cd79dc0b8037ca2b3a016f552ac5de59fd1d9ef85e0ac7c357bbbf44"
+}

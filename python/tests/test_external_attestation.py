@@ -119,6 +119,67 @@ def test_validate_bundle_checks_sidecar_when_present(
     assert result.ok, result.to_dict()
 
 
+def test_ed25519_signed_external_attestation_roundtrip(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from pcs_core.artifact_integrity import (
+        build_trusted_key,
+        build_trusted_key_registry,
+        encode_key_bytes,
+        generate_ed25519_keypair,
+    )
+    from pcs_core.external_attestation import seal_external_attestation
+
+    seed, pub = generate_ed25519_keypair()
+    key_id = "attest-key"
+    registry_path = tmp_path / "keys.json"
+    registry_path.write_text(
+        json.dumps(
+            build_trusted_key_registry(
+                [
+                    build_trusted_key(
+                        key_id=key_id,
+                        public_key=encode_key_bytes(pub),
+                        valid_from="2020-01-01T00:00:00Z",
+                        purposes=["external_attestation"],
+                    )
+                ]
+            )
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("PCS_TRUSTED_KEY_REGISTRY", str(registry_path))
+
+    base = {
+        "schema_version": "v0",
+        "artifact_type": "ExternalAttestation.v0",
+        "attestation_id": "ext-1",
+        "release_bundle_digest": "sha256:" + "a" * 64,
+        "trace_digest": "sha256:" + "b" * 64,
+        "property_id": "qc_release.temporal.safety",
+        "property_version": "v0",
+        "checker": "certifyedge",
+        "checker_version": "0.1.0",
+        "checker_binary_digest": "sha256:" + "c" * 64,
+        "policy_digest": "sha256:" + "d" * 64,
+        "executed_at": "2026-07-22T12:00:00Z",
+        "result": "CertificateChecked",
+        "attestation_class": "mock",
+        "issuer_identity": "certifyedge-mock",
+        "authentication_mode": "ed25519_signed",
+        "attestation_ref": "mock://certifyedge/x",
+    }
+    # Fix policy digest to match helper.
+    from pcs_core.external_attestation import policy_digest_from_property
+
+    base["policy_digest"] = policy_digest_from_property("qc_release.temporal.safety", "v0")
+    sealed = seal_external_attestation(base, private_seed=seed, key_id=key_id)
+    assert sealed["authentication_mode"] == "ed25519_signed"
+    assert sealed["attestation_signature"]["algorithm"] == "ed25519"
+    errors = validate_external_attestation(sealed)
+    assert errors == [], errors
+
+
 def test_verify_certifyedge_pin_release_fail_closed() -> None:
     import subprocess
     import sys

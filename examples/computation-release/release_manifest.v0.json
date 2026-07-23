@@ -13,7 +13,7 @@
   },
   "release_chain_validation_result": {
     "path": "release_chain_validation_result.v0.json",
-    "sha256": "sha256:655eb161766f61ba6d804767be022ff49c9199337897012f44f84631657007b7"
+    "sha256": "sha256:4005a96945962a6d261dece69319f957b7a9afc4d4e00d2c1a77a126983238ea"
   },
   "canonical_signed_bundle": {
     "path": "signed_science_claim_bundle.json",
@@ -74,7 +74,7 @@
       "producer": "pcs-core",
       "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
       "source_commit": "d444444444444444444444444444444444444444",
-      "sha256": "sha256:a2b8d26f9d0e056e7fd963156021a88b43c764c84357e2ff8ae70cd2c2d99acc"
+      "sha256": "sha256:b3f437010792f1f1f70ade9912374a1795c1458bf35309d6e1f888d875d09f3c"
     },
     "computation_witness.json": {
       "artifact_type": "ComputationWitness.v0",
@@ -82,7 +82,7 @@
       "producer": "pcs-core",
       "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
       "source_commit": "d444444444444444444444444444444444444444",
-      "sha256": "sha256:b89def93118f055abb45b8b0187e2aaeb452ec6eae502c9ba9bbf7ded83377cb"
+      "sha256": "sha256:944ab3a7bcc6ecd3b7b702c122fc3aa4e1048f2d885d14350894bb18618e3bf2"
     },
     "science_claim_bundle.certified.json": {
       "artifact_type": "ScienceClaimBundle.v0",
@@ -118,13 +118,13 @@
     }
   },
   "release_status": "Validated",
-  "signature_or_digest": "sha256:ebddfa4e6202cac49c4eda4bb1927ce0da70f2b0b2630f9749ab53156195b925",
+  "signature_or_digest": "sha256:1245f737c423f4d37416fe307ee88b4d3c78e93115f60eb9f98b18a50e4d4b97",
   "proof_obligation": {
     "path": "proof_obligation.v0.json",
-    "sha256": "sha256:4f87c95582fa9739b36877329fbdd604050f28613454eda1fb5e4905e10936d5"
+    "sha256": "sha256:a734edd00cc3f944b7dc38fa070dc289fb8d74508f6b53d7a39a7dd9daa70c85"
   },
   "lean_check_result": {
     "path": "lean_check_result.v0.json",
-    "sha256": "sha256:b90dab592454baaddcee040200c40aaf49f309b599a81cec3dfefcf3050bdcb8"
+    "sha256": "sha256:964fc5a5c1ae0a6d9d1d1a181e8214d278aa52f405d4b5f3b45b1bd909fa52c7"
   }
 }

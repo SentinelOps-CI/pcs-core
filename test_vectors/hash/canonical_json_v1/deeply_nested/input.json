@@ -1,0 +1,40 @@
+{
+  "schema_version": "v0",
+  "artifact_type": "CanonicalProbe.v0",
+  "child": {
+    "level": 0,
+    "child": {
+      "level": 1,
+      "child": {
+        "level": 2,
+        "child": {
+          "level": 3,
+          "child": {
+            "level": 4,
+            "child": {
+              "level": 5,
+              "child": {
+                "level": 6,
+                "child": {
+                  "level": 7,
+                  "child": {
+                    "level": 8,
+                    "child": {
+                      "level": 9,
+                      "child": {
+                        "level": 10,
+                        "child": {
+                          "level": 11
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

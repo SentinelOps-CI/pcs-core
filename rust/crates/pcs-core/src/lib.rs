@@ -6,8 +6,11 @@ pub mod status;
 pub mod validation;
 
 pub use hash::{
-    canonical_hash, canonical_json_bytes, canonical_json_string, domain_separated_signing_message,
-    CANONICALIZATION_VERSION,
+    assert_canonical_number_policy, canonical_hash, canonical_hash_legacy, canonical_hash_release,
+    canonical_json_bytes, canonical_json_string, domain_separated_signing_message,
+    try_canonical_hash_release, CanonicalizationError, CANONICALIZATION_VERSION,
+    REJECTION_FLOAT_PROHIBITED, REJECTION_INTEGER_OUT_OF_RANGE, REJECTION_NEGATIVE_ZERO,
+    SAFE_INTEGER_MAX, SAFE_INTEGER_MIN,
 };
 pub use pf_core::{
     action_admissible_with_resource_pattern_d, compute_event_hash, compute_trace_hash,

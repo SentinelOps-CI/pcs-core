@@ -1,0 +1,125 @@
+{
+  "schema_version": "v0",
+  "artifact_type": "PFCoreTrace.v0",
+  "trace_id": "trace-frame-preserved-cross-tenant-noop-1",
+  "workflow_id": "agent_tool_use.safety_v0",
+  "events": [
+    {
+      "schema_version": "v0",
+      "artifact_type": "PFCoreEvent.v0",
+      "event_id": "ev-tenant-a-1",
+      "trace_id": "trace-frame-preserved-cross-tenant-noop-1",
+      "sequence": 0,
+      "timestamp": "2026-06-18T00:00:00Z",
+      "principal": {
+        "principal_id": "agent-1",
+        "principal_kind": "agent",
+        "tenant": "tenant-a",
+        "roles": [
+          "agent"
+        ],
+        "capabilities": [
+          "cap:file-read",
+          "cap:email-send",
+          "cap:handoff",
+          "cap:mcp-invoke"
+        ]
+      },
+      "action": {
+        "action_id": "act-a-1",
+        "tool_name": "filesystem.read",
+        "capability": {
+          "capability_id": "cap:file-read",
+          "effect_kind": "file.read",
+          "resource_pattern": "/data/*"
+        },
+        "effects": [
+          {
+            "effect_kind": "file.read"
+          }
+        ],
+        "reads": [
+          {
+            "resource_id": "res-1",
+            "uri": "/data/a.txt",
+            "tenant": "tenant-a"
+          }
+        ],
+        "writes": [],
+        "input_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "output_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "decision": "allow",
+      "decision_reason": "authorized",
+      "contract_refs": [],
+      "evidence_refs": [],
+      "previous_event_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "source_repo": "https://github.com/example/agent-runtime",
+      "source_commit": "abc1234567890abc1234567890abc1234567890",
+      "event_hash": "sha256:4cb030bae3a5c954a793b711b38f64ad8721e94304cbce807ef710ef29b4d60f",
+      "signature_or_digest": "sha256:4cb030bae3a5c954a793b711b38f64ad8721e94304cbce807ef710ef29b4d60f"
+    },
+    {
+      "schema_version": "v0",
+      "artifact_type": "PFCoreEvent.v0",
+      "event_id": "ev-tenant-b-1",
+      "trace_id": "trace-frame-preserved-cross-tenant-noop-1",
+      "sequence": 1,
+      "timestamp": "2026-06-18T00:00:00Z",
+      "principal": {
+        "principal_id": "agent-2",
+        "principal_kind": "agent",
+        "tenant": "tenant-b",
+        "roles": [
+          "agent"
+        ],
+        "capabilities": [
+          "cap:file-read",
+          "cap:email-send",
+          "cap:handoff",
+          "cap:mcp-invoke"
+        ]
+      },
+      "action": {
+        "action_id": "act-b-1",
+        "tool_name": "filesystem.read",
+        "capability": {
+          "capability_id": "cap:file-read",
+          "effect_kind": "file.read",
+          "resource_pattern": "/data/*"
+        },
+        "effects": [
+          {
+            "effect_kind": "file.read"
+          }
+        ],
+        "reads": [
+          {
+            "resource_id": "res-b-1",
+            "uri": "/data/b.txt",
+            "tenant": "tenant-b"
+          }
+        ],
+        "writes": [],
+        "input_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "output_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "decision": "allow",
+      "decision_reason": "authorized",
+      "contract_refs": [],
+      "evidence_refs": [],
+      "previous_event_hash": "sha256:4cb030bae3a5c954a793b711b38f64ad8721e94304cbce807ef710ef29b4d60f",
+      "source_repo": "https://github.com/example/agent-runtime",
+      "source_commit": "abc1234567890abc1234567890abc1234567890",
+      "event_hash": "sha256:32dfeb25da315f658c381bc0d0f1df1b1d5a9ed88de482cb87e226e74dc9a391",
+      "signature_or_digest": "sha256:32dfeb25da315f658c381bc0d0f1df1b1d5a9ed88de482cb87e226e74dc9a391"
+    }
+  ],
+  "policy_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "contract_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "claim_class": "RuntimeChecked",
+  "source_repo": "https://github.com/example/agent-runtime",
+  "source_commit": "abc1234567890abc1234567890abc1234567890",
+  "trace_hash": "sha256:76a2ebd3fab23b3e7f642e7a81ea03e79115cc9aec490b9bc6ba3480b7a85a18",
+  "signature_or_digest": "sha256:76a2ebd3fab23b3e7f642e7a81ea03e79115cc9aec490b9bc6ba3480b7a85a18"
+}

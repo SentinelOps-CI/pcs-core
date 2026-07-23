@@ -13,6 +13,9 @@ from pcs_core.lean_catalog import (
 
 def validate_proof_obligation_semantics(data: dict[str, Any]) -> list[str]:
     errors: list[str] = []
+    from pcs_core.pcs_projection import validate_proof_obligation_projection
+
+    errors.extend(validate_proof_obligation_projection(data))
     obligations = data.get("obligations")
     if not isinstance(obligations, list) or not obligations:
         errors.append("ProofObligation.v0 requires non-empty obligations")
@@ -53,6 +56,11 @@ def validate_lean_check_result_semantics(data: dict[str, Any]) -> list[str]:
         if not data.get("proof_term_ref"):
             errors.append(
                 "LeanCheckResult.v0 EnvelopeLeanChecked requires proof_term_ref",
+            )
+        proj_hash = data.get("pcs_projection_manifest_hash")
+        if not isinstance(proj_hash, str) or not proj_hash.startswith("sha256:"):
+            errors.append(
+                "LeanCheckResult.v0 EnvelopeLeanChecked requires pcs_projection_manifest_hash",
             )
     results = data.get("obligation_results")
     if not isinstance(results, list):

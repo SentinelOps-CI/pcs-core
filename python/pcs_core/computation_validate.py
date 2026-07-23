@@ -2,10 +2,15 @@
 
 from __future__ import annotations
 
+import json
+from dataclasses import dataclass
+from hashlib import sha256
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
 from pcs_core.hash import PLACEHOLDER_DIGEST, SIGNATURE_FIELD, canonical_hash
+from pcs_core.safe_paths import UnsafePathError, resolve_contained_file
+
 
 RELEASE_WITNESS_STATUS = "CertificateChecked"
 
@@ -16,6 +21,24 @@ ENVIRONMENT_RECEIPT_FILE = "environment_receipt.json"
 COMPUTATION_RUN_RECEIPT_FILE = "computation_run_receipt.json"
 RESULT_ARTIFACT_FILE = "result_artifact.json"
 COMPUTATION_WITNESS_FILE = "computation_witness.json"
+
+# Issue-code tokens embedded in semantic error strings (release-chain mappers parse these).
+PAYLOAD_DIGEST_MISMATCH = "payload_digest_mismatch"
+PAYLOAD_SIZE_MISMATCH = "payload_size_mismatch"
+PAYLOAD_MISSING = "payload_missing"
+PAYLOAD_PATH_UNSAFE = "payload_path_unsafe"
+DUPLICATE_RESULT_DECLARATION = "duplicate_result_declaration"
+
+
+@dataclass(frozen=True)
+class VerifiedResultPayload:
+    """Byte-verified ResultArtifact.v0 payload under a release root."""
+
+    result_id: str
+    result_artifact_relpath: str
+    payload_relpath: str
+    digest: str
+    size_bytes: int
 
 
 def _is_zero_commit(commit: str) -> bool:
@@ -52,6 +75,186 @@ def _signature_or_digest_valid(data: dict[str, Any]) -> list[str]:
     expected = canonical_hash(body)
     if digest != expected:
         return [f"{SIGNATURE_FIELD} does not match canonical digest (signature_or_digest_valid)"]
+    return []
+
+
+def _payload_digest(content: bytes) -> str:
+    return f"sha256:{sha256(content).hexdigest()}"
+
+
+def verify_result_artifact_payload(
+    release_dir: Path,
+    result: Mapping[str, Any],
+    *,
+    result_artifact_relpath: str = RESULT_ARTIFACT_FILE,
+) -> VerifiedResultPayload:
+    """Resolve, read, and bind ResultArtifact.v0 payload bytes under ``release_dir``.
+
+    Rejects absolute paths, ``..`` traversal, symlinks, and Windows reparse-point
+    escapes. Compares SHA-256 and ``size_bytes`` against the declared fields.
+    """
+    result_id = result.get("result_id")
+    if not isinstance(result_id, str) or not result_id.strip():
+        raise ValueError(
+            f"{result_artifact_relpath}: ResultArtifact.v0 result_id is required "
+            f"({DUPLICATE_RESULT_DECLARATION})",
+        )
+    payload_ref = result.get("path")
+    if not isinstance(payload_ref, str) or not payload_ref.strip():
+        raise ValueError(
+            f"{result_artifact_relpath}: ResultArtifact.v0 path is required ({PAYLOAD_MISSING})",
+        )
+    declared_digest = result.get("sha256")
+    if not isinstance(declared_digest, str) or not declared_digest.startswith("sha256:"):
+        raise ValueError(
+            f"{result_artifact_relpath}: ResultArtifact.v0 sha256 is required "
+            f"({PAYLOAD_DIGEST_MISMATCH})",
+        )
+    declared_size = result.get("size_bytes")
+    if not isinstance(declared_size, int) or isinstance(declared_size, bool) or declared_size < 0:
+        raise ValueError(
+            f"{result_artifact_relpath}: ResultArtifact.v0 size_bytes is required "
+            f"({PAYLOAD_SIZE_MISMATCH})",
+        )
+
+    root = release_dir.resolve()
+    try:
+        payload_path = resolve_contained_file(root, payload_ref)
+    except UnsafePathError as exc:
+        message = str(exc).lower()
+        if "does not resolve" in message or "not a regular file" in message:
+            code = PAYLOAD_MISSING
+        else:
+            code = PAYLOAD_PATH_UNSAFE
+        raise ValueError(
+            f"{result_artifact_relpath}: unsafe or missing payload path {payload_ref!r} "
+            f"({code}): {exc}",
+        ) from exc
+
+    payload_bytes = payload_path.read_bytes()
+    actual_digest = _payload_digest(payload_bytes)
+    actual_size = len(payload_bytes)
+    if actual_digest != declared_digest:
+        raise ValueError(
+            f"{result_artifact_relpath}: payload digest mismatch for {payload_ref!r}: "
+            f"declared {declared_digest}, got {actual_digest} ({PAYLOAD_DIGEST_MISMATCH})",
+        )
+    if actual_size != declared_size:
+        raise ValueError(
+            f"{result_artifact_relpath}: payload size mismatch for {payload_ref!r}: "
+            f"declared {declared_size}, got {actual_size} ({PAYLOAD_SIZE_MISMATCH})",
+        )
+
+    # Normalize to forward-slash release-relative path for projection / obligations.
+    rel = payload_path.relative_to(root).as_posix()
+    return VerifiedResultPayload(
+        result_id=result_id.strip(),
+        result_artifact_relpath=result_artifact_relpath.replace("\\", "/"),
+        payload_relpath=rel,
+        digest=actual_digest,
+        size_bytes=actual_size,
+    )
+
+
+def _iter_result_artifact_files(release_dir: Path) -> list[tuple[str, dict[str, Any]]]:
+    """Return ``(relpath, doc)`` for every ResultArtifact.v0 under the release root."""
+    root = release_dir.resolve()
+    found: list[tuple[str, dict[str, Any]]] = []
+    seen_paths: set[str] = set()
+
+    def _consider(path: Path) -> None:
+        if not path.is_file():
+            return
+        try:
+            rel = path.relative_to(root).as_posix()
+        except ValueError:
+            return
+        if rel in seen_paths:
+            return
+        try:
+            doc = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+            return
+        if not isinstance(doc, dict):
+            return
+        # Primary harness file is always treated as ResultArtifact.v0.
+        if path.name == RESULT_ARTIFACT_FILE or path.name.startswith("result_artifact"):
+            seen_paths.add(rel)
+            found.append((rel, doc))
+            return
+        artifact_type = str(doc.get("artifact_type") or "")
+        if artifact_type == "ResultArtifact.v0":
+            seen_paths.add(rel)
+            found.append((rel, doc))
+
+    _consider(root / RESULT_ARTIFACT_FILE)
+    for path in sorted(root.glob("result_artifact*.json")):
+        _consider(path)
+
+    manifest_path = root / "release_manifest.v0.json"
+    if manifest_path.is_file():
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+            manifest = None
+        if isinstance(manifest, dict):
+            artifacts = manifest.get("artifacts")
+            if isinstance(artifacts, dict):
+                for name, meta in artifacts.items():
+                    if not isinstance(meta, dict):
+                        continue
+                    artifact_type = str(meta.get("artifact_type") or "")
+                    if artifact_type != "ResultArtifact.v0" and not str(name).startswith(
+                        "result_artifact",
+                    ):
+                        continue
+                    _consider(root / str(name))
+
+    return found
+
+
+def verify_all_result_artifact_payloads(release_dir: Path) -> list[VerifiedResultPayload]:
+    """Verify every ResultArtifact.v0 payload; reject duplicate declarations."""
+    entries = _iter_result_artifact_files(release_dir)
+    if not entries:
+        raise ValueError(
+            f"{release_dir}: no ResultArtifact.v0 files found ({PAYLOAD_MISSING})",
+        )
+
+    verified: list[VerifiedResultPayload] = []
+    seen_ids: dict[str, str] = {}
+    seen_payload_paths: dict[str, str] = {}
+
+    for relpath, doc in entries:
+        item = verify_result_artifact_payload(
+            release_dir,
+            doc,
+            result_artifact_relpath=relpath,
+        )
+        prior_id = seen_ids.get(item.result_id)
+        if prior_id is not None:
+            raise ValueError(
+                f"duplicate ResultArtifact result_id {item.result_id!r} in "
+                f"{prior_id} and {relpath} ({DUPLICATE_RESULT_DECLARATION})",
+            )
+        prior_path = seen_payload_paths.get(item.payload_relpath)
+        if prior_path is not None:
+            raise ValueError(
+                f"duplicate ResultArtifact payload path {item.payload_relpath!r} in "
+                f"{prior_path} and {relpath} ({DUPLICATE_RESULT_DECLARATION})",
+            )
+        seen_ids[item.result_id] = relpath
+        seen_payload_paths[item.payload_relpath] = relpath
+        verified.append(item)
+    return verified
+
+
+def validate_result_payloads_in_release(directory: Path) -> list[str]:
+    """Return semantic errors for ResultArtifact payload binding under ``directory``."""
+    try:
+        verify_all_result_artifact_payloads(directory)
+    except ValueError as exc:
+        return [str(exc)]
     return []
 
 
@@ -237,16 +440,12 @@ def _load_release_json(directory: Path, name: str) -> dict[str, Any] | None:
     path = directory / name
     if not path.is_file():
         return None
-    import json
-
     data = json.loads(path.read_text(encoding="utf-8"))
     return data if isinstance(data, dict) else None
 
 
 def validate_computation_release_directory(directory: Path) -> list[str]:
     """Validate a computation release fixture directory (valid train)."""
-    import json
-
     from pcs_core.validate import ValidationError, validate_artifact, validate_file
 
     errors: list[str] = []
@@ -291,6 +490,7 @@ def validate_computation_release_directory(directory: Path) -> list[str]:
             witness=witness,
         ),
     )
+    errors.extend(validate_result_payloads_in_release(directory))
     if run_receipt.get("workflow_id") != profile.get("workflow_id"):
         errors.append("computation_run_receipt.workflow_id does not match workflow_profile")
     for name in (
@@ -345,8 +545,6 @@ def validate_computation_release_directory(directory: Path) -> list[str]:
 
 def validate_computation_invalid_case(directory: Path) -> list[str]:
     """Return errors if an invalid-case directory incorrectly passes validation."""
-    import json
-
     from pcs_core.validate import ValidationError, validate_artifact
 
     paths = {
@@ -385,6 +583,7 @@ def validate_computation_invalid_case(directory: Path) -> list[str]:
             witness=witness,
         ),
     )
+    failures.extend(validate_result_payloads_in_release(directory))
     if not failures:
         return [f"{directory.name}: invalid fixture must fail semantic validation"]
     return []

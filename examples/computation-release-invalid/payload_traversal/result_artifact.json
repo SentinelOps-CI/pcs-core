@@ -1,0 +1,14 @@
+{
+  "schema_version": "v0",
+  "result_id": "result-metric-001",
+  "result_kind": "metric",
+  "path": "../outside_metrics.json",
+  "sha256": "sha256:3e8f8863ea36cfdcc6718ec4d738a6b69ed649f229d52edf79b88ebdd596768c",
+  "size_bytes": 46,
+  "media_type": "application/json",
+  "description": "Primary reproducibility metric output",
+  "produced_by_run": "run-sci-comp-001",
+  "source_repo": "https://github.com/example/scientific-computation-runner",
+  "source_commit": "e555555555555555555555555555555555555555",
+  "signature_or_digest": "sha256:31a667621aaad59266d4fc856835964f2b7af586be38d53ebe62fe2eb8889b0c"
+}

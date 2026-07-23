@@ -27,11 +27,16 @@ def _load(path: Path) -> dict:
     return __import__("json").loads(path.read_text(encoding="utf-8"))
 
 
+EFFECT_FRAME_TRACE = (
+    REPO / "examples" / "pf-core-valid" / "certificate_mode_effectframecertificate" / "trace.json"
+)
+
+
 @pytest.mark.parametrize(
     "mode,trace_path",
     [
         ("FramePreservedCertificate", FILE_READ),
-        ("EffectFrameCertificate", FILE_READ),
+        ("EffectFrameCertificate", EFFECT_FRAME_TRACE),
         ("HandoffSafeCertificate", VALID_TRACE),
         ("CompositionalExtensionCertificate", FILE_READ),
         ("ContractCheckedCertificate", CONTRACT_TRACE),
@@ -50,8 +55,17 @@ def test_certificate_mode_codegen_has_no_trivial_aggregates(
     if mode == "HandoffSafeCertificate":
         handoff = _load(HANDOFF_FIXTURE)
         (work / "handoff.json").write_text(json.dumps(handoff), encoding="utf-8")
+        # Explicit handoff binding (PR2); sibling auto-scan is no longer accepted.
+        trace = dict(trace)
+        trace["evidence_selection"] = {
+            "policy": "explicit_ids",
+            "policy_version": "v0",
+            "handoff_ids": [str(handoff["handoff_id"])],
+        }
+        trace_file.write_text(json.dumps(trace), encoding="utf-8")
     if mode == "ContractCheckedCertificate":
         # Keep sibling contract JSON resolvable beside the source fixture.
+        # Explicit contract binding (PR3); sibling auto-scan is not accepted.
         codegen_trace_path = CONTRACT_TRACE
         for path in CONTRACT_TRACE.parent.glob("*.json"):
             if path.name == CONTRACT_TRACE.name:
@@ -59,7 +73,29 @@ def test_certificate_mode_codegen_has_no_trivial_aggregates(
             target = work / path.name
             if not target.exists():
                 target.write_text(path.read_text(encoding="utf-8"), encoding="utf-8")
+        trace = dict(trace)
+        if "evidence_selection" not in trace:
+            contract_ids: list[str] = []
+            for event in trace.get("events") or []:
+                if isinstance(event, dict):
+                    refs = event.get("contract_refs")
+                    if isinstance(refs, list):
+                        contract_ids.extend(str(ref) for ref in refs if str(ref))
+            trace["evidence_selection"] = {
+                "policy": "explicit_ids",
+                "policy_version": "v0",
+                "contract_ids": sorted(set(contract_ids)),
+            }
         codegen_trace_path = work / CONTRACT_TRACE.name
+        codegen_trace_path.write_text(json.dumps(trace), encoding="utf-8")
+    if mode == "EffectFrameCertificate":
+        for path in EFFECT_FRAME_TRACE.parent.glob("*.json"):
+            if path.name == EFFECT_FRAME_TRACE.name:
+                continue
+            target = work / path.name
+            if not target.exists():
+                target.write_text(path.read_text(encoding="utf-8"), encoding="utf-8")
+        codegen_trace_path = work / "trace.json"
         codegen_trace_path.write_text(json.dumps(trace), encoding="utf-8")
     generated = generate_proof_obligation_file(
         trace,
@@ -72,6 +108,17 @@ def test_certificate_mode_codegen_has_no_trivial_aggregates(
     assert TRIVIAL_RE.search(text) is None, f"{mode} still emits trivial aggregate"
     assert f"Certificate mode: `{mode}`" in text
     assert "concrete_certificate_mode_witness" in generated.theorem_names
+    if mode == "EffectFrameCertificate":
+        assert "concreteDeclaredFrame" in text
+        assert ".effects = true" not in text
+        assert "actionEffectsInFrameD" in text
+        assert "concreteDeclaredFrame = true" in text
+    if mode == "CompositionalExtensionCertificate":
+        assert "compositional_safe_extension_yields_safe_extended_trace" in text
+        assert "compositional_frame_valid_initial" in text
+        assert "stepState" in text
+        assert "CompositionalSafeExtension" in text or "compositional_safe_extension" in text
+        assert "compositionalState_0" in text
 
 
 def test_tool_use_default_certificate_mode_is_trace_safe_r() -> None:
@@ -172,11 +219,13 @@ def test_handoff_mode_without_handoff_fails(tmp_path: Path) -> None:
     from pcs_core.pf_core_lean_codegen import CertificateModeEvidenceMissing
 
     trace = _load(FILE_READ)
+    trace_file = tmp_path / "trace.json"
+    trace_file.write_text(json.dumps(trace), encoding="utf-8")
     with pytest.raises(CertificateModeEvidenceMissing, match="handoff"):
         generate_proof_obligation_file(
             trace,
             tmp_path,
-            trace_path=tmp_path / "trace.json",
+            trace_path=trace_file,
             certificate_mode="HandoffSafeCertificate",
         )
 

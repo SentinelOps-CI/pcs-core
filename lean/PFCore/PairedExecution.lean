@@ -7,12 +7,19 @@ import PFCore.Transition
 **Status:** Research scaffolding only. Strong paired-execution non-interference
 theorems are **not proved** here and must **not** be cited as release claims.
 
-The proved single-trace observational property is `TenantProjectionIsolation`
-(see `Observational.lean`). Reserve the name **NonInterference** for a future
-paired-execution theorem family in a later schema/kernel version.
+## Claim boundary (Workstream C3)
 
-This module records vocabulary and assumptions required for that future family:
-paired executions, low-equivalent initial states, high-input perturbations,
+| Formal predicate | Status | May be called “non-interference”? |
+|------------------|--------|-----------------------------------|
+| `TenantProjectionIsolation` | **Proved** (single-trace observational) | Only with the qualifier “single-trace observational / projection isolation” |
+| `NonInterference` (Observational abbrev) | Compatibility alias of the above | Prefer `TenantProjectionIsolation` in user-facing claims |
+| `PairedExecutionNonInterference` | **Unproved scaffolding** | Never as a stable or public claim |
+
+No stable certificate or public claim may use the bare phrase “non-interference”
+without naming which formal predicate is meant.
+
+This module records vocabulary and assumptions required for a future paired-execution
+family: paired executions, low-equivalent initial states, high-input perturbations,
 an explicit scheduler model, low-output equivalence, termination and timing
 assumptions, and declassification rules.
 -/
@@ -131,5 +138,31 @@ theorem tenant_projection_isolation_of_trace_safe
     (tenantLow tenantHigh : String) (tr : Trace) (h : TraceSafe tr) :
     TenantProjectionIsolation tenantLow tenantHigh tr :=
   traceSafe_implies_tenant_projection_isolation tenantLow tenantHigh tr h
+
+/--
+Scaffolding vocabulary: a paired run under explicit assumptions. Inhabitance of
+this structure is **not** a non-interference proof.
+-/
+structure PairedRun where
+  tenantLow : String
+  tenantHigh : String
+  left : Execution
+  right : Execution
+  assumptions : PairedExecutionAssumptions
+deriving Repr
+
+/-- Name the unproved paired-execution obligation for a `PairedRun`. -/
+def PairedRun.NonInterferenceObligation (r : PairedRun) : Prop :=
+  PairedExecutionNonInterference r.tenantLow r.tenantHigh r.left r.right r.assumptions
+
+/--
+Same-execution paired runs satisfy low-output equivalence only. This does **not**
+prove `PairedRun.NonInterferenceObligation` under high-input perturbation.
+-/
+theorem paired_run_same_execution_low_output
+    (tenantLow _tenantHigh : String) (e : Execution)
+    (_asm : PairedExecutionAssumptions) :
+    LowOutputEquivalent tenantLow e e :=
+  low_output_equivalent_refl tenantLow e
 
 end PFCore

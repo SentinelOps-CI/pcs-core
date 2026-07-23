@@ -34,6 +34,9 @@ cd "${ROOT}/python"
 pip install -c requirements.lock -e ".[dev,quality]" >/dev/null
 pcs capabilities
 
+echo "== Gate: org/infra release gates =="
+pcs release check-gates --mode "${MODE}"
+
 echo "== Gate: quality (Python) =="
 ruff check pcs_core tests
 ruff format --check pcs_core tests
@@ -97,7 +100,7 @@ if [[ "${SKIP_LEAN}" != "1" ]]; then
   fi
 fi
 
-echo "== Gate: SBOM + provenance scaffold =="
+echo "== Gate: SBOM scaffold =="
 bash "${ROOT}/scripts/generate-sbom.sh" "${ROOT}/dist/sbom"
 test -f "${ROOT}/dist/sbom/pcs-core.cdx.json"
 
@@ -138,6 +141,17 @@ else
   pcs pf-core validate-external-attestation --bundle "${BUNDLE_OUT}" --allow-absence
   echo "OK preview mode: external attestation present or absence notice recorded"
 fi
+
+echo "== Gate: release provenance binding (local gated; CI signs) =="
+PCS_PROVENANCE_BUILD_SBOM=0 \
+PCS_PROVENANCE_SBOM_DIR="${ROOT}/dist/sbom" \
+PCS_PROVENANCE_BUNDLE_DIR="${BUNDLE_OUT}" \
+  bash "${ROOT}/scripts/build-release-provenance.sh" "${ROOT}/dist/provenance"
+test -f "${ROOT}/dist/provenance/ReleaseProvenanceBinding.v0.json"
+bash "${ROOT}/scripts/finalize-provenance-attestation.sh" "${ROOT}/dist/provenance" gated \
+  "local release-gate.sh cannot mint GitHub Sigstore attestations; CI release-provenance.yml does"
+PCS_PROVENANCE_REQUIRE_SIGNED=0 \
+  bash "${ROOT}/scripts/verify-release-provenance.sh" "${ROOT}/dist/provenance"
 
 echo "== Gate: signed tag policy (document only; do not push) =="
 echo "Documented: create an annotated GPG/SSH-signed tag matching VERSION after gates pass."

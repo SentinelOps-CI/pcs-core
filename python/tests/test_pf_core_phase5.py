@@ -55,12 +55,21 @@ def test_observed_effect_structure_present() -> None:
     text = _lean_source("ObservedEffect.lean")
     for name in (
         "structure ObservedEffect",
+        "def ObservationSoundness",
+        "def ObservationCompleteness",
+        "def EffectAttribution",
+        "def InstrumentationAuthenticity",
+        "def AttestedExecution",
         "def TrustedInstrumentation",
         "theorem observed_sensitive_effects_in_frame",
         "theorem accepted_transition_no_undeclared_sensitive_observation",
+        "theorem observation_soundness_not_trusted_without_authenticity",
         "TrustedInstrumentation",
     ):
         assert name in text, f"missing {name}"
+    # TrustedInstrumentation must not be definitionally mere ObservationsAgree.
+    assert "def TrustedInstrumentation (a : Action) (obs : List ObservedEffect) : Prop :=\n  ObservationsAgree" not in text
+    assert "AttestedExecution ctx" in text or "AttestedExecution" in text
 
 
 def test_deny_closed_refinement_present() -> None:
@@ -75,6 +84,8 @@ def test_deny_closed_refinement_present() -> None:
         "theorem traceSafeDenyClosed_implies_traceSafe",
     ):
         assert name in text, f"missing {name}"
+    assert "DenyClosedCertificate" in text
+    assert "disabled" in text.lower() or "scaffolded" in text.lower()
 
 
 def test_tenant_projection_isolation_naming() -> None:
@@ -86,6 +97,8 @@ def test_tenant_projection_isolation_naming() -> None:
     assert "def PairedExecutionNonInterference" in paired
     assert "not proved" in paired.lower() or "unproved" in paired.lower()
     assert "Research scaffolding" in paired or "research scaffolding" in paired.lower()
+    assert "PairedRun" in paired
+    assert "formal predicate" in paired.lower() or "Claim boundary" in paired
 
 
 def test_runtime_semantics_doc() -> None:
@@ -96,9 +109,13 @@ def test_runtime_semantics_doc() -> None:
         "EventSafeDenyClosed",
         "PairedExecutionNonInterference",
         "instrumentation",
+        "ObservationSoundness",
+        "AttestedExecution",
+        "DenyClosedCertificate",
     ):
         assert phrase in doc, f"missing {phrase!r} in runtime-semantics.md"
     assert "not proved" in doc.lower() or "unproved" in doc.lower()
+    assert "ObservationsAgree" in doc
 
 
 def test_non_interference_doc_prefers_tenant_projection_isolation() -> None:

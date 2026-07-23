@@ -645,11 +645,16 @@ def validate_observed_effects_agree(
     action: Mapping[str, Any],
     observations: list[Mapping[str, Any]],
 ) -> list[str]:
-    """Mirror ``ObservationsAgree`` / ``TrustedInstrumentation`` for one action.
+    """Mirror ``ObservationsAgree`` / ``ObservationSoundness`` for one action.
 
     Each observation must declare ``kind`` (or ``effect_kind``) present in the
     action's declared effects. Optional ``resource.uri`` must appear in reads or
-    writes. Callers must separately attest instrumentation faithfulness.
+    writes.
+
+    This is **not** ``TrustedInstrumentation``. Lean ``TrustedInstrumentation`` is
+    the attested-execution relation (soundness + completeness + attribution +
+    authenticity). Callers must separately attest instrumentation authenticity
+    before claiming trust.
     """
     declared = set(_action_effect_kinds(action))
     reads = action.get("reads") if isinstance(action.get("reads"), list) else []
