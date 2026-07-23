@@ -744,6 +744,92 @@ def _check_pf_core_generated_lean_proof(errors: list[str], checks: int) -> int:
                     "pf-core.generated-lean-proof: release-grade requires TraceSafeR proof "
                     f"obligations {sorted(missing_r)!r}"
                 )
+            # Exercise every certificate mode under release-grade: codegen + inventory honesty.
+            from pcs_core.pf_core_lean_codegen import (
+                CERTIFICATE_MODES,
+                CertificateModeEvidenceMissing,
+                certificate_mode_obligations,
+                generate_proof_obligation_file,
+                theorem_inventory_hash,
+            )
+
+            mode_fixtures = {
+                "TraceSafeCertificate": (
+                    repo_root() / "examples/pf-core-valid/file_read_allowed/trace.json",
+                    None,
+                ),
+                "TraceSafeRCertificate": (trace_path, None),
+                "FramePreservedCertificate": (
+                    repo_root() / "examples/pf-core-valid/file_read_allowed/trace.json",
+                    None,
+                ),
+                "EffectFrameCertificate": (
+                    repo_root() / "examples/pf-core-valid/file_read_allowed/trace.json",
+                    None,
+                ),
+                "HandoffSafeCertificate": (
+                    repo_root()
+                    / "examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json",
+                    repo_root() / "examples/pf-core-valid/handoff_subset_authority/handoff.json",
+                ),
+                "CompositionalExtensionCertificate": (
+                    repo_root() / "examples/pf-core-valid/file_read_allowed/trace.json",
+                    None,
+                ),
+                "ContractCheckedCertificate": (
+                    repo_root() / "examples/pf-core-valid/contract_checked/trace.json",
+                    None,
+                ),
+            }
+            for mode in sorted(CERTIFICATE_MODES):
+                checks += 1
+                fixture_path, handoff_path = mode_fixtures.get(mode, (None, None))
+                if fixture_path is None or not fixture_path.is_file():
+                    errors.append(f"pf-core.certificate-mode.{mode}: missing release-grade fixture")
+                    continue
+                try:
+                    mode_trace = json.loads(fixture_path.read_text(encoding="utf-8"))
+                except (OSError, json.JSONDecodeError) as exc:
+                    errors.append(f"pf-core.certificate-mode.{mode}: unreadable fixture: {exc}")
+                    continue
+                with tempfile.TemporaryDirectory(prefix=f"pfcore-mode-{mode}-") as mode_tmp:
+                    work = Path(mode_tmp)
+                    local_trace = work / "trace.json"
+                    local_trace.write_text(json.dumps(mode_trace), encoding="utf-8")
+                    if handoff_path is not None and handoff_path.is_file():
+                        shutil.copy2(handoff_path, work / "handoff.json")
+                    if mode == "ContractCheckedCertificate":
+                        for sibling in fixture_path.parent.glob("*.json"):
+                            if sibling.name == fixture_path.name:
+                                continue
+                            shutil.copy2(sibling, work / sibling.name)
+                    try:
+                        generated = generate_proof_obligation_file(
+                            mode_trace,
+                            work / "out",
+                            trace_path=local_trace,
+                            certificate_mode=mode,
+                            release_grade=False,
+                        )
+                    except CertificateModeEvidenceMissing as exc:
+                        errors.append(f"pf-core.certificate-mode.{mode}: evidence missing: {exc}")
+                        continue
+                    required = certificate_mode_obligations(
+                        mode, list(mode_trace.get("events") or [])
+                    )
+                    missing_inv = required - generated.theorem_names
+                    if missing_inv:
+                        errors.append(
+                            f"pf-core.certificate-mode.{mode}: inventory missing "
+                            f"{sorted(missing_inv)!r}"
+                        )
+                    expected_hash = theorem_inventory_hash(generated.theorem_names)
+                    if not expected_hash.startswith("sha256:"):
+                        errors.append(f"pf-core.certificate-mode.{mode}: invalid inventory hash")
+                    if "concrete_certificate_mode_witness" not in generated.theorem_names:
+                        errors.append(
+                            f"pf-core.certificate-mode.{mode}: missing mode witness theorem"
+                        )
     return checks
 
 

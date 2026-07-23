@@ -10,7 +10,12 @@ from pcs_core.hash import PLACEHOLDER_DIGEST, canonical_hash
 from pcs_core.paths import examples_dir, schemas_dir
 from pcs_core.registry_data import registry_entries
 from pcs_core.registry_semantics import audit_registry_catalog, enrich_semantic_check
-from pcs_core.validate import ValidationError, detect_artifact_type, validate_artifact
+from pcs_core.validate import (
+    DetectionMode,
+    ValidationError,
+    detect_artifact_type,
+    validate_artifact,
+)
 
 REGISTRY_ID = "pcs-artifact-registry-v0.1"
 REGISTRY_VERSION = "0.1.0"
@@ -126,7 +131,7 @@ def check_artifact_against_registry(
     data = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(data, dict):
         return [f"{path}: artifact root must be an object"]
-    artifact_type = detect_artifact_type(data)
+    artifact_type = detect_artifact_type(data, mode=DetectionMode.LEGACY_IMPORT)
     if not artifact_type:
         return [f"{path}: could not detect artifact type"]
     if artifact_type not in entries:
@@ -134,7 +139,7 @@ def check_artifact_against_registry(
         return errors
     entry = entries[artifact_type]
     try:
-        validate_artifact(data, artifact_type)
+        validate_artifact(data, artifact_type, detection_mode=DetectionMode.LEGACY_IMPORT)
     except ValidationError as exc:
         errors.extend(exc.errors)
     producer = str(data.get("producer") or "")

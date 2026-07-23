@@ -3,14 +3,41 @@
 from __future__ import annotations
 
 import json
+import warnings
+from enum import Enum
 from pathlib import Path
 from typing import Any
 
-from jsonschema import Draft202012Validator
+from jsonschema import Draft202012Validator, FormatChecker
 from referencing import Registry, Resource
 from referencing.jsonschema import DRAFT202012
 
 from pcs_core.paths import schemas_dir
+
+# Format vocabularies treated as assertions (Draft 2020-12 + FormatChecker).
+# See docs/json-schema-formats.md.
+ASSERTED_FORMATS: frozenset[str] = frozenset(
+    {
+        "date-time",
+        "uri",
+        "uuid",
+        "duration",
+        "hostname",
+        "email",
+    }
+)
+
+_FORMAT_CHECKER = FormatChecker(formats=sorted(ASSERTED_FORMATS))
+
+
+class DetectionMode(str, Enum):
+    """Controls whether heuristic artifact_type detection is allowed."""
+
+    RELEASE = "release"
+    MIGRATION = "migration"
+    LEGACY_IMPORT = "legacy_import"
+    DIAGNOSTIC = "diagnostic"
+
 
 ARTIFACT_SCHEMAS: dict[str, str] = {
     "AssumptionSet.v0": "AssumptionSet.v0.schema.json",
@@ -40,6 +67,8 @@ ARTIFACT_SCHEMAS: dict[str, str] = {
     "ComputationWitness.v0": "ComputationWitness.v0.schema.json",
     "ProofObligation.v0": "ProofObligation.v0.schema.json",
     "LeanCheckResult.v0": "LeanCheckResult.v0.schema.json",
+    "PCSProjectionManifest.v0": "PCSProjectionManifest.v0.schema.json",
+    "PFCoreSemanticProjection.v0": "PFCoreSemanticProjection.v0.schema.json",
     "BenchmarkTask.v0": "BenchmarkTask.v0.schema.json",
     "BenchmarkCase.v0": "BenchmarkCase.v0.schema.json",
     "BenchmarkRun.v0": "BenchmarkRun.v0.schema.json",
@@ -69,6 +98,11 @@ ARTIFACT_SCHEMAS: dict[str, str] = {
     "PFCoreRuntimeObservation.v0": "PFCoreRuntimeObservation.v0.schema.json",
     "PFCoreCertificate.v0": "PFCoreCertificate.v0.schema.json",
     "PCSBridgeCertificate.v0": "PCSBridgeCertificate.v0.schema.json",
+    "PFCoreKernelManifest.v0": "PFCoreKernelManifest.v0.schema.json",
+    "PFCoreReleaseBundleManifest.v0": "PFCoreReleaseBundleManifest.v0.schema.json",
+    "ArtifactIntegrity.v1": "ArtifactIntegrity.v1.schema.json",
+    "FormatAssertionProbe.v0": "FormatAssertionProbe.v0.schema.json",
+    "ExternalAttestation.v0": "ExternalAttestation.v0.schema.json",
 }
 
 
@@ -112,14 +146,29 @@ def _schema_requires_artifact_type(artifact_type: str) -> bool:
     return artifact_type_schema.get("const") == artifact_type
 
 
-def detect_artifact_type(data: dict[str, Any]) -> str | None:
+def _detect_explicit_artifact_type(data: dict[str, Any]) -> str | None:
+    """Return type only when ``artifact_type`` is a self-describing schema const.
+
+    Some artifacts (MigrationReport, BenchmarkArtifactRef) reuse the field name for a
+    *subject* type; those must fall through to heuristics or an explicit caller type.
+    """
     explicit = data.get("artifact_type")
-    if isinstance(explicit, str) and explicit in ARTIFACT_SCHEMAS:
-        if _schema_requires_artifact_type(explicit):
+    if not isinstance(explicit, str) or explicit not in ARTIFACT_SCHEMAS:
+        return None
+    if _schema_requires_artifact_type(explicit):
+        return explicit
+    if explicit == "LeanCheckResult.v0" and data.get("schema_version") == "v0":
+        if "trace_path" in data or "check_id" in data:
             return explicit
-        if explicit == "LeanCheckResult.v0" and data.get("schema_version") == "v0":
-            if "trace_path" in data or "check_id" in data:
-                return explicit
+    return None
+
+
+def _has_self_describing_artifact_type(data: dict[str, Any]) -> bool:
+    return _detect_explicit_artifact_type(data) is not None
+
+
+def _detect_artifact_type_heuristic(data: dict[str, Any]) -> str | None:
+    """Field-presence heuristics. Not used on the release-grade path."""
     if (
         "trace_id" in data
         and "tool_calls" in data
@@ -311,6 +360,13 @@ def detect_artifact_type(data: dict[str, Any]) -> str | None:
         and "lean_module" in data
     ):
         return "ProofObligation.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and data.get("artifact_type") == "PCSProjectionManifest.v0"
+        and isinstance(data.get("projection_id"), str)
+        and isinstance(data.get("entries"), list)
+    ):
+        return "PCSProjectionManifest.v0"
     if "validation_id" in data and "artifacts_checked" in data:
         return "ReleaseChainValidationResult.v0"
     if (
@@ -405,7 +461,67 @@ def detect_artifact_type(data: dict[str, Any]) -> str | None:
         return "ClaimArtifact.v0"
     if "bundle_id" in data and "claim_refs" in data:
         return "EvidenceBundle.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and data.get("artifact_type") == "PFCoreKernelManifest.v0"
+        and isinstance(data.get("files"), list)
+    ):
+        return "PFCoreKernelManifest.v0"
+    if (
+        data.get("schema_version") == "v0"
+        and data.get("artifact_type") == "PFCoreReleaseBundleManifest.v0"
+        and "trace_path" in data
+        and "certificate_path" in data
+    ):
+        return "PFCoreReleaseBundleManifest.v0"
+    if (
+        data.get("schema_version") == "v1"
+        and data.get("artifact_type") == "ArtifactIntegrity.v1"
+        and "artifact_digest" in data
+        and "signature" in data
+    ):
+        return "ArtifactIntegrity.v1"
     return None
+
+
+_HEURISTIC_WARNED: set[tuple[str, str]] = set()
+
+
+def detect_artifact_type(
+    data: dict[str, Any],
+    *,
+    mode: DetectionMode | str = DetectionMode.DIAGNOSTIC,
+) -> str | None:
+    """Detect artifact type.
+
+    Release mode requires an explicit self-describing ``artifact_type`` and never
+    falls back to field-presence heuristics. Heuristics remain available for
+    migration, legacy import, and diagnostic modes, and emit a deprecation warning
+    (once per type per mode per process).
+    """
+    if isinstance(mode, str):
+        mode = DetectionMode(mode)
+
+    explicit = _detect_explicit_artifact_type(data)
+    if explicit is not None:
+        return explicit
+
+    if mode is DetectionMode.RELEASE:
+        return None
+
+    heuristic = _detect_artifact_type_heuristic(data)
+    if heuristic is not None:
+        key = (mode.value, heuristic)
+        if key not in _HEURISTIC_WARNED:
+            _HEURISTIC_WARNED.add(key)
+            warnings.warn(
+                f"heuristic artifact_type detection selected {heuristic!r} under "
+                f"{mode.value} mode; declare artifact_type explicitly for release-grade "
+                "validation (DetectionMode.RELEASE)",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+    return heuristic
 
 
 def _load_schema(path: Path) -> dict[str, Any]:
@@ -449,7 +565,11 @@ def get_validator(artifact_type: str) -> Draft202012Validator:
         raise ValidationError(f"Unknown artifact type: {artifact_type}")
     schema_path = schemas_dir() / schema_name
     schema = _load_schema(schema_path)
-    return Draft202012Validator(schema, registry=get_registry())
+    return Draft202012Validator(
+        schema,
+        registry=get_registry(),
+        format_checker=_FORMAT_CHECKER,
+    )
 
 
 def validate_schema(data: dict[str, Any], artifact_type: str) -> list[str]:
