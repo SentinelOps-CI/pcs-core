@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pcs.sentinelops.ci/schemas/PFCoreBundleVerificationResult.v0.schema.json",
+  "title": "PFCoreBundleVerificationResult.v0",
+  "description": "Digest-bound result of pcs pf-core verify-bundle against a closed PF-Core release bundle.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "artifact_type",
+    "ok",
+    "bundle_dir",
+    "verifier",
+    "verifier_version",
+    "checks",
+    "issues",
+    "signature_or_digest"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "$ref": "common.defs.json#/$defs/schema_version" },
+    "artifact_type": { "const": "PFCoreBundleVerificationResult.v0" },
+    "canonicalization_version": {
+      "$ref": "common.defs.json#/$defs/canonicalization_version"
+    },
+    "ok": { "type": "boolean" },
+    "bundle_dir": {
+      "type": "string",
+      "minLength": 1
+    },
+    "verifier": {
+      "type": "string",
+      "minLength": 1
+    },
+    "verifier_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "manifest_digest": {
+      "$ref": "common.defs.json#/$defs/hex_digest"
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["check_id", "status"],
+        "additionalProperties": false,
+        "properties": {
+          "check_id": { "type": "string", "minLength": 1 },
+          "status": {
+            "type": "string",
+            "enum": ["passed", "failed", "skipped"]
+          },
+          "detail": { "type": "string" }
+        }
+      }
+    },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "message"],
+        "additionalProperties": false,
+        "properties": {
+          "code": { "type": "string", "minLength": 1 },
+          "message": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "signature_or_digest": {
+      "$ref": "common.defs.json#/$defs/hex_digest"
+    }
+  }
+}

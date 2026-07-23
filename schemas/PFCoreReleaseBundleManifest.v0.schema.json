@@ -30,7 +30,14 @@
     "certificate_path": { "$ref": "common.defs.json#/$defs/relative_posix_path" },
     "kernel_manifest_path": { "$ref": "common.defs.json#/$defs/relative_posix_path" },
     "lean_check_result_path": { "$ref": "common.defs.json#/$defs/relative_posix_path" },
+    "lean_check_result_hash": { "$ref": "common.defs.json#/$defs/hex_digest" },
     "proof_path": { "$ref": "common.defs.json#/$defs/relative_posix_path" },
+    "semantic_projection_path": { "$ref": "common.defs.json#/$defs/relative_posix_path" },
+    "semantic_projection_hash": { "$ref": "common.defs.json#/$defs/hex_digest" },
+    "theorem_manifest_path": { "$ref": "common.defs.json#/$defs/relative_posix_path" },
+    "theorem_manifest_hash": { "$ref": "common.defs.json#/$defs/hex_digest" },
+    "evidence_manifest_path": { "$ref": "common.defs.json#/$defs/relative_posix_path" },
+    "evidence_manifest_hash": { "$ref": "common.defs.json#/$defs/hex_digest" },
     "trace_hash": { "$ref": "common.defs.json#/$defs/hex_digest" },
     "proof_term_hash": { "$ref": "common.defs.json#/$defs/hex_digest" },
     "pfcore_kernel_hash": { "$ref": "common.defs.json#/$defs/hex_digest" },
@@ -50,14 +57,34 @@
         "required": [
           "proof_path",
           "lean_check_result_path",
-          "proof_term_hash"
+          "lean_check_result_hash",
+          "proof_term_hash",
+          "semantic_projection_path",
+          "semantic_projection_hash",
+          "theorem_manifest_path",
+          "theorem_manifest_hash",
+          "evidence_manifest_path",
+          "evidence_manifest_hash"
         ],
         "properties": {
           "proof_path": { "$ref": "common.defs.json#/$defs/relative_posix_path" },
           "lean_check_result_path": {
             "$ref": "common.defs.json#/$defs/relative_posix_path"
           },
-          "proof_term_hash": { "$ref": "common.defs.json#/$defs/hex_digest" }
+          "lean_check_result_hash": { "$ref": "common.defs.json#/$defs/hex_digest" },
+          "proof_term_hash": { "$ref": "common.defs.json#/$defs/hex_digest" },
+          "semantic_projection_path": {
+            "$ref": "common.defs.json#/$defs/relative_posix_path"
+          },
+          "semantic_projection_hash": { "$ref": "common.defs.json#/$defs/hex_digest" },
+          "theorem_manifest_path": {
+            "$ref": "common.defs.json#/$defs/relative_posix_path"
+          },
+          "theorem_manifest_hash": { "$ref": "common.defs.json#/$defs/hex_digest" },
+          "evidence_manifest_path": {
+            "$ref": "common.defs.json#/$defs/relative_posix_path"
+          },
+          "evidence_manifest_hash": { "$ref": "common.defs.json#/$defs/hex_digest" }
         }
       }
     }
