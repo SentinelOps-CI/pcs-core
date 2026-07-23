@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "pcs-core"
 version = "0.1.0"
-description = "Proof-Carrying Science canonical artifact validation"
+description = "Proof-Carrying Science canonical artifact validation (validator distribution)"
 readme = "../README.md"
 license = { text = "Apache-2.0" }
 requires-python = ">=3.11"
@@ -18,6 +18,17 @@ dependencies = [
 dev = [
   "pytest>=8.0.0",
   "ruff>=0.6.0",
+]
+quality = [
+  "hypothesis>=6.100.0",
+  "pyright>=1.1.390",
+  "coverage[toml]>=7.6.0",
+]
+# Verifier extras document the Lean/OCI path; Lean assets ship via the
+# verifier OCI image or a PCS_BUILD_VERIFIER=1 wheel (see docs/distribution.md).
+verifier = [
+  "jsonschema>=4.23.0",
+  "referencing>=0.35.0,<0.37.0",
 ]
 
 [project.scripts]
@@ -32,14 +43,20 @@ packages = ["pcs_core"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "../schemas" = "pcs_core/schemas"
+"../catalog" = "pcs_core/catalog"
+"../test_vectors/hash" = "pcs_core/test_vectors/hash"
 
 [tool.hatch.build.targets.sdist]
 include = [
   "/schemas",
+  "/catalog",
+  "/test_vectors/hash",
   "/python/pcs_core",
   "/python/tests",
   "/examples",
   "/docs",
+  "/lean",
+  "/pins",
 ]
 
 [tool.ruff]
@@ -63,3 +80,12 @@ testpaths = ["tests"]
 pythonpath = ["."]
 # pcs-core tests are sync-only; disable corridor-os / global pytest-asyncio plugin noise
 addopts = "-p no:asyncio"
+
+[tool.coverage.run]
+branch = true
+source = ["pcs_core"]
+
+[tool.coverage.report]
+fail_under = 70
+show_missing = true
+
