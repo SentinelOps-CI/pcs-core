@@ -50,6 +50,16 @@
       "responsible_component": "CertifyEdge"
     },
     {
+      "check_id": "computation_result_payload_bytes",
+      "description": "ResultArtifact payload path resolves and SHA-256/size match bytes",
+      "status": "passed",
+      "details": {},
+      "registry_check_refs": [
+        "ResultArtifact.v0.payload_bytes_match_digest"
+      ],
+      "responsible_component": "pcs-core"
+    },
+    {
       "check_id": "computation_code_commit_present",
       "description": "ComputationWitness and run receipt carry non-zero code commits",
       "status": "passed",
@@ -116,7 +126,7 @@
   "failure_codes": [],
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:77166b5a1299f16eb4d489882dcdca544c6473ede35cf35de81e302acfaa3ab3",
+  "signature_or_digest": "sha256:f0e8f4c003da80b5a3f34b5734fa7fd204800cef74b23070e1e0b102bfb1ce74",
   "deferred_registry_checks": [
     {
       "registry_ref": "HandoffManifest.v0.handoff_input_hashes_when_validated",

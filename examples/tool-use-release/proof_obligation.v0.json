@@ -66,8 +66,82 @@
       "artifact_type": "SignedScienceClaimBundle.v0"
     }
   },
+  "pcs_projection_manifest": {
+    "schema_version": "v0",
+    "artifact_type": "PCSProjectionManifest.v0",
+    "projection_id": "pcs-projection-release-pcs-v0.1-tool-use-safety",
+    "release_id": "release-pcs-v0.1-tool-use-safety",
+    "workflow_id": "agent_tool_use.safety_v0",
+    "entries": [
+      {
+        "artifact_path": "tool_use_certificate.valid.json",
+        "artifact_digest": "sha256:3e517b1d66dcd475d4d69f01f9b5790cf55610250c356ec3fddd96a868e02cb6",
+        "json_pointer": "/certificate_id",
+        "normalized_value": "cert-tool-use-safety-v0",
+        "lean_identifier": "concreteCertificate.certificateId"
+      },
+      {
+        "artifact_path": "tool_use_trace.valid.json",
+        "artifact_digest": "sha256:a7bfd0dd83b149ef7cba53ea11ccdc04a23226a2ad39d77e125e8825dc00f253",
+        "json_pointer": "/trace_hash",
+        "normalized_value": "sha256:42ce47fca8ec10a9c65c8d9b9384c8be52094c93d46aa9705ce7c2fa2b8c89e4",
+        "lean_identifier": "concreteToolUseTrace.traceHash"
+      },
+      {
+        "artifact_path": "tool_use_certificate.valid.json",
+        "artifact_digest": "sha256:3e517b1d66dcd475d4d69f01f9b5790cf55610250c356ec3fddd96a868e02cb6",
+        "json_pointer": "/trace_hash",
+        "normalized_value": "sha256:42ce47fca8ec10a9c65c8d9b9384c8be52094c93d46aa9705ce7c2fa2b8c89e4",
+        "lean_identifier": "concreteToolUseCertificate.traceHash"
+      },
+      {
+        "artifact_path": "tool_use_trace.valid.json",
+        "artifact_digest": "sha256:a7bfd0dd83b149ef7cba53ea11ccdc04a23226a2ad39d77e125e8825dc00f253",
+        "json_pointer": "/policy_hash",
+        "normalized_value": "sha256:76d4443f09c6fb0d6cc7bebc5c80eae53bd008e4a212ab61d0d1844ac773b5cd",
+        "lean_identifier": "concreteToolUseTrace.policyHash"
+      },
+      {
+        "artifact_path": "tool_use_certificate.valid.json",
+        "artifact_digest": "sha256:3e517b1d66dcd475d4d69f01f9b5790cf55610250c356ec3fddd96a868e02cb6",
+        "json_pointer": "/policy_hash",
+        "normalized_value": "sha256:76d4443f09c6fb0d6cc7bebc5c80eae53bd008e4a212ab61d0d1844ac773b5cd",
+        "lean_identifier": "concreteToolUseCertificate.policyHash"
+      },
+      {
+        "artifact_path": "runtime_receipt.json",
+        "artifact_digest": "sha256:f95f7cfe528eb0712d3f876d3766edac6b1b859ff992448c1ca98a780e598da7",
+        "json_pointer": "/trace_hash",
+        "normalized_value": "sha256:42ce47fca8ec10a9c65c8d9b9384c8be52094c93d46aa9705ce7c2fa2b8c89e4",
+        "lean_identifier": "concreteRuntimeReceipt.traceHash"
+      },
+      {
+        "artifact_path": "verification_result.json",
+        "artifact_digest": "sha256:07a5b4077f7207965f4f37ddb7bf0940394a91a433dcfc0e0de35cdf257d7366",
+        "json_pointer": "/verified_input/bundle_hash",
+        "normalized_value": "sha256:8ec0f90d0af828db78c5ada9299daea96128c4737328d40d6d6c473046d4780d",
+        "lean_identifier": "concreteVerification.verifiedInputBundleHash"
+      },
+      {
+        "artifact_path": "#resolved/certified_bundle_hash",
+        "artifact_digest": "sha256:0f48b7c1d8d5436c7efd16574f0f1b88ee7e813baa6665f1cf1d884a47fe8b2e",
+        "json_pointer": "/#resolved/certified_bundle_hash",
+        "normalized_value": "sha256:8ec0f90d0af828db78c5ada9299daea96128c4737328d40d6d6c473046d4780d",
+        "lean_identifier": "concreteCertifiedBundleHash"
+      },
+      {
+        "artifact_path": "signed_science_claim_bundle.json",
+        "artifact_digest": "sha256:b530e409f16527c66cdb6d824af399cbe45d38d78fb2c401bba3518c02ce977a",
+        "json_pointer": "/signed_input_bundle_hash",
+        "normalized_value": "sha256:8ec0f90d0af828db78c5ada9299daea96128c4737328d40d6d6c473046d4780d",
+        "lean_identifier": "concreteSignedInputHash"
+      }
+    ],
+    "signature_or_digest": "sha256:ff82279a183c8783c5fc0f63a3847202b1dc8b95eaf8da816ccf62d2d8cda354"
+  },
+  "pcs_projection_manifest_hash": "sha256:ff82279a183c8783c5fc0f63a3847202b1dc8b95eaf8da816ccf62d2d8cda354",
   "lean_module": "PCS.Theorems",
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:69335e62a2eb10f6475b5716c00137af4f691b906731807eb9eafe8658d32f5c"
+  "signature_or_digest": "sha256:251a6ee6ca8d547e4e7d47f25649c470fcd37ffaff23470aa8a6cfae35b06b6a"
 }

@@ -142,10 +142,12 @@ def test_canonical_json_v1_shared_vectors() -> None:
 
 
 def test_number_policy_rejects_floats_and_unsafe_ints() -> None:
-    with pytest.raises(CanonicalizationError):
+    with pytest.raises(CanonicalizationError) as float_exc:
         assert_canonical_number_policy({"x": 1.5})
-    with pytest.raises(CanonicalizationError):
+    assert float_exc.value.code == "float_prohibited"
+    with pytest.raises(CanonicalizationError) as int_exc:
         assert_canonical_number_policy({"x": SAFE_INTEGER_MAX + 1})
+    assert int_exc.value.code == "integer_out_of_range"
     assert_canonical_number_policy({"x": SAFE_INTEGER_MAX, "y": 0})
 
 
