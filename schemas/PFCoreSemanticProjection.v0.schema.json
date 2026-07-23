@@ -26,7 +26,8 @@
         "HandoffSafeCertificate",
         "CompositionalExtensionCertificate",
         "ContractCheckedCertificate"
-      ]
+      ],
+      "description": "Issuance status: schemas/pf_core.certificate_mode_status.json"
     },
     "events": {
       "type": "array",
@@ -92,12 +93,22 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["handoff_id", "from_principal", "to_principal"],
+        "required": [
+          "handoff_id",
+          "from_principal",
+          "to_principal",
+          "delegated_capabilities"
+        ],
         "additionalProperties": false,
         "properties": {
           "handoff_id": { "type": "string", "minLength": 1 },
           "from_principal": { "$ref": "#/$defs/principal" },
-          "to_principal": { "$ref": "#/$defs/principal" }
+          "to_principal": { "$ref": "#/$defs/principal" },
+          "delegated_capabilities": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "$ref": "#/$defs/delegated_capability" }
+          }
         }
       }
     },
@@ -105,20 +116,80 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["contract_id"],
+        "required": ["contract_id", "semantics_layer"],
         "additionalProperties": false,
         "properties": {
           "contract_id": { "type": "string", "minLength": 1 },
           "pre": { "type": "object", "additionalProperties": true },
           "post": { "type": "object", "additionalProperties": true },
           "invariant": { "type": "object", "additionalProperties": true },
-          "field_semantics": { "type": "object", "additionalProperties": true }
+          "semantics_layer": {
+            "type": "array",
+            "description": "Effective per-field semantic layer after defaults are applied",
+            "items": { "$ref": "#/$defs/semantics_layer_field" }
+          }
         }
       }
+    },
+    "effect_frame": {
+      "type": "object",
+      "description": "Projected independent declared effect frame (v0: one global frame)",
+      "required": ["frame_id", "allowed_effect_kinds", "frame_scope_policy"],
+      "additionalProperties": false,
+      "properties": {
+        "frame_id": { "type": "string", "minLength": 1 },
+        "allowed_effect_kinds": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "frame_scope_policy": { "type": "string", "const": "global" },
+        "workflow_id": { "type": "string", "minLength": 1 },
+        "contract_id": { "type": "string", "minLength": 1 },
+        "source_policy_ref": { "type": "string", "minLength": 1 },
+        "resource_constraints": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["effect_kind", "resource_pattern"],
+            "additionalProperties": false,
+            "properties": {
+              "effect_kind": { "type": "string", "minLength": 1 },
+              "resource_pattern": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
+    "initial_state": {
+      "$ref": "#/$defs/operational_state",
+      "description": "Projected initial operational state for FramePreservedCertificate"
+    },
+    "transition_states": {
+      "type": "array",
+      "description": "Projected post-states after each event for FramePreservedCertificate",
+      "items": { "$ref": "#/$defs/operational_state" }
     },
     "projection_hash": { "$ref": "common.defs.json#/$defs/hex_digest" }
   },
   "$defs": {
+    "operational_state": {
+      "type": "object",
+      "required": ["tenant", "active_principal", "resource_frame", "capability_frame"],
+      "additionalProperties": false,
+      "properties": {
+        "tenant": { "type": "string" },
+        "active_principal": { "$ref": "#/$defs/principal" },
+        "resource_frame": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/resource" }
+        },
+        "capability_frame": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
     "principal": {
       "type": "object",
       "required": ["principal_id", "tenant", "roles", "capabilities"],
@@ -137,6 +208,43 @@
       "properties": {
         "uri": { "type": "string" },
         "tenant": { "type": "string" }
+      }
+    },
+    "delegated_capability": {
+      "type": "object",
+      "required": ["capability_id", "effect_kind", "resource_pattern"],
+      "additionalProperties": false,
+      "properties": {
+        "capability_id": { "type": "string", "minLength": 1 },
+        "effect_kind": { "type": "string", "minLength": 1 },
+        "resource_pattern": { "type": "string", "minLength": 1 }
+      }
+    },
+    "semantics_layer_field": {
+      "type": "object",
+      "required": ["section", "field", "normalized_value", "effective_layer"],
+      "additionalProperties": false,
+      "properties": {
+        "section": {
+          "type": "string",
+          "enum": ["pre", "post", "invariant"]
+        },
+        "field": { "type": "string", "minLength": 1 },
+        "normalized_value": {
+          "description": "Normalized active field value from pre/post/invariant",
+          "oneOf": [
+            { "type": "string" },
+            { "type": "boolean" },
+            { "type": "null" }
+          ]
+        },
+        "effective_layer": {
+          "type": "string",
+          "enum": ["lean", "runtime", "out_of_scope"]
+        },
+        "lean_theorem": { "type": "string", "minLength": 1 },
+        "runtime_check_id": { "type": "string", "minLength": 1 },
+        "out_of_scope_rationale": { "type": "string", "minLength": 1 }
       }
     }
   }

@@ -11,8 +11,15 @@ artifact (`PFCoreSemanticProjection.v0`) rather than a full Lean JSON decoder.
 2. Hash the projection independently (`projection_hash` / certificate
    `semantic_projection_hash`).
 3. Emit concrete Lean terms from the projection (Python codegen bridge).
-4. Bind generated theorem inventory via `theorem_inventory_hash` /
-   `theorem_manifest_hash`.
+4. Bind generated theorem inventory via `theorem_inventory_hash` and the
+   structured `PFCoreTheoremManifest.v0` digest (`theorem_manifest_hash`).
+   The manifest hash covers normalized propositions and metadata; it is **not**
+   an alias of the name-only inventory hash.
+5. Close the release bundle with `semantic_projection_*`, `theorem_manifest_*`,
+   `evidence_manifest_*`, and `lean_check_result_*` path/hash fields. Copy
+   selected evidence into `evidence/` and verify independently with
+   `pcs pf-core verify-bundle` (stable releases must not rely on
+   `validate-bundle` alone).
 
 Envelope fields that are not Lean-relevant (source commit metadata, unused
 extensions) must not change the projection hash.
