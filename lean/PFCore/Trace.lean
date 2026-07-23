@@ -35,9 +35,9 @@ def Trace.events : Trace → List Event
   | Trace.empty => []
   | Trace.cons tr ev => Trace.events tr ++ [ev]
 
-/-- Build a trace from an oldest-first event list. -/
+/-- Build a trace from an oldest-first event list (chronological accumulation). -/
 def Trace.ofEvents (events : List Event) : Trace :=
-  events.foldr (fun e t => Trace.cons t e) Trace.empty
+  events.foldl (fun tr ev => Trace.cons tr ev) Trace.empty
 
 /-- Chronological concatenation: events of `tr1` followed by events of `tr2`. -/
 def Trace.append (tr1 tr2 : Trace) : Trace :=
@@ -55,6 +55,62 @@ def Trace.append (tr1 tr2 : Trace) : Trace :=
 theorem trace_events_cons (tr : Trace) (ev : Event) :
     Trace.events (Trace.cons tr ev) = Trace.events tr ++ [ev] := by
   simp [Trace.events]
+
+/-- Helper: left-fold `cons` appends events chronologically onto an existing trace. -/
+theorem trace_events_foldl_cons (tr : Trace) (events : List Event) :
+    Trace.events (events.foldl (fun t e => Trace.cons t e) tr) =
+      Trace.events tr ++ events := by
+  induction events generalizing tr with
+  | nil => simp [List.foldl]
+  | cons e es ih =>
+    simp [List.foldl, Trace.events, ih]
+
+/--
+**Meaning:** `Trace.ofEvents` preserves chronological (oldest-first) list order.
+
+**Trusted use:** Aligning JSON event arrays with Lean `Trace.events`.
+
+**Does not imply:** Hash-chain or replay validity.
+-/
+theorem trace_events_ofEvents (events : List Event) :
+    Trace.events (Trace.ofEvents events) = events := by
+  simp [Trace.ofEvents, trace_events_foldl_cons, Trace.events]
+
+/--
+**Meaning:** Building a trace from its event list recovers the original trace.
+
+**Trusted use:** Round-trip between inductive traces and oldest-first event lists.
+
+**Does not imply:** Equality of independently constructed traces beyond event lists.
+-/
+theorem trace_ofEvents_events (tr : Trace) :
+    Trace.ofEvents tr.events = tr := by
+  induction tr with
+  | empty =>
+    simp [Trace.ofEvents, Trace.events]
+  | cons tr' ev ih =>
+    -- events (cons tr' ev) = events tr' ++ [ev]
+    -- ofEvents (xs ++ [ev]) = cons (ofEvents xs) ev
+    calc
+      Trace.ofEvents (Trace.events (Trace.cons tr' ev))
+          = Trace.ofEvents (Trace.events tr' ++ [ev]) := by
+              simp [Trace.events]
+      _ = (fun t => Trace.cons t ev)
+            (Trace.ofEvents (Trace.events tr')) := by
+              simp [Trace.ofEvents, List.foldl_append]
+      _ = Trace.cons tr' ev := by
+              simp [ih]
+
+
+/-- Concrete two-event regression: chronological JSON order matches `Trace.events`. -/
+example (e0 e1 : Event) :
+    Trace.events (Trace.ofEvents [e0, e1]) = [e0, e1] :=
+  trace_events_ofEvents [e0, e1]
+
+/-- Concrete three-event regression: chronological JSON order matches `Trace.events`. -/
+example (e0 e1 e2 : Event) :
+    Trace.events (Trace.ofEvents [e0, e1, e2]) = [e0, e1, e2] :=
+  trace_events_ofEvents [e0, e1, e2]
 
 /--
 **Meaning:** Append distributes over `Trace.cons` on the right.

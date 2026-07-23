@@ -192,21 +192,19 @@ def _repo_matches(repo: str, expected_repo: str) -> bool:
 
 
 def validate_release_chain(directory: Path) -> list[ReleaseChainIssue]:
-    """Validate a complete release directory for single-run atomic consistency."""
-    from pcs_core.computation_release_chain import validate_computation_release_chain
-    from pcs_core.release_chain_profiles import (
-        is_computation_release_directory,
-        is_tool_use_release_directory,
-    )
-    from pcs_core.tool_use_release_chain import validate_tool_use_release_chain
+    """Validate a complete release directory for single-run atomic consistency.
 
-    base = directory.resolve()
-    if is_tool_use_release_directory(base):
-        return validate_tool_use_release_chain(base)
-    if is_computation_release_directory(base):
-        return validate_computation_release_chain(base)
+    Compatibility entry point: delegates to the declarative release-profile engine.
+    """
+    from pcs_core.release_profile_engine import validate_release_directory
 
+    return validate_release_directory(directory)
+
+
+def _validate_labtrust_release_chain_impl(directory: Path) -> list[ReleaseChainIssue]:
+    """LabTrust domain validator body (legacy; invoked via ReleaseProfileSpec)."""
     issues: list[ReleaseChainIssue] = []
+    base = directory.resolve()
 
     manifest_path = base / MANIFEST_NAME
     if not manifest_path.is_file():

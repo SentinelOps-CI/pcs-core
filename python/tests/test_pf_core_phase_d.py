@@ -34,7 +34,8 @@ def test_contract_lean_has_invariant_preserved_cons_theorem() -> None:
 
 def test_generated_proof_includes_per_event_theorems(tmp_path: Path) -> None:
     trace = _load(VALID_TRACE)
-    proof_path = generate_proof_obligation_file(trace, tmp_path, trace_path=VALID_TRACE)
+    generated = generate_proof_obligation_file(trace, tmp_path, trace_path=VALID_TRACE)
+    proof_path = generated.path
     text = proof_path.read_text(encoding="utf-8")
     assert "theorem concrete_event_safe_" in text
     assert "eventSafeD evt_001 = true := by" in text or "eventSafeD ev_" in text
@@ -45,14 +46,16 @@ def test_generated_proof_documents_contract_refs_when_missing(tmp_path: Path) ->
     trace = _load(CONTRACT_TRACE)
     assert trace_has_contract_refs(trace)
     # No contract JSON alongside trace -> documents gap
-    proof_path = generate_proof_obligation_file(trace, tmp_path)
+    generated = generate_proof_obligation_file(trace, tmp_path)
+    proof_path = generated.path
     text = proof_path.read_text(encoding="utf-8")
     assert "validate-contracts" in text
 
 
 def test_generated_proof_discharges_contracts_with_json(tmp_path: Path) -> None:
     trace = _load(CONTRACT_TRACE)
-    proof_path = generate_proof_obligation_file(trace, tmp_path, trace_path=CONTRACT_TRACE)
+    generated = generate_proof_obligation_file(trace, tmp_path, trace_path=CONTRACT_TRACE)
+    proof_path = generated.path
     text = proof_path.read_text(encoding="utf-8")
     assert "concrete_trace_satisfies_contract_" in text
 
@@ -63,7 +66,8 @@ def test_generated_proof_includes_handoff_when_present(tmp_path: Path) -> None:
     trace_file = tmp_path / "pfcore_trace.json"
     trace_file.write_text(json.dumps(trace), encoding="utf-8")
     (tmp_path / "handoff.json").write_text(json.dumps(handoff), encoding="utf-8")
-    proof_path = generate_proof_obligation_file(trace, tmp_path / "out", trace_path=trace_file)
+    generated = generate_proof_obligation_file(trace, tmp_path / "out", trace_path=trace_file)
+    proof_path = generated.path
     text = proof_path.read_text(encoding="utf-8")
     assert "handoffSafeD" in text
     assert "theorem concrete_handoff_safe_" in text
@@ -74,9 +78,10 @@ def test_generated_proof_compiles_with_lake() -> None:
     from pcs_core.lean_check import pfcore_generated_dir, run_lean_concrete_proof
 
     trace = _load(VALID_TRACE)
-    proof_path = generate_proof_obligation_file(
+    generated = generate_proof_obligation_file(
         trace, pfcore_generated_dir(), trace_path=VALID_TRACE
     )
+    proof_path = generated.path
     ok, detail = run_lean_concrete_proof(proof_path, skip_build=False)
     if not ok and ("lake unavailable" in detail or "timed out" in detail.lower()):
         pytest.skip(detail)

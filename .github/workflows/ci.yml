@@ -9,14 +9,15 @@ jobs:
   python:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.12"
       - name: Install and test Python
         run: |
           cd python
-          pip install -e ".[dev]"
+          pip install -c requirements.lock -e ".[dev]"
+          pcs capabilities
           pytest -q tests/test_pf_core_tier1.py tests/test_pf_core_cross_language.py
           pytest -q tests/test_pf_core_stage1.py tests/test_pf_core_stage2.py tests/test_pf_core_stage3.py
           pytest -q tests/test_pf_core_phase_f.py
@@ -76,10 +77,19 @@ jobs:
           pytest -q tests/test_multidomain_workflows.py
           ruff check pcs_core tests
           ruff format --check pcs_core tests
+      - name: Phase 7 quality — hypothesis + pyright + pin check
+        run: |
+          cd python
+          pip install -c requirements.lock -e ".[dev,quality]"
+          python ../scripts/verify-certifyedge-pin.py --mode preview
+          pyright pcs_core/external_attestation.py pcs_core/safe_paths.py pcs_core/pf_core_certifyedge.py
+          pytest -q tests/test_external_attestation.py tests/test_property_based.py
+          coverage run -m pytest -q tests/test_external_attestation.py tests/test_safe_paths.py
+          coverage report --include='pcs_core/external_attestation.py,pcs_core/safe_paths.py' --fail-under=70
       - name: PF-Core fixture validation
         run: |
           cd python
-          pip install -e .
+          pip install -c requirements.lock -e .
           pcs validate ../examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json
           pcs pf-core validate-trace ../examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json
       # Dev CI policy: live CertifyEdge when available; mock fallback for format validation.
@@ -88,7 +98,7 @@ jobs:
       - name: PF-Core CertifyEdge check (live or mock)
         run: |
           cd python
-          pip install -e .
+          pip install -c requirements.lock -e .
           if command -v certifyedge >/dev/null 2>&1; then
             echo "CertifyEdge CLI found: $(command -v certifyedge)"
             certifyedge --version || true
@@ -123,6 +133,19 @@ jobs:
             ../lean/PFCore/Catalog.lean \
             ../rust/crates/pcs-core/src/pf_core_catalog.rs \
             ../typescript/packages/core/src/pfCoreCatalog.ts
+          # Fail if hand-maintained Lean effect/role catalogs reappear outside Catalog.lean.
+          if grep -n '("cap:file-read", Effect.read)' ../lean/PFCore/Action.lean; then
+            echo "hand-maintained knownCapabilityEffectCatalog entries found in Action.lean" >&2
+            exit 1
+          fi
+          if grep -n '("file_reader", \["cap:file-read"\])' ../lean/PFCore/RoleMap.lean; then
+            echo "hand-maintained runtimeRoleMap entries found in RoleMap.lean" >&2
+            exit 1
+          fi
+          if grep -n 'EFFECT_KIND_TO_LEAN: dict\[str, str\] = {' ../python/pcs_core/pf_core_lean_codegen.py; then
+            echo "manual EFFECT_KIND_TO_LEAN table found in pf_core_lean_codegen.py" >&2
+            exit 1
+          fi
       - name: PF-Core adapter parity (provability-fabric-core pin)
         run: bash scripts/run-pf-core-adapter-ci.sh
       - name: LabTrust release fixtures
@@ -133,21 +156,21 @@ jobs:
   lean:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.12"
-      - name: Install elan
-        run: curl -sSfL https://github.com/leanprover/elan/releases/download/v4.0.0/elan-x86_64-unknown-linux-gnu.tar.gz | tar xz && ./elan-init -y --default-toolchain none
+      - name: Install elan (checksum verified)
+        run: bash scripts/install-elan-verified.sh
       - name: Build Lean libraries and PF-Core lean-check
         run: |
           export PATH="$HOME/.elan/bin:$PATH"
           cd lean
-          elan default leanprover/lean4:v4.14.0
           lake build PCS
           lake build PFCore
           cd ../python
-          pip install -e .
+          pip install -c requirements.lock -e .
+          pcs capabilities
           pcs pf-core lean-check --trace ../examples/pf-core-valid/tool_use_trace_compiled/pfcore_trace.json --out /tmp/pfcore-ci-cert.json
           pcs pf-core verify-proof-binding \
             --certificate /tmp/pfcore-ci-cert.json \
@@ -160,8 +183,8 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master' }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.12"
       - name: PF-Core provability-fabric-core adapter parity
@@ -170,8 +193,8 @@ jobs:
   rust:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.86
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: dtolnay/rust-toolchain@4d407b29186a635f0cc27475ef0bc0ae605a8866 # 1.86
         with:
           components: rustfmt, clippy
       - name: Test Rust
@@ -179,21 +202,21 @@ jobs:
           cd rust
           cargo fmt --check
           rustup component add clippy
-          cargo clippy --all-targets -- -D warnings
-          cargo test
-          cargo test hash_vectors
+          cargo clippy --locked --all-targets -- -D warnings
+          cargo test --locked
+          cargo test --locked hash_vectors
 
   typescript:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: "22"
       - name: Test TypeScript
         run: |
           cd typescript
-          npm install
+          npm ci
           npm test
           npm run test:hash-vectors -w @pcs/core
           npm run lint
@@ -202,14 +225,15 @@ jobs:
     runs-on: ubuntu-latest
     needs: python
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.12"
       - name: Required CLI commands
         run: |
           cd python
-          pip install -e .
+          pip install -c requirements.lock -e .
+          pcs capabilities
           pcs validate ../examples/science_claim_bundle.certified.valid.json
           pcs validate ../examples/signed_science_claim_bundle.valid.json
           pcs validate ../examples/labtrust/signed_science_claim_bundle.valid.json

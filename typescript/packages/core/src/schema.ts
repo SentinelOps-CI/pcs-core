@@ -80,7 +80,13 @@ const ARTIFACT_SCHEMAS: Record<ArtifactType, string> = {
   "PFCoreHandoff.v0": "PFCoreHandoff.v0.schema.json",
   "PFCoreRuntimeObservation.v0": "PFCoreRuntimeObservation.v0.schema.json",
   "PFCoreCertificate.v0": "PFCoreCertificate.v0.schema.json",
+  "PFCoreSemanticProjection.v0": "PFCoreSemanticProjection.v0.schema.json",
   "PCSBridgeCertificate.v0": "PCSBridgeCertificate.v0.schema.json",
+  "PFCoreKernelManifest.v0": "PFCoreKernelManifest.v0.schema.json",
+  "PFCoreReleaseBundleManifest.v0": "PFCoreReleaseBundleManifest.v0.schema.json",
+  "ArtifactIntegrity.v1": "ArtifactIntegrity.v1.schema.json",
+  "FormatAssertionProbe.v0": "FormatAssertionProbe.v0.schema.json",
+  "ExternalAttestation.v0": "ExternalAttestation.v0.schema.json",
 };
 
 

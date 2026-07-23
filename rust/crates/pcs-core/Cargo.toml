@@ -13,3 +13,4 @@ jsonschema = "0.26"
 
 [dev-dependencies]
 walkdir = "2"
+proptest = "1"

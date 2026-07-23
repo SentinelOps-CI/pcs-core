@@ -24,3 +24,13 @@ lean/PFCore/Generated/*.lean
 
 release-run/
 examples/labtrust-release/.ci_validation_result.json
+python/pyproject.verifier.toml
+python/dist/
+
+# Local CertifyEdge provision output
+.tools/
+
+
+# Hypothesis local cache
+python/.hypothesis/
+

@@ -1,0 +1,19 @@
+# CODEOWNERS — security-sensitive paths require maintainer review.
+# See SECURITY.md and docs/security-governance.md.
+
+* @SentinelOps-CI/dev-team
+
+/lean/ @SentinelOps-CI/dev-team
+/lean/PFCore/ @SentinelOps-CI/dev-team
+/lean/PCS/ @SentinelOps-CI/dev-team
+/schemas/ @SentinelOps-CI/dev-team
+/pins/ @SentinelOps-CI/dev-team
+/.github/ @SentinelOps-CI/dev-team
+/docker/ @SentinelOps-CI/dev-team
+/python/pcs_core/hash.py @SentinelOps-CI/dev-team
+/python/pcs_core/release_chain.py @SentinelOps-CI/dev-team
+/python/pcs_core/release_chain_checks.py @SentinelOps-CI/dev-team
+/python/pcs_core/pf_core_bundle.py @SentinelOps-CI/dev-team
+/docs/trust-model.md @SentinelOps-CI/dev-team
+/docs/hash-canonicalization.md @SentinelOps-CI/dev-team
+/SECURITY.md @SentinelOps-CI/dev-team

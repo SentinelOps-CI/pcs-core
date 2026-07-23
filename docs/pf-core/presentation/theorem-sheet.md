@@ -32,7 +32,19 @@ theorem every_allowed_event_in_safe_trace_is_allowed (tr : Trace) (ev : Event)
     ActionAllowed ev.principal ev.action
 ```
 
-## Conservative non-interference (`lean/PFCore/NonInterference.lean`)
+## Conservative tenant projection isolation (`lean/PFCore/Observational.lean`)
+
+User-facing name: **`TenantProjectionIsolation`** (Lean `NonInterference` is a compatibility alias only; paired-execution NI is unproved scaffolding in `PairedExecution.lean`).
+
+### `traceSafe_implies_tenant_projection_isolation`
+
+```lean
+theorem traceSafe_implies_tenant_projection_isolation
+    (tenantLow tenantHigh : String) (tr : Trace) (hTrace : TraceSafe tr) :
+    TenantProjectionIsolation tenantLow tenantHigh tr
+```
+
+## Conservative tenant isolation (`lean/PFCore/NonInterference.lean`)
 
 ### `cons_preserves_tenant_scope`
 

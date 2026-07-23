@@ -13,6 +13,8 @@ LabTrust-Gym, CertifyEdge, Provability Fabric, and Scientific Memory import arti
 | Running a release train | [release-protocol.md](release-protocol.md), [labtrust-release-fixtures.md](labtrust-release-fixtures.md), [releases/v0.1.0.md](releases/v0.1.0.md) |
 | Publishing benchmarks | [benchmarks.md](benchmarks.md), [benchmark-ingest-contract.md](benchmark-ingest-contract.md), [producer-benchmark-ingest.md](producer-benchmark-ingest.md) |
 | Auditing evidence | [labtrust-release-fixtures.md](labtrust-release-fixtures.md), [semantic-check-policy.md](semantic-check-policy.md) |
+| Packaging / verifier OCI | [distribution.md](distribution.md) |
+| Security governance | [security-governance.md](security-governance.md), [../SECURITY.md](../SECURITY.md) |
 
 ## Core guides
 
@@ -26,6 +28,7 @@ LabTrust-Gym, CertifyEdge, Provability Fabric, and Scientific Memory import arti
 | Workflow profiles (all domains) | [workflow-profiles.md](workflow-profiles.md) |
 | Benchmarks | [benchmarks.md](benchmarks.md) |
 | Canonical hashing | [hash-canonicalization.md](hash-canonicalization.md) |
+| JSON Schema formats | [json-schema-formats.md](json-schema-formats.md) |
 | Vendoring schemas | [downstream-schema-sync.md](downstream-schema-sync.md) |
 | Conformance suites | [../conformance/README.md](../conformance/README.md) |
 
@@ -63,6 +66,8 @@ Maintainers can run the full gate through one command on each platform.
 | [migration-policy.md](migration-policy.md) | Version migrations |
 | [versioning.md](versioning.md) | `schema_version` rules |
 | [lean-trust-kernel.md](lean-trust-kernel.md) | Lean formal checks |
+| [distribution.md](distribution.md) | Validator vs verifier products |
+| [security-governance.md](security-governance.md) | Branch protection, SBOM/SLSA, retention |
 
 ## Repository layout
 

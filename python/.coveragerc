@@ -1,0 +1,24 @@
+# Coverage thresholds for release/certificate validators (Phase 7).
+# Run: cd python && coverage run -m pytest -q && coverage report --fail-under=70
+# Focus measurement on trust-critical modules via --include below.
+
+[run]
+branch = true
+source = pcs_core
+omit =
+    pcs_core/benchmark_*.py
+    pcs_core/scripts/*
+    */tests/*
+
+[report]
+fail_under = 70
+show_missing = true
+skip_covered = false
+include =
+    pcs_core/external_attestation.py
+    pcs_core/pf_core_bundle.py
+    pcs_core/pf_core_certifyedge.py
+    pcs_core/safe_paths.py
+    pcs_core/validate*.py
+    pcs_core/release_chain.py
+    pcs_core/hash.py

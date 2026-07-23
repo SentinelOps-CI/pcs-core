@@ -62,7 +62,9 @@ step "PF-Core catalog drift check" bash -lc "
     '${ROOT}/python/pcs_core/pf_core_catalog.py' \
     '${ROOT}/lean/PFCore/Catalog.lean' \
     '${ROOT}/rust/crates/pcs-core/src/pf_core_catalog.rs' \
-    '${ROOT}/typescript/packages/core/src/pfCoreCatalog.ts'
+    '${ROOT}/typescript/packages/core/src/pfCoreCatalog.ts' &&
+  ! grep -n '(\"cap:file-read\", Effect.read)' '${ROOT}/lean/PFCore/Action.lean' &&
+  ! grep -n 'EFFECT_KIND_TO_LEAN: dict\[str, str\] = {' '${ROOT}/python/pcs_core/pf_core_lean_codegen.py'
 "
 
 step "pf-core audit-lean-no-sorry" pcs pf-core audit-lean-no-sorry

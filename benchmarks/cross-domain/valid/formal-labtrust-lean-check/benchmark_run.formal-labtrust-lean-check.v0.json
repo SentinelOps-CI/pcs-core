@@ -3,8 +3,8 @@
   "run_id": "bench-run-formal-labtrust-lean-check",
   "task_id": "formal-trust-kernel-v0",
   "case_id": "formal-labtrust-lean-check",
-  "started_at": "2026-06-28T07:05:52Z",
-  "completed_at": "2026-06-28T07:05:52Z",
+  "started_at": "2026-07-22T22:27:58Z",
+  "completed_at": "2026-07-22T22:27:58Z",
   "commands": [
     {
       "command": "lean_check C:/Users/mateo/pcs-core/examples/labtrust-release",
@@ -27,5 +27,5 @@
   "duration_ms": 1,
   "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
   "source_commit": "d444444444444444444444444444444444444444",
-  "signature_or_digest": "sha256:e0c2f6d9eeeb30f5dc8305878e13d7e7413952e81432544d5002247579d6771c"
+  "signature_or_digest": "sha256:66ade3141db1645fc90c4d250125254a4bab1d703cfd595d8cd59271ae341307"
 }

@@ -1,0 +1,18 @@
+# Locked Python constraints for reproducible CI installs.
+# Install: pip install -c requirements.lock -e ".[dev,quality]"
+# Refresh after intentional dependency bumps; keep in sync with pyproject.toml ranges.
+
+attrs==25.4.0
+jsonschema==4.26.0
+jsonschema-specifications==2025.9.1
+referencing==0.36.2
+rpds-py==0.30.0
+
+# Optional-dev (CI)
+pytest==8.3.5
+ruff==0.15.9
+
+# Optional-quality (CI Phase 7)
+hypothesis==6.131.0
+pyright==1.1.400
+coverage==7.8.0

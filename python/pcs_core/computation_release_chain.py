@@ -118,6 +118,14 @@ def _validate_computation_alignment(base: Path, errors: list[str]) -> None:
 
 
 def validate_computation_release_chain(directory: Path) -> list[ReleaseChainIssue]:
+    """Compatibility wrapper — delegates to the declarative release-profile engine."""
+    from pcs_core.release_profile_engine import run_release_profile_validation
+    from pcs_core.release_profile_specs import COMPUTATION_RELEASE_PROFILE
+
+    return run_release_profile_validation(directory.resolve(), COMPUTATION_RELEASE_PROFILE)
+
+
+def _validate_computation_release_chain_impl(directory: Path) -> list[ReleaseChainIssue]:
     """Validate a scientific computation release directory."""
     issues: list[ReleaseChainIssue] = []
     base = directory.resolve()

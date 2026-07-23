@@ -1,4 +1,5 @@
 import PFCore.Capability
+import PFCore.Catalog
 
 /-!
 # PF-Core role-to-capability expansion (conservative kernel subset)
@@ -8,7 +9,8 @@ known roles into explicit capability ids. This module models that expansion map 
 alignment between expanded role capabilities and explicit principal capability lists.
 
 Full runtime RoleMap parity and dynamic role assignment remain outside the kernel; see
-`docs/pf-core/assumptions.md`.
+`docs/pf-core/assumptions.md`. Role map entries are generated into
+`Catalog.runtimeRoleMapEntries` from `catalog/pf_core.catalog.json`.
 -/
 
 namespace PFCore
@@ -116,19 +118,11 @@ def RoleMap.allMappedCapabilities (rm : RoleMap) : List String :=
 
 **Trusted use:** Cross-language parity audits and `runtime_role_expansion_subset`.
 
-**Does not imply:** Runtime producers assign only these roles or codegen auto-sync on catalog change.
+**Does not imply:** Runtime producers assign only these roles — entries are generated from
+`catalog/pf_core.catalog.json` into `Catalog.runtimeRoleMapEntries`.
 -/
 def runtimeRoleMap : RoleMap :=
-  { entries :=
-      [ ("file_reader", ["cap:file-read"])
-      , ("file_admin", ["cap:file-read", "cap:file-write"])
-      , ("network_user", ["cap:network"])
-      , ("email_user", ["cap:email-send"])
-      , ("handoff_delegate", ["cap:handoff"])
-      , ("mcp_user", ["cap:mcp-invoke"])
-      , ("lab_operator", ["cap:lab-release"])
-      , ("agent", ["cap:file-read", "cap:email-send", "cap:handoff", "cap:mcp-invoke"])
-      ] }
+  { entries := Catalog.runtimeRoleMapEntries }
 
 /-- Role names in `runtimeRoleMap` (mirrors Python `ROLE_CAPABILITY_MAP` keys). -/
 def runtimeRoleMapKeys : List String :=

@@ -1,4 +1,4 @@
-# Trust model (v0.1)
+# Trust model (v0.1 / Phase 1 integrity)
 
 PCS artifacts function as **evidence containers** that carry attestations and measurements, and each container requires an explicit guarantee label in user interfaces and exports because trust is layered by design.
 
@@ -23,11 +23,50 @@ The LabTrust demonstration implements a **proof-carrying simulation workflow** a
 
 `RuntimeReceipt.v0` binds `events_hash`, `policy_hash`, and `trace_hash`. `TraceCertificate.v0` references the same `trace_hash` and `spec_hash`. `ScienceClaimBundle.v0` validation enforces alignment between receipt and certificate trace hashes.
 
-The canonical algorithm is documented in [hash-canonicalization.md](hash-canonicalization.md).
+The canonical algorithm is **PCS Canonical JSON v1**, documented in [hash-canonicalization.md](hash-canonicalization.md).
 
-## Signatures
+## Digests vs signatures
 
-v0.1 includes `signature_or_digest` on artifacts, while full signing infrastructure remains outside the initial release and downstream verifiers attach signatures after checks complete.
+### v0 compatibility (`signature_or_digest`)
+
+v0 artifacts carry a single `signature_or_digest` field that is an integrity digest of
+canonical JSON, not a cryptographic signature. v0 readers continue to accept this field.
+New producers should prefer the v1 envelope when signing.
+
+### v1 integrity envelope
+
+```json
+{
+  "schema_version": "v1",
+  "artifact_type": "…",
+  "canonicalization_version": "v1",
+  "artifact_digest": "sha256:…",
+  "signature": {
+    "algorithm": "ed25519",
+    "key_id": "…",
+    "signed_at": "…",
+    "value": "…"
+  }
+}
+```
+
+Normative schema: `schemas/ArtifactIntegrity.v1.schema.json`.
+
+`artifact_digest` hashes the artifact with `signature`, `artifact_digest`, and
+`signature_or_digest` stripped. The signature covers the domain-separated message:
+
+```text
+PCS:<artifact_type>:<schema_version>:<artifact_digest>
+```
+
+### Trust roots, rotation, and revocation
+
+| Concern | Policy |
+|---------|--------|
+| Trust root | Downstream verifiers pin an allowlist of ed25519 public keys by `key_id` (file or HSM). pcs-core does not ship production private keys. |
+| Rotation | Publish a new `key_id` before retiring the old key. Artifacts must carry the `key_id` used at `signed_at`. Overlap windows are verifier policy. |
+| Revocation | Maintain a revocation list of `key_id` values (and optional digest denylist). Revoked keys must not verify new artifacts; historical artifacts signed before revocation may be accepted only under explicit audit policy. |
+| Algorithm agility | v1 fixes `algorithm` to `ed25519`. Future algorithms require a new schema version. |
 
 ## Staleness
 

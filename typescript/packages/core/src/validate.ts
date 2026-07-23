@@ -55,7 +55,13 @@ export type ArtifactType =
   | "PFCoreHandoff.v0"
   | "PFCoreRuntimeObservation.v0"
   | "PFCoreCertificate.v0"
+  | "PFCoreSemanticProjection.v0"
   | "PCSBridgeCertificate.v0"
+  | "PFCoreKernelManifest.v0"
+  | "PFCoreReleaseBundleManifest.v0"
+  | "ArtifactIntegrity.v1"
+  | "FormatAssertionProbe.v0"
+  | "ExternalAttestation.v0"
   | "ReleaseManifest.v0"
   | "HandoffManifest.v0"
   | "ReleaseChainValidationResult.v0"
@@ -113,10 +119,16 @@ const EXPLICIT_ARTIFACT_TYPES = new Set<ArtifactType>([
   "PFCoreHandoff.v0",
   "PFCoreRuntimeObservation.v0",
   "PFCoreCertificate.v0",
+  "PFCoreSemanticProjection.v0",
   "LeanCheckResult.v0",
   "ToolUseTrace.v0",
   "PCSBridgeCertificate.v0",
   "ClaimArtifact.v0",
+  "PFCoreKernelManifest.v0",
+  "PFCoreReleaseBundleManifest.v0",
+  "ArtifactIntegrity.v1",
+  "FormatAssertionProbe.v0",
+  "ExternalAttestation.v0",
 ]);
 
 export function detectArtifactType(data: Record<string, unknown>): ArtifactType | null {

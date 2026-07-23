@@ -1,0 +1,14 @@
+{
+  "schema_version": "v0",
+  "artifact_type": "PFCoreTrace.v0",
+  "trace_id": "trace-file-read-1",
+  "workflow_id": "agent_tool_use.safety_v0",
+  "events": [],
+  "trace_hash": "sha256:7c586dc277783547e76b3b78a5357cd4bb12e20627df11fa55e3f82c920ac6de",
+  "policy_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "contract_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "claim_class": "RuntimeChecked",
+  "source_repo": "https://github.com/example/agent-runtime",
+  "source_commit": "abc1234567890abc1234567890abc1234567890",
+  "signature_or_digest": "sha256:bc26bbf4e65c1722cf2dd56723238ff13b72526ee6450d0bb9e4e54a4c3a4d30"
+}

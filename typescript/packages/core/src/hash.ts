@@ -1,10 +1,45 @@
 import { createHash } from "node:crypto";
 
-const SIGNATURE_FIELD = "signature_or_digest";
+/** v0 compatibility field: integrity digest historically named like a signature. */
+export const SIGNATURE_FIELD = "signature_or_digest";
+/** v1 separated content digest. */
+export const ARTIFACT_DIGEST_FIELD = "artifact_digest";
+/** v1 cryptographic signature object. */
+export const SIGNATURE_OBJECT_FIELD = "signature";
+
+export const HASH_EXCLUDED_FIELDS = new Set([
+  SIGNATURE_FIELD,
+  ARTIFACT_DIGEST_FIELD,
+  SIGNATURE_OBJECT_FIELD,
+]);
+
+/** PCS Canonical JSON algorithm version. */
+export const CANONICALIZATION_VERSION = "v1";
+
+export const SAFE_INTEGER_MIN = -9007199254740991;
+export const SAFE_INTEGER_MAX = 9007199254740991;
 
 export function isZeroSourceCommit(commit: string): boolean {
   const trimmed = commit.trim();
   return trimmed.length > 0 && /^0+$/.test(trimmed);
+}
+
+export function domainSeparatedSigningMessage(args: {
+  artifactType: string;
+  schemaVersion: string;
+  artifactDigest: string;
+}): string {
+  const { artifactType, schemaVersion, artifactDigest } = args;
+  if (!artifactType || artifactType.includes(":")) {
+    throw new Error(`invalid artifact_type for domain separation: ${artifactType}`);
+  }
+  if (!schemaVersion || schemaVersion.includes(":")) {
+    throw new Error(`invalid schema_version for domain separation: ${schemaVersion}`);
+  }
+  if (!artifactDigest.startsWith("sha256:") || artifactDigest.length !== 71) {
+    throw new Error(`invalid artifact_digest for domain separation: ${artifactDigest}`);
+  }
+  return `PCS:${artifactType}:${schemaVersion}:${artifactDigest}`;
 }
 
 function sortValue(value: unknown): unknown {
@@ -24,8 +59,12 @@ function sortValue(value: unknown): unknown {
 }
 
 export function canonicalizeForHash(data: Record<string, unknown>): Record<string, unknown> {
-  const payload = { ...data };
-  delete payload[SIGNATURE_FIELD];
+  const payload: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(data)) {
+    if (!HASH_EXCLUDED_FIELDS.has(key)) {
+      payload[key] = value;
+    }
+  }
   return sortValue(payload) as Record<string, unknown>;
 }
 

@@ -16,7 +16,7 @@
     "test:hash-vectors": "npm run build && node --test --test-name-pattern=hash dist/tests/examples.test.js",
     "lint": "tsc -p tsconfig.json --noEmit"
   },
-  "dependencies": {
+    "dependencies": {
     "ajv": "^8.17.0",
     "ajv-formats": "^3.0.1"
   },

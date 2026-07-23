@@ -69,7 +69,8 @@ def test_generated_proof_includes_contract_obligations(tmp_path: Path) -> None:
     trace = _load(CONTRACT_TRACE)
     assert trace_has_contract_refs(trace)
     assert validate_contracts_before_codegen(trace, trace_path=CONTRACT_TRACE) == []
-    proof_path = generate_proof_obligation_file(trace, tmp_path, trace_path=CONTRACT_TRACE)
+    generated = generate_proof_obligation_file(trace, tmp_path, trace_path=CONTRACT_TRACE)
+    proof_path = generated.path
     text = proof_path.read_text(encoding="utf-8")
     assert "ContractPreSpec" in text
     assert "concrete_trace_satisfies_contract_" in text
@@ -269,9 +270,10 @@ def test_contract_checked_generated_proof_compiles() -> None:
     from pcs_core.lean_check import pfcore_generated_dir, run_lean_concrete_proof
 
     trace = _load(CONTRACT_TRACE)
-    proof_path = generate_proof_obligation_file(
+    generated = generate_proof_obligation_file(
         trace, pfcore_generated_dir(), trace_path=CONTRACT_TRACE
     )
+    proof_path = generated.path
     ok, detail = run_lean_concrete_proof(proof_path, skip_build=False)
     if not ok and ("lake unavailable" in detail or "timed out" in detail.lower()):
         pytest.skip(detail)

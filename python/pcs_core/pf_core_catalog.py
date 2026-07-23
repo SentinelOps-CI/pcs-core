@@ -14,6 +14,16 @@ EFFECT_KINDS = frozenset(
     ]
 )
 
+EFFECT_KIND_TO_LEAN: dict[str, str] = {
+    "file.read": "Effect.read",
+    "file.write": "Effect.write",
+    "network.egress": "Effect.network",
+    "email.send": "Effect.externalMessage",
+    "handoff.delegate": "Effect.stateChange",
+    "mcp.invoke": "Effect.codeExecution",
+    "lab.release": 'Effect.custom "lab.release"',
+}
+
 CAPABILITY_CATALOG: dict[str, dict[str, str]] = {
     "cap:file-read": {
         "capability_id": "cap:file-read",

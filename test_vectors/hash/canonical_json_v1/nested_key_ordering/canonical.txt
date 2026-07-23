@@ -1,0 +1,1 @@
+{"a":{"b":2,"c":3},"artifact_type":"CanonicalProbe.v0","m":0,"schema_version":"v0","z":1}

@@ -15,18 +15,13 @@ structure ComputationWitness where
   status : String
   deriving Repr
 
-/-- Witness result hashes must be drawn from the declared result artifact digest set. -/
+/-- Witness result hashes must be drawn from an independently declared artifact digest set. -/
 def witnessResultHashesAdmissible (witness : ComputationWitness) (artifactHashes : List Hash) : Prop :=
   ∀ h ∈ witness.resultHashes, h ∈ artifactHashes
 
-/-- Declared artifact digest set for multi-artifact witnesses: the full `resultHashes` listing. -/
+/-- Deprecated circular helper retained only for legacy catalogs; do not use in generated proofs. -/
 def witnessDeclaredArtifactHashes (witness : ComputationWitness) : List Hash :=
   witness.resultHashes
-
-theorem witness_declared_artifact_hashes_self_admissible (witness : ComputationWitness) :
-    witnessResultHashesAdmissible witness (witnessDeclaredArtifactHashes witness) := by
-  intro h hh
-  exact hh
 
 theorem witness_result_hashes_admissible
     (witness : ComputationWitness) (artifactHashes : List Hash)

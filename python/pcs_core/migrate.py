@@ -6,7 +6,12 @@ import json
 from pathlib import Path
 from typing import Any
 
-from pcs_core.validate import ValidationError, detect_artifact_type, validate_artifact
+from pcs_core.validate import (
+    DetectionMode,
+    ValidationError,
+    detect_artifact_type,
+    validate_artifact,
+)
 
 
 def _migration_report_body(
@@ -57,10 +62,10 @@ def migrate_artifact(
             report["message"] or "unsupported migration",
             errors=[report["message"] or "unsupported migration"],
         )
-    artifact_type = detect_artifact_type(data)
+    artifact_type = detect_artifact_type(data, mode=DetectionMode.MIGRATION)
     if not artifact_type:
         raise ValidationError("Could not detect artifact type for migration")
-    validate_artifact(data, artifact_type)
+    validate_artifact(data, artifact_type, detection_mode=DetectionMode.MIGRATION)
     report = _migration_report_body(
         from_version=from_version,
         to_version=to_version,

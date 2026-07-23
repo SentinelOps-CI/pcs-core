@@ -53,6 +53,6 @@ PCS `pcs lean-check` (without `--trace`) evaluates release obligations in Python
 
 - PF-Core contract JSON predicates are richer than the Lean `Contract` structure; contract satisfaction in Lean is intentionally simplified (see [contract-semantics.md](contract-semantics.md)).
 - Role names are not interpreted in the Lean kernel; runtime expands roles to capabilities, and lean-check requires explicit capability lists on traces (permanent assumption).
-- Global non-interference and full compositional invariant research remain deferred (Phase F).
+- Global / paired-execution non-interference remains deferred; the proved single-trace observational bound is `TenantProjectionIsolation` (Phase 5; see [runtime-semantics.md](runtime-semantics.md)).
 - Model correctness, NL policy, MCP semantics, and live CertifyEdge attestation are out of scope.
 - Generated proofs cover `traceSafeD`, per-event `eventSafeD`, and optional `handoffSafeD`; they do not yet discharge arbitrary JSON contract invariants in Lean.

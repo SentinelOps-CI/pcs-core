@@ -5,7 +5,10 @@ pub mod schema;
 pub mod status;
 pub mod validation;
 
-pub use hash::{canonical_hash, canonical_json_bytes, canonical_json_string};
+pub use hash::{
+    canonical_hash, canonical_json_bytes, canonical_json_string, domain_separated_signing_message,
+    CANONICALIZATION_VERSION,
+};
 pub use pf_core::{
     action_admissible_with_resource_pattern_d, compute_event_hash, compute_trace_hash,
     event_safe_d, event_safe_rd, parse_contract_semantics_checked,

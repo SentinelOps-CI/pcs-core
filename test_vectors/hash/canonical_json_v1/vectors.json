@@ -1,0 +1,55 @@
+{
+  "canonicalization_version": "v1",
+  "cases": [
+    {
+      "case_id": "unicode",
+      "expected_digest": "sha256:ea8eaef40cb0024f431f548964aa9433944b92e5e69da08eb9239991a0c72fda",
+      "canonical_json": "{\"artifact_type\":\"CanonicalProbe.v0\",\"schema_version\":\"v0\",\"text\":\"café\"}"
+    },
+    {
+      "case_id": "escaped_characters",
+      "expected_digest": "sha256:082825d413a4baef19e6f815ea3a5a1a6789b6fa6490ea3233e7a0daa6170650",
+      "canonical_json": "{\"artifact_type\":\"CanonicalProbe.v0\",\"schema_version\":\"v0\",\"text\":\"line1\\nline2\\t\\\"quoted\\\"\"}"
+    },
+    {
+      "case_id": "safe_integer_boundaries",
+      "expected_digest": "sha256:04c81e770e51294080a98ae9a671fb338eb7a54329441e5c0d0ee85979723129",
+      "canonical_json": "{\"artifact_type\":\"CanonicalProbe.v0\",\"hi\":9007199254740991,\"lo\":-9007199254740991,\"schema_version\":\"v0\"}"
+    },
+    {
+      "case_id": "large_integers_as_strings",
+      "expected_digest": "sha256:b40fc9fe560ef9c4360abce90a2dd1ae8f2dbcad7c7f60be9c52b63c8a02ef2d",
+      "canonical_json": "{\"artifact_type\":\"CanonicalProbe.v0\",\"big\":\"9007199254740993\",\"schema_version\":\"v0\"}"
+    },
+    {
+      "case_id": "empty_object",
+      "expected_digest": "sha256:b2027ee4cbf74c92670bd89bf0393f775e7b52ac258395fe6007b3ed4a5b4a60",
+      "canonical_json": "{\"artifact_type\":\"CanonicalProbe.v0\",\"empty\":{},\"schema_version\":\"v0\"}"
+    },
+    {
+      "case_id": "empty_array",
+      "expected_digest": "sha256:9f587415224a4bda6291cea471666e941053a598e5729869b775c80cfa8044a0",
+      "canonical_json": "{\"artifact_type\":\"CanonicalProbe.v0\",\"empty\":[],\"schema_version\":\"v0\"}"
+    },
+    {
+      "case_id": "nested_key_ordering",
+      "expected_digest": "sha256:bca9999825a03d31689a6b7b87a65ccfebe2e2a34d92db2c11790b6b7f08961e",
+      "canonical_json": "{\"a\":{\"b\":2,\"c\":3},\"artifact_type\":\"CanonicalProbe.v0\",\"m\":0,\"schema_version\":\"v0\",\"z\":1}"
+    },
+    {
+      "case_id": "array_order_significant",
+      "expected_digest": "sha256:77bd3abe215c92c4a921521143c37416795f90e50d7bd6f40113cb826a696223",
+      "canonical_json": "{\"artifact_type\":\"CanonicalProbe.v0\",\"events\":[{\"id\":\"b\"},{\"id\":\"a\"}],\"schema_version\":\"v0\"}"
+    },
+    {
+      "case_id": "negative_zero_integer",
+      "expected_digest": "sha256:01c0ed8cebb55f4c1ce6bd0c4145b4855ef2d1e1a6431bd5fc15ef32084e472a",
+      "canonical_json": "{\"artifact_type\":\"CanonicalProbe.v0\",\"schema_version\":\"v0\",\"value\":0}"
+    },
+    {
+      "case_id": "exponent_forms_as_strings",
+      "expected_digest": "sha256:4b6578e12b9c789046b101cdc1d0bd0475079fed0434d5c8ffd4505c484d647b",
+      "canonical_json": "{\"artifact_type\":\"CanonicalProbe.v0\",\"schema_version\":\"v0\",\"scientific\":\"1.23e+4\"}"
+    }
+  ]
+}

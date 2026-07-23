@@ -46,25 +46,39 @@ Repository secret (optional): `PF_CORE_CERTIFYEDGE_CLI` — absolute path to the
 
 ## Install (live path)
 
-1. Install [CertifyEdge](https://github.com/fraware/CertifyEdge) per upstream instructions.
-2. Ensure the `certifyedge` CLI is on `PATH`, or set `PF_CORE_CERTIFYEDGE_CLI`.
-3. Verify:
+Preferred production path: pin an immutable CertifyEdge artifact in
+`pins/certifyedge.json` (`status=pinned`) and provision via:
+
+```bash
+export PCS_RELEASE_MODE=release
+bash scripts/provision-certifyedge.sh
+export PF_CORE_CERTIFYEDGE_CLI="$PWD/.tools/certifyedge/certifyedge"
+```
+
+Approved strategies: `oci_digest`, `signed_binary`, `source_commit_build`.
+Release mode fails closed when the pin is `unpinned` — do not invent fake digests.
+
+Fallback (documented staging only): install [CertifyEdge](https://github.com/fraware/CertifyEdge)
+per upstream instructions and set `PF_CORE_CERTIFYEDGE_CLI`.
+
+1. Verify:
 
 ```bash
 certifyedge --version
 which certifyedge
 ```
 
-4. Run a live check:
+2. Bind live attestation to an exact release bundle:
 
 ```bash
-pcs pf-core certifyedge-check \
-  --trace examples/pf-core-valid/labtrust_replay/trace.json \
-  --property qc_release.temporal.safety \
-  --out /tmp/PFCoreCertificate.certifyedge.json
+pcs pf-core bundle-release --trace PATH --cert PATH --out /tmp/bundle
+pcs pf-core attest-bundle --bundle /tmp/bundle --property qc_release.temporal.safety --require-live
+pcs pf-core validate-external-attestation --bundle /tmp/bundle --require-live
 ```
 
-Expected: `claim_class: CertificateChecked` (never `LeanKernelChecked`).
+Expected: `ExternalAttestation.v0` with `attestation_class: live`, bound to the
+bundle manifest digest. Claim class on the PF-Core certificate remains
+`CertificateChecked` (never `LeanKernelChecked`).
 
 ## Mock path (dev CI fallback)
 

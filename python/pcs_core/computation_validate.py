@@ -159,23 +159,47 @@ def validate_computation_witness_alignment(
         )
     result_hashes = witness.get("result_hashes")
     result_sha = result.get("sha256")
-    if isinstance(result_hashes, list) and isinstance(result_sha, str):
-        if result_sha not in result_hashes:
+    if isinstance(result_hashes, list):
+        normalized = [str(item) for item in result_hashes]
+        if len(normalized) != len(set(normalized)):
             errors.append(
-                "ComputationWitness.v0 result_hashes must include ResultArtifact sha256 "
-                "(result_hashes_match_result_artifacts)",
+                "ComputationWitness.v0 result_hashes must not contain duplicates "
+                "(duplicate_result_hash)",
             )
-    witness_code = witness.get("code_commit")
-    run_code = run_receipt.get("code_commit")
-    if isinstance(witness_code, str) and isinstance(run_code, str) and witness_code != run_code:
-        errors.append("ComputationWitness.v0 code_commit does not match ComputationRunReceipt")
+        if isinstance(result_sha, str):
+            if result_sha not in normalized:
+                errors.append(
+                    "ComputationWitness.v0 result_hashes must include ResultArtifact sha256 "
+                    "(result_hashes_match_result_artifacts)",
+                )
+            # Independent declared set for the single-artifact harness is {result.sha256}.
+            undeclared = [item for item in normalized if item != result_sha]
+            if undeclared:
+                errors.append(
+                    "ComputationWitness.v0 result_hashes contain digests not justified by "
+                    "ResultArtifact.sha256 (witness_undeclared_extra_result)",
+                )
     if witness.get("status") == RELEASE_WITNESS_STATUS:
+        for field, value in (
+            ("dataset_hash", dataset_hash),
+            ("environment_hash", environment_hash),
+            ("run_receipt_hash", run_hash),
+        ):
+            if not isinstance(value, str) or not value.startswith("sha256:") or len(value) != 71:
+                errors.append(
+                    f"ComputationWitness.v0 {field} must be a non-empty sha256 digest "
+                    f"(missing_{field})",
+                )
         exit_code = run_receipt.get("exit_code")
         if exit_code not in (0, None):
             errors.append(
                 f"ComputationRunReceipt.v0 exit_code {exit_code!r} forbids "
                 "CertificateChecked witness (nonzero_exit_code)",
             )
+    witness_code = witness.get("code_commit")
+    run_code = run_receipt.get("code_commit")
+    if isinstance(witness_code, str) and isinstance(run_code, str) and witness_code != run_code:
+        errors.append("ComputationWitness.v0 code_commit does not match ComputationRunReceipt")
     return errors
 
 

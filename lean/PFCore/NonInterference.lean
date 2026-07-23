@@ -1,12 +1,14 @@
 import PFCore.Theorems
 
 /-!
-# PF-Core conservative tenant-scoped non-interference
+# PF-Core conservative tenant-scoped isolation
 
 This module proves a **conservative subset** of tenant isolation: principals and
 resource reads/writes stay within a declared tenant for scoped traces and for
-allowed events in safe traces. Full cross-tenant non-interference (e.g. covert
-channels, handoff across tenants, or deny-event side effects) is not claimed.
+allowed events in safe traces. Full cross-tenant / paired-execution
+non-interference (e.g. covert channels, handoff across tenants, or deny-event
+side effects) is not claimed. The single-trace observational property is named
+`TenantProjectionIsolation` in `Observational.lean`.
 -/
 
 namespace PFCore

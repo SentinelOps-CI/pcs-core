@@ -10,6 +10,16 @@ pub const EFFECT_KINDS: &[&str] = &[
     "lab.release",
 ];
 
+pub const EFFECT_KIND_TO_LEAN: &[(&str, &str)] = &[
+    ("file.read", "Effect.read"),
+    ("file.write", "Effect.write"),
+    ("network.egress", "Effect.network"),
+    ("email.send", "Effect.externalMessage"),
+    ("handoff.delegate", "Effect.stateChange"),
+    ("mcp.invoke", "Effect.codeExecution"),
+    ("lab.release", "Effect.custom \"lab.release\""),
+];
+
 pub const CAPABILITY_CATALOG: &[(&str, &str, &str)] = &[
     ("cap:file-read", "file.read", "/data/*"),
     ("cap:file-write", "file.write", "/data/*"),

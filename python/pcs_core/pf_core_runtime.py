@@ -516,10 +516,12 @@ def validate_observational_non_interference(
     tenant_low: str,
     tenant_high: str,
 ) -> list[str]:
-    """Return observational NI violations (``NonInterference`` / ``nonInterferenceD`` mirror).
+    """Return ``TenantProjectionIsolation`` / ``tenantProjectionIsolationD`` violations.
 
-    Conservative projection-based check only. Does not claim covert-channel freedom,
-    timing indistinguishability, or scheduler-level global non-interference.
+    Compatibility name retained (``NonInterference`` was the prior Lean alias).
+    Conservative single-trace projection check only. Does **not** claim paired-
+    execution non-interference, covert-channel freedom, timing indistinguishability,
+    or scheduler-level global NI.
     """
     if tenant_low == tenant_high:
         return []
@@ -533,7 +535,7 @@ def validate_observational_non_interference(
     for index, event in enumerate(projection):
         if not _low_event_for_tenant(tenant_low, event):
             errors.append(
-                f"NonInterference: projected event at projection[{index}] is not "
+                f"TenantProjectionIsolation: projected event at projection[{index}] is not "
                 f"LowEvent for tenant {tenant_low!r}"
             )
 
@@ -547,10 +549,14 @@ def validate_observational_non_interference(
             continue
         if _low_event_for_tenant(tenant_low, event):
             errors.append(
-                f"NonInterference: high-tenant event at events[{index}] is low-visible "
-                f"to tenant {tenant_low!r}"
+                f"TenantProjectionIsolation: high-tenant event at events[{index}] is "
+                f"low-visible to tenant {tenant_low!r}"
             )
     return errors
+
+
+# Compatibility alias — prefer documenting as TenantProjectionIsolation.
+validate_tenant_projection_isolation = validate_observational_non_interference
 
 
 def validate_observational_non_interference_all_pairs(trace: Mapping[str, Any]) -> list[str]:
@@ -572,6 +578,112 @@ def validate_observational_non_interference_all_pairs(trace: Mapping[str, Any]) 
             if tenant_low == tenant_high:
                 continue
             errors.extend(validate_observational_non_interference(trace, tenant_low, tenant_high))
+    return errors
+
+
+# Effect kinds forbidden on a closed deny path (Lean ``Effect.IsDenyPathForbidden``).
+_DENY_PATH_FORBIDDEN_EFFECTS = frozenset(
+    {
+        "file.write",
+        "network.egress",
+        "email.send",
+        "mcp.invoke",
+        "handoff.delegate",
+    }
+)
+
+
+def _action_effect_kinds(action: Mapping[str, Any]) -> list[str]:
+    effects = action.get("effects")
+    if not isinstance(effects, list):
+        return []
+    kinds: list[str] = []
+    for item in effects:
+        if isinstance(item, dict):
+            kind = str(item.get("effect_kind") or "")
+            if kind:
+                kinds.append(kind)
+        elif isinstance(item, str) and item:
+            kinds.append(item)
+    return kinds
+
+
+def validate_event_safe_deny_closed(trace: Mapping[str, Any]) -> list[str]:
+    """Mirror ``EventSafeDenyClosed`` / ``DenyPathClosed`` on declared footprints.
+
+    For deny events: empty write list and no deny-path-forbidden effect kinds.
+    Does not require observation instrumentation fields on the JSON trace.
+    """
+    errors: list[str] = []
+    events = trace.get("events")
+    if not isinstance(events, list):
+        return ["TraceInvalid: events must be an array"]
+
+    for index, event in enumerate(events):
+        if not isinstance(event, dict):
+            continue
+        if str(event.get("decision") or "") != "deny":
+            continue
+        base = f"events[{index}]"
+        action = event.get("action")
+        if not isinstance(action, dict):
+            errors.append(f"EventSafeDenyClosed: {base} missing action")
+            continue
+        writes = action.get("writes")
+        if isinstance(writes, list) and len(writes) > 0:
+            errors.append(f"EventSafeDenyClosed: {base} deny event declares non-empty writes")
+        for kind in _action_effect_kinds(action):
+            if kind in _DENY_PATH_FORBIDDEN_EFFECTS:
+                errors.append(
+                    f"EventSafeDenyClosed: {base} deny event declares forbidden "
+                    f"effect_kind {kind!r}"
+                )
+    return errors
+
+
+def validate_observed_effects_agree(
+    action: Mapping[str, Any],
+    observations: list[Mapping[str, Any]],
+) -> list[str]:
+    """Mirror ``ObservationsAgree`` / ``TrustedInstrumentation`` for one action.
+
+    Each observation must declare ``kind`` (or ``effect_kind``) present in the
+    action's declared effects. Optional ``resource.uri`` must appear in reads or
+    writes. Callers must separately attest instrumentation faithfulness.
+    """
+    declared = set(_action_effect_kinds(action))
+    reads = action.get("reads") if isinstance(action.get("reads"), list) else []
+    writes = action.get("writes") if isinstance(action.get("writes"), list) else []
+    read_uris = {
+        str(r.get("uri") or "") for r in reads if isinstance(r, dict) and str(r.get("uri") or "")
+    }
+    write_uris = {
+        str(r.get("uri") or "") for r in writes if isinstance(r, dict) and str(r.get("uri") or "")
+    }
+    errors: list[str] = []
+    for index, obs in enumerate(observations):
+        if not isinstance(obs, dict):
+            errors.append(f"ObservedEffect: observations[{index}] must be an object")
+            continue
+        kind = str(obs.get("kind") or obs.get("effect_kind") or "")
+        if not kind:
+            errors.append(f"ObservedEffect: observations[{index}] missing kind")
+            continue
+        if kind not in declared:
+            errors.append(
+                f"ObservedEffect: observations[{index}] kind {kind!r} not in "
+                f"declared action effects"
+            )
+        resource = obs.get("resource")
+        if isinstance(resource, dict):
+            uri = str(resource.get("uri") or "")
+            if uri and uri not in read_uris and uri not in write_uris:
+                errors.append(
+                    f"ObservedEffect: observations[{index}] resource {uri!r} "
+                    f"absent from declared reads/writes"
+                )
+        elif resource is not None:
+            errors.append(f"ObservedEffect: observations[{index}].resource must be object or null")
     return errors
 
 

@@ -127,6 +127,14 @@ def _validate_tool_use_trace_hash_alignment(base: Path, errors: list[str]) -> No
 
 
 def validate_tool_use_release_chain(directory: Path) -> list[ReleaseChainIssue]:
+    """Compatibility wrapper — delegates to the declarative release-profile engine."""
+    from pcs_core.release_profile_engine import run_release_profile_validation
+    from pcs_core.release_profile_specs import TOOL_USE_RELEASE_PROFILE
+
+    return run_release_profile_validation(directory.resolve(), TOOL_USE_RELEASE_PROFILE)
+
+
+def _validate_tool_use_release_chain_impl(directory: Path) -> list[ReleaseChainIssue]:
     """Validate a tool-use release directory for single-run atomic consistency."""
     issues: list[ReleaseChainIssue] = []
     base = directory.resolve()

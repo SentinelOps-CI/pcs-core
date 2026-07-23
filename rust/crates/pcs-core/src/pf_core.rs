@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 
 use serde_json::{Map, Value};
+use sha2::{Digest, Sha256};
 
 use crate::hash::canonical_hash;
 use crate::pf_core_catalog::{
@@ -343,6 +344,26 @@ fn mode_obligation_theorems(mode: &str) -> &'static [&'static str] {
 
 fn certificate_mode_is_valid(mode: &str) -> bool {
     CERTIFICATE_MODES.contains(&mode)
+}
+
+/// Stable hash of a generated theorem-name inventory (sorted, newline-joined).
+fn theorem_inventory_hash(theorem_names: &HashSet<String>) -> String {
+    let mut sorted: Vec<&str> = theorem_names.iter().map(String::as_str).collect();
+    sorted.sort_unstable();
+    let payload = sorted.join("\n");
+    let digest = Sha256::digest(payload.as_bytes());
+    format!("sha256:{:x}", digest)
+}
+
+fn is_generated_module_theorem(kind: &str, theorem: &str) -> bool {
+    matches!(
+        kind,
+        "CertificateMode"
+            | "ConcreteTraceSafe"
+            | "ConcreteTraceSafeProp"
+            | "ConcreteAllowedEventsAllowed"
+    ) || theorem.starts_with("concrete_")
+        || theorem.starts_with("frame_")
 }
 
 pub fn resolve_tool_mapping(
@@ -774,6 +795,32 @@ pub fn validate_pfcore_certificate_semantics(certificate: &Value) -> Vec<String>
                     .iter()
                     .map(|s| (*s).to_string())
                     .collect();
+            mode_required.insert("concrete_certificate_mode_witness".to_string());
+            let inventory: Option<HashSet<String>> = certificate
+                .get("theorem_inventory")
+                .and_then(|v| v.as_array())
+                .map(|items| {
+                    items
+                        .iter()
+                        .filter_map(|item| item.as_str().map(str::to_string))
+                        .collect()
+                });
+            if let Some(ref inv) = inventory {
+                let inventory_hash = certificate
+                    .get("theorem_inventory_hash")
+                    .and_then(|v| v.as_str());
+                let expected_hash = theorem_inventory_hash(inv);
+                if inventory_hash != Some(expected_hash.as_str()) {
+                    errors.push(
+                        "root: theorem_inventory_hash does not match theorem_inventory".into(),
+                    );
+                }
+            } else {
+                errors.push(
+                    "root: lean_proof_checked requires theorem_inventory for certificate_mode evidence"
+                        .into(),
+                );
+            }
             if let Some(obligations) = certificate.get("obligations").and_then(|v| v.as_array()) {
                 for item in obligations {
                     if let Some(theorem) = item.get("theorem").and_then(|v| v.as_str()) {
@@ -815,6 +862,68 @@ pub fn validate_pfcore_certificate_semantics(certificate: &Value) -> Vec<String>
                     errors.push(format!(
                         "root: certificate_mode obligations missing passed proofs for {missing_mode:?}"
                     ));
+                }
+            }
+            if let (Some(ref inv), Some(obligations)) = (
+                &inventory,
+                certificate.get("obligations").and_then(|v| v.as_array()),
+            ) {
+                let generated_passed: HashSet<String> = obligations
+                    .iter()
+                    .filter(|item| item.get("passed").and_then(|v| v.as_bool()) == Some(true))
+                    .filter_map(|item| {
+                        let theorem = item.get("theorem").and_then(|v| v.as_str())?;
+                        let kind = item.get("kind").and_then(|v| v.as_str()).unwrap_or("");
+                        if is_generated_module_theorem(kind, theorem) {
+                            Some(theorem.to_string())
+                        } else {
+                            None
+                        }
+                    })
+                    .collect();
+                let forged: Vec<String> = generated_passed.difference(inv).cloned().collect();
+                if !forged.is_empty() {
+                    let mut sorted = forged;
+                    sorted.sort();
+                    errors.push(format!(
+                        "root: passed obligations absent from theorem_inventory: {sorted:?}"
+                    ));
+                }
+            }
+            match certificate.get("certificate_mode_witness") {
+                Some(Value::Object(witness)) => {
+                    let theorem = witness
+                        .get("theorem")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
+                    if theorem != "concrete_certificate_mode_witness" {
+                        errors.push(
+                            "root: certificate_mode_witness.theorem must be concrete_certificate_mode_witness"
+                                .into(),
+                        );
+                    }
+                    let proposition = witness
+                        .get("proposition")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .trim();
+                    if proposition.is_empty() {
+                        errors.push(
+                            "root: certificate_mode_witness.proposition must be non-empty".into(),
+                        );
+                    }
+                    if let Some(ref inv) = inventory {
+                        if !inv.contains("concrete_certificate_mode_witness") {
+                            errors.push(
+                                "root: concrete_certificate_mode_witness missing from theorem_inventory"
+                                    .into(),
+                            );
+                        }
+                    }
+                }
+                _ => {
+                    errors
+                        .push("root: lean_proof_checked requires certificate_mode_witness".into());
                 }
             }
             if cert_mode == "ContractCheckedCertificate"
@@ -1408,6 +1517,143 @@ pub fn validate_denied_events_preserved(
     errors
 }
 
+const DENY_PATH_FORBIDDEN_EFFECTS: &[&str] = &[
+    "file.write",
+    "network.egress",
+    "email.send",
+    "mcp.invoke",
+    "handoff.delegate",
+];
+
+fn action_effect_kinds(action: &Value) -> Vec<String> {
+    let Some(effects) = action.get("effects").and_then(|v| v.as_array()) else {
+        return Vec::new();
+    };
+    let mut kinds = Vec::new();
+    for item in effects {
+        if let Some(obj) = item.as_object() {
+            if let Some(kind) = obj.get("effect_kind").and_then(|v| v.as_str()) {
+                if !kind.is_empty() {
+                    kinds.push(kind.to_string());
+                }
+            }
+        } else if let Some(kind) = item.as_str() {
+            if !kind.is_empty() {
+                kinds.push(kind.to_string());
+            }
+        }
+    }
+    kinds
+}
+
+/// Mirror Python ``validate_event_safe_deny_closed`` / Lean ``EventSafeDenyClosed``.
+pub fn validate_event_safe_deny_closed(trace: &Value) -> Vec<String> {
+    let mut errors = Vec::new();
+    let Some(events) = trace.get("events").and_then(|v| v.as_array()) else {
+        return vec!["TraceInvalid: events must be an array".into()];
+    };
+    for (index, event) in events.iter().enumerate() {
+        let Some(obj) = event.as_object() else {
+            continue;
+        };
+        if obj.get("decision").and_then(|v| v.as_str()).unwrap_or("") != "deny" {
+            continue;
+        }
+        let base = format!("events[{index}]");
+        let Some(action) = obj.get("action").and_then(|v| v.as_object()) else {
+            errors.push(format!("EventSafeDenyClosed: {base} missing action"));
+            continue;
+        };
+        if let Some(writes) = action.get("writes").and_then(|v| v.as_array()) {
+            if !writes.is_empty() {
+                errors.push(format!(
+                    "EventSafeDenyClosed: {base} deny event declares non-empty writes"
+                ));
+            }
+        }
+        for kind in action_effect_kinds(&Value::Object(action.clone())) {
+            if DENY_PATH_FORBIDDEN_EFFECTS.contains(&kind.as_str()) {
+                errors.push(format!(
+                    "EventSafeDenyClosed: {base} deny event declares forbidden effect_kind {kind:?}"
+                ));
+            }
+        }
+    }
+    errors
+}
+
+/// Mirror Python ``validate_observed_effects_agree`` / Lean ``ObservationsAgree``.
+pub fn validate_observed_effects_agree(action: &Value, observations: &[Value]) -> Vec<String> {
+    let declared: std::collections::HashSet<String> =
+        action_effect_kinds(action).into_iter().collect();
+    let reads = action
+        .get("reads")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let writes = action
+        .get("writes")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let mut read_uris = std::collections::HashSet::new();
+    let mut write_uris = std::collections::HashSet::new();
+    for item in &reads {
+        if let Some(uri) = item.get("uri").and_then(|v| v.as_str()) {
+            if !uri.is_empty() {
+                read_uris.insert(uri.to_string());
+            }
+        }
+    }
+    for item in &writes {
+        if let Some(uri) = item.get("uri").and_then(|v| v.as_str()) {
+            if !uri.is_empty() {
+                write_uris.insert(uri.to_string());
+            }
+        }
+    }
+    let mut errors = Vec::new();
+    for (index, obs) in observations.iter().enumerate() {
+        let Some(obj) = obs.as_object() else {
+            errors.push(format!(
+                "ObservedEffect: observations[{index}] must be an object"
+            ));
+            continue;
+        };
+        let kind = obj
+            .get("kind")
+            .or_else(|| obj.get("effect_kind"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        if kind.is_empty() {
+            errors.push(format!(
+                "ObservedEffect: observations[{index}] missing kind"
+            ));
+            continue;
+        }
+        if !declared.contains(kind) {
+            errors.push(format!(
+                "ObservedEffect: observations[{index}] kind {kind:?} not in declared action effects"
+            ));
+        }
+        if let Some(resource) = obj.get("resource") {
+            if let Some(res_obj) = resource.as_object() {
+                let uri = res_obj.get("uri").and_then(|v| v.as_str()).unwrap_or("");
+                if !uri.is_empty() && !read_uris.contains(uri) && !write_uris.contains(uri) {
+                    errors.push(format!(
+                        "ObservedEffect: observations[{index}] resource {uri:?} absent from declared reads/writes"
+                    ));
+                }
+            } else if !resource.is_null() {
+                errors.push(format!(
+                    "ObservedEffect: observations[{index}].resource must be object or null"
+                ));
+            }
+        }
+    }
+    errors
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1537,6 +1783,49 @@ mod tests {
             validate_observational_non_interference(&trace, "tenant-a", "other-tenant").is_empty()
         );
         assert!(validate_observational_non_interference_all_pairs(&trace).is_empty());
+        assert!(validate_event_safe_deny_closed(&trace).is_empty());
+    }
+
+    #[test]
+    fn pf_core_deny_closed_rejects_forbidden_write() {
+        let mut trace =
+            load_json(repo_root().join("examples/pf-core-valid/file_read_allowed/trace.json"));
+        let events = trace
+            .get_mut("events")
+            .and_then(|v| v.as_array_mut())
+            .expect("events");
+        let event = events.first_mut().expect("event");
+        event["decision"] = Value::String("deny".into());
+        event["action"]["writes"] = serde_json::json!([{"uri": "file:///tmp/x", "tenant": "t"}]);
+        event["action"]["effects"] = serde_json::json!([{"effect_kind": "file.write"}]);
+        let errors = validate_event_safe_deny_closed(&trace);
+        assert!(errors.iter().any(|e| e.contains("EventSafeDenyClosed")));
+    }
+
+    #[test]
+    fn pf_core_observed_effects_agree_cases() {
+        let action = serde_json::json!({
+            "effects": [{"effect_kind": "file.read"}],
+            "reads": [{"uri": "file:///a", "tenant": "t"}],
+            "writes": []
+        });
+        let ok = vec![serde_json::json!({"kind": "file.read", "resource": {"uri": "file:///a"}})];
+        assert!(validate_observed_effects_agree(&action, &ok).is_empty());
+        let bad = vec![serde_json::json!({"kind": "file.write"})];
+        assert!(!validate_observed_effects_agree(&action, &bad).is_empty());
+    }
+
+    #[test]
+    fn proptest_digest_hex_shape() {
+        use proptest::prelude::*;
+        proptest!(|(bytes in prop::collection::vec(any::<u8>(), 0..64))| {
+            use sha2::{Digest, Sha256};
+            let mut h = Sha256::new();
+            h.update(&bytes);
+            let digest = format!("sha256:{:x}", h.finalize());
+            prop_assert!(digest.starts_with("sha256:"));
+            prop_assert_eq!(digest.len(), 71);
+        });
     }
 
     #[test]
@@ -1699,6 +1988,11 @@ mod tests {
                 "PFCoreCertificate.v0",
                 "certificate_mode obligations",
             ),
+            (
+                "examples/pf-core-invalid/certificate_mode_tracesafecertificate_missing_obligations/certificate.json",
+                "PFCoreCertificate.v0",
+                "theorem_inventory",
+            ),
         ];
         for (relative, artifact_type, needle) in cases {
             let path = repo_root().join(relative);
@@ -1713,6 +2007,79 @@ mod tests {
                 "{relative}: expected {needle} in {errors:?}"
             );
         }
+    }
+
+    #[test]
+    fn pf_core_theorem_inventory_hash_mismatch_rejected() {
+        let mut inventory = HashSet::new();
+        for name in [
+            "concrete_allowed_events_allowed",
+            "concrete_certificate_mode_witness",
+            "concrete_trace_safe",
+            "concrete_trace_safe_prop",
+        ] {
+            inventory.insert(name.to_string());
+        }
+        let good_hash = theorem_inventory_hash(&inventory);
+        let mut cert = serde_json::json!({
+            "schema_version": "v0",
+            "artifact_type": "PFCoreCertificate.v0",
+            "certificate_id": "inv-hash-mismatch",
+            "trace_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+            "contract_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+            "policy_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+            "claim_class": "LeanKernelChecked",
+            "checker": "pcs-core",
+            "checker_version": "0.1.0",
+            "assumption_refs": ["docs/pf-core/trusted-boundary.md"],
+            "certificate_mode": "TraceSafeCertificate",
+            "lean_proof_checked": true,
+            "proof_term_ref": "lean/PFCore/Generated/example.lean",
+            "proof_term_hash": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "lean_environment_hash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "pfcore_kernel_hash": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "lean_build_status": {"ok": true, "target": "PFCore", "detail": "ok"},
+            "theorem_inventory": [
+                "concrete_allowed_events_allowed",
+                "concrete_certificate_mode_witness",
+                "concrete_trace_safe",
+                "concrete_trace_safe_prop"
+            ],
+            "theorem_inventory_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+            "certificate_mode_witness": {
+                "theorem": "concrete_certificate_mode_witness",
+                "proposition": "TraceSafe concreteTrace"
+            },
+            "obligations": [
+                {"kind": "ConcreteTraceSafe", "theorem": "concrete_trace_safe", "passed": true},
+                {"kind": "ConcreteTraceSafeProp", "theorem": "concrete_trace_safe_prop", "passed": true},
+                {"kind": "ConcreteAllowedEventsAllowed", "theorem": "concrete_allowed_events_allowed", "passed": true},
+                {"kind": "CertificateMode", "theorem": "concrete_certificate_mode_witness", "passed": true}
+            ],
+            "default_contract_ref": "trace-safe",
+            "contract_semantics_checked": {
+                "lean": ["resource_within_capability_pattern"],
+                "runtime": ["resource_pattern_scope"]
+            },
+            "source_repo": "https://github.com/example/pcs-core",
+            "source_commit": "abc1234567890abc1234567890abc1234567890",
+            "signature_or_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+        });
+        let errors = validate_pfcore_certificate_semantics(&cert);
+        assert!(
+            errors
+                .iter()
+                .any(|err| err.contains("theorem_inventory_hash does not match")),
+            "expected inventory hash mismatch, got {errors:?}"
+        );
+        cert["theorem_inventory_hash"] = serde_json::Value::String(good_hash);
+        let ok_errors = validate_pfcore_certificate_semantics(&cert);
+        assert!(
+            ok_errors
+                .iter()
+                .all(|err| !err.contains("theorem_inventory_hash does not match")),
+            "good hash should clear mismatch, got {ok_errors:?}"
+        );
     }
 
     #[test]

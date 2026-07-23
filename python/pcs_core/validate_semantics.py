@@ -45,7 +45,9 @@ from pcs_core.tool_use_validate import (
 )
 from pcs_core.validate_detect import (
     ARTIFACT_SCHEMAS,
+    DetectionMode,
     ValidationError,
+    _detect_explicit_artifact_type,
     _load_schema,
     detect_artifact_type,
     get_validator,
@@ -129,6 +131,29 @@ def validate_semantics(data: dict[str, Any], artifact_type: str) -> list[str]:
 
     if artifact_type == "ProofObligation.v0":
         errors.extend(validate_proof_obligation_semantics(data))
+        return errors
+
+    if artifact_type == "PCSProjectionManifest.v0":
+        for index, entry in enumerate(data.get("entries") or []):
+            if not isinstance(entry, dict):
+                errors.append(f"PCSProjectionManifest.v0.entries[{index}] must be an object")
+                continue
+            value = entry.get("normalized_value")
+            if not isinstance(value, str) or not value.strip():
+                errors.append(
+                    f"PCSProjectionManifest.v0.entries[{index}].normalized_value must be non-empty",
+                )
+            elif "unknown" in value.lower():
+                errors.append(
+                    f"PCSProjectionManifest.v0.entries[{index}].normalized_value "
+                    "must not contain an unknown placeholder",
+                )
+            ident = entry.get("lean_identifier")
+            if isinstance(ident, str) and "unknown" in ident.lower():
+                errors.append(
+                    f"PCSProjectionManifest.v0.entries[{index}].lean_identifier "
+                    "must not contain an unknown placeholder",
+                )
         return errors
 
     if artifact_type == "LeanCheckResult.v0":
@@ -253,6 +278,11 @@ def validate_semantics(data: dict[str, Any], artifact_type: str) -> list[str]:
         "PFCoreCertificate.v0",
         "LeanCheckResult.v0",
         "ToolUseTrace.v0",
+        # Bundle/kernel/projection artifacts may mirror claim_class without embedding
+        # certificate proof evidence fields (those live on PFCoreCertificate.v0).
+        "PFCoreReleaseBundleManifest.v0",
+        "PFCoreKernelManifest.v0",
+        "PFCoreSemanticProjection.v0",
     }:
         _validate_pfcore_claim_class(
             data, "root", errors, allowed=PF_CORE_CLAIM_CLASSES, artifact_kind="pf-core"
@@ -261,8 +291,39 @@ def validate_semantics(data: dict[str, Any], artifact_type: str) -> list[str]:
     return errors
 
 
-def validate_artifact(data: dict[str, Any], artifact_type: str | None = None) -> None:
-    artifact_type = artifact_type or detect_artifact_type(data)
+def validate_artifact(
+    data: dict[str, Any],
+    artifact_type: str | None = None,
+    *,
+    release_grade: bool = False,
+    detection_mode: DetectionMode | str | None = None,
+) -> None:
+    if detection_mode is None:
+        mode = DetectionMode.RELEASE if release_grade else DetectionMode.DIAGNOSTIC
+    elif isinstance(detection_mode, str):
+        mode = DetectionMode(detection_mode)
+    else:
+        mode = detection_mode
+
+    if release_grade or mode is DetectionMode.RELEASE:
+        if artifact_type is not None:
+            declared = _detect_explicit_artifact_type(data)
+            if declared is not None and declared != artifact_type:
+                raise ValidationError(
+                    f"artifact_type mismatch: declared {declared!r} != requested {artifact_type!r}",
+                    errors=["ArtifactTypeMismatch"],
+                )
+        else:
+            declared = _detect_explicit_artifact_type(data)
+            if declared is None:
+                raise ValidationError(
+                    "release-grade validation requires explicit self-describing "
+                    "artifact_type (or pass artifact_type= to the validator)",
+                    errors=["MissingArtifactType"],
+                )
+            artifact_type = declared
+
+    artifact_type = artifact_type or detect_artifact_type(data, mode=mode)
     if not artifact_type:
         raise ValidationError("Could not detect artifact type from JSON content")
 
@@ -276,16 +337,42 @@ def validate_artifact(data: dict[str, Any], artifact_type: str | None = None) ->
         )
 
 
-def validate_file(path: Path | str) -> str:
+def validate_file(
+    path: Path | str,
+    *,
+    release_grade: bool = False,
+    detection_mode: DetectionMode | str | None = None,
+) -> str:
     path = Path(path)
     with path.open(encoding="utf-8") as f:
         data = json.load(f)
     if not isinstance(data, dict):
         raise ValidationError("Artifact root must be a JSON object")
-    artifact_type = detect_artifact_type(data)
+    if detection_mode is None:
+        mode = DetectionMode.RELEASE if release_grade else DetectionMode.DIAGNOSTIC
+    elif isinstance(detection_mode, str):
+        mode = DetectionMode(detection_mode)
+    else:
+        mode = detection_mode
+    if release_grade or mode is DetectionMode.RELEASE:
+        declared = _detect_explicit_artifact_type(data)
+        if declared is None:
+            raise ValidationError(
+                f"release-grade validation requires explicit self-describing "
+                f"artifact_type in {path}",
+                errors=["MissingArtifactType"],
+            )
+        artifact_type = declared
+    else:
+        artifact_type = detect_artifact_type(data, mode=mode)
     if not artifact_type:
         raise ValidationError(f"Could not detect artifact type in {path}")
-    validate_artifact(data, artifact_type)
+    validate_artifact(
+        data,
+        artifact_type,
+        release_grade=release_grade,
+        detection_mode=mode,
+    )
     if artifact_type == "ReleaseManifest.v0":
         ref_errors = validate_release_manifest_fixture_refs(data, path.parent)
         if ref_errors:
