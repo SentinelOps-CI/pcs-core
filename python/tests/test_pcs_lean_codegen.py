@@ -95,8 +95,12 @@ def test_computation_values_from_obligations() -> None:
     values = computation_values_from_obligations(doc, release_dir=COMPUTATION)
     assert values["result_artifact_sha256"] in values["witness_result_hashes"]
     declared = declared_artifact_hashes_for_computation(values)
-    assert declared == values["witness_result_hashes"]
-    assert len(declared) >= 2
+    assert declared == values["declared_result_artifact_hashes"]
+    assert values["result_artifact_sha256"] in declared
+    assert all(h in declared for h in values["witness_result_hashes"])
+    assert values["dataset_hash"].startswith("sha256:")
+    assert values["environment_hash"].startswith("sha256:")
+    assert values["run_receipt_hash"].startswith("sha256:")
 
 
 def test_generate_tool_use_proof_file(tmp_path: Path) -> None:
@@ -114,7 +118,8 @@ def test_generate_computation_proof_file(tmp_path: Path) -> None:
     doc = extract_proof_obligations_from_release(COMPUTATION)
     path = generate_proof_obligation_file(doc, tmp_path, release_dir=COMPUTATION)
     text = path.read_text(encoding="utf-8")
-    assert "witnessDeclaredArtifactHashes concreteComputationWitness" in text
+    assert "concreteDeclaredResultArtifactHashes" in text
+    assert "witnessDeclaredArtifactHashes concreteComputationWitness" not in text
     assert "concrete_witness_result_hashes_admissible_prop" in text
     assert "concrete_witness_result_hash_listed_prop" in text
     assert "concrete_computation_release_admissible_prop" in text
