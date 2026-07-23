@@ -114,5 +114,9 @@ No PF-Core trusted Lean file may contain `sorry`, `admit`, `axiom`, or `unsafe` 
 - `lean/PFCore/Transition.lean`
 - `lean/PFCore/EffectFrame.lean`
 - `lean/PFCore/State.lean`
+- `lean/PFCore/Hash.lean`
+- `lean/PFCore/ObservedEffect.lean`
+- `lean/PFCore/DenyClosed.lean`
+- `lean/PFCore/PairedExecution.lean` (research scaffolding; paired-execution NI **not proved**)
 - `lean/PFCore.lean` (root module for `lake build PFCore`)
 - `lean/PCS.lean` (root module for `lake build PCS`)

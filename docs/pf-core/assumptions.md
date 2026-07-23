@@ -39,7 +39,13 @@ PF-Core proofs and certificates are conditional on explicit assumptions. This do
 - Model correctness or alignment.
 - Clinical or production safety of real-world systems.
 - Natural-language policy interpretation.
-- Global non-interference across tenants before event-level trace safety is proved.
+- Global or paired-execution non-interference across tenants before event-level trace safety is proved (`TenantProjectionIsolation` is the proved single-trace observational bound only).
+
+## Runtime instrumentation and attestation (Phase 5)
+
+- `TrustedInstrumentation` / observation agreement lemmas apply **only** when observations are produced by trusted runtime instrumentation or bound by an external attestation.
+- Untrusted producers may omit or fabricate observations; PF-Core does **not** prove observation completeness from raw logs alone.
+- See `docs/pf-core/runtime-semantics.md`.
 
 ## Assumption artifacts
 
