@@ -35,6 +35,28 @@
     "source_commit": { "type": "string", "minLength": 7 },
     "local_dev": { "type": "boolean" },
     "required_certificate_mode": { "$ref": "pf_core.defs.json#/$defs/certificate_mode" },
+    "evidence_selection": {
+      "type": "object",
+      "description": "Explicit evidence binding; handoff_ids for HandoffSafeCertificate; contract_ids for ContractCheckedCertificate; effect_frame_id for EffectFrameCertificate (v0: one global frame)",
+      "additionalProperties": false,
+      "properties": {
+        "policy": { "type": "string", "minLength": 1 },
+        "policy_version": { "type": "string", "minLength": 1 },
+        "handoff_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "contract_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "effect_frame_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Independent PFCoreEffectFrame.v0 frame_id (v0: one global frame per trace)"
+        }
+      }
+    },
     "signature_or_digest": { "$ref": "common.defs.json#/$defs/hex_digest" }
   }
 }

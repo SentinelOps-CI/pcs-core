@@ -1,4 +1,3 @@
 {
-  "certificate_mode": "FramePreservedCertificate",
-  "valid": true
+  "certificate_mode": "FramePreservedCertificate"
 }
