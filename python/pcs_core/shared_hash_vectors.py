@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from pcs_core.hash import canonical_hash, canonical_json_bytes
-from pcs_core.paths import repo_root
+from pcs_core.paths import package_dir, repo_root
 
 VECTOR_SPECS: dict[str, str] = {
     "RuntimeReceipt.v0": "examples/runtime_receipt.valid.json",
@@ -53,6 +53,9 @@ VECTOR_FILENAMES: dict[str, str] = {
 
 
 def shared_vectors_dir() -> Path:
+    bundled = package_dir() / "test_vectors" / "hash"
+    if bundled.is_dir() and any(bundled.glob("*.vector.json")):
+        return bundled
     return repo_root() / "test_vectors" / "hash"
 
 
