@@ -10,7 +10,8 @@ readme = "../README.md"
 license = { text = "Apache-2.0" }
 requires-python = ">=3.11"
 dependencies = [
-  "jsonschema>=4.23.0",
+  # format-nongpl registers date-time/uri/duration/hostname checkers used as assertions
+  "jsonschema[format-nongpl]>=4.23.0",
   "referencing>=0.35.0,<0.37.0",
 ]
 
@@ -27,7 +28,7 @@ quality = [
 # Verifier extras document the Lean/OCI path; Lean assets ship via the
 # verifier OCI image or a PCS_BUILD_VERIFIER=1 wheel (see docs/distribution.md).
 verifier = [
-  "jsonschema>=4.23.0",
+  "jsonschema[format-nongpl]>=4.23.0",
   "referencing>=0.35.0,<0.37.0",
 ]
 
