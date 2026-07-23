@@ -11,7 +11,7 @@ PCS_OBLIGATION_KIND_THEOREM: dict[str, str] = {
     ),
     "ToolTraceHashMatchesCertificate": "tool_trace_hash_matches_certificate",
     "ComputationWitnessHashAlignment": "witness_result_hashes_admissible",
-    "ReleaseChainAdmissible": "concrete_release_chain_admissible_prop",
+    "ReleaseChainAdmissible": "concrete_envelope_release_admissible_prop",
 }
 
 PCS_UNTRUSTED_OBLIGATION_KIND_THEOREM: dict[str, str] = {}
@@ -76,6 +76,19 @@ PF_CORE_OBLIGATION_KIND_THEOREM: dict[str, str] = {
     "EventSafeDenyClosedImpliesEventSafe": "eventSafeDenyClosed_implies_eventSafe",
     "TraceSafeDenyClosedImpliesTraceSafe": "traceSafeDenyClosed_implies_traceSafe",
     "TraceSafeImpliesTenantProjectionIsolation": ("traceSafe_implies_tenant_projection_isolation"),
+    "CompositionalSafeExtensionYieldsSafeExtendedTrace": (
+        "compositional_safe_extension_yields_safe_extended_trace"
+    ),
+    "CompositionalSafeExtensionPreservesContractInvariant": (
+        "compositional_safe_extension_preserves_contract_invariant"
+    ),
+    "TracePrefixSafeExtension": "trace_prefix_safe_extension",
+    "TrustedInstrumentationImpliesObservationSoundness": (
+        "trusted_instrumentation_implies_observation_soundness"
+    ),
+    "ObservationSoundnessNotTrustedWithoutAuthenticity": (
+        "observation_soundness_not_trusted_without_authenticity"
+    ),
 }
 
 PF_CORE_SOUNDNESS_THEOREMS = frozenset(
@@ -158,6 +171,15 @@ PF_CORE_SOUNDNESS_THEOREMS = frozenset(
         "low_output_equivalent_refl",
         "low_equivalent_states_refl",
         "tenant_projection_isolation_of_trace_safe",
+        "compositional_safe_extension_yields_safe_extended_trace",
+        "compositional_safe_extension_preserves_contract_invariant",
+        "trace_prefix_safe_extension",
+        "trusted_instrumentation_implies_observation_soundness",
+        "trusted_instrumentation_implies_observations_agree",
+        "observation_soundness_not_trusted_without_authenticity",
+        "observation_soundness_kinds_declared",
+        "attested_execution_no_undeclared_sensitive_observation",
+        "paired_run_same_execution_low_output",
     }
 )
 
@@ -187,10 +209,25 @@ UNTRUSTED_OBLIGATION_KINDS = frozenset(UNTRUSTED_OBLIGATION_KIND_THEOREM.keys())
 PCS_CONCRETE_PROOF_THEOREMS = frozenset(
     {
         "concrete_certificate_matches_runtime",
+        "concrete_certificate_matches_runtime_prop",
         "concrete_verification_admits_bundle",
+        "concrete_verification_admits_bundle_prop",
         "concrete_signed_bundle_admissible",
+        "concrete_signed_bundle_admissible_prop",
         "concrete_release_chain_admissible",
         "concrete_release_chain_admissible_prop",
+        "concrete_envelope_release_admissible",
+        "concrete_envelope_release_admissible_prop",
+        "concrete_envelope_projection_bound",
+        "concrete_envelope_projection_bound_prop",
+        "concrete_tool_trace_hash_matches",
+        "concrete_tool_trace_hash_matches_prop",
+        "concrete_tool_use_release_admissible_prop",
+        "concrete_witness_result_hashes_admissible",
+        "concrete_witness_result_hashes_admissible_prop",
+        "concrete_witness_result_hash_listed",
+        "concrete_witness_result_hash_listed_prop",
+        "concrete_computation_release_admissible_prop",
     }
 )
 

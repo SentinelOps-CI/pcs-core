@@ -8,9 +8,11 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from pcs_core.asset_resolver import pcs_generated_root, require_lean_root
 from pcs_core.hash import PLACEHOLDER_DIGEST, canonical_hash
 from pcs_core.lean_catalog import OBLIGATION_KIND_THEOREM
 from pcs_core.obligation_extraction_errors import (
+    InvalidProofInputDigest,
     MissingArtifactStatus,
     MissingCertificateId,
     MissingCertifiedBundleHash,
@@ -21,13 +23,15 @@ from pcs_core.obligation_extraction_errors import (
     MissingVerificationChecks,
     MissingVerifiedBundleHash,
     MissingWitnessId,
+    ObligationExtractionError,
 )
-from pcs_core.paths import repo_root
 from pcs_core.pcs_projection import (
+    PAYLOAD_SHA256_POINTER,
     ProjectionManifestBuilder,
     assert_no_unknown_or_empty,
     projection_manifest_hash,
     require_sha256_digest,
+    validate_projection_against_release,
 )
 from pcs_core.protocol_fixtures import PCS_CORE_REPO
 from pcs_core.release_chain_profiles import detect_workflow_profile_id
@@ -46,8 +50,8 @@ PCS_LEAN_CHECK_DISCLAIMER = (
 
 PCS_ENVELOPE_LEAN_PROOF_DISCLAIMER = (
     "EnvelopeLeanChecked means a generated PCS release-chain module compiled with `lake env lean` "
-    "and discharged `ReleaseChainAdmissible` deciders for the concrete obligation bundle. "
-    "This is not LeanKernelChecked PF-Core trace safety."
+    "and discharged EnvelopeReleaseAdmissible (projection-bound) for the concrete obligation "
+    "bundle. This is not LeanKernelChecked PF-Core trace safety."
 )
 
 
@@ -530,75 +534,11 @@ def _extract_tool_use_obligations(
 
 
 def _extract_declared_result_artifact_hashes(release_dir: Path) -> list[str]:
-    """Collect result artifact digests from ResultArtifact.v0 files and release manifest.
+    """Collect verified ResultArtifact.v0 payload digests (never from the witness alone)."""
+    from pcs_core.computation_validate import verify_all_result_artifact_payloads
 
-    Digests are taken from independently verified result artifacts / manifest entries —
-    never from the computation witness itself.
-    """
-    declared: list[str] = []
-    seen: set[str] = set()
-
-    def _add(digest: str) -> None:
-        if digest and digest not in seen:
-            seen.add(digest)
-            declared.append(digest)
-
-    # Primary ResultArtifact.v0 beside the release.
-    result_path = release_dir / "result_artifact.json"
-    if result_path.is_file():
-        result = _load_json(result_path)
-        if isinstance(result, dict):
-            sha = str(result.get("sha256") or "")
-            if sha.startswith("sha256:"):
-                _add(sha)
-
-    # Additional ResultArtifact.v0 files if present.
-    for path in sorted(release_dir.glob("result_artifact*.json")):
-        if path.name == "result_artifact.json":
-            continue
-        doc = _load_json(path)
-        if isinstance(doc, dict) and str(doc.get("artifact_type") or "") in {
-            "ResultArtifact.v0",
-            "",
-        }:
-            # Accept schema-typed or legacy untyped result artifacts with sha256.
-            sha = str(doc.get("sha256") or "")
-            if sha.startswith("sha256:"):
-                _add(sha)
-
-    manifest = _load_json(release_dir / "release_manifest.v0.json")
-    if isinstance(manifest, dict):
-        artifacts = manifest.get("artifacts")
-        if isinstance(artifacts, dict):
-            for name, meta in artifacts.items():
-                if not isinstance(meta, dict):
-                    continue
-                artifact_type = str(meta.get("artifact_type") or "")
-                if artifact_type != "ResultArtifact.v0" and not str(name).startswith(
-                    "result_artifact"
-                ):
-                    continue
-                # Prefer content hash of the result file when present; else manifest sha.
-                rel = str(name)
-                candidate = release_dir / rel
-                if candidate.is_file():
-                    doc = _load_json(candidate)
-                    if isinstance(doc, dict):
-                        sha = str(doc.get("sha256") or "")
-                        if sha.startswith("sha256:"):
-                            _add(sha)
-                            continue
-                sha = str(meta.get("sha256") or "")
-                # Manifest file digests are content hashes of JSON files, not result
-                # payload digests — only accept payload digests from ResultArtifact bodies.
-                del sha
-
-    if not declared:
-        raise ValueError(
-            f"{release_dir}: no independent ResultArtifact.v0 digests for "
-            "declared_result_artifact_hashes"
-        )
-    return declared
+    verified = verify_all_result_artifact_payloads(release_dir)
+    return [item.digest for item in verified]
 
 
 def _extract_computation_obligations(
@@ -636,16 +576,32 @@ def _extract_computation_obligations(
         field="/run_receipt_hash",
         artifact="computation_witness.json",
     )
+    # B3: obligations bind verified payload digests, not envelope-only declarations.
+    from pcs_core.computation_validate import verify_all_result_artifact_payloads
+
+    try:
+        verified_payloads = verify_all_result_artifact_payloads(release_dir)
+    except ValueError as exc:
+        raise InvalidProofInputDigest(
+            str(exc),
+            field_path="/sha256",
+            artifact="result_artifact.json",
+        ) from exc
+    if not verified_payloads:
+        raise InvalidProofInputDigest(
+            "no verified ResultArtifact payloads",
+            field_path="/sha256",
+            artifact="result_artifact.json",
+        )
+    primary = verified_payloads[0]
     result_sha = require_sha256_digest(
-        result.get("sha256"),
+        primary.digest,
         field="/sha256",
-        artifact="result_artifact.json",
+        artifact=primary.result_artifact_relpath,
     )
     witness_status = _require_status(witness, artifact="computation_witness.json")
     witness_hashes = witness.get("result_hashes")
     if not isinstance(witness_hashes, list) or not witness_hashes:
-        from pcs_core.obligation_extraction_errors import InvalidProofInputDigest
-
         raise InvalidProofInputDigest(
             "computation_witness.result_hashes is required and must be non-empty",
             field_path="/result_hashes",
@@ -660,7 +616,7 @@ def _extract_computation_obligations(
         for index, item in enumerate(witness_hashes)
     ]
 
-    declared_hashes = _extract_declared_result_artifact_hashes(release_dir)
+    declared_hashes = [item.digest for item in verified_payloads]
     certified_bundle_hash = _resolve_certified_bundle_hash(release_dir)
     verified_bundle = _require_verified_bundle_hash(verification)
     signed_bundle_hash = _require_signed_bundle_hash(signed)
@@ -695,12 +651,25 @@ def _extract_computation_obligations(
         require_digest=True,
     )
     projection.add(
-        artifact_path="result_artifact.json",
+        artifact_path=primary.result_artifact_relpath,
         json_pointer="/sha256",
         normalized_value=result_sha,
         lean_identifier="concreteResultArtifactHash",
         require_digest=True,
     )
+    for index, item in enumerate(verified_payloads):
+        lean_id = (
+            "concreteVerifiedResultPayloadHash"
+            if index == 0
+            else f"concreteVerifiedResultPayloadHash_{index}"
+        )
+        projection.add(
+            artifact_path=item.payload_relpath,
+            json_pointer=PAYLOAD_SHA256_POINTER,
+            normalized_value=item.digest,
+            lean_identifier=lean_id,
+            require_digest=True,
+        )
     projection.add(
         artifact_path="verification_result.json",
         json_pointer="/verified_input/bundle_hash",
@@ -832,6 +801,17 @@ def extract_proof_obligations_from_release(
 
     projection_doc = projection.build()
     proj_hash = projection_manifest_hash(projection_doc)
+    replay_errors = validate_projection_against_release(
+        projection_doc,
+        release_dir,
+        expected_hash=proj_hash,
+    )
+    if replay_errors:
+        raise ObligationExtractionError(
+            code="InvalidProofInputDigest",
+            message="; ".join(replay_errors),
+            artifact="PCSProjectionManifest.v0",
+        )
 
     body: dict[str, Any] = {
         "schema_version": "v0",
@@ -852,7 +832,10 @@ def extract_proof_obligations_from_release(
 
 
 def run_lean_build() -> tuple[bool, str]:
-    lean_dir = repo_root() / "lean"
+    try:
+        lean_dir = require_lean_root()
+    except FileNotFoundError as exc:
+        return False, str(exc)
     try:
         proc = subprocess.run(
             ["lake", "build"],
@@ -928,7 +911,12 @@ def run_lean_check(
         from pcs_core.lean_check import run_pcs_lean_concrete_proof
 
         lean_environment_hash = compute_lean_environment_hash()
-        generated_dir = repo_root() / "lean" / "PCS" / "Generated"
+        try:
+            generated_dir = pcs_generated_root()
+        except FileNotFoundError:
+            from pcs_core.paths import repo_root
+
+            generated_dir = repo_root() / "lean" / "PCS" / "Generated"
         module = generated_module_name(obligations_doc)
         proof_path = generate_proof_obligation_file(obligations_doc, generated_dir)
         proof_term_ref = proof_term_ref_from_path(proof_path)
@@ -944,10 +932,16 @@ def run_lean_check(
             proof_term_hash = compute_proof_term_hash(proof_path)
             workflow_id = workflow_id_from_obligations(obligations_doc)
             aggregate_theorem = aggregate_lean_theorem_for_workflow(workflow_id)
+            catalog_envelope = OBLIGATION_KIND_THEOREM.get("ReleaseChainAdmissible")
+            aggregate_kind = (
+                "ReleaseChainAdmissible"
+                if aggregate_theorem == catalog_envelope
+                else aggregate_theorem
+            )
             obligation_results.append(
                 {
                     "obligation_id": f"generated_{module}",
-                    "kind": "ReleaseChainAdmissible",
+                    "kind": aggregate_kind,
                     "status": "passed",
                     "lean_theorem": aggregate_theorem,
                     "failure_reason": "",
@@ -978,11 +972,22 @@ def run_lean_check(
     if lean_proof:
         disclaimer = f"{PCS_LEAN_CHECK_DISCLAIMER} {PCS_ENVELOPE_LEAN_PROOF_DISCLAIMER}"
 
-    projection_hash = obligations_doc.get("pcs_projection_manifest_hash")
-    if projection_hash is not None:
-        projection_hash = require_sha256_digest(
-            projection_hash,
-            field="/pcs_projection_manifest_hash",
+    projection_hash = require_sha256_digest(
+        obligations_doc.get("pcs_projection_manifest_hash"),
+        field="/pcs_projection_manifest_hash",
+        artifact="ProofObligation.v0",
+    )
+    projection_doc = obligations_doc.get("pcs_projection_manifest")
+    if not isinstance(projection_doc, dict):
+        raise InvalidProofInputDigest(
+            "ProofObligation.v0.pcs_projection_manifest is required",
+            field_path="/pcs_projection_manifest",
+            artifact="ProofObligation.v0",
+        )
+    if projection_manifest_hash(projection_doc) != projection_hash:
+        raise InvalidProofInputDigest(
+            "pcs_projection_manifest_hash does not match projection digest",
+            field_path="/pcs_projection_manifest_hash",
             artifact="ProofObligation.v0",
         )
 
@@ -1003,10 +1008,9 @@ def run_lean_check(
         "obligation_results": obligation_results,
         "lean_proof_checked": lean_proof_checked,
         "disclaimer": disclaimer,
+        "pcs_projection_manifest_hash": projection_hash,
         "signature_or_digest": PLACEHOLDER_DIGEST,
     }
-    if projection_hash:
-        body["pcs_projection_manifest_hash"] = projection_hash
     if proof_term_ref:
         body["proof_term_ref"] = proof_term_ref
     if proof_term_hash:

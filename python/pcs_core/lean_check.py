@@ -14,6 +14,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping
 
+from pcs_core.asset_resolver import lean_root as resolve_lean_root
+from pcs_core.asset_resolver import pf_core_generated_root, pf_core_kernel_root
 from pcs_core.hash import canonical_hash
 from pcs_core.lean_catalog import (
     PF_CORE_CONCRETE_PROOF_THEOREMS,
@@ -21,7 +23,8 @@ from pcs_core.lean_catalog import (
     PF_CORE_LEAN_KERNEL_THEOREM_CATALOG,
     PF_CORE_THEOREM_CATALOG,
 )
-from pcs_core.paths import package_dir, repo_root
+from pcs_core.paths import repo_root
+from pcs_core.pf_core_certificate_mode_status import enforce_certificate_mode_issuance
 from pcs_core.pf_core_contract import (
     DEFAULT_TRACE_SAFE_CONTRACT_ID,
     default_trace_safe_contract_hash,
@@ -31,7 +34,6 @@ from pcs_core.pf_core_contract_semantics import build_contract_semantics_checked
 from pcs_core.pf_core_lean_codegen import (
     CertificateModeEvidenceMissing,
     certificate_mode_obligations,
-    collect_contracts_for_trace,
     compute_lean_environment_hash,
     compute_pfcore_kernel_hash,
     enforce_tool_use_certificate_mode_policy,
@@ -40,6 +42,11 @@ from pcs_core.pf_core_lean_codegen import (
     resolve_certificate_mode,
     theorem_inventory_hash,
     validate_contracts_before_codegen,
+)
+from pcs_core.pf_core_resolved_evidence import (
+    EvidenceResolutionError,
+    PFCoreResolvedEvidence,
+    resolve_pf_core_evidence,
 )
 from pcs_core.pf_core_runtime import (
     compute_trace_hash,
@@ -96,18 +103,28 @@ def print_lean_check_disclaimer(*, stream=None) -> None:
 
 
 def lean_dir() -> Path:
-    bundled = package_dir() / "lean"
-    if (bundled / "lakefile.lean").is_file():
-        return bundled
+    """Lake project root via the authoritative asset resolver."""
+    root = resolve_lean_root()
+    if root is not None:
+        return root
+    # Preserve historical fallback for incomplete trees / early imports.
+    from pcs_core.paths import repo_root
+
     return repo_root() / "lean"
 
 
 def pfcore_lean_dir() -> Path:
-    return lean_dir() / "PFCore"
+    try:
+        return pf_core_kernel_root()
+    except FileNotFoundError:
+        return lean_dir() / "PFCore"
 
 
 def pfcore_generated_dir() -> Path:
-    return pfcore_lean_dir() / "Generated"
+    try:
+        return pf_core_generated_root()
+    except FileNotFoundError:
+        return pfcore_lean_dir() / "Generated"
 
 
 def pfcore_theorems_checked(*, lean_kernel: bool = False) -> list[str]:
@@ -299,11 +316,11 @@ def action_within_tenant_d(principal: Mapping[str, Any], action: Mapping[str, An
 
 
 def action_admissible_d(principal: Mapping[str, Any], action: Mapping[str, Any]) -> bool:
+    """Mirror Lean ``actionAdmissibleD`` (excludes resource-pattern scope)."""
     from pcs_core.pf_core_runtime import (
         validate_action_capabilities_known,
         validate_action_capability_effects,
         validate_action_effects_known,
-        validate_resource_scope,
     )
 
     capability = action.get("capability")
@@ -314,7 +331,6 @@ def action_admissible_d(principal: Mapping[str, Any], action: Mapping[str, Any])
         validate_action_capabilities_known(action)
         validate_action_effects_known(action)
         validate_action_capability_effects(action)
-        validate_resource_scope(action)
     except Exception:
         return False
     return has_capability_d(principal, cap_id) and action_within_tenant_d(principal, action)
@@ -409,8 +425,10 @@ def action_resources_within_capability_pattern_d(action: Mapping[str, Any]) -> b
 def action_admissible_with_resource_pattern_d(
     principal: Mapping[str, Any], action: Mapping[str, Any]
 ) -> bool:
-    """Mirror Lean ``actionAdmissibleWithResourcePatternD`` (kernel + catalog scope)."""
-    return action_admissible_d(principal, action)
+    """Mirror Lean ``actionAdmissibleWithResourcePatternD`` (base + resource scope)."""
+    return action_admissible_d(principal, action) and action_resources_within_capability_pattern_d(
+        action
+    )
 
 
 def event_safe_rd(event: Mapping[str, Any]) -> bool:
@@ -610,9 +628,11 @@ def build_pfcore_certificate(
     certificate_mode: str | None = None,
     theorem_inventory: frozenset[str] | set[str] | list[str] | None = None,
     theorem_inventory_hash: str | None = None,
+    theorem_manifest_hash: str | None = None,
     certificate_mode_witness: dict[str, str] | None = None,
     semantic_projection_hash: str | None = None,
     concrete_theorems_compiled: frozenset[str] | set[str] | list[str] | None = None,
+    resolved_evidence: PFCoreResolvedEvidence | None = None,
 ) -> dict[str, Any]:
     events = _trace_events(trace)
     trace_hash = str(trace.get("trace_hash") or compute_trace_hash(dict(trace)))
@@ -627,7 +647,10 @@ def build_pfcore_certificate(
         claim_class = "RuntimeChecked"
         proof_ref = None
 
-    contracts = collect_contracts_for_trace(trace)
+    if resolved_evidence is not None:
+        contracts = resolved_evidence.contracts_by_id
+    else:
+        contracts = {}
     contract_semantics = build_contract_semantics_checked(trace, contracts)
     runtime_checks = list(contract_semantics.get("runtime", []))
     runtime_checks.append("resource_pattern_scope")
@@ -664,6 +687,51 @@ def build_pfcore_certificate(
         concrete_generated=inventory_list,
         concrete_compiled=compiled_list,
     )
+
+    selected_contract_ids: list[str] = []
+    contract_digests: dict[str, str] = {}
+    contract_theorem_names: list[str] = []
+    contract_evidence_digest: str | None = None
+    if resolved_evidence is not None and (
+        certificate_mode == "ContractCheckedCertificate" or resolved_evidence.selected_contract_ids
+    ):
+        from pcs_core.pf_core_resolved_evidence import (
+            collect_contract_theorem_names,
+            compute_contract_evidence_digest,
+            contract_source_file_digests,
+        )
+
+        selected_contract_ids = list(resolved_evidence.selected_contract_ids)
+        contract_digests = contract_source_file_digests(resolved_evidence)
+        contract_theorem_names = collect_contract_theorem_names(theorem_inventory)
+        contract_evidence_digest = compute_contract_evidence_digest(
+            selected_contract_ids=selected_contract_ids,
+            contract_source_file_digests=contract_digests,
+            effective_layers=resolved_evidence.effective_contract_semantic_layers,
+            contract_theorem_names=contract_theorem_names,
+        )
+
+    selected_handoff_ids: list[str] = []
+    handoff_digests: dict[str, str] = {}
+    handoff_theorem_names: list[str] = []
+    handoff_evidence_digest: str | None = None
+    if resolved_evidence is not None and (
+        certificate_mode == "HandoffSafeCertificate" or resolved_evidence.selected_handoff_ids
+    ):
+        from pcs_core.pf_core_resolved_evidence import (
+            collect_handoff_theorem_names,
+            compute_handoff_evidence_digest,
+            handoff_source_file_digests,
+        )
+
+        selected_handoff_ids = list(resolved_evidence.selected_handoff_ids)
+        handoff_digests = handoff_source_file_digests(resolved_evidence)
+        handoff_theorem_names = collect_handoff_theorem_names(theorem_inventory)
+        handoff_evidence_digest = compute_handoff_evidence_digest(
+            selected_handoff_ids=selected_handoff_ids,
+            handoff_source_file_digests=handoff_digests,
+            handoff_theorem_names=handoff_theorem_names,
+        )
 
     cert: dict[str, Any] = {
         "schema_version": "v0",
@@ -705,14 +773,54 @@ def build_pfcore_certificate(
 
         inventory_hash = theorem_inventory_hash or _inventory_hash(frozenset(inventory_list))
         cert["theorem_inventory_hash"] = inventory_hash
-        # Dedicated theorem-manifest hash bound to the generated inventory.
-        cert["theorem_manifest_hash"] = inventory_hash
+        # Theorem-manifest digest binds propositions + metadata (not name inventory alone).
+        if theorem_manifest_hash:
+            cert["theorem_manifest_hash"] = theorem_manifest_hash
+        elif theorem_manifest_hash is None:
+            # Fail closed for lean-checked paths: callers must supply the real digest.
+            pass
     if certificate_mode_witness:
         cert["certificate_mode_witness"] = certificate_mode_witness
     if semantic_projection_hash:
         cert["semantic_projection_hash"] = semantic_projection_hash
     if default_contract_ref:
         cert["default_contract_ref"] = default_contract_ref
+    if certificate_mode == "ContractCheckedCertificate" or selected_contract_ids:
+        cert["selected_contract_ids"] = selected_contract_ids
+        cert["contract_source_file_digests"] = contract_digests
+        if contract_evidence_digest:
+            cert["contract_evidence_digest"] = contract_evidence_digest
+        cert["contract_theorem_names"] = contract_theorem_names
+    if certificate_mode == "HandoffSafeCertificate" or selected_handoff_ids:
+        cert["selected_handoff_ids"] = selected_handoff_ids
+        cert["handoff_source_file_digests"] = handoff_digests
+        if handoff_evidence_digest:
+            cert["handoff_evidence_digest"] = handoff_evidence_digest
+        cert["handoff_theorem_names"] = handoff_theorem_names
+    if (
+        resolved_evidence is not None
+        and resolved_evidence.effect_frame is not None
+        and (
+            certificate_mode == "EffectFrameCertificate"
+            or resolved_evidence.effect_frame_path is not None
+        )
+    ):
+        from pcs_core.pf_core_resolved_evidence import effect_frame_source_digest
+
+        frame = resolved_evidence.effect_frame
+        cert["effect_frame_id"] = str(frame.get("frame_id") or "")
+        if resolved_evidence.effect_frame_path is not None:
+            cert["effect_frame_path"] = str(resolved_evidence.effect_frame_path)
+        cert["effect_frame_digest"] = effect_frame_source_digest(resolved_evidence)
+    if (
+        resolved_evidence is not None
+        and certificate_mode == "FramePreservedCertificate"
+        and resolved_evidence.initial_state is not None
+    ):
+        from pcs_core.pf_core_resolved_evidence import transition_chain_digest
+
+        cert["transition_chain_digest"] = transition_chain_digest(resolved_evidence)
+        cert["transition_event_count"] = len(resolved_evidence.transition_states)
     if proof_ref:
         cert["proof_ref"] = proof_ref
         cert["proof_term_ref"] = proof_ref
@@ -720,6 +828,35 @@ def build_pfcore_certificate(
         cert["proof_term_hash"] = proof_term_hash
     cert["signature_or_digest"] = canonical_hash(cert)
     return cert
+
+
+def resolve_lean_check_artifact_paths(
+    *,
+    trace_path: Path,
+    out_path: Path | None,
+    result_out_path: Path | None,
+    generated_proof_path: Path | None = None,
+) -> dict[str, str]:
+    """Deterministic artifact paths for lean-check outputs."""
+    certificate = (out_path or trace_path.with_name("PFCoreCertificate.v0.json")).resolve()
+    if result_out_path is not None:
+        lean_check_result = result_out_path.resolve()
+    elif out_path is not None:
+        lean_check_result = out_path.with_name("LeanCheckResult.v0.json").resolve()
+    else:
+        lean_check_result = trace_path.with_name("LeanCheckResult.v0.json").resolve()
+    proof_anchor = certificate.parent
+    if generated_proof_path is not None:
+        generated_proof = generated_proof_path.resolve()
+    else:
+        generated_proof = (proof_anchor / "PFCoreGeneratedProof.placeholder.lean").resolve()
+    return {
+        "certificate": str(certificate),
+        "lean_check_result": str(lean_check_result),
+        "generated_proof": str(generated_proof),
+        "semantic_projection": str((proof_anchor / "PFCoreSemanticProjection.v0.json").resolve()),
+        "theorem_manifest": str((proof_anchor / "PFCoreTheoremManifest.v0.json").resolve()),
+    }
 
 
 def build_lean_check_result(
@@ -736,6 +873,7 @@ def build_lean_check_result(
     obligations: list[dict[str, Any]],
     lean_environment_hash: str | None = None,
     certificate: dict[str, Any] | None = None,
+    artifact_paths: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     claim_class = "OutOfScope"
     status = "Rejected"
@@ -780,6 +918,8 @@ def build_lean_check_result(
     }
     if lean_environment_hash:
         result["lean_environment_hash"] = lean_environment_hash
+    if artifact_paths:
+        result["artifact_paths"] = dict(artifact_paths)
     result["signature_or_digest"] = canonical_hash(result)
     return result
 
@@ -793,6 +933,7 @@ def run_pfcore_lean_check(
     skip_lean_proof: bool = False,
     certificate_mode: str | None = None,
     release_grade: bool = False,
+    allow_non_public_modes: bool = False,
 ) -> tuple[int, dict[str, Any]]:
     """Validate trace semantics, optionally prove concrete trace safety in Lean."""
     print_lean_check_disclaimer()
@@ -809,6 +950,13 @@ def run_pfcore_lean_check(
     )
 
     issues = check_pfcore_trace_lean_semantics(data)
+    issuance_error = enforce_certificate_mode_issuance(
+        mode,
+        release_grade=release_grade,
+        allow_non_public=allow_non_public_modes,
+    )
+    if issuance_error:
+        issues.append(PFCoreLeanCheckIssue("CertificateModeIssuanceDenied", issuance_error))
     policy_error = enforce_tool_use_certificate_mode_policy(
         data,
         mode,
@@ -817,7 +965,22 @@ def run_pfcore_lean_check(
     )
     if policy_error:
         issues.append(PFCoreLeanCheckIssue("CertificateModePolicyViolation", policy_error))
-    contract_errors = validate_contracts_before_codegen(data, trace_path=trace_path)
+
+    resolved_evidence: PFCoreResolvedEvidence | None = None
+    try:
+        resolved_evidence = resolve_pf_core_evidence(
+            data,
+            trace_path=trace_path,
+            certificate_mode=mode,
+        )
+    except EvidenceResolutionError as exc:
+        issues.append(PFCoreLeanCheckIssue("EvidenceResolutionFailed", str(exc)))
+
+    contract_errors = validate_contracts_before_codegen(
+        data,
+        trace_path=trace_path,
+        resolved_evidence=resolved_evidence,
+    )
     for err in contract_errors:
         issues.append(PFCoreLeanCheckIssue("ContractViolation", err))
     no_sorry_errors = audit_pfcore_lean_no_sorry()
@@ -831,21 +994,28 @@ def run_pfcore_lean_check(
     generated_proof = None
     inventory: frozenset[str] = frozenset()
     inventory_hash: str | None = None
+    theorem_manifest_hash: str | None = None
     mode_witness: dict[str, str] | None = None
     compiled_theorems: frozenset[str] = frozenset()
 
     if not issues and not no_sorry_errors and not skip_lean_proof:
         try:
+            if resolved_evidence is None:
+                raise CertificateModeEvidenceMissing(
+                    "resolved evidence required before Lean codegen"
+                )
             generated_proof = generate_proof_obligation_file(
                 data,
                 pfcore_generated_dir(),
                 trace_path=trace_path,
                 certificate_mode=mode,
                 release_grade=release_grade,
+                resolved_evidence=resolved_evidence,
             )
             proof_path = generated_proof.path
             inventory = generated_proof.theorem_names
             inventory_hash = theorem_inventory_hash(inventory)
+            theorem_manifest_hash = generated_proof.theorem_manifest_hash
             semantic_projection_hash = generated_proof.semantic_projection_hash
             mode_witness = {
                 "theorem": generated_proof.mode_witness_theorem,
@@ -921,6 +1091,31 @@ def run_pfcore_lean_check(
         except ValueError as exc:
             issues.append(PFCoreLeanCheckIssue("LeanCodegenFailed", str(exc)))
 
+    def _artifact_paths() -> dict[str, str]:
+        proof_path = generated_proof.path if generated_proof is not None else None
+        return resolve_lean_check_artifact_paths(
+            trace_path=trace_path,
+            out_path=out_path,
+            result_out_path=result_out_path,
+            generated_proof_path=proof_path,
+        )
+
+    def _result(**kwargs: Any) -> dict[str, Any]:
+        return build_lean_check_result(
+            trace_path=trace_path,
+            no_sorry_errors=kwargs.pop("no_sorry_errors", no_sorry_errors),
+            build_ok=kwargs.pop("build_ok", build_ok),
+            build_detail=kwargs.pop("build_detail", build_detail),
+            proof_ok=kwargs.pop("proof_ok", proof_ok),
+            proof_detail=kwargs.pop("proof_detail", proof_detail),
+            skip_build=skip_build,
+            skip_lean_proof=skip_lean_proof,
+            obligations=kwargs.pop("obligations", obligations),
+            lean_environment_hash=lean_environment_hash,
+            artifact_paths=_artifact_paths(),
+            **kwargs,
+        )
+
     def _emit(code: int, result: dict[str, Any]) -> tuple[int, dict[str, Any]]:
         if result_out_path:
             result_out_path.write_text(json.dumps(result, indent=2), encoding="utf-8")
@@ -930,54 +1125,15 @@ def run_pfcore_lean_check(
         return code, result
 
     if issues or no_sorry_errors:
-        result = build_lean_check_result(
-            trace_path=trace_path,
-            issues=issues,
-            no_sorry_errors=no_sorry_errors,
-            build_ok=build_ok,
-            build_detail=build_detail,
-            proof_ok=proof_ok,
-            proof_detail=proof_detail,
-            skip_build=skip_build,
-            skip_lean_proof=skip_lean_proof,
-            obligations=obligations,
-            lean_environment_hash=lean_environment_hash,
-        )
-        return _emit(1, result)
+        return _emit(1, _result(issues=issues))
 
     if not build_ok and not skip_build:
         issues.append(PFCoreLeanCheckIssue("LeanBuildFailed", build_detail))
-        result = build_lean_check_result(
-            trace_path=trace_path,
-            issues=issues,
-            no_sorry_errors=no_sorry_errors,
-            build_ok=build_ok,
-            build_detail=build_detail,
-            proof_ok=proof_ok,
-            proof_detail=proof_detail,
-            skip_build=skip_build,
-            skip_lean_proof=skip_lean_proof,
-            obligations=obligations,
-            lean_environment_hash=lean_environment_hash,
-        )
-        return _emit(1, result)
+        return _emit(1, _result(issues=issues))
 
     if not skip_lean_proof and not skip_build and not proof_ok:
         issues.append(PFCoreLeanCheckIssue("LeanProofFailed", proof_detail))
-        result = build_lean_check_result(
-            trace_path=trace_path,
-            issues=issues,
-            no_sorry_errors=no_sorry_errors,
-            build_ok=build_ok,
-            build_detail=build_detail,
-            proof_ok=proof_ok,
-            proof_detail=proof_detail,
-            skip_build=skip_build,
-            skip_lean_proof=skip_lean_proof,
-            obligations=obligations,
-            lean_environment_hash=lean_environment_hash,
-        )
-        return _emit(1, result)
+        return _emit(1, _result(issues=issues))
 
     if (
         proof_ok
@@ -1000,20 +1156,14 @@ def run_pfcore_lean_check(
                     f"{sorted(missing_r)!r}; base traceSafeD alone is insufficient",
                 )
             )
-            result = build_lean_check_result(
-                trace_path=trace_path,
-                issues=issues,
-                no_sorry_errors=no_sorry_errors,
-                build_ok=build_ok,
-                build_detail=build_detail,
-                proof_ok=False,
-                proof_detail="trace-safe-r-obligations-missing",
-                skip_build=skip_build,
-                skip_lean_proof=skip_lean_proof,
-                obligations=obligations,
-                lean_environment_hash=lean_environment_hash,
+            return _emit(
+                1,
+                _result(
+                    issues=issues,
+                    proof_ok=False,
+                    proof_detail="trace-safe-r-obligations-missing",
+                ),
             )
-            return _emit(1, result)
 
     cert = build_pfcore_certificate(
         data,
@@ -1031,9 +1181,11 @@ def run_pfcore_lean_check(
         certificate_mode=mode if generated_proof is None else generated_proof.certificate_mode,
         theorem_inventory=inventory if inventory else None,
         theorem_inventory_hash=inventory_hash,
+        theorem_manifest_hash=theorem_manifest_hash,
         certificate_mode_witness=mode_witness,
         semantic_projection_hash=semantic_projection_hash,
         concrete_theorems_compiled=compiled_theorems if compiled_theorems else None,
+        resolved_evidence=resolved_evidence,
     )
     from pcs_core.validate import ValidationError, validate_artifact
 
@@ -1042,35 +1194,23 @@ def run_pfcore_lean_check(
     except ValidationError as exc:
         for err in exc.errors or [str(exc)]:
             issues.append(PFCoreLeanCheckIssue("CertificateInvalid", err))
-        result = build_lean_check_result(
-            trace_path=trace_path,
-            issues=issues,
-            no_sorry_errors=no_sorry_errors,
-            build_ok=build_ok,
-            build_detail=build_detail,
-            proof_ok=proof_ok,
-            proof_detail=proof_detail,
-            skip_build=skip_build,
-            skip_lean_proof=skip_lean_proof,
-            obligations=obligations,
-            lean_environment_hash=lean_environment_hash,
-        )
-        return _emit(1, result)
+        return _emit(1, _result(issues=issues))
 
-    result = build_lean_check_result(
-        trace_path=trace_path,
-        issues=[],
-        no_sorry_errors=[],
-        build_ok=build_ok,
-        build_detail=build_detail,
-        proof_ok=proof_ok,
-        proof_detail=proof_detail,
-        skip_build=skip_build,
-        skip_lean_proof=skip_lean_proof,
-        obligations=obligations,
-        lean_environment_hash=lean_environment_hash,
-        certificate=cert,
-    )
+    result = _result(issues=[], no_sorry_errors=[], certificate=cert)
+    artifact_paths = result.get("artifact_paths")
+    if isinstance(artifact_paths, dict) and generated_proof is not None:
+        if isinstance(generated_proof.semantic_projection, Mapping):
+            projection_out = Path(str(artifact_paths["semantic_projection"]))
+            projection_out.parent.mkdir(parents=True, exist_ok=True)
+            projection_out.write_text(
+                json.dumps(dict(generated_proof.semantic_projection), indent=2) + "\n",
+                encoding="utf-8",
+            )
+        if generated_proof.theorem_manifest is not None:
+            from pcs_core.pf_core_theorem_manifest import write_theorem_manifest
+
+            manifest_out = Path(str(artifact_paths["theorem_manifest"]))
+            write_theorem_manifest(generated_proof.theorem_manifest, manifest_out)
     if out_path:
         out_path.write_text(json.dumps(cert, indent=2), encoding="utf-8")
     return _emit(0, result)
