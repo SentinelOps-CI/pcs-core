@@ -1,0 +1,154 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pcs.sentinelops.ci/schemas/VerificationResult.v1.schema.json",
+  "title": "VerificationResult.v1",
+  "description": "Portable verifier-assurance decision record for a single claim evaluation. Distinct from VerificationResult.v0 (LabTrust/PF import checks with status+checks[]). Do not auto-upgrade v0 to v1. Nested integrity only; signature_or_digest forbidden.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "artifact_type",
+    "verification_result_id",
+    "created_at",
+    "producer",
+    "producer_version",
+    "source_repo",
+    "source_commit",
+    "verifier_profile",
+    "claim_ids",
+    "raw_backend_output_digest",
+    "normalized_result_digest",
+    "normalization_applied",
+    "check_groups",
+    "resource_limits",
+    "execution_status",
+    "decision",
+    "integrity"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "$ref": "common.defs.json#/$defs/schema_version_v1" },
+    "artifact_type": { "const": "VerificationResult.v1" },
+    "verification_result_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "created_at": { "$ref": "common.defs.json#/$defs/iso8601_datetime" },
+    "producer": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "producer_version": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "source_repo": { "type": "string", "format": "uri" },
+    "source_commit": {
+      "$ref": "verifier_assurance.defs.json#/$defs/git_commit_sha40"
+    },
+    "verifier_profile": {
+      "type": "object",
+      "required": ["verifier_profile_id", "profile_digest"],
+      "additionalProperties": false,
+      "properties": {
+        "verifier_profile_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "profile_digest": { "$ref": "common.defs.json#/$defs/hex_digest" }
+      }
+    },
+    "claim_ids": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "trajectory_digest": { "$ref": "common.defs.json#/$defs/hex_digest" },
+    "initial_state_digest": { "$ref": "common.defs.json#/$defs/hex_digest" },
+    "terminal_state_digest": { "$ref": "common.defs.json#/$defs/hex_digest" },
+    "input_bundle_digest": { "$ref": "common.defs.json#/$defs/hex_digest" },
+    "raw_backend_output_digest": {
+      "$ref": "common.defs.json#/$defs/hex_digest"
+    },
+    "normalized_result_digest": {
+      "$ref": "common.defs.json#/$defs/hex_digest"
+    },
+    "normalization_applied": { "type": "boolean" },
+    "check_groups": {
+      "type": "array",
+      "description": "Separate process / authority / side_effect / state / evidence check groups. Skipped checks retain status and optional reason_code.",
+      "items": {
+        "type": "object",
+        "required": ["kind", "checks"],
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "$ref": "verifier_assurance.defs.json#/$defs/check_group_kind"
+          },
+          "checks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["check_id", "mandatory", "status"],
+              "additionalProperties": false,
+              "properties": {
+                "check_id": { "type": "string", "minLength": 1 },
+                "mandatory": { "type": "boolean" },
+                "status": {
+                  "$ref": "verifier_assurance.defs.json#/$defs/check_status"
+                },
+                "reason_code": { "type": "string", "minLength": 1 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "resource_limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "wall_time_ms": { "type": "integer", "minimum": 0 },
+        "memory_bytes": { "type": "integer", "minimum": 0 },
+        "max_output_bytes": { "type": "integer", "minimum": 0 },
+        "notes": { "type": "string", "minLength": 1 }
+      }
+    },
+    "execution_status": {
+      "$ref": "verifier_assurance.defs.json#/$defs/execution_status"
+    },
+    "decision": {
+      "$ref": "verifier_assurance.defs.json#/$defs/verification_decision"
+    },
+    "guarantee_class": {
+      "$ref": "verifier_assurance.defs.json#/$defs/guarantee_class"
+    },
+    "declared_input_guarantee_class": {
+      "$ref": "verifier_assurance.defs.json#/$defs/guarantee_class"
+    },
+    "normalizer_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Normalizer implementation version producing normalized_result_digest."
+    },
+    "invocation_ref": {
+      "$ref": "verifier_assurance.defs.json#/$defs/invocation_ref"
+    },
+    "assumptions": {
+      "type": "array",
+      "items": {
+        "$ref": "verifier_assurance.defs.json#/$defs/assumption_entry"
+      }
+    },
+    "limits": {
+      "type": "array",
+      "items": {
+        "$ref": "verifier_assurance.defs.json#/$defs/limit_entry"
+      }
+    },
+    "cohort_id": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "integrity": {
+      "$ref": "verifier_assurance.defs.json#/$defs/nested_integrity"
+    },
+    "signature_or_digest": {
+      "$ref": "verifier_assurance.defs.json#/$defs/forbid_signature_or_digest"
+    }
+  }
+}
