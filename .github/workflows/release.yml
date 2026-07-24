@@ -197,9 +197,11 @@ jobs:
             tests/test_pf_core_cross_language.py \
             tests/test_pf_core_phase4_differential.py \
             tests/test_pf_core_hash_vector_parity.py \
-            tests/test_canonical_hash_release.py
+            tests/test_canonical_hash_release.py \
+            tests/test_verifier_assurance_cross_language.py
           pcs conformance run --suite pf-core-cross-language
-          cd ../rust && cargo test --locked pf_core
+          pcs conformance run --suite verifier-assurance
+          cd ../rust && cargo test --locked pf_core && cargo test --locked va_
           cd ../typescript && npm ci && npm test && npm run test:hash-vectors -w @pcs/core
 
   semantic-projection-replay:
