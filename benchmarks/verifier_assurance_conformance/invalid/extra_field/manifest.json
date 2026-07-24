@@ -1,0 +1,5 @@
+{
+  "artifact_file": "artifact.json",
+  "artifact_type": "VerifierProfile.v1",
+  "expected_error": "Additional properties are not allowed ('extra_field' was unexpected)"
+}

@@ -1,0 +1,52 @@
+{
+  "applicability": {
+    "status": "active",
+    "valid_from": "2026-07-01T00:00:00Z"
+  },
+  "artifact_type": "VerifierProfile.v1",
+  "assumptions": [
+    "host OS is Linux"
+  ],
+  "claim_surface": {
+    "guarantee_class": "certificate_checked",
+    "out_of_scope_claim_ids": [
+      "claim.formal.full_correctness"
+    ],
+    "supported_claim_ids": [
+      "claim.safety.no_egress"
+    ]
+  },
+  "configuration": {
+    "config_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "model_digest": null,
+    "policy_digest": null,
+    "prompt_digest": null,
+    "resource_limit_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+  },
+  "created_at": "2026-07-24T12:00:00Z",
+  "implementation": {
+    "implementation_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "language": "rust",
+    "name": "ovk-static-checker",
+    "version": "1.0.0"
+  },
+  "integrity": {
+    "artifact_digest": "sha256:405cbdcce40f391dc52a0b3608890ad95c75f911e2c08e72d307fae403aeb171",
+    "canonicalization_version": "v1"
+  },
+  "known_blind_spots": [
+    "does not observe runtime network"
+  ],
+  "mechanism": {
+    "allows_abstention": true,
+    "description": "Static claim checker",
+    "determinism": "deterministic",
+    "mechanism_class": "static_analysis"
+  },
+  "producer": "OVK",
+  "producer_version": "0.1.0",
+  "schema_version": "v1",
+  "source_commit": "abc1234",
+  "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+  "verifier_profile_id": "vp-ovk-static-001"
+}

@@ -1,0 +1,5 @@
+{
+  "artifact_file": "artifact.json",
+  "artifact_type": "VerifierReplayReport.v1",
+  "expected_error": "ReplayMatchedWithDrift"
+}

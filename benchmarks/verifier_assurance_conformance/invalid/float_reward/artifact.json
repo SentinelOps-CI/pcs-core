@@ -1,0 +1,58 @@
+{
+  "artifact_type": "RewardEvidenceEnvelope.v1",
+  "authority": {
+    "authority_class": "producer",
+    "authority_id": "labtrust-reward"
+  },
+  "claims_issued": [
+    "claim.safety.no_egress"
+  ],
+  "claims_rejected": [],
+  "claims_unresolved": [],
+  "components": [
+    {
+      "claim_id": "claim.safety.no_egress",
+      "component_id": "safety",
+      "guarantee_class": "certificate_checked",
+      "value": "1.0"
+    },
+    {
+      "component_id": "quality",
+      "guarantee_class": "empirically_measured",
+      "value": "0.5"
+    }
+  ],
+  "composition_function": "sum",
+  "created_at": "2026-07-24T12:10:00Z",
+  "env_profile_id": "env-lab",
+  "env_profile_version": "1.0.0",
+  "episode_id": "ep-1",
+  "lifecycle": {
+    "status": "active"
+  },
+  "mandatory_unresolved_claim_ids": [],
+  "producer": "LabTrust-Gym",
+  "producer_version": "0.1.0",
+  "profile_refs": [
+    {
+      "applicability_status": "active",
+      "profile_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "verifier_profile_id": "vp-ovk-static-001"
+    }
+  ],
+  "reward_envelope_id": "rew-001",
+  "scalar_total": 1.5,
+  "schema_version": "v1",
+  "source_commit": "e068794683959c52a19594a6d271dd5e69f3c999",
+  "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+  "state_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "step_index": 0,
+  "trajectory_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "verifier_result_refs": [
+    {
+      "artifact_digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "artifact_id": "vr-001",
+      "artifact_type": "VerificationResult.v1"
+    }
+  ]
+}
