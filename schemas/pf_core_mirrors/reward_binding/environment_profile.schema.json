@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "pcs.environment_profile.v0",
+  "title": "PCS Environment Profile (mirrored)",
+  "description": "Immutable mirror of PCS environment profile. Not in PF-Core TCB.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "profile_id", "digest"],
+  "properties": {
+    "schema_version": { "const": "pcs.environment_profile.v0" },
+    "profile_id": { "type": "string", "minLength": 1 },
+    "digest": { "type": "string", "minLength": 1 },
+    "description": { "type": "string" }
+  }
+}

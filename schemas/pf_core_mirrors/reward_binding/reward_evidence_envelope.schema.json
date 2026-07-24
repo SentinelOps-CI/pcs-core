@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "pcs.reward_evidence_envelope.v0",
+  "title": "PCS Reward Evidence Envelope (mirrored)",
+  "description": "Immutable mirror of PCS reward evidence envelope. Not in PF-Core TCB. Pin digest in adapters/pcs/README.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "envelope_id",
+    "trace_digest",
+    "environment_profile_ref",
+    "verifier_result_refs",
+    "issuer",
+    "authority_ref",
+    "issued_at",
+    "integrity"
+  ],
+  "properties": {
+    "schema_version": { "const": "pcs.reward_evidence_envelope.v0" },
+    "envelope_id": { "type": "string", "minLength": 1 },
+    "trace_digest": { "type": "string", "minLength": 1 },
+    "environment_profile_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "digest"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "digest": { "type": "string", "minLength": 1 }
+      }
+    },
+    "verifier_result_refs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "digest"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "digest": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "issuer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["principal_id", "tenant_id"],
+      "properties": {
+        "principal_id": { "type": "string", "minLength": 1 },
+        "tenant_id": { "type": "string", "minLength": 1 }
+      }
+    },
+    "authority_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "digest"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "digest": { "type": "string", "minLength": 1 }
+      }
+    },
+    "issued_at": { "type": "integer", "minimum": 0 },
+    "stale": { "type": "boolean" },
+    "claim_class": { "type": "string", "minLength": 1 },
+    "integrity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["alg", "digest", "key_id"],
+      "properties": {
+        "alg": { "const": "sha256" },
+        "digest": { "type": "string", "minLength": 1 },
+        "key_id": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

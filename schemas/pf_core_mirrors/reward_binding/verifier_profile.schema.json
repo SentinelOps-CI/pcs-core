@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "pcs.verifier_profile.v0",
+  "title": "PCS Verifier Profile (mirrored)",
+  "description": "Immutable mirror of PCS verifier profile. Not in PF-Core TCB.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "profile_id", "config_digest", "status"],
+  "properties": {
+    "schema_version": { "const": "pcs.verifier_profile.v0" },
+    "profile_id": { "type": "string", "minLength": 1 },
+    "config_digest": { "type": "string", "minLength": 1 },
+    "status": {
+      "type": "string",
+      "enum": ["active", "superseded", "revoked"]
+    },
+    "suite": { "type": "string" },
+    "rubric": { "type": "string" }
+  }
+}
