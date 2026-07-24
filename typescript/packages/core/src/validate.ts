@@ -10,6 +10,10 @@ import {
 import { ARTIFACT_STATUSES, TRACE_CERTIFICATE_STATUSES } from "./status.js";
 import { isZeroSourceCommit } from "./hash.js";
 import { validateSchema } from "./schema.js";
+import {
+  isVaArtifactType,
+  validateVaSemanticsStrings,
+} from "./verifierAssurance.js";
 
 export class ValidationError extends Error {
   readonly errors: string[];
@@ -60,6 +64,12 @@ export type ArtifactType =
   | "PFCoreKernelManifest.v0"
   | "PFCoreReleaseBundleManifest.v0"
   | "ArtifactIntegrity.v1"
+  | "VerifierProfile.v1"
+  | "VerificationResult.v1"
+  | "RewardEvidenceEnvelope.v1"
+  | "OptimizationCampaignManifest.v1"
+  | "AdjudicationRecord.v1"
+  | "VerifierAssuranceReport.v1"
   | "FormatAssertionProbe.v0"
   | "ExternalAttestation.v0"
   | "ReleaseManifest.v0"
@@ -127,6 +137,12 @@ const EXPLICIT_ARTIFACT_TYPES = new Set<ArtifactType>([
   "PFCoreKernelManifest.v0",
   "PFCoreReleaseBundleManifest.v0",
   "ArtifactIntegrity.v1",
+  "VerifierProfile.v1",
+  "VerificationResult.v1",
+  "RewardEvidenceEnvelope.v1",
+  "OptimizationCampaignManifest.v1",
+  "AdjudicationRecord.v1",
+  "VerifierAssuranceReport.v1",
   "FormatAssertionProbe.v0",
   "ExternalAttestation.v0",
 ]);
@@ -515,6 +531,14 @@ export function validateArtifact(
   }
   const errors: string[] = [...validateSchema(data, type)];
   if (PROTOCOL_ARTIFACT_TYPES.has(type)) {
+    if (errors.length > 0) {
+      throw new ValidationError(`Validation failed for ${type}`, errors);
+    }
+    return;
+  }
+  // VA *.v1: mirror Python early-return (dedicated semantic module).
+  if (isVaArtifactType(type)) {
+    errors.push(...validateVaSemanticsStrings(data, type));
     if (errors.length > 0) {
       throw new ValidationError(`Validation failed for ${type}`, errors);
     }
