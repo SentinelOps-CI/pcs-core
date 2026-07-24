@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "pcs.verification_result.v0",
+  "title": "PCS Verification Result (mirrored)",
+  "description": "Immutable mirror of PCS verification result. Not in PF-Core TCB.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "result_id",
+    "verifier_profile_ref",
+    "status"
+  ],
+  "properties": {
+    "schema_version": { "const": "pcs.verification_result.v0" },
+    "result_id": { "type": "string", "minLength": 1 },
+    "verifier_profile_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "digest"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "digest": { "type": "string", "minLength": 1 }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pass", "fail", "error"]
+    },
+    "artifact_digest": { "type": "string" }
+  }
+}
