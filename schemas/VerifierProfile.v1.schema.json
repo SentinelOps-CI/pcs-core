@@ -1,0 +1,247 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pcs.sentinelops.ci/schemas/VerifierProfile.v1.schema.json",
+  "title": "VerifierProfile.v1",
+  "description": "Immutable verifier identity and configuration for portable verifier assurance. Distinct from WorkflowProfile.v0. Integrity is nested (ArtifactIntegrity.v1 pattern); signature_or_digest is forbidden.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "artifact_type",
+    "verifier_profile_id",
+    "created_at",
+    "producer",
+    "producer_version",
+    "source_repo",
+    "source_commit",
+    "implementation",
+    "configuration",
+    "mechanism",
+    "claim_surface",
+    "applicability",
+    "assumptions",
+    "known_blind_spots",
+    "integrity"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "$ref": "common.defs.json#/$defs/schema_version_v1" },
+    "artifact_type": { "const": "VerifierProfile.v1" },
+    "verifier_profile_id": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "created_at": { "$ref": "common.defs.json#/$defs/iso8601_datetime" },
+    "producer": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "producer_version": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "source_repo": { "type": "string", "format": "uri" },
+    "source_commit": {
+      "$ref": "verifier_assurance.defs.json#/$defs/git_commit_sha40"
+    },
+    "implementation": {
+      "type": "object",
+      "required": ["name", "version", "implementation_digest"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "version": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "language": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "entry_point": { "type": "string", "minLength": 1 },
+        "implementation_digest": {
+          "$ref": "common.defs.json#/$defs/hex_digest"
+        },
+        "package_digest": { "$ref": "common.defs.json#/$defs/hex_digest" },
+        "container_digest": { "$ref": "common.defs.json#/$defs/hex_digest" },
+        "runtime_digest": { "$ref": "common.defs.json#/$defs/hex_digest" },
+        "dependency_lock_digest": {
+          "$ref": "common.defs.json#/$defs/hex_digest"
+        },
+        "normalization_implementation_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      }
+    },
+    "configuration": {
+      "type": "object",
+      "description": "Material configuration digests. Inapplicable slots must be explicit JSON null (not omitted).",
+      "required": [
+        "config_digest",
+        "policy_digest",
+        "model_digest",
+        "prompt_digest",
+        "resource_limit_digest"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "config_digest": { "$ref": "common.defs.json#/$defs/hex_digest" },
+        "policy_digest": {
+          "$ref": "verifier_assurance.defs.json#/$defs/digest_or_null"
+        },
+        "model_digest": {
+          "$ref": "verifier_assurance.defs.json#/$defs/digest_or_null"
+        },
+        "prompt_digest": {
+          "$ref": "verifier_assurance.defs.json#/$defs/digest_or_null"
+        },
+        "resource_limit_digest": {
+          "$ref": "verifier_assurance.defs.json#/$defs/digest_or_null"
+        },
+        "rubric_digest": {
+          "$ref": "verifier_assurance.defs.json#/$defs/digest_or_null"
+        },
+        "test_suite_digest": {
+          "$ref": "verifier_assurance.defs.json#/$defs/digest_or_null"
+        },
+        "threshold_digest": {
+          "$ref": "verifier_assurance.defs.json#/$defs/digest_or_null"
+        },
+        "ensemble_digest": {
+          "$ref": "verifier_assurance.defs.json#/$defs/digest_or_null"
+        }
+      }
+    },
+    "mechanism": {
+      "type": "object",
+      "required": [
+        "mechanism_class",
+        "determinism",
+        "allows_abstention",
+        "description"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "mechanism_class": {
+          "$ref": "verifier_assurance.defs.json#/$defs/mechanism_class"
+        },
+        "determinism": {
+          "$ref": "verifier_assurance.defs.json#/$defs/decision_determinism"
+        },
+        "allows_abstention": { "type": "boolean" },
+        "description": { "type": "string", "minLength": 1 },
+        "requires_authoritative_state": { "type": "boolean" },
+        "requires_complete_trajectory": { "type": "boolean" },
+        "requires_external_execution": { "type": "boolean" },
+        "requires_human_judgment": { "type": "boolean" }
+      }
+    },
+    "claim_surface": {
+      "type": "object",
+      "required": [
+        "supported_claim_ids",
+        "guarantee_class",
+        "out_of_scope_claim_ids"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "supported_claim_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "guarantee_class": {
+          "$ref": "verifier_assurance.defs.json#/$defs/guarantee_class"
+        },
+        "out_of_scope_claim_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "decision_space": {
+          "type": "array",
+          "items": {
+            "$ref": "verifier_assurance.defs.json#/$defs/verification_decision"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      }
+    },
+    "applicability": {
+      "type": "object",
+      "required": ["status"],
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "$ref": "verifier_assurance.defs.json#/$defs/applicability_status"
+        },
+        "valid_from": { "$ref": "common.defs.json#/$defs/iso8601_datetime" },
+        "valid_until": { "$ref": "common.defs.json#/$defs/iso8601_datetime" },
+        "environment_families": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "environment_versions": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "task_families": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "claim_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "supported_input_schema_versions": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "excluded_conditions": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "supersedes_profile_id": { "type": "string", "minLength": 1 },
+        "superseded_by_profile_id": { "type": "string", "minLength": 1 },
+        "revoked_at": { "$ref": "common.defs.json#/$defs/iso8601_datetime" },
+        "revocation_reason": { "type": "string", "minLength": 1 }
+      }
+    },
+    "assumptions": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "known_blind_spots": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "configuration_schema_digest": {
+      "$ref": "common.defs.json#/$defs/hex_digest",
+      "description": "Optional digest of the schema that validates canonical_configuration."
+    },
+    "configuration_schema": {
+      "type": "object",
+      "description": "Optional inline configuration schema. When present, Canonical JSON digest must equal configuration_schema_digest."
+    },
+    "canonical_configuration": {
+      "type": "object",
+      "description": "Optional canonical configuration object (secrets redacted). Prefer digesting via configuration.config_digest."
+    },
+    "redacted_environment": {
+      "$ref": "verifier_assurance.defs.json#/$defs/redacted_environment"
+    },
+    "external_dependencies": {
+      "type": "array",
+      "items": {
+        "$ref": "verifier_assurance.defs.json#/$defs/external_dependency"
+      }
+    },
+    "execution_controls": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "seed": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "temperature": {
+          "$ref": "verifier_assurance.defs.json#/$defs/decimal_string"
+        },
+        "timeout_ms": { "type": "integer", "minimum": 1 },
+        "max_memory_bytes": { "type": "integer", "minimum": 1 },
+        "notes": { "type": "string", "minLength": 1 }
+      }
+    },
+    "limitations_notice": {
+      "$ref": "common.defs.json#/$defs/limitations_notice"
+    },
+    "integrity": {
+      "$ref": "verifier_assurance.defs.json#/$defs/nested_integrity"
+    },
+    "signature_or_digest": {
+      "$ref": "verifier_assurance.defs.json#/$defs/forbid_signature_or_digest"
+    }
+  }
+}

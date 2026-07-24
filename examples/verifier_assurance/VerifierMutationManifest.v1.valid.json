@@ -1,0 +1,32 @@
+{
+  "artifact_type": "VerifierMutationManifest.v1",
+  "base_profile_ref": {
+    "artifact_type": "VerifierProfile.v1",
+    "profile_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "verifier_profile_id": "vp-opa-demo-001"
+  },
+  "canonicalization_version": "v1",
+  "created_at": "2026-07-24T16:03:00Z",
+  "expected_effect": "Changes execution timeout.",
+  "integrity": {
+    "artifact_digest": "sha256:35d8c217a200611e57fdc6039018429aa27e1169717678bed7c205d1dd95f025",
+    "canonicalization_version": "v1"
+  },
+  "mutated_profile_ref": {
+    "artifact_type": "VerifierProfile.v1",
+    "profile_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "verifier_profile_id": "vp-opa-demo-001-mut-alter_timeout"
+  },
+  "mutation_class": "alter_timeout",
+  "mutation_id": "mut-alter_timeout-001",
+  "parameters": {
+    "timeout_ms": 1000
+  },
+  "producer": "OVK",
+  "producer_version": "0.4.0",
+  "production_prohibition": true,
+  "schema_version": "v1",
+  "source_commit": "e068794683959c52a19594a6d271dd5e69f3c999",
+  "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+  "supported_by_adapter": true
+}

@@ -14,7 +14,7 @@ pcs conformance run --suite multidomain
 pcs conformance run --suite all --json   # ConformanceReport.v0
 ```
 
-Available suites include `release-manifest`, `handoff-manifest`, `artifact-registry`, `semantic-check-execution`, `release-chain-validation`, `release-chain`, `component-release-fragment`, `hash`, `migration`, `status-transition`, `workflow-profile`, `tool-use`, `computation`, `benchmark`, `benchmark-report`, `benchmark-ingest`, `multidomain`, `all`.
+Available suites include `release-manifest`, `handoff-manifest`, `artifact-registry`, `semantic-check-execution`, `release-chain-validation`, `release-chain`, `component-release-fragment`, `hash`, `migration`, `status-transition`, `workflow-profile`, `tool-use`, `computation`, `benchmark`, `benchmark-report`, `benchmark-ingest`, `multidomain`, `verifier-assurance`, `all`.
 
 ## Downstream CI
 
@@ -47,3 +47,4 @@ The registry catalog is listed through `pcs registry audit` as described in [doc
 | Benchmark | `benchmark/` | Benchmark fixture trees |
 | Benchmark report | `benchmark-report/` | `BenchmarkReport.v0` and corpus |
 | Benchmark ingest | `benchmark-ingest/` | `PcsBenchIngest.v0` — [docs/benchmark-ingest-contract.md](../docs/benchmark-ingest-contract.md) |
+| Verifier Assurance | `verifier-assurance/` | PCS-VA six-artifact family — [docs/verifier-assurance/protocol.md](../docs/verifier-assurance/protocol.md) |

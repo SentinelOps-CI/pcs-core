@@ -1,0 +1,125 @@
+{
+  "$id": "https://pcs.sentinelops.ci/schemas/VerifierReplayReport.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Replay comparison report for verifier assurance.",
+  "properties": {
+    "artifact_type": {
+      "const": "VerifierReplayReport.v1"
+    },
+    "canonicalization_version": {
+      "$ref": "common.defs.json#/$defs/canonicalization_version"
+    },
+    "created_at": {
+      "$ref": "common.defs.json#/$defs/iso8601_datetime"
+    },
+    "determinism": {
+      "$ref": "verifier_assurance.defs.json#/$defs/determinism_mode"
+    },
+    "drift": {
+      "additionalProperties": false,
+      "properties": {
+        "claim_match": {
+          "type": "boolean"
+        },
+        "normalized_digest_match": {
+          "type": "boolean"
+        },
+        "notes": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "raw_digest_match": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "raw_digest_match",
+        "normalized_digest_match"
+      ],
+      "type": "object"
+    },
+    "failure_reason": {
+      "$ref": "verifier_assurance.defs.json#/$defs/failure_reason"
+    },
+    "indeterminate_reason": {
+      "$ref": "verifier_assurance.defs.json#/$defs/indeterminate_reason"
+    },
+    "integrity": {
+      "$ref": "verifier_assurance.defs.json#/$defs/nested_integrity"
+    },
+    "original_invocation_ref": {
+      "$ref": "verifier_assurance.defs.json#/$defs/invocation_ref"
+    },
+    "original_normalized_digest": {
+      "$ref": "common.defs.json#/$defs/hex_digest"
+    },
+    "original_raw_digest": {
+      "$ref": "common.defs.json#/$defs/hex_digest"
+    },
+    "producer": {
+      "maxLength": 256,
+      "minLength": 1,
+      "type": "string"
+    },
+    "producer_version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "type": "string"
+    },
+    "profile_ref": {
+      "$ref": "verifier_assurance.defs.json#/$defs/profile_ref"
+    },
+    "replay_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "type": "string"
+    },
+    "replay_invocation_ref": {
+      "$ref": "verifier_assurance.defs.json#/$defs/invocation_ref"
+    },
+    "replay_normalized_digest": {
+      "$ref": "common.defs.json#/$defs/hex_digest"
+    },
+    "replay_raw_digest": {
+      "$ref": "common.defs.json#/$defs/hex_digest"
+    },
+    "replay_status": {
+      "$ref": "verifier_assurance.defs.json#/$defs/replay_status"
+    },
+    "schema_version": {
+      "$ref": "common.defs.json#/$defs/schema_version_v1"
+    },
+    "signature_or_digest": {
+      "$ref": "verifier_assurance.defs.json#/$defs/forbid_signature_or_digest"
+    },
+    "source_commit": {
+      "$ref": "verifier_assurance.defs.json#/$defs/git_commit_sha40"
+    },
+    "source_repo": {
+      "format": "uri",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "artifact_type",
+    "canonicalization_version",
+    "replay_id",
+    "original_invocation_ref",
+    "profile_ref",
+    "replay_status",
+    "determinism",
+    "original_raw_digest",
+    "replay_raw_digest",
+    "original_normalized_digest",
+    "replay_normalized_digest",
+    "drift",
+    "producer",
+    "producer_version",
+    "created_at",
+    "integrity"
+  ],
+  "title": "VerifierReplayReport.v1",
+  "type": "object"
+}

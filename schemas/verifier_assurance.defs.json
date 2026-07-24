@@ -1,0 +1,576 @@
+{
+  "$defs": {
+    "access_class": {
+      "description": "Optimizer / evaluator access to the verifier under test.",
+      "enum": [
+        "black_box",
+        "gray_box",
+        "white_box",
+        "adaptive",
+        "transfer"
+      ],
+      "type": "string"
+    },
+    "adjudication_label": {
+      "enum": [
+        "valid",
+        "invalid",
+        "indeterminate_missing_evidence",
+        "indeterminate_domain_disagreement"
+      ],
+      "type": "string"
+    },
+    "applicability_status": {
+      "enum": [
+        "active",
+        "expired",
+        "superseded",
+        "revoked"
+      ],
+      "type": "string"
+    },
+    "artifact_ref": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_digest": {
+          "$ref": "common.defs.json#/$defs/hex_digest"
+        },
+        "artifact_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "artifact_type": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_type",
+        "artifact_id",
+        "artifact_digest"
+      ],
+      "type": "object"
+    },
+    "assumption_entry": {
+      "additionalProperties": false,
+      "properties": {
+        "assumption_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "type": "string"
+        },
+        "critical": {
+          "type": "boolean"
+        },
+        "statement": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "assumption_id",
+        "statement"
+      ],
+      "type": "object"
+    },
+    "check_group_kind": {
+      "enum": [
+        "process",
+        "authority",
+        "side_effect",
+        "state",
+        "evidence"
+      ],
+      "type": "string"
+    },
+    "check_status": {
+      "enum": [
+        "passed",
+        "failed",
+        "skipped",
+        "error"
+      ],
+      "type": "string"
+    },
+    "ci_method": {
+      "description": "Declared confidence-interval method. No silent default that invents denominators.",
+      "enum": [
+        "wilson",
+        "clopper_pearson",
+        "bootstrap",
+        "other"
+      ],
+      "type": "string"
+    },
+    "confidence_interval": {
+      "additionalProperties": false,
+      "properties": {
+        "lower": {
+          "$ref": "#/$defs/rate_decimal_string"
+        },
+        "method": {
+          "$ref": "#/$defs/ci_method"
+        },
+        "parameters": {
+          "description": "Method parameters (e.g. alpha). Must be declared explicitly; empty object only when method truly has none.",
+          "type": "object"
+        },
+        "sample_size": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "upper": {
+          "$ref": "#/$defs/rate_decimal_string"
+        }
+      },
+      "required": [
+        "method",
+        "parameters",
+        "lower",
+        "upper",
+        "sample_size"
+      ],
+      "type": "object"
+    },
+    "decimal_string": {
+      "description": "Decimal number encoded as a string for Canonical JSON v1 (no JSON floats).",
+      "pattern": "^-?(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?$",
+      "type": "string"
+    },
+    "decision_determinism": {
+      "enum": [
+        "deterministic",
+        "stochastic"
+      ],
+      "type": "string"
+    },
+    "determinism_mode": {
+      "enum": [
+        "deterministic",
+        "stochastic",
+        "mixed"
+      ],
+      "type": "string"
+    },
+    "digest_or_null": {
+      "description": "Hex digest slot that must be present; use JSON null when the mechanism is inapplicable (do not omit).",
+      "oneOf": [
+        {
+          "$ref": "common.defs.json#/$defs/hex_digest"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "execution_status": {
+      "enum": [
+        "completed",
+        "timeout",
+        "unavailable",
+        "error",
+        "cancelled",
+        "resource_exhausted"
+      ],
+      "type": "string"
+    },
+    "external_dependency": {
+      "additionalProperties": false,
+      "properties": {
+        "dependency_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "type": "string"
+        },
+        "digest": {
+          "$ref": "common.defs.json#/$defs/hex_digest"
+        },
+        "identity": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "binary",
+            "container",
+            "library",
+            "service",
+            "dataset",
+            "model",
+            "toolchain",
+            "other"
+          ],
+          "type": "string"
+        },
+        "optional": {
+          "type": "boolean"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "dependency_id",
+        "kind",
+        "identity"
+      ],
+      "type": "object"
+    },
+    "failure_reason": {
+      "enum": [
+        "obligation_unsatisfied",
+        "policy_denied",
+        "counterexample_found",
+        "test_failed",
+        "state_diff_mismatch",
+        "integrity_mismatch",
+        "unsupported_mutation",
+        "profile_revoked",
+        "internal_error",
+        "other"
+      ],
+      "type": "string"
+    },
+    "forbid_signature_or_digest": {
+      "description": "Forbidden on VA *.v1 roots; use nested integrity.artifact_digest (+ optional signature).",
+      "not": {}
+    },
+    "git_commit_sha40": {
+      "$ref": "common.defs.json#/$defs/git_commit"
+    },
+    "guarantee_class": {
+      "description": "PCS guarantee label for VA evidence. Normalization/export must never upgrade this class. observational replaces runtime_observed as the VA observational label (do not treat runtime_observed as a formal upgrade path).",
+      "enum": [
+        "observational",
+        "runtime_observed",
+        "empirically_measured",
+        "human_reviewed",
+        "certificate_checked",
+        "formally_checked",
+        "unchecked_advisory"
+      ],
+      "type": "string"
+    },
+    "indeterminate_reason": {
+      "description": "Typed indeterminate reasons for invocation/replay layers (fail-closed; never acceptance).",
+      "enum": [
+        "missing_checker",
+        "timeout",
+        "parser_failure",
+        "unsupported_input",
+        "external_service_error",
+        "resource_exhausted",
+        "spawn_error",
+        "incomplete_trajectory",
+        "missing_authoritative_state",
+        "declared_nondeterminism",
+        "other"
+      ],
+      "type": "string"
+    },
+    "invocation_exit_kind": {
+      "enum": [
+        "exited",
+        "timeout",
+        "missing_checker",
+        "spawn_error",
+        "signal",
+        "cancelled",
+        "resource_exhausted",
+        "error",
+        "other"
+      ],
+      "type": "string"
+    },
+    "invocation_ref": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_type": {
+          "const": "VerifierInvocationRecord.v1"
+        },
+        "invocation_digest": {
+          "$ref": "common.defs.json#/$defs/hex_digest"
+        },
+        "invocation_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "invocation_id",
+        "invocation_digest"
+      ],
+      "type": "object"
+    },
+    "lifecycle_status": {
+      "enum": [
+        "draft",
+        "active",
+        "superseded",
+        "revoked",
+        "archived"
+      ],
+      "type": "string"
+    },
+    "limit_entry": {
+      "additionalProperties": false,
+      "properties": {
+        "limit_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "type": "string"
+        },
+        "statement": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "limit_id",
+        "statement"
+      ],
+      "type": "object"
+    },
+    "mechanism_class": {
+      "description": "Controlled verifier mechanism class (not a formal-strength upgrade).",
+      "enum": [
+        "static_analysis",
+        "dynamic_analysis",
+        "policy_engine",
+        "test_suite",
+        "model_judge",
+        "human_review",
+        "formal_proof",
+        "replay",
+        "hybrid",
+        "other"
+      ],
+      "type": "string"
+    },
+    "mutation_class": {
+      "enum": [
+        "remove_success_predicate",
+        "remove_process_predicate",
+        "remove_authority_predicate",
+        "change_threshold",
+        "reduce_test_subset",
+        "alter_timeout",
+        "suppress_error",
+        "change_rubric",
+        "change_prompt",
+        "ensemble_quorum",
+        "hidden_state_access",
+        "policy_bundle",
+        "abstention",
+        "other"
+      ],
+      "type": "string"
+    },
+    "named_digest": {
+      "additionalProperties": false,
+      "properties": {
+        "digest": {
+          "$ref": "common.defs.json#/$defs/hex_digest"
+        },
+        "media_type": {
+          "maxLength": 256,
+          "minLength": 1,
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 256,
+          "minLength": 1,
+          "type": "string"
+        },
+        "path": {
+          "$ref": "common.defs.json#/$defs/relative_posix_path"
+        }
+      },
+      "required": [
+        "name",
+        "digest"
+      ],
+      "type": "object"
+    },
+    "nested_integrity": {
+      "additionalProperties": false,
+      "description": "ArtifactIntegrity.v1 field pattern nested on VA roots (canonicalization_version + artifact_digest; optional signature).",
+      "properties": {
+        "artifact_digest": {
+          "$ref": "common.defs.json#/$defs/hex_digest"
+        },
+        "canonicalization_version": {
+          "$ref": "common.defs.json#/$defs/canonicalization_version"
+        },
+        "signature": {
+          "$ref": "common.defs.json#/$defs/ed25519_signature_envelope"
+        }
+      },
+      "required": [
+        "canonicalization_version",
+        "artifact_digest"
+      ],
+      "type": "object"
+    },
+    "non_negative_decimal_string": {
+      "description": "Non-negative decimal string (Canonical JSON v1; no JSON floats).",
+      "pattern": "^(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?$",
+      "type": "string"
+    },
+    "profile_ref": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_type": {
+          "const": "VerifierProfile.v1"
+        },
+        "profile_digest": {
+          "$ref": "common.defs.json#/$defs/hex_digest"
+        },
+        "verifier_profile_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_type",
+        "verifier_profile_id",
+        "profile_digest"
+      ],
+      "type": "object"
+    },
+    "protected_evidence_location_class": {
+      "enum": [
+        "public_artifact",
+        "access_controlled_store",
+        "partner_private_store",
+        "holdout_store",
+        "omitted"
+      ],
+      "type": "string"
+    },
+    "rate_decimal_string": {
+      "description": "Rate in [0, 1] encoded as a decimal string (Canonical JSON v1; no JSON floats).",
+      "pattern": "^(?:0(?:\\.[0-9]+)?|1(?:\\.0+)?)(?:[eE][+-]?[0-9]+)?$",
+      "type": "string"
+    },
+    "rate_with_ci": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence_interval": {
+          "$ref": "#/$defs/confidence_interval"
+        },
+        "denominator": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "numerator": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "rate": {
+          "$ref": "#/$defs/rate_decimal_string"
+        }
+      },
+      "required": [
+        "rate",
+        "numerator",
+        "denominator",
+        "confidence_interval"
+      ],
+      "type": "object"
+    },
+    "redacted_environment": {
+      "additionalProperties": false,
+      "properties": {
+        "entries": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "environment_digest": {
+          "$ref": "common.defs.json#/$defs/hex_digest"
+        },
+        "redacted_keys": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "redaction_policy_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "redaction_policy_id",
+        "entries"
+      ],
+      "type": "object"
+    },
+    "replay_status": {
+      "enum": [
+        "matched",
+        "drifted",
+        "indeterminate",
+        "failed"
+      ],
+      "type": "string"
+    },
+    "result_ref": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_type": {
+          "const": "VerificationResult.v1"
+        },
+        "result_digest": {
+          "$ref": "common.defs.json#/$defs/hex_digest"
+        },
+        "verification_result_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_type",
+        "verification_result_id",
+        "result_digest"
+      ],
+      "type": "object"
+    },
+    "reward_composition_function": {
+      "enum": [
+        "sum",
+        "weighted_sum",
+        "min",
+        "max",
+        "custom"
+      ],
+      "type": "string"
+    },
+    "verification_decision": {
+      "description": "Closed decision vocabulary for VerificationResult.v1. Fail closed: timeouts/unavailable/malformed/unsupported map to indeterminate_*, never accept/reject.",
+      "enum": [
+        "accept",
+        "reject",
+        "indeterminate_insufficient_evidence",
+        "indeterminate_execution_error",
+        "indeterminate_out_of_scope",
+        "indeterminate_configuration_drift"
+      ],
+      "type": "string"
+    }
+  },
+  "$id": "https://pcs.sentinelops.ci/schemas/verifier_assurance.defs.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Shared $defs for Verifier Assurance (VA) *.v1 artifacts. Digests use common.defs.json#/$defs/hex_digest. Rates and rewards use decimal strings (no JSON floats). Do not upgrade observational / runtime-observed evidence to formal guarantee classes.",
+  "title": "PCS Verifier Assurance Common Definitions"
+}

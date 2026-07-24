@@ -283,12 +283,15 @@ jobs:
             tests/test_pf_core_phase4_differential.py \
             tests/test_pf_core_hash_vector_parity.py \
             tests/test_canonical_hash_release.py \
-            tests/test_shared_hash_vectors.py
+            tests/test_shared_hash_vectors.py \
+            tests/test_verifier_assurance_cross_language.py
           pcs shared-hash-vectors verify
           pcs conformance run --suite pf-core-cross-language
+          pcs conformance run --suite verifier-assurance
           cd ../rust
           cargo test --locked pf_core -- --nocapture
           cargo test --locked hash_vectors
+          cargo test --locked va_ -- --nocapture
           cd ../typescript
           npm ci
           npm test

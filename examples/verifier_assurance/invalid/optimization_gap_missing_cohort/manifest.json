@@ -1,0 +1,5 @@
+{
+  "artifact_file": "artifact.json",
+  "artifact_type": "VerifierAssuranceReport.v1",
+  "expected_error": "OptimizationGapCohorts"
+}

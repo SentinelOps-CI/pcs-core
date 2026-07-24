@@ -1,0 +1,161 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pcs.sentinelops.ci/schemas/OptimizationCampaignManifest.v1.schema.json",
+  "title": "OptimizationCampaignManifest.v1",
+  "description": "Optimization campaign declaration: target profile, env, model/policy/harness IDs, access class, budgets, splits, and containment policies.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "artifact_type",
+    "campaign_id",
+    "created_at",
+    "producer",
+    "producer_version",
+    "source_repo",
+    "source_commit",
+    "target_verifier_profile",
+    "env_profile_id",
+    "env_profile_version",
+    "model_id",
+    "policy_id",
+    "harness_id",
+    "checkpoint_ids",
+    "algorithm",
+    "optimizer_settings",
+    "episode_count",
+    "trajectory_count",
+    "query_count",
+    "seeds",
+    "compute_budget",
+    "access_class",
+    "visibility",
+    "splits",
+    "containment_policy",
+    "disclosure_policy",
+    "integrity"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "$ref": "common.defs.json#/$defs/schema_version_v1" },
+    "artifact_type": { "const": "OptimizationCampaignManifest.v1" },
+    "campaign_id": { "type": "string", "minLength": 1 },
+    "created_at": { "$ref": "common.defs.json#/$defs/iso8601_datetime" },
+    "producer": { "type": "string", "minLength": 1 },
+    "producer_version": { "type": "string", "minLength": 1 },
+    "source_repo": { "type": "string", "format": "uri" },
+    "source_commit": { "$ref": "verifier_assurance.defs.json#/$defs/git_commit_sha40" },
+    "target_verifier_profile": {
+      "type": "object",
+      "required": ["verifier_profile_id", "profile_digest"],
+      "additionalProperties": false,
+      "properties": {
+        "verifier_profile_id": { "type": "string", "minLength": 1 },
+        "profile_digest": { "$ref": "common.defs.json#/$defs/hex_digest" }
+      }
+    },
+    "env_profile_id": { "type": "string", "minLength": 1 },
+    "env_profile_version": { "type": "string", "minLength": 1 },
+    "model_id": { "type": "string", "minLength": 1 },
+    "policy_id": { "type": "string", "minLength": 1 },
+    "harness_id": { "type": "string", "minLength": 1 },
+    "checkpoint_ids": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "algorithm": { "type": "string", "minLength": 1 },
+    "optimizer_settings": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "learning_rate": { "$ref": "verifier_assurance.defs.json#/$defs/decimal_string" },
+        "batch_size": { "type": "integer", "minimum": 1 },
+        "notes": { "type": "string" }
+      }
+    },
+    "episode_count": { "type": "integer", "minimum": 0 },
+    "trajectory_count": { "type": "integer", "minimum": 0 },
+    "query_count": { "type": "integer", "minimum": 0 },
+    "seeds": {
+      "type": "array",
+      "items": { "type": "integer" }
+    },
+    "compute_budget": {
+      "type": "object",
+      "required": ["accounting_method", "wall_time_seconds", "query_budget"],
+      "additionalProperties": false,
+      "properties": {
+        "accounting_method": { "type": "string", "minLength": 1 },
+        "wall_time_seconds": { "type": "integer", "minimum": 0 },
+        "query_budget": { "type": "integer", "minimum": 0 },
+        "gpu_hours": { "$ref": "verifier_assurance.defs.json#/$defs/non_negative_decimal_string" }
+      }
+    },
+    "access_class": { "$ref": "verifier_assurance.defs.json#/$defs/access_class" },
+    "visibility": {
+      "type": "object",
+      "required": ["public_summary", "full_traces_retained"],
+      "additionalProperties": false,
+      "properties": {
+        "public_summary": { "type": "boolean" },
+        "full_traces_retained": { "type": "boolean" },
+        "notes": { "type": "string" }
+      }
+    },
+    "splits": {
+      "type": "object",
+      "required": ["train", "validation", "holdout"],
+      "additionalProperties": false,
+      "properties": {
+        "train": { "type": "string", "minLength": 1 },
+        "validation": { "type": "string", "minLength": 1 },
+        "holdout": { "type": "string", "minLength": 1 }
+      }
+    },
+    "mutation_schedule": { "type": "string" },
+    "early_stopping": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "criterion": { "type": "string" }
+      }
+    },
+    "cohorts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "cohort_id",
+          "cohort_kind",
+          "access_class",
+          "compute_exposure"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "cohort_id": { "type": "string", "minLength": 1 },
+          "cohort_kind": {
+            "type": "string",
+            "enum": ["ordinary", "optimized", "other"]
+          },
+          "access_class": { "$ref": "verifier_assurance.defs.json#/$defs/access_class" },
+          "compute_exposure": {
+            "type": "object",
+            "required": ["accounting_method", "wall_time_seconds", "query_count"],
+            "additionalProperties": false,
+            "properties": {
+              "accounting_method": { "type": "string", "minLength": 1 },
+              "wall_time_seconds": { "type": "integer", "minimum": 0 },
+              "query_count": { "type": "integer", "minimum": 0 }
+            }
+          }
+        }
+      }
+    },
+    "containment_policy": { "type": "string", "minLength": 1 },
+    "disclosure_policy": { "type": "string", "minLength": 1 },
+    "integrity": { "$ref": "verifier_assurance.defs.json#/$defs/nested_integrity" },
+    "signature_or_digest": {
+      "$ref": "verifier_assurance.defs.json#/$defs/forbid_signature_or_digest"
+    }
+  }
+}

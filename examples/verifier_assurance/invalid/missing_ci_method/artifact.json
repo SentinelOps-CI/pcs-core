@@ -1,0 +1,190 @@
+{
+  "applicability_limits": [
+    "synthetic fixture only"
+  ],
+  "artifact_type": "VerifierAssuranceReport.v1",
+  "campaign_ref": {
+    "artifact_digest": "sha256:fd790a71e8eeefcd40d6b2b3b1642b3f93b93669d518564a62fc4f9f2d93ff8f",
+    "artifact_id": "camp-001",
+    "artifact_type": "OptimizationCampaignManifest.v1"
+  },
+  "cohorts": [
+    {
+      "accept_count": 1,
+      "access_class": "black_box",
+      "cohort_id": "cohort-ordinary",
+      "cohort_kind": "ordinary",
+      "compute_exposure": {
+        "accounting_method": "wall_clock",
+        "query_count": 50,
+        "wall_time_seconds": 600
+      },
+      "included_result_count": 1,
+      "indeterminate_count": 0,
+      "reject_count": 0
+    },
+    {
+      "accept_count": 0,
+      "access_class": "adaptive",
+      "cohort_id": "cohort-optimized",
+      "cohort_kind": "optimized",
+      "compute_exposure": {
+        "accounting_method": "wall_clock",
+        "query_count": 950,
+        "wall_time_seconds": 3000
+      },
+      "included_result_count": 1,
+      "indeterminate_count": 0,
+      "reject_count": 1
+    }
+  ],
+  "created_at": "2026-07-24T15:00:00Z",
+  "excluded_items": [
+    {
+      "item_id": "ex-1",
+      "reason_code": "out_of_scope"
+    }
+  ],
+  "independent_adjudication": true,
+  "integrity": {
+    "artifact_digest": "sha256:e43da9e8d7807bc3be18339447a6914cd3cd200d878f4b9ae4ca1fb130fb146b",
+    "canonicalization_version": "v1"
+  },
+  "metrics": {
+    "abstention_rate": {
+      "confidence_interval": {
+        "lower": "0.000000",
+        "method": "wilson",
+        "parameters": {
+          "alpha": "0.05",
+          "declared": true
+        },
+        "sample_size": 2,
+        "upper": "0.000000"
+      },
+      "denominator": 2,
+      "numerator": 0,
+      "rate": "0.000000"
+    },
+    "adjudication_coverage": {
+      "confidence_interval": {
+        "lower": "1.000000",
+        "method": "wilson",
+        "parameters": {
+          "alpha": "0.05",
+          "declared": true
+        },
+        "sample_size": 2,
+        "upper": "1.000000"
+      },
+      "denominator": 2,
+      "numerator": 2,
+      "rate": "1.000000"
+    },
+    "cost_decimal": "0",
+    "excluded_count": 1,
+    "exploit_family_counts": {},
+    "false_accept_rate": {
+      "confidence_interval": {
+        "lower": "0",
+        "parameters": {
+          "alpha": "0.05"
+        },
+        "sample_size": 2,
+        "upper": "0"
+      },
+      "denominator": 2,
+      "numerator": 0,
+      "rate": "0.000000"
+    },
+    "false_reject_rate": {
+      "confidence_interval": {
+        "lower": "0.000000",
+        "method": "wilson",
+        "parameters": {
+          "alpha": "0.05",
+          "declared": true
+        },
+        "sample_size": 2,
+        "upper": "0.000000"
+      },
+      "denominator": 2,
+      "numerator": 0,
+      "rate": "0.000000"
+    },
+    "inter_verifier_disagreement_rate": {
+      "confidence_interval": {
+        "lower": "0.000000",
+        "method": "wilson",
+        "parameters": {
+          "alpha": "0.05",
+          "declared": true
+        },
+        "sample_size": 2,
+        "upper": "0.000000"
+      },
+      "denominator": 2,
+      "numerator": 0,
+      "rate": "0.000000"
+    },
+    "latency_ms_p50": 0,
+    "optimization_gap": "-1.000000",
+    "optimized_accept_rate": {
+      "confidence_interval": {
+        "lower": "0.000000",
+        "method": "wilson",
+        "parameters": {
+          "alpha": "0.05",
+          "declared": true
+        },
+        "sample_size": 1,
+        "upper": "0.000000"
+      },
+      "denominator": 1,
+      "numerator": 0,
+      "rate": "0.000000"
+    },
+    "ordinary_accept_rate": {
+      "confidence_interval": {
+        "lower": "1.000000",
+        "method": "wilson",
+        "parameters": {
+          "alpha": "0.05",
+          "declared": true
+        },
+        "sample_size": 1,
+        "upper": "1.000000"
+      },
+      "denominator": 1,
+      "numerator": 1,
+      "rate": "1.000000"
+    },
+    "queries_to_first_exploit": null,
+    "reward_invalidation_rate": {
+      "confidence_interval": {
+        "lower": "0.000000",
+        "method": "wilson",
+        "parameters": {
+          "alpha": "0.05",
+          "declared": true
+        },
+        "sample_size": 2,
+        "upper": "0.000000"
+      },
+      "denominator": 2,
+      "numerator": 0,
+      "rate": "0.000000"
+    },
+    "sample_size": 2,
+    "time_to_first_exploit_seconds": null,
+    "unadjudicated_count": 0
+  },
+  "producer": "pcs-core",
+  "producer_version": "0.1.0",
+  "release_grade": true,
+  "report_id": "rep-001",
+  "schema_version": "v1",
+  "source_commit": "e068794683959c52a19594a6d271dd5e69f3c999",
+  "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+  "unadjudicated_items": []
+}

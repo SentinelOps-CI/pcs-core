@@ -1,0 +1,68 @@
+{
+  "access_class": "black_box",
+  "algorithm": "random-search",
+  "artifact_type": "OptimizationCampaignManifest.v1",
+  "campaign_id": "camp-001",
+  "checkpoint_ids": [
+    "ckpt-0"
+  ],
+  "cohorts": [
+    {
+      "cohort_id": "cohort-ordinary",
+      "cohort_kind": "ordinary",
+      "compute_exposure": {
+        "accounting_method": "wall_clock",
+        "query_count": 50,
+        "wall_time_seconds": 600
+      }
+    }
+  ],
+  "compute_budget": {
+    "accounting_method": "wall_clock",
+    "gpu_hours": "0",
+    "query_budget": 1000,
+    "wall_time_seconds": 3600
+  },
+  "containment_policy": "offline-only",
+  "created_at": "2026-07-24T11:00:00Z",
+  "disclosure_policy": "public-summary",
+  "env_profile_id": "env-lab",
+  "env_profile_version": "1.0.0",
+  "episode_count": 10,
+  "harness_id": "harness-a",
+  "integrity": {
+    "artifact_digest": "sha256:b4e187d91adca8deb1a7f53441430a1fc0682015b6d8f43ee756eadfdab8d4a8",
+    "canonicalization_version": "v1"
+  },
+  "model_id": "model-a",
+  "optimizer_settings": {
+    "batch_size": 8,
+    "learning_rate": "0.01"
+  },
+  "policy_id": "policy-a",
+  "producer": "pcs-core",
+  "producer_version": "0.1.0",
+  "query_count": 100,
+  "schema_version": "v1",
+  "seeds": [
+    1,
+    2,
+    3
+  ],
+  "source_commit": "e068794683959c52a19594a6d271dd5e69f3c999",
+  "source_repo": "https://github.com/SentinelOps-CI/pcs-core",
+  "splits": {
+    "holdout": "hold-v1",
+    "train": "train-v1",
+    "validation": "val-v1"
+  },
+  "target_verifier_profile": {
+    "profile_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "verifier_profile_id": "vp-ovk-static-001"
+  },
+  "trajectory_count": 10,
+  "visibility": {
+    "full_traces_retained": false,
+    "public_summary": true
+  }
+}

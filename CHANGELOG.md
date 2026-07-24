@@ -1,5 +1,23 @@
 # Changelog
 
+## Verifier Assurance Protocol (PCS-VA) — working tree
+
+### Added
+
+- Six `*.v1` VA artifacts: `VerifierProfile`, `VerificationResult`, `RewardEvidenceEnvelope`, `OptimizationCampaignManifest`, `AdjudicationRecord`, `VerifierAssuranceReport`.
+- Shared `schemas/verifier_assurance.defs.json`; nested integrity; decimal-string rates/rewards.
+- Python semantics, offline report builder, CLI (`pcs verifier|reward|campaign|adjudication|assurance`), conformance suite `verifier-assurance`.
+- Fixtures under `examples/verifier_assurance/` and producer gate under `benchmarks/verifier_assurance_conformance/`.
+- Docs under `docs/verifier-assurance/` and RC notes in `docs/releases/verifier-assurance-rc.md`.
+- Rust/TypeScript schema map registration for the six VA types.
+- Rust/TypeScript semantic validators + report verify with Python-parity error codes (PCS-VA-07).
+- Cross-language VA parity tests (`test_verifier_assurance_cross_language.py`, Rust `va_*`, TS suite).
+
+### Compatibility
+
+- `VerificationResult.v0` unchanged (LabTrust/PF import contract). No auto-upgrade to v1.
+- Public VA surface is the six planned artifacts only; optional `invocation_ref` on results is an opaque producer pin, not a separate PCS artifact type.
+
 ## PF-Core v0.1.0-pf-core (2026-06-29)
 
 Release tag for the PF-Core production kernel on `pcs-core` `main`. Bounded claim: machine-checkable trace certificates for catalog-driven, resource-pattern-scoped agentic tool-use traces. Release-grade tool-use `LeanKernelChecked` requires the TraceSafeR evidence chain.

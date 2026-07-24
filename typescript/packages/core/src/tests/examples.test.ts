@@ -41,6 +41,11 @@ import {
   resolveCertificateModeDefault,
   resolveToolMapping,
 } from "../pfCore.js";
+import {
+  constructVaArtifact,
+  validateVaSemantics,
+  verifyAssuranceReport,
+} from "../verifierAssurance.js";
 import { detectArtifactType, validateArtifact, ValidationError, type ArtifactType } from "../validate.js";
 
 const examplesDir = join(dirname(fileURLToPath(import.meta.url)), "../../../../../examples");
@@ -464,7 +469,7 @@ test("shared hash vectors match test_vectors/hash fixtures", () => {
       expected_digest: string;
       canonical_json: string;
     };
-    const inputPath = vector.input ?? vector.input_file ?? "";
+    const inputPath = (vector.input ?? vector.input_file ?? "").replace(/\\/g, "/");
     const data = load(inputPath.replace(/^examples\//, ""));
     assert.equal(Buffer.from(canonicalJsonBytes(data)).toString("utf8"), vector.canonical_json);
     assert.equal(canonicalHash(data), vector.expected_digest);
@@ -579,4 +584,85 @@ test("canonical_json_v1 accept and release-reject vectors", () => {
     // release mode must still share the normalized rejection code.
     assert.ok(canonicalHashLegacy(data).startsWith("sha256:"), caseRow.case_id);
   }
+});
+
+test("verifier assurance valid fixtures pass semantics", () => {
+  const cases: Array<[string, string]> = [
+    ["verifier_assurance/valid/profile_basic/profile.json", "VerifierProfile.v1"],
+    ["verifier_assurance/valid/result_accept/result.json", "VerificationResult.v1"],
+    ["verifier_assurance/valid/reward_scalar/reward.json", "RewardEvidenceEnvelope.v1"],
+    ["verifier_assurance/valid/campaign_basic/campaign.json", "OptimizationCampaignManifest.v1"],
+    ["verifier_assurance/valid/adjudication_basic/adjudication.json", "AdjudicationRecord.v1"],
+    ["verifier_assurance/valid/report_rebuild/report.json", "VerifierAssuranceReport.v1"],
+  ];
+  for (const [rel, expected] of cases) {
+    const data = load(rel);
+    assert.equal(detectArtifactType(data), expected, rel);
+    assert.deepEqual(validateVaSemantics(data, expected), []);
+    validateArtifact(data, expected as ArtifactType);
+  }
+});
+
+test("verifier assurance invalid fixtures emit expected codes", () => {
+  const cases: Array<[string, string]> = [
+    ["timeout_accept", "FailClosedDecision"],
+    ["accept_mandatory_failure", "AcceptWithMandatoryFailure"],
+    ["identical_normalization_digests", "IdenticalNormalizationDigests"],
+    ["reward_total_mismatch", "RewardCompositionMismatch"],
+    ["revoked_profile_active_reward", "RevokedProfileGate"],
+    ["missing_rationale_commitment", "RationaleCommitment"],
+    ["short_source_commit", "InvalidSourceCommit"],
+    ["release_grade_no_adjudication", "ReleaseGradeAdjudication"],
+    ["optimization_gap_missing_cohort", "OptimizationGapCohorts"],
+    ["cohort_missing_access", "CohortAccessClass"],
+    ["cohort_count_mismatch", "CohortCountMismatch"],
+    ["excluded_items_invisible", "ExcludedItemsVisible"],
+    ["missing_ci_method", "CIMethodsDeclared"],
+    ["indeterminate_misclassification", "IndeterminateMisclassification"],
+    ["active_reward_unresolved", "ActiveRewardUnresolvedClaims"],
+  ];
+  for (const [dir, code] of cases) {
+    const manifest = load(`verifier_assurance/invalid/${dir}/manifest.json`);
+    const artifactFile = String(manifest.artifact_file ?? "artifact.json");
+    const artifactType = String(manifest.artifact_type);
+    const data = load(`verifier_assurance/invalid/${dir}/${artifactFile}`);
+    const issues = validateVaSemantics(data, artifactType);
+    assert.ok(
+      issues.some((i) => i.code === code),
+      `${dir}: expected ${code}, got ${JSON.stringify(issues)}`,
+    );
+  }
+});
+
+test("verifier assurance verify report digest parity", () => {
+  const report = load("verifier_assurance/valid/report_rebuild/report.json");
+  assert.deepEqual(verifyAssuranceReport(report), []);
+  const tampered = { ...report, report_id: "tampered-id" };
+  const issues = verifyAssuranceReport(tampered);
+  assert.ok(issues.some((i) => i.code === "ReportDigestMismatch"), JSON.stringify(issues));
+});
+
+test("verifier assurance constructor retains unknown fields", () => {
+  assert.throws(() => constructVaArtifact("VerifierProfile.v1", {}));
+  const fields: Record<string, unknown> = {
+    schema_version: "v1",
+    artifact_type: "VerifierProfile.v1",
+    verifier_profile_id: "vp",
+    created_at: "2026-07-24T00:00:00Z",
+    producer: "pcs-core",
+    producer_version: "0.1.0",
+    source_repo: "https://example.invalid",
+    source_commit: "e068794683959c52a19594a6d271dd5e69f3c999",
+    implementation: {},
+    configuration: {},
+    mechanism: {},
+    claim_surface: {},
+    applicability: {},
+    assumptions: [],
+    known_blind_spots: [],
+    integrity: { canonicalization_version: "v1", artifact_digest: "sha256:" + "a".repeat(64) },
+    extra_field: true,
+  };
+  const built = constructVaArtifact("VerifierProfile.v1", fields);
+  assert.equal(built.extra_field, true);
 });

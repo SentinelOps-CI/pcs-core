@@ -1,0 +1,210 @@
+{
+  "$id": "https://pcs.sentinelops.ci/schemas/VerifierInvocationRecord.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Portable single-run invocation evidence for verifier assurance.",
+  "properties": {
+    "artifact_type": {
+      "const": "VerifierInvocationRecord.v1"
+    },
+    "assumptions": {
+      "items": {
+        "$ref": "verifier_assurance.defs.json#/$defs/assumption_entry"
+      },
+      "type": "array"
+    },
+    "canonicalization_version": {
+      "$ref": "common.defs.json#/$defs/canonicalization_version"
+    },
+    "command": {
+      "additionalProperties": false,
+      "properties": {
+        "argv": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "cwd": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "env_digest": {
+          "$ref": "common.defs.json#/$defs/hex_digest"
+        },
+        "limits": {
+          "additionalProperties": false,
+          "properties": {
+            "max_memory_bytes": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "max_output_bytes": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "timeout_ms": {
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "required": [
+        "argv",
+        "cwd",
+        "env_digest"
+      ],
+      "type": "object"
+    },
+    "compiled_obligation": {
+      "additionalProperties": false,
+      "properties": {
+        "digest": {
+          "$ref": "common.defs.json#/$defs/hex_digest"
+        },
+        "media_type": {
+          "maxLength": 256,
+          "minLength": 1,
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 256,
+          "minLength": 1,
+          "type": "string"
+        },
+        "path": {
+          "$ref": "common.defs.json#/$defs/relative_posix_path"
+        }
+      },
+      "required": [
+        "digest"
+      ],
+      "type": "object"
+    },
+    "completed_at": {
+      "$ref": "common.defs.json#/$defs/iso8601_datetime"
+    },
+    "created_at": {
+      "$ref": "common.defs.json#/$defs/iso8601_datetime"
+    },
+    "exit": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "integer"
+        },
+        "kind": {
+          "$ref": "verifier_assurance.defs.json#/$defs/invocation_exit_kind"
+        },
+        "message": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "type": "object"
+    },
+    "failure_reason": {
+      "$ref": "verifier_assurance.defs.json#/$defs/failure_reason"
+    },
+    "guarantee_class": {
+      "$ref": "verifier_assurance.defs.json#/$defs/guarantee_class"
+    },
+    "indeterminate_reason": {
+      "$ref": "verifier_assurance.defs.json#/$defs/indeterminate_reason"
+    },
+    "input_digest": {
+      "$ref": "common.defs.json#/$defs/hex_digest"
+    },
+    "integrity": {
+      "$ref": "verifier_assurance.defs.json#/$defs/nested_integrity"
+    },
+    "invocation_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "type": "string"
+    },
+    "limits": {
+      "items": {
+        "$ref": "verifier_assurance.defs.json#/$defs/limit_entry"
+      },
+      "type": "array"
+    },
+    "normalized_result_digest": {
+      "$ref": "common.defs.json#/$defs/hex_digest"
+    },
+    "normalizer_version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "type": "string"
+    },
+    "producer": {
+      "maxLength": 256,
+      "minLength": 1,
+      "type": "string"
+    },
+    "producer_version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "type": "string"
+    },
+    "profile_ref": {
+      "$ref": "verifier_assurance.defs.json#/$defs/profile_ref"
+    },
+    "raw_backend_result_digest": {
+      "$ref": "common.defs.json#/$defs/hex_digest"
+    },
+    "result_ref": {
+      "$ref": "verifier_assurance.defs.json#/$defs/result_ref"
+    },
+    "schema_version": {
+      "$ref": "common.defs.json#/$defs/schema_version_v1"
+    },
+    "signature_or_digest": {
+      "$ref": "verifier_assurance.defs.json#/$defs/forbid_signature_or_digest"
+    },
+    "source_commit": {
+      "$ref": "verifier_assurance.defs.json#/$defs/git_commit_sha40"
+    },
+    "source_repo": {
+      "format": "uri",
+      "type": "string"
+    },
+    "started_at": {
+      "$ref": "common.defs.json#/$defs/iso8601_datetime"
+    },
+    "stderr_digest": {
+      "$ref": "common.defs.json#/$defs/hex_digest"
+    },
+    "stdout_digest": {
+      "$ref": "common.defs.json#/$defs/hex_digest"
+    }
+  },
+  "required": [
+    "schema_version",
+    "artifact_type",
+    "canonicalization_version",
+    "invocation_id",
+    "profile_ref",
+    "input_digest",
+    "command",
+    "started_at",
+    "completed_at",
+    "exit",
+    "stdout_digest",
+    "stderr_digest",
+    "raw_backend_result_digest",
+    "normalized_result_digest",
+    "producer",
+    "producer_version",
+    "integrity"
+  ],
+  "title": "VerifierInvocationRecord.v1",
+  "type": "object"
+}

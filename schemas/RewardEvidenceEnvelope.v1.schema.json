@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pcs.sentinelops.ci/schemas/RewardEvidenceEnvelope.v1.schema.json",
+  "title": "RewardEvidenceEnvelope.v1",
+  "description": "Reward evidence binding episode/step digests, scalar total, named components, verifier-result refs, claims, authority, and lifecycle.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "artifact_type",
+    "reward_envelope_id",
+    "created_at",
+    "producer",
+    "producer_version",
+    "source_repo",
+    "source_commit",
+    "episode_id",
+    "step_index",
+    "env_profile_id",
+    "env_profile_version",
+    "state_digest",
+    "trajectory_digest",
+    "scalar_total",
+    "composition_function",
+    "components",
+    "verifier_result_refs",
+    "claims_issued",
+    "claims_rejected",
+    "claims_unresolved",
+    "authority",
+    "lifecycle",
+    "integrity"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "$ref": "common.defs.json#/$defs/schema_version_v1" },
+    "artifact_type": { "const": "RewardEvidenceEnvelope.v1" },
+    "reward_envelope_id": { "type": "string", "minLength": 1 },
+    "created_at": { "$ref": "common.defs.json#/$defs/iso8601_datetime" },
+    "producer": { "type": "string", "minLength": 1 },
+    "producer_version": { "type": "string", "minLength": 1 },
+    "source_repo": { "type": "string", "format": "uri" },
+    "source_commit": { "$ref": "verifier_assurance.defs.json#/$defs/git_commit_sha40" },
+    "episode_id": { "type": "string", "minLength": 1 },
+    "step_index": { "type": "integer", "minimum": 0 },
+    "env_profile_id": { "type": "string", "minLength": 1 },
+    "env_profile_version": { "type": "string", "minLength": 1 },
+    "state_digest": { "$ref": "common.defs.json#/$defs/hex_digest" },
+    "trajectory_digest": { "$ref": "common.defs.json#/$defs/hex_digest" },
+    "scalar_total": { "$ref": "verifier_assurance.defs.json#/$defs/decimal_string" },
+    "composition_function": {
+      "$ref": "verifier_assurance.defs.json#/$defs/reward_composition_function"
+    },
+    "components": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["component_id", "value", "guarantee_class"],
+        "additionalProperties": false,
+        "properties": {
+          "component_id": { "type": "string", "minLength": 1 },
+          "value": { "$ref": "verifier_assurance.defs.json#/$defs/decimal_string" },
+          "weight": { "$ref": "verifier_assurance.defs.json#/$defs/decimal_string" },
+          "guarantee_class": { "$ref": "verifier_assurance.defs.json#/$defs/guarantee_class" },
+          "claim_id": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "verifier_result_refs": {
+      "type": "array",
+      "items": { "$ref": "verifier_assurance.defs.json#/$defs/artifact_ref" }
+    },
+    "claims_issued": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "claims_rejected": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "claims_unresolved": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "mandatory_unresolved_claim_ids": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "authority": {
+      "type": "object",
+      "required": ["authority_id", "authority_class"],
+      "additionalProperties": false,
+      "properties": {
+        "authority_id": { "type": "string", "minLength": 1 },
+        "authority_class": { "type": "string", "minLength": 1 }
+      }
+    },
+    "lifecycle": {
+      "type": "object",
+      "required": ["status"],
+      "additionalProperties": false,
+      "properties": {
+        "status": { "$ref": "verifier_assurance.defs.json#/$defs/lifecycle_status" },
+        "supersedes": { "type": "string", "minLength": 1 },
+        "superseded_by": { "type": "string", "minLength": 1 },
+        "revocation_reason": { "type": "string", "minLength": 1 },
+        "migration_record_id": { "type": "string", "minLength": 1 }
+      }
+    },
+    "profile_refs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["verifier_profile_id", "profile_digest", "applicability_status"],
+        "additionalProperties": false,
+        "properties": {
+          "verifier_profile_id": { "type": "string", "minLength": 1 },
+          "profile_digest": { "$ref": "common.defs.json#/$defs/hex_digest" },
+          "applicability_status": {
+            "$ref": "verifier_assurance.defs.json#/$defs/applicability_status"
+          }
+        }
+      }
+    },
+    "integrity": { "$ref": "verifier_assurance.defs.json#/$defs/nested_integrity" },
+    "signature_or_digest": {
+      "$ref": "verifier_assurance.defs.json#/$defs/forbid_signature_or_digest"
+    }
+  }
+}

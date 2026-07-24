@@ -15,6 +15,7 @@ LabTrust-Gym, CertifyEdge, Provability Fabric, and Scientific Memory import arti
 | Auditing evidence | [labtrust-release-fixtures.md](labtrust-release-fixtures.md), [semantic-check-policy.md](semantic-check-policy.md) |
 | Packaging / verifier OCI | [distribution.md](distribution.md) |
 | Security governance | [security-governance.md](security-governance.md), [../SECURITY.md](../SECURITY.md) |
+| Verifier Assurance (PCS-VA) | [verifier-assurance/ownership.md](verifier-assurance/ownership.md), [verifier-assurance/protocol.md](verifier-assurance/protocol.md), [verifier-assurance/cli.md](verifier-assurance/cli.md), [releases/verifier-assurance-rc.md](releases/verifier-assurance-rc.md) |
 
 ## Core guides
 
@@ -68,6 +69,8 @@ Maintainers can run the full gate through one command on each platform.
 | [lean-trust-kernel.md](lean-trust-kernel.md) | Lean formal checks |
 | [distribution.md](distribution.md) | Validator vs verifier products |
 | [security-governance.md](security-governance.md) | Branch protection, SBOM/SLSA, retention |
+| [verifier-assurance/](verifier-assurance/) | Verifier Assurance Protocol (PCS-VA): ownership, protocol, semantic rules, CLI, non-claims, migration, threat-model |
+| [releases/verifier-assurance-rc.md](releases/verifier-assurance-rc.md) | PCS-VA RC checklist and six-artifact surface |
 
 ## Repository layout
 

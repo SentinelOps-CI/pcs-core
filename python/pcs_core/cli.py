@@ -66,6 +66,200 @@ def cmd_validate(path: Path) -> int:
         return 1
 
 
+def _cmd_va_validate(path: Path, *, expected_type: str, as_json: bool = False) -> int:
+    try:
+        data = _load_json(path)
+        from pcs_core.verifier_assurance_validate import (
+            SemanticIssue,
+            validate_va_semantics,
+        )
+
+        validate_artifact(data, expected_type, release_grade=True)
+        issues = validate_va_semantics(data, expected_type, as_issues=True)
+        assert isinstance(issues, list)
+        if issues:
+            structured = []
+            for item in issues:
+                if isinstance(item, SemanticIssue):
+                    structured.append(
+                        {"code": item.code, "path": item.path, "message": item.message}
+                    )
+                else:
+                    structured.append(
+                        {"code": "ValidationError", "path": "$", "message": str(item)}
+                    )
+            if as_json:
+                print(
+                    json.dumps(
+                        {
+                            "ok": False,
+                            "artifact_type": expected_type,
+                            "path": str(path),
+                            "errors": structured,
+                        }
+                    )
+                )
+            else:
+                print(f"FAIL {path}: semantic validation failed for {expected_type}", file=sys.stderr)
+                for item in structured:
+                    print(
+                        f"  - {item['code']} at {item['path']}: {item['message']}",
+                        file=sys.stderr,
+                    )
+            return 1
+        if as_json:
+            print(json.dumps({"ok": True, "artifact_type": expected_type, "path": str(path)}))
+        else:
+            print(f"OK {expected_type} {path}")
+        return 0
+    except ValidationError as exc:
+        errors: list[dict[str, str]] = []
+        for err in exc.errors:
+            if " at " in err and ": " in err:
+                code, rest = err.split(" at ", 1)
+                path_part, message = rest.split(": ", 1)
+                errors.append({"code": code, "path": path_part, "message": message})
+            else:
+                errors.append({"code": "ValidationError", "path": "$", "message": err})
+        if not errors:
+            errors = [{"code": "ValidationError", "path": "$", "message": str(exc)}]
+        payload = {
+            "ok": False,
+            "artifact_type": expected_type,
+            "path": str(path),
+            "errors": errors,
+        }
+        if as_json:
+            print(json.dumps(payload))
+        else:
+            print(f"FAIL {path}: {exc}", file=sys.stderr)
+            for err in exc.errors:
+                print(f"  - {err}", file=sys.stderr)
+        return 1
+
+
+def cmd_assurance_build_report(
+    *,
+    campaign: Path,
+    results: Path,
+    adjudications: Path,
+    out: Path,
+    report_id: str,
+    created_at: str,
+    source_commit: str,
+    release_grade: bool,
+    as_json: bool,
+) -> int:
+    from pcs_core.verifier_assurance_report import (
+        ReportBuildError,
+        build_assurance_report_from_paths,
+    )
+    from pcs_core.verifier_assurance_validate import SemanticIssue
+
+    try:
+        report = build_assurance_report_from_paths(
+            campaign_path=campaign,
+            results_dir=results,
+            adjudications_dir=adjudications,
+            report_id=report_id,
+            created_at=created_at,
+            source_commit=source_commit,
+            release_grade=release_grade,
+            out_path=out,
+        )
+        if as_json:
+            print(json.dumps({"ok": True, "out": str(out), "report_id": report["report_id"]}))
+        else:
+            print(f"OK wrote {out}")
+        return 0
+    except ReportBuildError as exc:
+        structured = []
+        for item in exc.issues:
+            if isinstance(item, SemanticIssue):
+                structured.append(
+                    {"code": item.code, "path": item.path, "message": item.message}
+                )
+            else:
+                structured.append(
+                    {"code": "BuildFailure", "path": "$", "message": str(item)}
+                )
+        if as_json:
+            print(json.dumps({"ok": False, "errors": structured}))
+        else:
+            print(f"FAIL build-report: {exc}", file=sys.stderr)
+            for item in structured:
+                print(
+                    f"  - {item['code']} at {item['path']}: {item['message']}",
+                    file=sys.stderr,
+                )
+        return 1
+    except (ValidationError, OSError, ValueError) as exc:
+        if as_json:
+            print(
+                json.dumps(
+                    {
+                        "ok": False,
+                        "errors": [
+                            {"code": "BuildFailure", "path": "$", "message": str(exc)}
+                        ],
+                    }
+                )
+            )
+        else:
+            print(f"FAIL build-report: {exc}", file=sys.stderr)
+        return 1
+
+
+def cmd_assurance_verify_report(path: Path, *, as_json: bool = False) -> int:
+    try:
+        from pcs_core.verifier_assurance_report import verify_assurance_report
+        from pcs_core.verifier_assurance_validate import SemanticIssue
+
+        data = _load_json(path)
+        validate_artifact(data, "VerifierAssuranceReport.v1", release_grade=True)
+        issues = verify_assurance_report(data)
+        if issues:
+            structured = []
+            for item in issues:
+                if isinstance(item, SemanticIssue):
+                    structured.append(
+                        {"code": item.code, "path": item.path, "message": item.message}
+                    )
+                else:
+                    structured.append(
+                        {"code": "ValidationError", "path": "$", "message": str(item)}
+                    )
+            if as_json:
+                print(json.dumps({"ok": False, "path": str(path), "errors": structured}))
+            else:
+                print(
+                    f"FAIL {path}: assurance report verification failed",
+                    file=sys.stderr,
+                )
+                for item in structured:
+                    print(
+                        f"  - {item['code']} at {item['path']}: {item['message']}",
+                        file=sys.stderr,
+                    )
+            return 1
+        if as_json:
+            print(json.dumps({"ok": True, "path": str(path)}))
+        else:
+            print(f"OK VerifierAssuranceReport.v1 {path}")
+        return 0
+    except ValidationError as exc:
+        errors = [{"code": "ValidationError", "path": "$", "message": str(exc)}]
+        for err in exc.errors:
+            errors.append({"code": "ValidationError", "path": "$", "message": err})
+        if as_json:
+            print(json.dumps({"ok": False, "path": str(path), "errors": errors}))
+        else:
+            print(f"FAIL {path}: {exc}", file=sys.stderr)
+            for err in exc.errors:
+                print(f"  - {err}", file=sys.stderr)
+        return 1
+
+
 def cmd_hash(path: Path) -> int:
     data = _load_json(path)
     print(canonical_hash(data))
@@ -1254,6 +1448,62 @@ def main(argv: list[str] | None = None) -> int:
         help="Emit ReleaseGateCheckReport.v0 JSON",
     )
 
+    verifier_parser = sub.add_parser("verifier", help="Verifier Assurance profile/result commands")
+    verifier_sub = verifier_parser.add_subparsers(dest="verifier_cmd", required=True)
+    verifier_profile = verifier_sub.add_parser("profile", help="VerifierProfile.v1 commands")
+    verifier_profile_sub = verifier_profile.add_subparsers(dest="verifier_profile_cmd", required=True)
+    p_vp_validate = verifier_profile_sub.add_parser("validate", help="Validate VerifierProfile.v1")
+    p_vp_validate.add_argument("path", type=Path)
+    p_vp_validate.add_argument("--json", action="store_true")
+    verifier_result = verifier_sub.add_parser("result", help="VerificationResult.v1 commands")
+    verifier_result_sub = verifier_result.add_subparsers(dest="verifier_result_cmd", required=True)
+    p_vr_validate = verifier_result_sub.add_parser("validate", help="Validate VerificationResult.v1")
+    p_vr_validate.add_argument("path", type=Path)
+    p_vr_validate.add_argument("--json", action="store_true")
+
+    reward_parser = sub.add_parser("reward", help="RewardEvidenceEnvelope.v1 commands")
+    reward_sub = reward_parser.add_subparsers(dest="reward_cmd", required=True)
+    p_reward_validate = reward_sub.add_parser("validate", help="Validate RewardEvidenceEnvelope.v1")
+    p_reward_validate.add_argument("path", type=Path)
+    p_reward_validate.add_argument("--json", action="store_true")
+
+    campaign_parser = sub.add_parser("campaign", help="OptimizationCampaignManifest.v1 commands")
+    campaign_sub = campaign_parser.add_subparsers(dest="campaign_cmd", required=True)
+    p_campaign_validate = campaign_sub.add_parser(
+        "validate", help="Validate OptimizationCampaignManifest.v1"
+    )
+    p_campaign_validate.add_argument("path", type=Path)
+    p_campaign_validate.add_argument("--json", action="store_true")
+
+    adjudication_parser = sub.add_parser("adjudication", help="AdjudicationRecord.v1 commands")
+    adjudication_sub = adjudication_parser.add_subparsers(dest="adjudication_cmd", required=True)
+    p_adj_validate = adjudication_sub.add_parser("validate", help="Validate AdjudicationRecord.v1")
+    p_adj_validate.add_argument("path", type=Path)
+    p_adj_validate.add_argument("--json", action="store_true")
+
+    assurance_parser = sub.add_parser("assurance", help="VerifierAssuranceReport.v1 commands")
+    assurance_sub = assurance_parser.add_subparsers(dest="assurance_cmd", required=True)
+    p_assurance_build = assurance_sub.add_parser(
+        "build-report", help="Build VerifierAssuranceReport.v1 offline"
+    )
+    p_assurance_build.add_argument("--campaign", type=Path, required=True)
+    p_assurance_build.add_argument("--results", type=Path, required=True)
+    p_assurance_build.add_argument("--adjudications", type=Path, required=True)
+    p_assurance_build.add_argument("--out", type=Path, required=True)
+    p_assurance_build.add_argument("--report-id", default="report-local")
+    p_assurance_build.add_argument("--created-at", default="2026-07-24T15:00:00Z")
+    p_assurance_build.add_argument(
+        "--source-commit",
+        default="e068794683959c52a19594a6d271dd5e69f3c999",
+    )
+    p_assurance_build.add_argument("--release-grade", action="store_true")
+    p_assurance_build.add_argument("--json", action="store_true")
+    p_assurance_verify = assurance_sub.add_parser(
+        "verify-report", help="Verify VerifierAssuranceReport.v1"
+    )
+    p_assurance_verify.add_argument("path", type=Path)
+    p_assurance_verify.add_argument("--json", action="store_true")
+
     args = parser.parse_args(argv)
 
     if args.command == "capabilities":
@@ -1443,6 +1693,40 @@ def main(argv: list[str] | None = None) -> int:
             require_oci_publish=args.require_oci_publish,
             as_json=args.json,
         )
+    if args.command == "verifier" and args.verifier_cmd == "profile":
+        return _cmd_va_validate(
+            args.path, expected_type="VerifierProfile.v1", as_json=args.json
+        )
+    if args.command == "verifier" and args.verifier_cmd == "result":
+        return _cmd_va_validate(
+            args.path, expected_type="VerificationResult.v1", as_json=args.json
+        )
+    if args.command == "reward" and args.reward_cmd == "validate":
+        return _cmd_va_validate(
+            args.path, expected_type="RewardEvidenceEnvelope.v1", as_json=args.json
+        )
+    if args.command == "campaign" and args.campaign_cmd == "validate":
+        return _cmd_va_validate(
+            args.path, expected_type="OptimizationCampaignManifest.v1", as_json=args.json
+        )
+    if args.command == "adjudication" and args.adjudication_cmd == "validate":
+        return _cmd_va_validate(
+            args.path, expected_type="AdjudicationRecord.v1", as_json=args.json
+        )
+    if args.command == "assurance" and args.assurance_cmd == "build-report":
+        return cmd_assurance_build_report(
+            campaign=args.campaign,
+            results=args.results,
+            adjudications=args.adjudications,
+            out=args.out,
+            report_id=args.report_id,
+            created_at=args.created_at,
+            source_commit=args.source_commit,
+            release_grade=args.release_grade,
+            as_json=args.json,
+        )
+    if args.command == "assurance" and args.assurance_cmd == "verify-report":
+        return cmd_assurance_verify_report(args.path, as_json=args.json)
 
     parser.print_help()
     return 2

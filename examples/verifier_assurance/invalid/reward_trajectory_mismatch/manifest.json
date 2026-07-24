@@ -1,0 +1,5 @@
+{
+  "artifact_file": "artifact.json",
+  "artifact_type": "RewardEvidenceEnvelope.v1",
+  "expected_error": "RewardTrajectoryMismatch"
+}
