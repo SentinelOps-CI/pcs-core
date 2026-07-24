@@ -270,26 +270,9 @@
       ],
       "type": "string"
     },
-    "invocation_exit_kind": {
-      "enum": [
-        "exited",
-        "timeout",
-        "missing_checker",
-        "spawn_error",
-        "signal",
-        "cancelled",
-        "resource_exhausted",
-        "error",
-        "other"
-      ],
-      "type": "string"
-    },
     "invocation_ref": {
       "additionalProperties": false,
       "properties": {
-        "artifact_type": {
-          "const": "VerifierInvocationRecord.v1"
-        },
         "invocation_digest": {
           "$ref": "common.defs.json#/$defs/hex_digest"
         },
@@ -346,25 +329,6 @@
         "formal_proof",
         "replay",
         "hybrid",
-        "other"
-      ],
-      "type": "string"
-    },
-    "mutation_class": {
-      "enum": [
-        "remove_success_predicate",
-        "remove_process_predicate",
-        "remove_authority_predicate",
-        "change_threshold",
-        "reduce_test_subset",
-        "alter_timeout",
-        "suppress_error",
-        "change_rubric",
-        "change_prompt",
-        "ensemble_quorum",
-        "hidden_state_access",
-        "policy_bundle",
-        "abstention",
         "other"
       ],
       "type": "string"
@@ -514,15 +478,6 @@
         "entries"
       ],
       "type": "object"
-    },
-    "replay_status": {
-      "enum": [
-        "matched",
-        "drifted",
-        "indeterminate",
-        "failed"
-      ],
-      "type": "string"
     },
     "result_ref": {
       "additionalProperties": false,

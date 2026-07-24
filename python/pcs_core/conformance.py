@@ -1026,9 +1026,6 @@ def _suite_verifier_assurance() -> tuple[list[str], list[str], int]:
     for artifact_type in (
         "VerifierProfile.v1",
         "VerificationResult.v1",
-        "VerifierInvocationRecord.v1",
-        "VerifierReplayReport.v1",
-        "VerifierMutationManifest.v1",
         "RewardEvidenceEnvelope.v1",
         "OptimizationCampaignManifest.v1",
         "AdjudicationRecord.v1",
