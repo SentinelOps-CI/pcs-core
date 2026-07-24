@@ -74,6 +74,19 @@ from pcs_core.validate_pf_core import (
 def validate_semantics(data: dict[str, Any], artifact_type: str) -> list[str]:
     errors: list[str] = []
 
+    if artifact_type in {
+        "VerifierProfile.v1",
+        "VerificationResult.v1",
+        "RewardEvidenceEnvelope.v1",
+        "OptimizationCampaignManifest.v1",
+        "AdjudicationRecord.v1",
+        "VerifierAssuranceReport.v1",
+    }:
+        from pcs_core.verifier_assurance_validate import validate_va_semantics
+
+        errors.extend(validate_va_semantics(data, artifact_type))
+        return errors
+
     if artifact_type == "ArtifactRegistry.v0":
         errors.extend(validate_artifact_registry_semantics(data))
         return errors
@@ -457,6 +470,15 @@ def check_valid_examples(examples_dir: Path | None = None) -> None:
         for path in sorted(ingest_examples.glob("*.pcs_bench_ingest.valid.json")):
             validate_file(path)
 
+    from pcs_core.verifier_assurance_validate import check_verifier_assurance_valid_fixtures
+
+    va_errors = check_verifier_assurance_valid_fixtures()
+    if va_errors:
+        raise ValidationError(
+            "Verifier Assurance valid fixtures failed",
+            errors=va_errors,
+        )
+
     check_pf_core_valid_fixtures()
 
 
@@ -484,3 +506,11 @@ def check_invalid_examples(examples_dir: Path | None = None) -> None:
         if not schema_errors and not semantic_errors:
             raise ValidationError(f"Expected {filename} to fail validation")
     check_pf_core_invalid_fixtures()
+    from pcs_core.verifier_assurance_validate import check_verifier_assurance_invalid_fixtures
+
+    va_invalid_errors = check_verifier_assurance_invalid_fixtures()
+    if va_invalid_errors:
+        raise ValidationError(
+            "Verifier Assurance invalid fixtures failed",
+            errors=va_invalid_errors,
+        )

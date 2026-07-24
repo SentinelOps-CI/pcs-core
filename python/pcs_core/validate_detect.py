@@ -129,6 +129,15 @@ ARTIFACT_SCHEMAS: dict[str, str] = {
     "FormatAssertionProbe.v0": "FormatAssertionProbe.v0.schema.json",
     "ExternalAttestation.v0": "ExternalAttestation.v0.schema.json",
     "ReleaseProvenanceBinding.v0": "ReleaseProvenanceBinding.v0.schema.json",
+    "VerifierProfile.v1": "VerifierProfile.v1.schema.json",
+    "VerificationResult.v1": "VerificationResult.v1.schema.json",
+    "VerifierInvocationRecord.v1": "VerifierInvocationRecord.v1.schema.json",
+    "VerifierReplayReport.v1": "VerifierReplayReport.v1.schema.json",
+    "VerifierMutationManifest.v1": "VerifierMutationManifest.v1.schema.json",
+    "RewardEvidenceEnvelope.v1": "RewardEvidenceEnvelope.v1.schema.json",
+    "OptimizationCampaignManifest.v1": "OptimizationCampaignManifest.v1.schema.json",
+    "AdjudicationRecord.v1": "AdjudicationRecord.v1.schema.json",
+    "VerifierAssuranceReport.v1": "VerifierAssuranceReport.v1.schema.json",
 }
 
 
@@ -208,7 +217,7 @@ def _detect_artifact_type_heuristic(data: dict[str, Any]) -> str | None:
         return "SignedScienceClaimBundle.v0"
     if "bundle_id" in data and "claim_artifact" in data:
         return "ScienceClaimBundle.v0"
-    if "verification_id" in data:
+    if "verification_id" in data and data.get("schema_version") != "v1":
         return "VerificationResult.v0"
     if "receipt_id" in data:
         return "RuntimeReceipt.v0"
@@ -465,7 +474,7 @@ def _detect_artifact_type_heuristic(data: dict[str, Any]) -> str | None:
         return "SignedScienceClaimBundle.v0"
     if "bundle_id" in data and "claim_artifact" in data:
         return "ScienceClaimBundle.v0"
-    if "verification_id" in data:
+    if "verification_id" in data and data.get("schema_version") != "v1":
         return "VerificationResult.v0"
     if "receipt_id" in data:
         return "RuntimeReceipt.v0"
@@ -520,6 +529,18 @@ def _detect_artifact_type_heuristic(data: dict[str, Any]) -> str | None:
         and "signature" in data
     ):
         return "ArtifactIntegrity.v1"
+    if data.get("schema_version") == "v1" and data.get("artifact_type") in {
+        "VerifierProfile.v1",
+        "VerificationResult.v1",
+        "VerifierInvocationRecord.v1",
+        "VerifierReplayReport.v1",
+        "VerifierMutationManifest.v1",
+        "RewardEvidenceEnvelope.v1",
+        "OptimizationCampaignManifest.v1",
+        "AdjudicationRecord.v1",
+        "VerifierAssuranceReport.v1",
+    }:
+        return str(data["artifact_type"])
     if (
         data.get("schema_version") == "v0"
         and data.get("artifact_type") == "TrustedKeyRegistry.v0"
