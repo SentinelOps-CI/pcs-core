@@ -1,5 +1,0 @@
-{
-  "artifact_file": "artifact.json",
-  "artifact_type": "VerifierMutationManifest.v1",
-  "expected_error": "production_prohibition"
-}

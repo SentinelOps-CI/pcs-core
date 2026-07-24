@@ -66,9 +66,6 @@ const ARTIFACT_SCHEMAS: &[(&str, &str)] = &[
     ("ArtifactIntegrity.v1", "ArtifactIntegrity.v1.schema.json"),
     ("VerifierProfile.v1", "VerifierProfile.v1.schema.json"),
     ("VerificationResult.v1", "VerificationResult.v1.schema.json"),
-    ("VerifierInvocationRecord.v1", "VerifierInvocationRecord.v1.schema.json"),
-    ("VerifierReplayReport.v1", "VerifierReplayReport.v1.schema.json"),
-    ("VerifierMutationManifest.v1", "VerifierMutationManifest.v1.schema.json"),
     ("RewardEvidenceEnvelope.v1", "RewardEvidenceEnvelope.v1.schema.json"),
     (
         "OptimizationCampaignManifest.v1",

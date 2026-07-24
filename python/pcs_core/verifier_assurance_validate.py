@@ -16,9 +16,6 @@ VA_ARTIFACT_TYPES = frozenset(
     {
         "VerifierProfile.v1",
         "VerificationResult.v1",
-        "VerifierInvocationRecord.v1",
-        "VerifierReplayReport.v1",
-        "VerifierMutationManifest.v1",
         "RewardEvidenceEnvelope.v1",
         "OptimizationCampaignManifest.v1",
         "AdjudicationRecord.v1",
@@ -26,14 +23,11 @@ VA_ARTIFACT_TYPES = frozenset(
     }
 )
 
-# OVK pin surface: profile, result, invocation, replay, mutation.
+# OVK-facing producer pins in pcs-core: profile + result only.
 OVK_VA_ARTIFACT_TYPES = frozenset(
     {
         "VerifierProfile.v1",
         "VerificationResult.v1",
-        "VerifierInvocationRecord.v1",
-        "VerifierReplayReport.v1",
-        "VerifierMutationManifest.v1",
     }
 )
 
@@ -885,68 +879,6 @@ def validate_va_semantics(
 
 
 
-def validate_invocation_record_semantics(
-    data: dict[str, Any], *, as_issues: bool = False
-) -> list[Any]:
-    issues = _forbid_legacy_signature_field(data, "VerifierInvocationRecord.v1")
-    issues.extend(_require_integrity(data, "VerifierInvocationRecord.v1"))
-    raw = data.get("raw_backend_result_digest")
-    normalized = data.get("normalized_result_digest")
-    if (
-        isinstance(raw, str)
-        and isinstance(normalized, str)
-        and raw == normalized
-        and data.get("normalizer_version")
-    ):
-        issues.append(
-            SemanticIssue(
-                "IdenticalNormalizationDigests",
-                "normalized_result_digest",
-                "when normalization is applied, raw and normalized digests must differ",
-            )
-        )
-    return _as_strings(issues, as_issues=as_issues)
-
-
-def validate_replay_report_semantics(
-    data: dict[str, Any], *, as_issues: bool = False
-) -> list[Any]:
-    issues = _forbid_legacy_signature_field(data, "VerifierReplayReport.v1")
-    issues.extend(_require_integrity(data, "VerifierReplayReport.v1"))
-    drift = data.get("drift") if isinstance(data.get("drift"), dict) else {}
-    status = data.get("replay_status")
-    if status == "matched" and (
-        drift.get("raw_digest_match") is False
-        or drift.get("normalized_digest_match") is False
-        or data.get("original_raw_digest") != data.get("replay_raw_digest")
-        or data.get("original_normalized_digest") != data.get("replay_normalized_digest")
-    ):
-        issues.append(
-            SemanticIssue(
-                "ReplayMatchedWithDrift",
-                "replay_status",
-                "matched status requires matching digests and drift flags true",
-            )
-        )
-    return _as_strings(issues, as_issues=as_issues)
-
-
-def validate_mutation_manifest_semantics(
-    data: dict[str, Any], *, as_issues: bool = False
-) -> list[Any]:
-    issues = _forbid_legacy_signature_field(data, "VerifierMutationManifest.v1")
-    issues.extend(_require_integrity(data, "VerifierMutationManifest.v1"))
-    if data.get("production_prohibition") is not True:
-        issues.append(
-            SemanticIssue(
-                "ProductionProhibitionRequired",
-                "production_prohibition",
-                "production_prohibition must be true",
-            )
-        )
-    return _as_strings(issues, as_issues=as_issues)
-
-
 def validate_verifier_assurance_semantics(
     data: dict[str, Any],
     artifact_type: str,
@@ -960,12 +892,6 @@ def validate_verifier_assurance_semantics(
         return validate_verification_result_semantics(
             data, as_issues=as_issues, context=context
         )
-    if artifact_type == "VerifierInvocationRecord.v1":
-        return validate_invocation_record_semantics(data, as_issues=as_issues)
-    if artifact_type == "VerifierReplayReport.v1":
-        return validate_replay_report_semantics(data, as_issues=as_issues)
-    if artifact_type == "VerifierMutationManifest.v1":
-        return validate_mutation_manifest_semantics(data, as_issues=as_issues)
     if artifact_type == "RewardEvidenceEnvelope.v1":
         return validate_reward_envelope_semantics(
             data, as_issues=as_issues, context=context
