@@ -910,6 +910,143 @@ def _check_pf_core_generated_lean_proof(errors: list[str], checks: int) -> int:
     return checks
 
 
+@_record("verifier-assurance")
+def _suite_verifier_assurance() -> tuple[list[str], list[str], int]:
+    from pcs_core.hash import canonical_hash
+    from pcs_core.verifier_assurance_report import (
+        build_assurance_report,
+        report_body_without_integrity,
+        verify_assurance_report,
+    )
+    from pcs_core.verifier_assurance_validate import (
+        SemanticIssue,
+        check_verifier_assurance_invalid_fixtures,
+        check_verifier_assurance_valid_fixtures,
+        iter_va_example_dirs,
+        load_va_context_from_dir,
+        validate_va_semantics,
+    )
+
+    errors = check_verifier_assurance_valid_fixtures()
+    errors.extend(check_verifier_assurance_invalid_fixtures())
+    checks = len(iter_va_example_dirs("valid")) + len(iter_va_example_dirs("invalid"))
+
+    # Report rebuild determinism (same inputs → identical body excluding integrity).
+    rebuild = repo_root() / "examples" / "verifier_assurance" / "valid" / "report_rebuild"
+    if rebuild.is_dir():
+        checks += 1
+        campaign = json.loads((rebuild / "campaign.json").read_text(encoding="utf-8"))
+        results = [
+            json.loads(p.read_text(encoding="utf-8"))
+            for p in sorted((rebuild / "results").glob("*.json"))
+        ]
+        adjudications = [
+            json.loads(p.read_text(encoding="utf-8"))
+            for p in sorted((rebuild / "adjudications").glob("*.json"))
+        ]
+        kwargs = {
+            "report_id": "rep-det",
+            "created_at": "2026-07-24T15:00:00Z",
+            "source_commit": "e068794683959c52a19594a6d271dd5e69f3c999",
+            "release_grade": True,
+            "excluded_items": [{"item_id": "ex-1", "reason_code": "out_of_scope"}],
+            "unadjudicated_items": [],
+            "applicability_limits": ["synthetic fixture only"],
+        }
+        a = build_assurance_report(
+            campaign=campaign, results=results, adjudications=adjudications, **kwargs
+        )
+        b = build_assurance_report(
+            campaign=campaign, results=results, adjudications=adjudications, **kwargs
+        )
+        if report_body_without_integrity(a) != report_body_without_integrity(b):
+            errors.append("report rebuild body not deterministic")
+        if a["integrity"]["artifact_digest"] != b["integrity"]["artifact_digest"]:
+            errors.append("report rebuild digest not deterministic")
+        golden = json.loads((rebuild / "report.json").read_text(encoding="utf-8"))
+        if verify_assurance_report(golden):
+            errors.append("golden report_rebuild/report.json failed verify")
+        tampered = dict(golden)
+        tampered["report_id"] = "tampered"
+        tamper_codes = {
+            i.code if isinstance(i, SemanticIssue) else str(i)
+            for i in verify_assurance_report(tampered)
+        }
+        if "ReportDigestMismatch" not in tamper_codes:
+            errors.append("tampered golden report did not yield ReportDigestMismatch")
+        checks += 2
+
+    # Producer dialect gates under benchmarks/verifier_assurance_conformance.
+    bench = repo_root() / "benchmarks" / "verifier_assurance_conformance"
+    if bench.is_dir():
+        from pcs_core.validate_detect import validate_schema
+
+        for case_dir in sorted((bench / "invalid").iterdir() if (bench / "invalid").is_dir() else []):
+            if not case_dir.is_dir() or not (case_dir / "manifest.json").is_file():
+                continue
+            checks += 1
+            manifest = json.loads((case_dir / "manifest.json").read_text(encoding="utf-8"))
+            artifact = json.loads(
+                (case_dir / str(manifest.get("artifact_file") or "artifact.json")).read_text(
+                    encoding="utf-8"
+                )
+            )
+            artifact_type = str(manifest["artifact_type"])
+            expected = str(manifest["expected_error"])
+            schema_errors = validate_schema(artifact, artifact_type)
+            context = load_va_context_from_dir(case_dir)
+            semantic = validate_va_semantics(
+                artifact, artifact_type, as_issues=True, context=context
+            )
+            joined = " ".join(schema_errors) + " " + " ".join(str(i) for i in semantic)
+            codes = {
+                i.code if isinstance(i, SemanticIssue) else str(i) for i in semantic
+            }
+            if expected not in codes and expected not in joined:
+                errors.append(
+                    f"benchmark {case_dir.name}: expected {expected!r}, got {sorted(codes)}"
+                )
+
+        for path in sorted((bench / "valid").rglob("*.json")) if (bench / "valid").is_dir() else []:
+            if path.name == "manifest.json":
+                continue
+            checks += 1
+            data = json.loads(path.read_text(encoding="utf-8"))
+            if not isinstance(data, dict) or "artifact_type" not in data:
+                continue
+            artifact_type = str(data["artifact_type"])
+            schema_errors = validate_schema(data, artifact_type)
+            semantic = validate_va_semantics(data, artifact_type, as_issues=True)
+            if schema_errors or semantic:
+                errors.append(f"benchmark valid {path}: {schema_errors or semantic}")
+
+    # Shared hash vectors for the six core types.
+    from pcs_core.shared_hash_vectors import VECTOR_SPECS, load_vector
+
+    for artifact_type in (
+        "VerifierProfile.v1",
+        "VerificationResult.v1",
+        "VerifierInvocationRecord.v1",
+        "VerifierReplayReport.v1",
+        "VerifierMutationManifest.v1",
+        "RewardEvidenceEnvelope.v1",
+        "OptimizationCampaignManifest.v1",
+        "AdjudicationRecord.v1",
+        "VerifierAssuranceReport.v1",
+    ):
+        if artifact_type not in VECTOR_SPECS:
+            errors.append(f"missing shared hash vector for {artifact_type}")
+            continue
+        checks += 1
+        vector = load_vector(artifact_type)
+        input_rel = vector.get("input") or vector.get("input_file")
+        data = json.loads((repo_root() / str(input_rel)).read_text(encoding="utf-8"))
+        if canonical_hash(data) != vector["expected_digest"]:
+            errors.append(f"hash vector mismatch for {artifact_type}")
+
+    return errors, [], max(checks, 1)
+
+
 @_record("pf-core-cross-language")
 def _suite_pf_core_cross_language() -> tuple[list[str], list[str], int]:
     import subprocess
