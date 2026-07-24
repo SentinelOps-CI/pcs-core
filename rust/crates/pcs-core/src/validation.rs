@@ -64,6 +64,18 @@ const ARTIFACT_SCHEMAS: &[(&str, &str)] = &[
         "PFCoreReleaseBundleManifest.v0.schema.json",
     ),
     ("ArtifactIntegrity.v1", "ArtifactIntegrity.v1.schema.json"),
+    ("VerifierProfile.v1", "VerifierProfile.v1.schema.json"),
+    ("VerificationResult.v1", "VerificationResult.v1.schema.json"),
+    ("VerifierInvocationRecord.v1", "VerifierInvocationRecord.v1.schema.json"),
+    ("VerifierReplayReport.v1", "VerifierReplayReport.v1.schema.json"),
+    ("VerifierMutationManifest.v1", "VerifierMutationManifest.v1.schema.json"),
+    ("RewardEvidenceEnvelope.v1", "RewardEvidenceEnvelope.v1.schema.json"),
+    (
+        "OptimizationCampaignManifest.v1",
+        "OptimizationCampaignManifest.v1.schema.json",
+    ),
+    ("AdjudicationRecord.v1", "AdjudicationRecord.v1.schema.json"),
+    ("VerifierAssuranceReport.v1", "VerifierAssuranceReport.v1.schema.json"),
     (
         "FormatAssertionProbe.v0",
         "FormatAssertionProbe.v0.schema.json",
@@ -170,6 +182,12 @@ const EXPLICIT_ARTIFACT_TYPES: &[&str] = &[
     "PFCoreKernelManifest.v0",
     "PFCoreReleaseBundleManifest.v0",
     "ArtifactIntegrity.v1",
+    "VerifierProfile.v1",
+    "VerificationResult.v1",
+    "RewardEvidenceEnvelope.v1",
+    "OptimizationCampaignManifest.v1",
+    "AdjudicationRecord.v1",
+    "VerifierAssuranceReport.v1",
     "FormatAssertionProbe.v0",
     "ExternalAttestation.v0",
 ];
@@ -615,6 +633,17 @@ pub fn validate_semantics(value: &Value, artifact_type: &str) -> Result<(), Vali
     if PROTOCOL_ARTIFACT_TYPES.contains(&artifact_type) {
         return Ok(());
     }
+    // VA *.v1: mirror Python early-return (dedicated semantic module; skip generic commit walk).
+    if crate::verifier_assurance::is_va_artifact_type(artifact_type) {
+        let errors = crate::verifier_assurance::validate_va_semantics_strings(value, artifact_type);
+        return if errors.is_empty() {
+            Ok(())
+        } else {
+            Err(ValidationError {
+                message: errors.join("; "),
+            })
+        };
+    }
     let mut errors = Vec::new();
     check_source_commits(value, "", &mut errors, false);
 
@@ -850,7 +879,8 @@ mod tests {
             let example_name = vector["input"]
                 .as_str()
                 .or_else(|| vector["input_file"].as_str())
-                .unwrap();
+                .unwrap()
+                .replace('\\', "/");
             let example_path = if example_name.starts_with("examples/") {
                 PathBuf::from(env!("CARGO_MANIFEST_DIR"))
                     .join("../../..")

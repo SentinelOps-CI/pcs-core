@@ -4,6 +4,7 @@ pub mod pf_core_catalog;
 pub mod schema;
 pub mod status;
 pub mod validation;
+pub mod verifier_assurance;
 
 pub use hash::{
     assert_canonical_number_policy, canonical_hash, canonical_hash_legacy, canonical_hash_release,
@@ -26,4 +27,9 @@ pub use pf_core::{
 pub use pf_core_catalog::{CAPABILITY_CATALOG, EFFECT_KINDS, ROLE_CAPABILITY_MAP, TOOL_NAME_MAP};
 pub use validation::{
     detect_artifact_type, validate_artifact, validate_semantics, ValidationError,
+};
+pub use verifier_assurance::{
+    attach_nested_integrity, construct_va_artifact, is_va_artifact_type,
+    validate_assurance_report_semantics, validate_va_semantics, validate_va_semantics_strings,
+    verify_assurance_report, SemanticIssue,
 };
