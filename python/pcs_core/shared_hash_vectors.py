@@ -28,6 +28,15 @@ VECTOR_SPECS: dict[str, str] = {
     "ComputationRunReceipt.v0": "examples/computation_run_receipt.valid.json",
     "ResultArtifact.v0": "examples/result_artifact.valid.json",
     "ComputationWitness.v0": "examples/computation_witness.valid.json",
+    "VerifierProfile.v1": "examples/verifier_assurance/valid/profile_basic/profile.json",
+    "VerificationResult.v1": "examples/verifier_assurance/valid/result_accept/result.json",
+    "VerifierInvocationRecord.v1": "examples/verifier_assurance/valid/invocation_basic/invocation.json",
+    "VerifierReplayReport.v1": "examples/verifier_assurance/valid/replay_matched/replay.json",
+    "VerifierMutationManifest.v1": "examples/verifier_assurance/valid/mutation_timeout/mutation.json",
+    "RewardEvidenceEnvelope.v1": "examples/verifier_assurance/valid/reward_scalar/reward.json",
+    "OptimizationCampaignManifest.v1": "examples/verifier_assurance/valid/campaign_basic/campaign.json",
+    "AdjudicationRecord.v1": "examples/verifier_assurance/valid/adjudication_basic/adjudication.json",
+    "VerifierAssuranceReport.v1": "examples/verifier_assurance/valid/report_rebuild/report.json",
 }
 
 VECTOR_FILENAMES: dict[str, str] = {
@@ -49,6 +58,15 @@ VECTOR_FILENAMES: dict[str, str] = {
     "ComputationRunReceipt.v0": "computation_run_receipt.vector.json",
     "ResultArtifact.v0": "result_artifact.vector.json",
     "ComputationWitness.v0": "computation_witness.vector.json",
+    "VerifierProfile.v1": "verifierprofile_v1.vector.json",
+    "VerificationResult.v1": "verificationresult_v1.vector.json",
+    "VerifierInvocationRecord.v1": "verifierinvocationrecord_v1.vector.json",
+    "VerifierReplayReport.v1": "verifierreplayreport_v1.vector.json",
+    "VerifierMutationManifest.v1": "verifiermutationmanifest_v1.vector.json",
+    "RewardEvidenceEnvelope.v1": "rewardevidenceenvelope_v1.vector.json",
+    "OptimizationCampaignManifest.v1": "optimizationcampaignmanifest_v1.vector.json",
+    "AdjudicationRecord.v1": "adjudicationrecord_v1.vector.json",
+    "VerifierAssuranceReport.v1": "verifierassurancereport_v1.vector.json",
 }
 
 
@@ -88,7 +106,7 @@ def write_shared_vectors(*, force: bool = False) -> None:
         data = json.loads(example.read_text(encoding="utf-8"))
         payload = {
             "artifact_type": artifact_type,
-            "input_file": relative,
+            "input_file": relative.replace("\\", "/"),
             "expected_digest": canonical_hash(data),
             "canonical_json": canonical_json_bytes(data).decode("utf-8"),
         }
@@ -99,7 +117,9 @@ def verify_shared_vectors() -> list[str]:
     errors: list[str] = []
     for artifact_type, relative in VECTOR_SPECS.items():
         vector = load_vector(artifact_type)
-        example_name = str(vector.get("input", vector.get("input_file", relative)))
+        example_name = str(vector.get("input", vector.get("input_file", relative))).replace(
+            "\\", "/"
+        )
         if not example_name.startswith("examples/"):
             example_name = relative
         data = json.loads(_example_path(example_name).read_text(encoding="utf-8"))
