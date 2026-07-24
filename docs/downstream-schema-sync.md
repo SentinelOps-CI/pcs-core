@@ -75,9 +75,19 @@ report = build_conformance_report_data("hash")
 
 Cross-language hash vectors are verified with `pcs shared-hash-vectors verify`.
 
+## Verifier Assurance (PCS-VA) sync notes
+
+Producers (OVK, LabTrust, optimization harnesses) should:
+
+1. Pin pcs-core SHA/tag and vendor only the six VA schemas plus `verifier_assurance.defs.json` / `common.defs.json` as needed.
+2. Emit `VerifierProfile.v1` / `VerificationResult.v1` (and campaign types as applicable); do not fork Invocation/Replay/Mutation schemas.
+3. Gate CI with `pcs conformance run --suite verifier-assurance` and the producer dialect tree under `benchmarks/verifier_assurance_conformance/`.
+4. Follow [verifier-assurance/migration.md](verifier-assurance/migration.md) and [verifier-assurance/non-claims.md](verifier-assurance/non-claims.md).
+
 ## Related documentation
 
 - [protocol.md](protocol.md)
+- [verifier-assurance/protocol.md](verifier-assurance/protocol.md)
 - [release-protocol.md](release-protocol.md)
 - [artifact-registry.md](artifact-registry.md)
 - [semantic-check-policy.md](semantic-check-policy.md)

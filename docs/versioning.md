@@ -4,6 +4,8 @@
 
 All PCS artifacts use `schema_version` value `"v0"` for the v0.1 release, and pinning git tag **`v0.1.0`** on pcs-core fixes schemas, registry, and validators at one commit.
 
+Verifier Assurance artifacts use `schema_version` value `"v1"` (`common.defs.json#/$defs/schema_version_v1`) in new `*.v1` schema files. Frozen `*.v0` schemas remain immutable; `VerificationResult.v0` and `VerificationResult.v1` coexist without auto-upgrade (see [verifier-assurance/migration.md](verifier-assurance/migration.md)).
+
 ## Change classes
 
 | Class | Description | Consumer impact |

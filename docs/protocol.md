@@ -18,6 +18,12 @@ Proof-Carrying Science (PCS) is a cross-repository artifact protocol, and **pcs-
 
 Release, workflow, and benchmark extensions are documented in [release-protocol.md](release-protocol.md) and [benchmarks.md](benchmarks.md).
 
+## Verifier Assurance family (`*.v1`)
+
+pcs-core also owns the Verifier Assurance (PCS-VA) six-artifact family for portable verifier profiles, results, rewards, campaigns, adjudication commitments, and offline assurance reports. These use `schema_version` value `"v1"` and nested `integrity` (not root `signature_or_digest`). They coexist with the v0.1 core table above; `VerificationResult.v1` does not replace `VerificationResult.v0`.
+
+See [verifier-assurance/protocol.md](verifier-assurance/protocol.md), [verifier-assurance/ownership.md](verifier-assurance/ownership.md), and [releases/verifier-assurance-rc.md](releases/verifier-assurance-rc.md).
+
 ## `schema_version` and artifact class
 
 The `schema_version` field records the **PCS protocol version**, while the artifact class is identified separately through the schema file, the JSON Schema `title`, and required identifier fields such as `bundle_id`, `receipt_id`, and `signed_bundle_id`.
@@ -83,3 +89,4 @@ Add `NewArtifact.v1.schema.json` under `schemas/` as a new file because frozen `
 | [workflow-profiles.md](workflow-profiles.md) | Multi-domain workflows |
 | [artifact-lifecycle.md](artifact-lifecycle.md) | Status flows |
 | [downstream-schema-sync.md](downstream-schema-sync.md) | Vendoring policy |
+| [verifier-assurance/protocol.md](verifier-assurance/protocol.md) | Verifier Assurance (PCS-VA) `*.v1` family |
