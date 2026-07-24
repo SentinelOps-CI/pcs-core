@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pcs.sentinelops.ci/schemas/AdjudicationRecord.v1.schema.json",
+  "title": "AdjudicationRecord.v1",
+  "description": "Adjudication record with labels, votes, independence/COI, blinded status, evidence refs, and protected rationale commitment (public may omit rationale content).",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "artifact_type",
+    "adjudication_id",
+    "created_at",
+    "producer",
+    "producer_version",
+    "source_repo",
+    "source_commit",
+    "subject",
+    "protocol_id",
+    "protocol_version",
+    "label",
+    "votes",
+    "independence_declared",
+    "conflict_of_interest_declared",
+    "blinded",
+    "label_released_at",
+    "evidence_refs",
+    "protected_rationale",
+    "integrity"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "$ref": "common.defs.json#/$defs/schema_version_v1" },
+    "artifact_type": { "const": "AdjudicationRecord.v1" },
+    "adjudication_id": { "type": "string", "minLength": 1 },
+    "created_at": { "$ref": "common.defs.json#/$defs/iso8601_datetime" },
+    "producer": { "type": "string", "minLength": 1 },
+    "producer_version": { "type": "string", "minLength": 1 },
+    "source_repo": { "type": "string", "format": "uri" },
+    "source_commit": { "$ref": "verifier_assurance.defs.json#/$defs/git_commit_sha40" },
+    "subject": { "$ref": "verifier_assurance.defs.json#/$defs/artifact_ref" },
+    "protocol_id": { "type": "string", "minLength": 1 },
+    "protocol_version": { "type": "string", "minLength": 1 },
+    "label": { "$ref": "verifier_assurance.defs.json#/$defs/adjudication_label" },
+    "votes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["voter_pseudonym_id", "role", "vote"],
+        "additionalProperties": false,
+        "properties": {
+          "voter_pseudonym_id": { "type": "string", "minLength": 1 },
+          "role": { "type": "string", "minLength": 1 },
+          "vote": { "$ref": "verifier_assurance.defs.json#/$defs/adjudication_label" }
+        }
+      }
+    },
+    "independence_declared": { "type": "boolean" },
+    "conflict_of_interest_declared": { "type": "boolean" },
+    "disagreement": { "type": "boolean" },
+    "escalation": { "type": "boolean" },
+    "blinded": { "type": "boolean" },
+    "label_released_at": { "$ref": "common.defs.json#/$defs/iso8601_datetime" },
+    "evidence_refs": {
+      "type": "array",
+      "items": { "$ref": "verifier_assurance.defs.json#/$defs/artifact_ref" }
+    },
+    "protected_rationale": {
+      "type": "object",
+      "required": ["commitment_digest", "location_class"],
+      "additionalProperties": false,
+      "properties": {
+        "commitment_digest": { "$ref": "common.defs.json#/$defs/hex_digest" },
+        "location_class": {
+          "$ref": "verifier_assurance.defs.json#/$defs/protected_evidence_location_class"
+        },
+        "content_omitted": {
+          "type": "boolean",
+          "description": "Public records set true; private rationale content must not appear in public fixtures."
+        }
+      }
+    },
+    "integrity": { "$ref": "verifier_assurance.defs.json#/$defs/nested_integrity" },
+    "signature_or_digest": {
+      "$ref": "verifier_assurance.defs.json#/$defs/forbid_signature_or_digest"
+    }
+  }
+}
