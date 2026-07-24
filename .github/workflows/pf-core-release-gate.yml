@@ -1,4 +1,4 @@
-﻿name: PF-Core Release Gate
+name: PF-Core Release Gate
 
 # Live CertifyEdge + pin verification. Tag/release path is fail-closed.
 # Preview path (workflow_dispatch release_mode=preview): lean-check → bundle-release
@@ -195,7 +195,7 @@ jobs:
           cp -a /tmp/pfcore-preview-bundle/. ../dist/pf-core-preview-bundle/
       - name: Upload preview release bundle
         if: env.PCS_RELEASE_MODE == 'preview'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: pcs-core-pf-core-preview-bundle
           path: dist/pf-core-preview-bundle/
