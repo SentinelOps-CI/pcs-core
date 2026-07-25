@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "pcs.authority_record.v0",
+  "title": "PCS Authority Record (mirrored)",
+  "description": "Immutable mirror of PCS authority record. Not in PF-Core TCB.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "authority_id",
+    "valid_from",
+    "valid_until",
+    "revoked",
+    "claim_class",
+    "environment_digest",
+    "authorized_issuers"
+  ],
+  "properties": {
+    "schema_version": { "const": "pcs.authority_record.v0" },
+    "authority_id": { "type": "string", "minLength": 1 },
+    "valid_from": { "type": "integer", "minimum": 0 },
+    "valid_until": { "type": "integer", "minimum": 0 },
+    "revoked": { "type": "boolean" },
+    "claim_class": { "type": "string", "minLength": 1 },
+    "environment_digest": { "type": "string", "minLength": 1 },
+    "authorized_issuers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["principal_id", "tenant_id"],
+        "properties": {
+          "principal_id": { "type": "string", "minLength": 1 },
+          "tenant_id": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

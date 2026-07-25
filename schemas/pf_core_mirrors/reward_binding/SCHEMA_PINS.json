@@ -1,0 +1,7 @@
+{
+  "authority_record.schema.json": "3da39fd9d1e95f40e72e2701a7675475f1ded7851c993ffd1875643e8e7435da",
+  "environment_profile.schema.json": "39f039415d519b0ba80b203cb90d479ffdf6e45fb2832be9b8336983b3e19dee",
+  "reward_evidence_envelope.schema.json": "0fc5c9b55b407ded03f23b96307bfc8b6f5b74d4244a0dc7bd6cbe876a89eae0",
+  "verification_result.schema.json": "37324f4877353ca90fcc59e54b70429d59d86ccd21ab2f0e52942e4d53495b9e",
+  "verifier_profile.schema.json": "ad985317963692d8b3ea90b92f931166199657c2688e50c57d11e89e135d227a"
+}
