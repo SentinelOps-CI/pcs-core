@@ -463,7 +463,7 @@ jobs:
       - name: Attest build provenance (immutable subjects)
         id: attest_prov
         continue-on-error: true
-        uses: actions/attest-build-provenance@96278af6caaf10aea03fd8d33a09a777ca52d62f # v3.2.0
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
         with:
           subject-checksums: dist/provenance/subjects-attest.sha256
 
@@ -519,7 +519,7 @@ jobs:
       - name: Attest sealed provenance binding
         if: ${{ steps.finalize_prov.outputs.status == 'signed' }}
         continue-on-error: true
-        uses: actions/attest-build-provenance@96278af6caaf10aea03fd8d33a09a777ca52d62f # v3.2.0
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
         with:
           subject-path: dist/provenance/ReleaseProvenanceBinding.v0.json
 
